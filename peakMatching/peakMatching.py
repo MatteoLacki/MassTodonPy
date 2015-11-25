@@ -30,10 +30,9 @@ for family in BFG.vs(type='F'):
 	for peakNo in BFG.neighborhood( family, order=1, mode='out' ):
 		if peakNo != family.index:
 				# BELOW: > 1 for the same peak is always included, 
-				# as order is set at most 1, and we want exactly 1.
+				# as order is set at most 1, and we want exactly 1.1
 			if BFG.neighborhood_size( peakNo, order=1, mode='out' ) > 1:
 				family['experimentalSupport'] += BFG.vs[peakNo]['intensity']
-	print family['experimentalSupport']	
 
 poorSupport = [ BFG.neighborhood( family, order=1, mode='out' ) for family in BFG.vs( type='F', experimentalSupport_lt=minExpSupp )]
 poorSupport = [ i for f in poorSupport for i in f ]
@@ -45,11 +44,9 @@ poorSupport = [ i for f in poorSupport for i in f ]
 # BFG.vs['color'] = [ color_dict[ge] for ge in BFG.vs['type']]
 # ig.plot(BFG, layout = layout, target='/Users/matteo/fullGraph.pdf')#,  bbox = (300, 300), margin = 20)
 
-BFG.delete_vertices(poorSupport)	
-
+BFG.delete_vertices( poorSupport )	
 	## After cleaving the experimentally unsupported part.
 # layout = BFG.layout("kk")
-# BFG.vs['label'] = BFG.vs['type']
-# color_dict = {'F': 'green', 'P': 'blue', 'E': 'red'}
-# BFG.vs['color'] = [ color_dict[ge] for ge in BFG.vs['type']]
 # ig.plot(BFG, layout = layout, target='/Users/matteo/experimentallySupported.pdf')#,  bbox = (300, 300), margin = 20)
+
+print BFG.clusters()
