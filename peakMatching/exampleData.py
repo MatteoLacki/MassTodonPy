@@ -7,11 +7,13 @@ theory 	= [
 	[(40.,.2),(41.,.3),(42.,.1)],
 	[(41.01,.1),(42.01,.6),(43.01,.7),(44.01,.01)]
 ]
+
 empiria = [
 	(20.1, 10.), (21.101, 20.),(22.09, 32.),(24.15, 10),(25.1, 14),
 	(40.02,213.),(41.02,521.),(42.01,122.),
 	(41.09,100.),(42.,640.),(43.02, 723),
-	(41.051,10.)
+	(41.051,10.),
+	(50,1.)
 ]
 
 def normalise(envelope):
@@ -22,3 +24,5 @@ def normalise(envelope):
 theory = [ normalise(spectrum) for spectrum in theory ]
 #Check if it is not better to include these peaks using IntervalTree( <iterable> )
 	# IntervalTree( Interval( mass-tol, mass+tol, (peakNo,famNo) ) for  )
+
+savePath = '/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodonPy'
