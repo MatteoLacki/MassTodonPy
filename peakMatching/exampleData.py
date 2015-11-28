@@ -9,13 +9,13 @@ theory 	= [
 	[(40.,.2),(41.,.3),(42.,.1)],
 	[(41.01,.1),(42.01,.6),(43.01,.7),(44.01,.01)]
 ]
-# empiria = [
-# 	(20.1, 10.), (21.101, 20.),(22.09, 32.),(24.15, 10),(25.1, 14),
-# 	(40.02,213.),(41.02,521.),(42.01,122.),
-# 	(41.09,100.),(42.,640.),(43.02, 723),
-# 	(41.051,10.),
-# 	(50,1.)
-# ]
+empiria = [
+	(20.1, 10.), (21.101, 20.),(22.09, 32.),(24.15, 10),(25.1, 14),
+	(40.02,213.),(41.02,521.),(42.01,122.),
+	(41.09,100.),(42.,640.),(43.02, 723),
+	(41.051,10.),
+	(50,1.)
+]
 
 def normalise(envelope):
 	totWeight = sum( float(weight) for mass, weight in envelope )
@@ -31,7 +31,7 @@ ionNo = [ 100., 200., 300., 500., 1000. ]
 empiria = [
 	(mass, intensity * ioNo) for spectrum, ioNo in zip(theory, ionNo) for mass, intensity in spectrum
 ]
-empiria.append(( 100.,200. ))
-empiria.append(( 20.11, 200. ))
-# print empiria
-
+# empiria.append(( 100.,200. ))
+# empiria.append(( 20.11, 200. ))
+print empiria
+print
