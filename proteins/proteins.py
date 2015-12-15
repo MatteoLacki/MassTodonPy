@@ -6,133 +6,265 @@ def style(G):
 	visual_style = {}
 	visual_style['vertex_color']= [ elem_color[gender] for gender in G.vs['elem']]
 	visual_style['vertex_label']= G.vs['elem']
-	visual_style['edge_width'] 	= [ bond_thick[bond] for bond in G.es['bond']]
+	# visual_style['edge_width'] 	= [ bond_thick[bond] for bond in G.es['bond']]
 	return visual_style
 
+######################################################################
 
-# def getBackbone():
-# 	B = ig.Graph()
-# 	B.add_vertex( elem='N', name='N0' )
-# 	B.add_vertex( elem='H', name='H0' )
-# 	B.add_vertex( elem='H', name='H1' )
-# 	B.add_edge( 'N0', 'H0', bond='-' )
-# 	B.add_edge( 'N0', 'H1', bond='-' )
-# 	B.add_vertex( elem='C', name='C0' ) # C-alpha
-# 	B.add_edge( 'C0', 'N0', bond='-' )
-# 	B.add_vertex( elem='H', name='H2' )
-# 	B.add_edge( 'H2', 'C0', bond='-' )
-# 	B.add_vertex( elem='C', name='C1' )
-# 	B.add_edge( 'C1', 'C0', bond='-' )
-# 	B.add_vertex( elem='O', name='O0' )
-# 	B.add_edge( 'O0', 'C1', bond='=' )
-# 	B.add_vertex( elem='O', name='O1' )
-# 	B.add_edge( 'O1', 'C1', bond='=' )
-# 	B.add_vertex( elem='H', name='H3' )
-# 	B.add_edge( 'H3', 'O1', bond='-' )
+def Backbone():
+	B = makeAtoms({ 'C':2, 'H':4, 'N':1, 'O':2 })
+	B.add_edge( 'N0', 'C0', Roep='cz' )
+	B.add_edge( 'C0', 'C1', Roep='ax' )
+	B = B + ('N0','H0') + ('N0','H1') + ('C0','H2')+\
+	('C1','O0')+('C1','O0')+('C1','O1') + ('O1','H3')	
+	return B
+
+######################################################################
+
+def getAttr(seq, attr_name):
+    try:
+        return seq[attr_name]
+    except KeyError:
+        return [None] * len(seq)
+
+def join(g1, g2, vertex_attributes, edge_attributes):
+    g = g1+g2
+    for attr in vertex_attributes:
+        g.vs[attr] = getAttr(g1.vs, attr) + getAttr(g2.vs, attr)
+    for attr in edge_attributes:
+        g.es[attr] = getAttr(g1.es, attr) + getAttr(g2.es, attr)
+    return g
+
+def addBackbone(AA, linkerName):
+	B = Backbone()
+	Calpha = B.vs.find('C0').index
+	linker = AA.vs.find(linkerName).index + len(B.vs)
+	G = join( B, AA, ['elem'], ['Roep'] )
+	G = G + ( Calpha, linker )
+	return G
 
 def makeAtoms(atomCnt):
-
-def getBackbone():
-	atomCnt = {'C':2, 'H':4, 'N':1, 'O':2}
 	vAtt = {'name': [], 'elem': [] }
 	for atom in atomCnt:
 		vAtt['elem'].extend( [ atom ]*atomCnt[atom] )
 		for aC in xrange(atomCnt[atom]):
 			vAtt['name'].append( atom+str(aC) )
-	B = ig.Graph( sum( atomCnt[a] for a in atomCnt ), vertex_attrs=vAtt )+\
-	('N0','H0') + ('N0','H1') + ('C0','N0') + ('C0','H2')+\
-	('C0','C1') + ('C1','O0') + ('C1','O1') + ('O1','H3')
-	B.es['bond'] = '-'
-	B.es[B.get_eid('C1','O0')]['bond']='='
-	return B
-	
+	G = ig.Graph( sum( atomCnt[a] for a in atomCnt ), vertex_attrs=vAtt )
+	return G
+######################################################################
+
 def A():
-	A = ig.Graph()
-	A.add_vertex( elem='C', name='C0' )
-	for i in xrange(3):
-		Hname = 'H'+str(i)
-		A.add_vertex( elem='H', name=Hname )
-		A.add_edge( 'C0', Hname, bond='-' )
+	A = makeAtoms({ 'C':1, 'H':3 })+\
+	('C0','H0')+('C0','H1')+('C0','H2')
+	A = addBackbone(A,'C0')
+	A['name'] = 'Alanine'
 	return A
 
 def R():
-	R = getBackbone()
-	h = 0
-	cPrev = 'Calpha'
-	for c in xrange(3):
-		Cname = 'C'+str(c)
-		R.add_vertex( 	elem = 'C', name = Cname )
-		R.add_edge( Cname, cPrev )
-		for i in xrange(2):
-			Hname = 'C'+str(h)
-			R.add_vertex( elem = 'H', name = Hname )
-			R.add_edge( Cname, Hname )
-			h += 1
-		cPrev = Cname
-	R.add_vertex( elem='N', name='-N(-H)-' )
-	R.add_edge( '-N(-H)-', cPrev )
+	R = makeAtoms({ 'C':4, 'H':10, 'N':3 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','C2')+\
+	('C2','H4')+('C2','H5')+('C2','N0')+\
+	('N0','H6')+('N0','C3')+\
+	('C3','N1')+('C3','N1')+('C3','N2')+\
+	('N1','H7')+\
+	('N2','H8')+('N2','H9')
+	R = addBackbone(R,'C0')
+	R['name'] ='Arginine'
+	return R
 
-	c += 1
-	Cname = 'C'+str(c)
-	R.add_vertex( 	elem = 'C', name = Cname )
-	R.add_edge( Cname, '-N(-H)-' )
-	
+def N():
+	N = makeAtoms({ 'C':2, 'H':4, 'N':1, 'O':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','O0')+('C1','O0')+('C1','N0')+\
+	('N0','H2')+('N0','H3')
+	N = addBackbone(N,'C0')
+	N['name'] ='Asparagine'
+	return N
+
+def D():
+	D = makeAtoms({ 'C':2, 'H':3, 'O':2 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','O0')+('C1','O0')+('C1','O1')+\
+	('O1','H2')
+	D = addBackbone(D,'C0')
+	D['name'] ='Aspartic acid'
+	return D
+
+def C():
+	C = makeAtoms({ 'C':1, 'H':3, 'S':1 })+\
+	('C0','H0')+('C0','H1')+('C0','S0')+\
+	('S0','H2')
+	C = addBackbone(C,'C0')
+	C['name'] = 'Cysteine'
+	return C
+
+def Q():
+	Q = makeAtoms({ 'C':3, 'H':6, 'N':1, 'O':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','C2')+\
+	('C2','O0')+('C2','O0')+('C2','N0')+\
+	('N0','H4')+('N0','H5')
+	Q = addBackbone(Q,'C0')
+	Q['name'] ='Glutamine'
+	return Q
+
+def E():
+	E = makeAtoms({ 'C':3, 'H':5, 'O':2 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','C2')+\
+	('C2','O0')+('C2','O0')+('C2','O1')+\
+	('O1','H4')
+	E = addBackbone(E,'C0')
+	E['name'] ='Glutamic acid'
+	return E
+
+def G():
+	G = makeAtoms({ 'H':1 })
+	G = addBackbone(G,'H0')
+	G['name'] = 'Glycine'
+	return G
+
+def H():
+	H = makeAtoms({ 'C':4, 'H':5, 'N':2 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C2')+('C1','N0')+\
+	('N0','H2')+('N0','C3')+\
+	('C3','H3')+('C3','N1')+('C3','N1')+\
+	('N1','C2')+\
+	('C2','H4')
+	H = addBackbone(H,'C0')
+	H['name'] ='Histidine'
+	return H
+
+def I():
+	I = makeAtoms({ 'C':4, 'H':9 })+\
+	('C0','H0')+('C0','C1')+('C0','C2')+\
+	('C1','H1')+('C1','H2')+('C1','H3')+\
+	('C2','H4')+('C2','H5')+('C2','C3')+\
+	('C3','H6')+('C3','H7')+('C3','H8')
+	I = addBackbone(I,'C0')
+	I['name'] ='Isoleucine'
+	return I
+
+def L():
+	L = makeAtoms({ 'C':4, 'H':9 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','C2')+('C1','C3')+\
+	('C2','H3')+('C2','H4')+('C2','H5')+\
+	('C3','H6')+('C3','H7')+('C3','H8')
+	L = addBackbone(L,'C0')
+	L['name'] ='Leucine'
+	return L
+
+def K():
+	K = makeAtoms({ 'C':4, 'H':10, 'N':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','C2')+\
+	('C2','H4')+('C2','H5')+('C2','C3')+\
+	('C3','H6')+('C3','H7')+('C3','N0')+\
+	('N0','H8')+('N0','H9')
+	K = addBackbone(K,'C0')
+	K['name'] ='Lysine'
+	return K
+
+def M():
+	M = makeAtoms({ 'C':3, 'H':7, 'S':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','S0')+\
+	('S0','C2')+\
+	('C2','H4')+('C2','H5')+('C2','H6')
+	M = addBackbone(M,'C0')
+	M['name'] = 'Methionine'
+	return M
+
+def F():
+	F = makeAtoms({ 'C':7, 'H':7 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C2')+('C1','C6')+\
+	('C2','H2')+('C2','C3')+\
+	('C3','H3')+('C3','C4')+('C3','C4')+\
+	('C4','H4')+('C4','C5')+\
+	('C5','H5')+('C5','C6')+('C5','C6')+\
+	('C6','H6')
+	F = addBackbone(F,'C0')
+	F['name'] = 'Phenylalanine'
+	return F
+
+def P(): # This is special: links to backbone in two places.
+	P = makeAtoms({ 'C':5, 'H':9, 'N':1, 'O':2 })
+	P.add_edge( 'C0', 'C1', Roep='ax' )
+	P.add_edge( 'N0', 'C1', Roep='cz' )
+	P = P + ('N0','H0') + ('C1','H1')+\
+	('C0','O0')+('C0','O0')+('C0','O1') + ('O1','H2')+\
+	('C1','C2')+\
+	('C2','H3')+('C2','H4')+('C2','C3')+\
+	('C3','H5')+('C3','H6')+('C3','C4')+\
+	('C4','N0')+('C4','H7')+('C4','H8')
+	('N')	
+	P['name'] = 'Proline'
+	return P
+
+def S():
+	S = makeAtoms({ 'C':1, 'H':3, 'O':1 })+\
+	('C0','H0')+('C0','H1')+('C0','O0')+\
+	('O0','H2')
+	S = addBackbone(S,'C0')
+	S['name'] = 'Serine'
+	return S
+
+def T():
+	T = makeAtoms({ 'C':2, 'H':5, 'O':1 })+\
+	('C0','H0')+('C0','O0')+('C0','C1')+\
+	('O0','H1')+\
+	('C1','H2')+('C1','H3')+('C1','H4')
+	T = addBackbone(T,'C0')
+	T['name'] = 'Threonine'
+	return T
+
+def W():
+	W = makeAtoms({ 'C':9, 'H':8, 'N':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C3')+('C1','C3')+\
+	('C2','C4')+('C2','C5')+('C2','C5')+\
+	('C3','N0')+('C3','H2')+\
+	('N0','H3')+('N0','C5')+\
+	('C5','C6')+\
+	('C6','H4')+('C6','C7')+('C6','C7')+\
+	('C4','C8')+('C4','C8')+('C4','H5')+\
+	('C7','H6')+('C7','C8')+\
+	('C8','H7')
+	W = addBackbone(W,'C0')
+	W['name'] = 'Tryptophan'
+	return W
+
+def Y():
+	Y = makeAtoms({ 'C':7, 'H':7, 'O':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C2')+('C1','C3')+\
+	('C2','H2')+('C2','C4')+\
+	('C3','H3')+('C3','C5')+('C3','C5')+\
+	('C4','H4')+('C4','C6')+('C4','C6')+\
+	('C5','H5')+('C5','C6')+\
+	('C6','O0')+\
+	('O0','H6')
+	Y = addBackbone(Y,'C0')
+	Y['name'] = 'Tyrosine'
+	return Y
+
+def V():
+	V = makeAtoms({ 'C':3, 'H':7 })+\
+	('C0','C1')+('C0','C2')+('C0','H0')+\
+	('C1','H1')+('C1','H2')+('C1','H3')+\
+	('C2','H4')+('C2','H5')+('C2','H6')
+	V = addBackbone(V,'C0')
+	V['name'] = 'Valine'
+	return V
 
 
-
-
-# back = getBackbone()
-# print back
-# back + vert
-# ig.plot( back, **style(back) )
-
-# R = getBackbone()
-# Hidx = 0
-# for i in xrange(3):
-# 	Cname = 'C_'+str(i)
-# 	R.add_vertex( elem = 'C', 	name = Cname )
-# 	R.add_edge( Cname, 'Calpha', bond = '-'  )
-# 	for j in xrange(2):
-# 		Hname= 'H_'+str(Hidx)
-# 		Hidx += 1
-# 		R.add_vertex( 	elem='H', 	name=Hname )
-# 		R.add_edge( Cname, Hname, bond='-' )
-
-
-# g = ig.Graph() 
-# g.add_vertices(3)
-# g.add_edges([(0,2),(1,2)])
-# g.vs['name'] = g.vs['type'] = ['a','b','c']
-
-# h = ig.Graph() 
-# h.add_vertices(3)
-# h.add_edges([(0,1),(1,2)])
-# h.vs['name'] = h.vs['type'] = ['a1','b1','c1']
-# # We can simply leave out the names. They are not so important. 
-
-# def get_attrs_or_nones(seq, attr_name):
-#     try:
-#         return seq[attr_name]
-#     except KeyError:
-#         return [None] * len(seq)
-
-# def better_disjoint_union(g1, g2):
-#     g = g1+g2
-#     vertex_attributes = set(g.vertex_attributes() + g2.vertex_attributes())
-#     edge_attributes = set(g.edge_attributes() + g2.edge_attributes())
-#     for attr in vertex_attributes:
-#         g.vs[attr] = get_attrs_or_nones(g1.vs, attr) + get_attrs_or_nones(g2.vs, attr)
-#     for attr in edge_attributes:
-#         g.es[attr] = get_attrs_or_nones(g1.es, attr) + get_attrs_or_nones(g2.es, attr)
-#     return g
-
-
-
-# print g
-# print h
-# print better_disjoint_union(g, h)
-
-# testAA = A()
-# ig.plot( testAA, **style(testAA) )
-# A = ig.Graph()
-# A.add_vertex( elem='C' )
+AA = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
+# savePath = '/Users/matteo/Dropbox/Science/MassSpectrometry/masstodon/Visual/AminoAcids/'
+# savePath = '/Users/matteo/MassSpec/Visual/AminoAcids/'
+# for aa in AA:
+# 	GG = locals()[aa]()
+# 	ig.plot( GG, target = savePath + aa + '.pdf', **style(GG) )
