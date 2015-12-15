@@ -124,7 +124,6 @@ def G():
 	G['name'] = 'Glycine'
 	return G
 
-
 def H():
 	H = makeAtoms({ 'C':4, 'H':5, 'N':2 })+\
 	('C0','H0')+('C0','H1')+('C0','C1')+\
@@ -137,9 +136,123 @@ def H():
 	H['name'] ='Histidine'
 	return H
 
-# Add Isoleucine
+def I():
+	I = makeAtoms({ 'C':4, 'H':9 })+\
+	('C0','H0')+('C0','C1')+('C0','C2')+\
+	('C1','H1')+('C1','H2')+('C1','H3')+\
+	('C2','H4')+('C2','H5')+('C2','C3')+\
+	('C3','H6')+('C3','H7')+('C3','H8')
+	I = addBackbone(I,'C0')
+	I['name'] ='Isoleucine'
+	return I
 
-GG = H()
+def L():
+	L = makeAtoms({ 'C':4, 'H':9 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','C2')+('C1','C3')+\
+	('C2','H3')+('C2','H4')+('C2','H5')+\
+	('C3','H6')+('C3','H7')+('C3','H8')
+	L = addBackbone(L,'C0')
+	L['name'] ='Leucine'
+	return L
+
+def K():
+	K = makeAtoms({ 'C':4, 'H':10, 'N':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','C2')+\
+	('C2','H4')+('C2','H5')+('C2','C3')+\
+	('C3','H6')+('C3','H7')+('C3','N0')+\
+	('N0','H8')+('N0','H9')
+	K = addBackbone(K,'C0')
+	K['name'] ='Lysine'
+	return K
+
+def M():
+	M = makeAtoms({ 'C':3, 'H':7, 'S':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','H2')+('C1','H3')+('C1','S0')+\
+	('S0','C2')+\
+	('C2','H4')+('C2','H5')+('C2','H6')
+	M = addBackbone(M,'C0')
+	M['name'] = 'Methionine'
+	return M
+
+def F():
+	F = makeAtoms({ 'C':7, 'H':7 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C2')+('C1','C6')+\
+	('C2','H2')+('C2','C3')+\
+	('C3','H3')+('C3','C4')+('C3','C4')+\
+	('C4','H4')+('C4','C5')+\
+	('C5','H5')+('C5','C6')+('C5','C6')+\
+	('C6','H6')
+	F = addBackbone(F,'C0')
+	F['name'] = 'Phenylalanine'
+	return F
+
+def P(): # This is special: links to backbone in two places.
+	P = makeAtoms({ 'C':5, 'H':9, 'N':1, 'O':2 })
+	P.add_edge( 'C0', 'C1', Roep='ax' )
+	P.add_edge( 'N0', 'C1', Roep='cz' )
+	P = P + ('N0','H0') + ('C1','H1')+\
+	('C0','O0')+('C0','O0')+('C0','O1') + ('O1','H2')+\
+	('C1','C2')+\
+	('C2','H3')+('C2','H4')+('C2','C3')+\
+	('C3','H5')+('C3','H6')+('C3','C4')+\
+	('C4','N0')+('C4','H7')+('C4','H8')
+	('N')	
+	P['name'] = 'Proline'
+	return P
+
+def S():
+	S = makeAtoms({ 'C':1, 'H':3, 'O':1 })+\
+	('C0','H0')+('C0','H1')+('C0','O0')+\
+	('O0','H2')
+	S = addBackbone(S,'C0')
+	S['name'] = 'Serine'
+	return S
+
+def T():
+	T = makeAtoms({ 'C':2, 'H':5, 'O':1 })+\
+	('C0','H0')+('C0','O0')+('C0','C1')+\
+	('O0','H1')+\
+	('C1','H2')+('C1','H3')+('C1','H4')
+	T = addBackbone(T,'C0')
+	T['name'] = 'Threonine'
+	return T
+
+def W():
+	W = makeAtoms({ 'C':9, 'H':8, 'N':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C3')+('C1','C3')+\
+	('C2','C4')+('C2','C5')+('C2','C5')+\
+	('C3','N0')+('C3','H2')+\
+	('N0','H3')+('N0','C5')+\
+	('C5','C6')+\
+	('C6','H4')+('C6','C7')+('C6','C7')+\
+	('C4','C8')+('C4','C8')+('C4','H5')+\
+	('C7','H6')+('C7','C8')+\
+	('C8','H7')
+	W = addBackbone(W,'C0')
+	W['name'] = 'Tryptophan'
+	return W
+
+def Y():
+	Y = makeAtoms({ 'C':7, 'H':7, 'O':1 })+\
+	('C0','H0')+('C0','H1')+('C0','C1')+\
+	('C1','C2')+('C1','C2')+('C1','C3')+\
+	('C2','H2')+('C2','C4')+\
+	('C3','H3')+('C3','C5')+('C3','C5')+\
+	('C4','H4')+('C4','C6')+('C4','C6')+\
+	('C5','H5')+('C5','C6')+\
+	('C6','O0')+\
+	('O0','H6')
+	Y = addBackbone(Y,'C0')
+	Y['name'] = 'Tyrosine'
+	return Y
+
+
+GG = W()
 # { 'C':2, 'H':2, 'N':1, 'O':1 } # The backbone atom count
 # GG = H()
 print GG 
