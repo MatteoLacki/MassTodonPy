@@ -1,9 +1,15 @@
 from aminoAcid import AminoAcid
 
-AA = AminoAcid()
-AA('A')
+AA = AminoAcid('A')
+AA.plot()
 
+type(AA) == 'aminoAcid.AminoAcid'
+type(10)
+isinstance( AA, AminoAcid )
 
+print AA
+
+print AA
 
 
 substanceP = 'RPKPQQFFGLM'
@@ -23,11 +29,11 @@ P = Protein('RPKPQQFFGLM')
  P('A')
 
 
- # def JoinAAs( LAA, RAA ):
-# 	LAA.delOH()
-# 	RAA.delH()
-# 	Nind = LAA.getNind()
-# 	Cind = RAA.getCind()
-# 	return join(LAA, RAA, Nind, Cind)
+ def JoinAAs( LAA, RAA ):
+	LAA.delOH()
+	RAA.delH()
+	Nind = LAA.getNind()
+	Cind = RAA.getCind()
+	return join(LAA, RAA, Nind, Cind)
 
 

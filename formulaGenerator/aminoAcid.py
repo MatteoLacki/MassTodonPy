@@ -1,6 +1,7 @@
 import igraph as ig
 
 class MissingAminoAcid(Exception): pass
+class WrongArgument(Exception): pass
 
 def getAttr(seq, attr_name):
     try:
@@ -17,14 +18,36 @@ def join(g1, g2, vertex_attributes, edge_attributes):
     return g
 
 class AminoAcid(object):
-	def __init__(self):
-		self.aminoAcids = set(['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'])
+	def __init__(self, aa):
+		try:
+			self.G = getattr(self, aa)()
+		except AttributeError:
+			print aa + ' is not among acceptable amino acids:'
+			print ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
+			raise MissingAminoAcid
+		
+		if 'aa'	== 'F' or 'aa' == 'Y': # the only amino acids with ambigous IUPAC notation
+			self.OH = (self.G.vs.find('Ocarboxyl1_2').index, self.G.vs.find('Hcarboxyl1').index)
+			self.C1 = self.G.vs.find('Ccarboxyl').index
+			self.C1name = 'Ccarboxyl'
+		else: 
+			self.OH = [self.G.vs.find('O1_2').index, self.G.vs.find('HO1_2').index]
+			self.C1 = self.G.vs.find('C1').index
+			self.C1name = 'C1'
+		
+		self.Nalpha = self.G.vs.find('Nalpha').index
+		self.HNalpha1 = self.G.vs.find('HNalpha1').index 
+		self.HNalpha2 = self.G.vs.find('HNalpha2').index 
+			# Now we rename all the things.
+		self.G.vs['IUPAC'] = self.G.vs['name']
+		self.updateVertexNames(0)
+		self.AAnoNext = 1			
 
-	def getAttr(seq, attr_name):
-	    try:
-	        return seq[attr_name]
-	    except KeyError:
-	        return [None] * len(seq)	
+	def __str__(self):
+		return self.G.__str__()
+
+	def __repr__(self):
+		return self.G.__repr__()
 
 	def addBackbone(self, A, acyclic=True):
 		B = self.Backbone(acyclic)
@@ -300,19 +323,49 @@ class AminoAcid(object):
 		V['name'] = 'Valine'
 		return V
 
-	def __call__(self, aa):
-		try:
-			return getattr(self, aa)()
-		except AttributeError:
-			print aa + ' is not among the accepted amino acids:'
-			print self.aminoAcids
-			raise MissingAminoAcid
+	def plot(self):
+		elem_color = {'C':'grey', 'H':'red', 'N':'blue', 'O':'white', 'S':'pink' }
+		visual_style = {}
+		visual_style['vertex_color']= [ elem_color[gender] for gender in self.G.vs['elem']]
+		visual_style['vertex_label']= self.G.vs['name']
+		visual_style['edge_label']	= self.G.es['Roep']
+		ig.plot( self.G, **visual_style )	
 
-def AAplot(G):
-	elem_color = {'C':'grey', 'H':'red', 'N':'blue', 'O':'white', 'S':'pink' }
-	visual_style = {}
-	visual_style['vertex_color']= [ elem_color[gender] for gender in G.vs['elem']]
-	visual_style['vertex_label']= G.vs['name']
-	visual_style['edge_label']= G.es['Roep']
-	ig.plot( G, **visual_style )
+	def delOH(self):
+		self.G.delete_vertices(self.OH)
+
+	def delH(self):
+		self.G.delete_vertices(self.HNalpha1)
+		self.G.vs[self.HNalpha2]['name'] = 'HNalpha'
+		
+	def updateVertexNames(self, AAno):
+		self.AAno = AAno
+		self.G.vs['name'] = [ str(AAno)+'_'+name for name in self.G.vs['IUPAC'] ]
+
+	def __add__(self, RightAA):
+		if isinstance(RightAA, AminoAcid):
+			RightAA.delH()
+			self.delOH()
+			
+			RightAA.updateVertexNames(self.AAnoNext)	
+			
+			
+			print self.G.vs['name']
+			print 
+			print RightAA.G.vs['name']
+			print
+			self.G = join( self.G, RightAA.G, 
+				vertex_attributes	= ['elem','name','IUPAC'], 
+				edge_attributes		= ['Roep'] )
+			
+			print self.G.vs['name']
+			self.G.add_edge( str(self.AAnoNext-1)+'_'+self.C1name, str(self.AAnoNext)+'_Nalpha', Roep='by' )			
+			self.AAnoNext += 1
+			return self
+		else:
+			print 'Ye cannot have +(Object,'+str(type(RightAA))+')'
+			raise WrongArgument
+
+
+
 
