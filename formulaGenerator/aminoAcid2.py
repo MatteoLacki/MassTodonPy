@@ -1,4 +1,5 @@
 import igraph as ig
+from collections import Counter
 
 class MissingAminoAcid(Exception): pass
 class WrongArgument(Exception): pass
@@ -19,19 +20,14 @@ def join(g1, g2, vertex_attributes, edge_attributes):
     return g
 
 class AminoAcid(object):
-	def __init__(self, aa):
+	def __init__(self, aa ):
 		try:
 			self.G = getattr(self, aa)()
 		except AttributeError:
 			print aa + ' is not among acceptable amino acids:'
 			print ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
 			raise MissingAminoAcid
-
-	def __str__(self):
-		return self.G.__str__()
-
-	def __repr__(self):
-		return self.G.__repr__()
+		self.superAtoms = self.localSuperAtoms()
 
 	def addBackbone(self, A):
 		B = self.Backbone()
@@ -323,6 +319,47 @@ class AminoAcid(object):
 			self.G.add_vertex(name='HNalpha2', elem='H')
 			self.G.add_edge('Nalpha','HNalpha2') # Might this be another by bond? Assume not
 
+	def elementContent(self, G):
+		atomNo = Counter()	
+		for el in G.vs['elem']:
+			atomNo[el] += 1
+		return atomNo
+
+	def fragmentNO(self, fragment, isProline=False):
+		if isProline:
+			if 'Calpha' in fragment.vs['name']:
+				return 0
+			else:
+				return 1
+		else:
+			if 'Calpha' in fragment.vs['name']:
+				return 1
+			elif 'Nalpha' in fragment.vs['name']:
+				return 0
+			else:
+				return 2
+
+	def localSuperAtoms(self):
+		isProline = self.G['name']=='Proline'
+		G = self.G.copy()
+		bonds2break = [ i for i,bt in enumerate(G.es['Roep']) if not bt==None ]
+		G.delete_edges(bonds2break)
+		if isProline:
+			superAtoms = ig.Graph(2)
+			superAtoms.add_edge(0,1,Roep='ax')
+		else:
+			superAtoms = ig.Graph(3)
+			superAtoms.add_edge(0,1,Roep='cz')
+			superAtoms.add_edge(1,2,Roep='ax')
+		for f in G.decompose():
+			superAtoms.vs[ self.fragmentNO(f, isProline) ]['elementContent'] = self.elementContent(f)
+		return superAtoms
+
+	# def __str__(self):
+	# 	return self.G.__str__()
+
+	# def __repr__(self):
+	# 	return self.G.__repr__()
 
 # def addBackbone(A):
 # 	B = Backbone()

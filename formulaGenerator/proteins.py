@@ -60,12 +60,9 @@ prev= BFS.next()
 A.G.vs.find('0_Calpha').index
 A.G.vs.find('0_Cbeta').index
 A.G.get_eid(7,18)
-
-for e in A.G.es:
-	print e
-A.G.es.find((0,1))
-
+	
 for curr in BFS:
+	A.G.get_eid( prev.index, curr.index )
 	
 
 
