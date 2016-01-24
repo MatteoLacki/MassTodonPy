@@ -22,10 +22,24 @@ class AminoAcid(object):
 	def __init__(self, aa ):
 		try:
 			self.G = getattr(self, aa)()
+			self.right = self.G.vs.find('Ccarbo').index
+			if aa == 'P':
+				self.left = self.G.vs.find('N1').index
+			else:
+				self.left = self.G.vs.find('Nalpha').index 
 		except AttributeError:
 			print aa + ' is not among acceptable amino acids:'
 			print ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
 			raise MissingAminoAcid
+
+	def getLeft(self):
+		return self.left
+
+	def getRight(self):
+		return self.right
+
+	def getGraph(self):
+		return self.G
 
 	def addBackbone(self, A):
 		B = self.Backbone()
