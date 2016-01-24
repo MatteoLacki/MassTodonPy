@@ -19,65 +19,35 @@ def join(g1, g2, vertex_attributes, edge_attributes):
     return g
 
 class AminoAcid(object):
-	def __init__(self, aa):
+	def __init__(self, aa ):
 		try:
 			self.G = getattr(self, aa)()
 		except AttributeError:
 			print aa + ' is not among acceptable amino acids:'
 			print ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
 			raise MissingAminoAcid
-		
-		if aa	== 'F' or aa == 'Y': # the only amino acids with ambigous IUPAC notation
-			self.OH = ( 'Ocarboxyl1_2', 'Hcarboxyl1')
-			self.C1 = 'Ccarboxyl'
-		else: 
-			self.OH = ( 'O1_2', 'HO1_2')
-			self.C1 = 'C1'
 
-			# Now we rename all the things.
-		self.G.vs['IUPAC'] = self.G.vs['name']
-		self.updateVertexNames(0)
-		self.AAnoNext = 1			
-
-	def __str__(self):
-		return self.G.__str__()
-
-	def __repr__(self):
-		return self.G.__repr__()
-
-	def addBackbone(self, A, acyclic=True):
-		B = self.Backbone(acyclic)
+	def addBackbone(self, A):
+		B = self.Backbone()
 		C = join( A, B, vertex_attributes=['elem','name'], edge_attributes=['Roep'] )
 		C += ('Calpha', 'Cbeta')
 		return C
 
-	def makeAtoms(self, atomCnt):
+	def makeAtoms(self,atomCnt):
 		vAtt = {'name': [], 'elem': [] }
 		for atom in atomCnt:
 			vAtt['elem'].extend( [ atom ]*atomCnt[atom] )
 			for aC in xrange(atomCnt[atom]):
 				vAtt['name'].append( atom+str(aC) )
-		G = ig.Graph( sum( atomCnt[a] for a in atomCnt ), vertex_attrs=vAtt )
+		  	G = ig.Graph( sum( atomCnt[a] for a in atomCnt ), vertex_attrs=vAtt )
 		return G
 
-	def Backbone(self, acyclic=True):
-		B = self.makeAtoms({ 'C':2, 'H':4, 'N':1, 'O':2 })
+	def Backbone(self):
+		B = self.makeAtoms({ 'C':2, 'H':2, 'N':1, 'O':1 })
 		B.add_edge( 'N0', 'C0', Roep='cz' )
 		B.add_edge( 'C0', 'C1', Roep='ax' )
-		B = B + ('N0','H0') + ('N0','H1') + ('C0','H2')+\
-		('C1','O0')+('C1','O0')+('C1','O1') + ('O1','H3')	
-		B.vs['PDB'] = ['H11', 'H12', 'HA', "H''", 'CA', 'C', "O'", "O''", 'N' ]
-		if acyclic:
-			Ccarboxyl = 'C1'
-			Ocarboxyl1= 'O1_1'
-			Ocarboxyl2= 'O1_2'
-			Hcarboxyl = 'HO1_2'
-		else: 
-			Ccarboxyl = 'Ccarboxyl'
-			Ocarboxyl1= 'Ocarboxyl1_1'
-			Ocarboxyl2= 'Ocarboxyl1_2'
-			Hcarboxyl = 'Hcarboxyl1'
-		B.vs['name'] = ['HNalpha1', 'HNalpha2', 'Halpha', Hcarboxyl, 'Calpha', Ccarboxyl, Ocarboxyl1, Ocarboxyl2, 'Nalpha']
+		B = B + ('H0','N0')+('C0','H1')+('C1','O0')+('C1','O0')
+		B.vs['name'] = ['HNalpha', 'Halpha', 'Calpha', 'Ccarbo', 'Ocarbo', 'Nalpha']
 		return B
 
 	def A(self):
@@ -156,7 +126,7 @@ class AminoAcid(object):
 		G = self.Backbone()
 		G.add_vertex('Halpha2',elem='H')
 		G.add_edge('Halpha2','Calpha')
-		G.vs['name'] = ['HNalpha1', 'HNalpha2', 'Halpha1', 'H1', 'Calpha', 'C1', 'O1_1', 'O1_2', 'Nalpha', 'Halpha2']
+		G.vs.find('Halpha')['name'] = 'Halpha1'
 		G['name'] ='Glycine'
 		return G
 
@@ -229,21 +199,21 @@ class AminoAcid(object):
 		('C5','H5')+('C5','C6')+('C5','C6')+\
 		('C6','H6')
 		F.vs['name']=['Hbeta1', 'Hbeta2', 'H6', 'H5', 'H4', 'H3', 'H2', 'Cbeta', 'C1', 'C6', 'C5', 'C4', 'C3', 'C2']
-		F = self.addBackbone(F,False)
+		F = self.addBackbone(F)
 		F['name'] = 'Phenylalanine'
 		return F
 
 	def P(self): # This is special: links to backbone in two places.
-		P = self.makeAtoms({ 'C':5, 'H':9, 'N':1, 'O':2 })
+		P = self.makeAtoms({ 'C':5, 'H':7, 'N':1, 'O':1 })
 		P.add_edge( 'C0', 'C1', Roep='ax' )
 		P.add_edge( 'N0', 'C1', Roep='cz' )
-		P = P + ('N0','H0') + ('C1','H1')+\
-		('C0','O0')+('C0','O0')+('C0','O1') + ('O1','H2')+\
+		P = P + ('C1','H0')+\
+		('C0','O0')+('C0','O0')+\
 		('C1','C2')+\
-		('C2','H3')+('C2','H4')+('C2','C3')+\
-		('C3','H5')+('C3','H6')+('C3','C4')+\
-		('C4','N0')+('C4','H7')+('C4','H8')
-		P.vs['name'] = ['HN1', 'H2', 'HO1_2', 'H3_1', 'H3_2', 'H4_1', 'H4_2', 'H5_1', 'H5_2', 'C1', 'C2', 'C3', 'C4', 'C5', 'O1_1', 'O1_2', 'N1']
+		('C2','H1')+('C2','H2')+('C2','C3')+\
+		('C3','H3')+('C3','H4')+('C3','C4')+\
+		('C4','N0')+('C4','H5')+('C4','H6')
+		P.vs['name'] = ['Halpha', 'H3_1', 'H3_2', 'H4_1', 'H4_2', 'H5_1', 'H5_2', 'Ccarbo', 'C2', 'C3', 'C4', 'C5', 'Ocarbo', 'N1']
 		P['name'] = 'Proline'
 		return P
 
@@ -306,7 +276,7 @@ class AminoAcid(object):
 		('C6','O0')+\
 		('O0','H6')
 		Y.vs['name']=['Hbeta1', 'Hbeta2', 'H6', 'H2', 'H5', 'H3', 'HO4', 'Cbeta', 'C1', 'C6', 'C2', 'C5', 'C3', 'C4', 'O4']
-		Y = self.addBackbone(Y,False)
+		Y = self.addBackbone(Y)
 		Y['name'] = 'Tyrosine'
 		return Y
 
@@ -320,59 +290,69 @@ class AminoAcid(object):
 		V['name'] = 'Valine'
 		return V
 
-	def plot(self):
+	def plot(self,target=''):
 		elem_color = {'C':'grey', 'H':'red', 'N':'blue', 'O':'white', 'S':'pink' }
 		visual_style = {}
 		visual_style['vertex_color']= [ elem_color[gender] for gender in self.G.vs['elem']]
 		visual_style['vertex_label']= self.G.vs['name']
 		visual_style['edge_label']	= self.G.es['Roep']
-		ig.plot( self.G, **visual_style )	
-
-	def delOH(self):
-		AAno = str(self.AAnoNext-1)
-		self.G.delete_vertices([ AAno+'_'+name for name in self.OH ])
-			
-	def delH(self):
-		if self.AAnoNext > 1:
-			raise OH_already_deleted
-
-		# AAno = str(self.AAnoNext-1)
-		if self.G['name'] == 'Proline': 
-			self.G.delete_vertices( self.G.vs.find( '0_HN1' ).index )	
+		if len(target) == 0:
+			ig.plot( self.G, **visual_style )
 		else:
-			self.G.delete_vertices( self.G.vs.find( '0_HNalpha1' ).index )
-			self.G.vs.find( '0_HNalpha2' )['IUPAC'] = 'HNalpha'
-		
-	def updateVertexNames(self, AAno):
-		self.AAno = AAno
-		self.G.vs['name'] = [ str(AAno)+'_'+name for name in self.G.vs['IUPAC'] ]
+			ig.plot( self.G, target=target, **visual_style )
 
-	def __iadd__(self, RightAA):
-		if isinstance(RightAA, AminoAcid):
-			RightAA.delH()
-			self.delOH()			
-			RightAA.updateVertexNames(self.AAnoNext)	
+	def add_OH(self):
+		self.G.vs.find('Ocarbo')['name'] = 'Ocarbo1'
+		self.G.add_vertex(name='Ocarbo2', elem='O')
+		self.G.add_vertex(name='HOcarbo2', elem='H')
+		self.G.add_edge('Ocarbo2','HOcarbo2')
+		self.G.add_edge('Ccarbo','Ocarbo2',Roep='by')
 
-			self.G = join( self.G, RightAA.G, 
-				vertex_attributes	= ['elem','name','IUPAC'], 
-				edge_attributes		= ['Roep'] )			
-
-			AAno = str(self.AAnoNext-1)
-			AAnext = str(self.AAnoNext)
-
-			if RightAA.G['name'] == 'Proline':
-				self.G.add_edge( AAno+'_'+self.C1, AAnext+'_N1', Roep='by' )
-			else:
-				self.G.add_edge( AAno+'_'+self.C1, AAnext+'_Nalpha', Roep='by' )			
-
-				# Updating the IUPAC-like names of OH.
-			self.OH = RightAA.OH
-			self.AAnoNext += 1
-			return self
+	def add_H(self):	
+		if self.G['name'] == 'Proline':
+			self.G.add_vertex(name='HN1', elem='H')
+			self.G.add_edge('N1','HN1')
 		else:
-			print 'Ye cannot have +(Object,'+str(type(RightAA))+')'
-			raise WrongArgument
+			self.G.vs.find('HNalpha')['name'] = 'HNalpha1'
+			self.G.add_vertex(name='HNalpha2', elem='H')
+			self.G.add_edge('Nalpha','HNalpha2') # Might this be another by bond? Assume not
 
+	# def __str__(self):
+	# 	return self.G.__str__()
 
+	# def __repr__(self):
+	# 	return self.G.__repr__()
 
+# def addBackbone(A):
+# 	B = Backbone()
+# 	C = join( A, B, vertex_attributes=['elem','name'], edge_attributes=['Roep'] )
+# 	C += ('Calpha', 'Cbeta')
+# 	return C
 
+# def makeAtoms(atomCnt):
+# 	vAtt = {'name': [], 'elem': [] }
+# 	for atom in atomCnt:
+# 		vAtt['elem'].extend( [ atom ]*atomCnt[atom] )
+# 		for aC in xrange(atomCnt[atom]):
+# 			vAtt['name'].append( atom+str(aC) )
+# 	  	G = ig.Graph( sum( atomCnt[a] for a in atomCnt ), vertex_attrs=vAtt )
+# 	return G
+
+# def Backbone():
+# 	B = makeAtoms({ 'C':2, 'H':2, 'N':1, 'O':1 })
+# 	B.add_edge( 'N0', 'C0', Roep='cz' )
+# 	B.add_edge( 'C0', 'C1', Roep='ax' )
+# 	B = B + ('H0','N0')+('C0','H1')+('C1','O0')+('C1','O0')
+# 	B.vs['name'] = ['HNalpha', 'Halpha', 'Calpha', 'Ccarbo', 'Ocarbo', 'Nalpha']
+# 	return B
+
+# def plot(G,target=''):
+# 	elem_color = {'C':'grey', 'H':'red', 'N':'blue', 'O':'white', 'S':'pink' }
+# 	visual_style = {}
+# 	visual_style['vertex_color']= [ elem_color[gender] for gender in G.vs['elem']]
+# 	visual_style['vertex_label']= G.vs['name']
+# 	visual_style['edge_label']	= G.es['Roep']
+# 	if len(target) == 0:
+# 		ig.plot( G, **visual_style )
+# 	else:
+# 		ig.plot( G, target=target, **visual_style )
