@@ -1,10 +1,10 @@
 from aminoAcid import AminoAcid
 from misc import plott
 import igraph as ig
-from collections import defaultdict
+from collections import defaultdict, Counter
 
-substanceP 	= 'RPKPQQFFGLM'
-ubiquitin 	= 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+# def Protein(object):
+# 	def __init__(fasta, bonds=[])
 
 def aminosIter(fasta):
 	aas 	= ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
@@ -76,10 +76,64 @@ def makeProtein( fasta, attributeNames=('name', 'elem'), bonds=['cz','ax','by'] 
 	G.es['Roep'] = list(GetBonds(fasta,B2B))
 	return G
 
+def elementContent(G):
+	atomNo = Counter()	
+	for el in G.vs['elem']:
+		atomNo[el] += 1
+	return atomNo
 
-fasta 	= substanceP
-G 		= makeProtein(fasta, bonds=['cz','by'])		
-plott(G, edge_label=G.es['Roep'], bbox=(2000,1000))
+substanceP 	= 'RPKPQQFFGLM'
+ubiquitin 	= 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+
+fasta 	= ubiquitin
+G 		= makeProtein(fasta,bonds=['cz'])		
+
+E = G.copy()
+E.delete_edges( i for i,bond in enumerate(E.es['Roep']) if not bond == None )
+SuperAtoms = E.decompose()
+
+
+	# This can be reduced in future
+VerticesDivision = {}
+for i, sA in enumerate(SuperAtoms):
+	for vName in sA.vs['name']:
+		VerticesDivision[vName] = i
+
+startVertexIdx 	= G.vs.find('0:Ccarbo').index
+SA_E = []
+SA_E_att = defaultdict(list)
+for v,_,parent in G.bfsiter( vid=startVertexIdx, mode='ALL', advanced=True ):
+	if parent:
+		bondType = G.es[G.get_eid( v.index, parent.index )]['Roep']
+		if bondType:
+			vFragNo = VerticesDivision[ v['name'] ] 
+			pFragNo = VerticesDivision[ parent['name'] ] 
+			if not vFragNo==pFragNo:
+				SA_E.append( (pFragNo,vFragNo) )
+				SA_E_att['Roep'].append( bondType )
+
+SA_V_att = defaultdict(list)
+SA_V_att['elementContent'] = [ elementContent(F) for F in SuperAtoms ]
+
+SuperAtomsGraph = ig.Graph( 
+	n 			= len(SuperAtoms), 
+	edges 		= SA_E, 
+	edge_attrs 	= SA_E_att,
+	vertex_attrs= SA_V_att )
+
+
+
+
+ig.plot( SuperAtomsGraph, bbox=(2000,1000), edge_label=SA_E_att['Roep'] )
+plott(E, bbox=(20000,10000), target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin2.pdf')
+
+
+# layout = E.layout_lgl()
+plott(E, bbox=(20000,10000), layout=layout, target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin2.pdf')
+
+# G 		= makeProtein(fasta, bonds=['cz','by','ax'])		
+# layout 	= G.layout_lgl()
+# plott(G, edge_label=G.es['Roep'], bbox=(20000,10000), layout=layout, target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin.pdf')
 
 
 # ends, __,starts = G.bfs(0)
