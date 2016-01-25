@@ -82,50 +82,74 @@ def elementContent(G):
 		atomNo[el] += 1
 	return atomNo
 
+def getSuperAtomGraph(G):
+	E = G.copy()
+	E.delete_edges( i for i,bond in enumerate(E.es['Roep']) if not bond == None )
+	SuperAtoms = E.decompose()
+	VerticesDivision= {} # This can be reduced in future
+	for i, sA in enumerate(SuperAtoms):
+		for vName in sA.vs['name']:
+			VerticesDivision[vName] = i
+	SA_E = []
+	SA_E_att = defaultdict(list)
+	for v,_,parent in G.bfsiter( vid=0, mode='ALL', advanced=True ):
+		if parent:
+			bondType = G.es[G.get_eid( v.index, parent.index )]['Roep']
+			if bondType:
+				vFragNo = VerticesDivision[ v['name'] ] 
+				pFragNo = VerticesDivision[ parent['name'] ] 
+				if not vFragNo==pFragNo:
+					SA_E.append( (pFragNo,vFragNo) )
+					SA_E_att['Roep'].append( bondType )
+	SA_V_att = defaultdict(list)
+	SA_V_att['elementContent'] = [ elementContent(F) for F in SuperAtoms ]
+	SuperAtomsGraph = ig.Graph( 
+		n 			= len(SuperAtoms), 
+		edges 		= SA_E, 
+		edge_attrs 	= SA_E_att,
+		vertex_attrs= SA_V_att )
+	return SuperAtomsGraph
+
 substanceP 	= 'RPKPQQFFGLM'
 ubiquitin 	= 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+fasta 		= ubiquitin
 
-fasta 	= ubiquitin
-G 		= makeProtein(fasta,bonds=['cz'])		
+G 	= makeProtein(fasta,bonds=['cz'])		
+SA 	= getSuperAtomGraph(G)
 
-E = G.copy()
-E.delete_edges( i for i,bond in enumerate(E.es['Roep']) if not bond == None )
-SuperAtoms = E.decompose()
+def get_c_z_ions(SA):
+	imp = SA.vs.select(_degree=1)	
+	if imp[0]['elementContent'] == Counter({'H': 2, 'N': 1}): # Not the brightest criterion...
+		firstVertex, lastVertex = imp[0].index, imp[1].index 
+	else:
+		firstVertex, lastVertex = imp[1].index, imp[0].index
+	c = []
+	atomsCnt= Counter()
+	for v in SA.bfsiter( vid=firstVertex ):	
+		atomsCnt += v['elementContent']
+		c.append( atomsCnt.copy() )	
+	z = []
+	atomsCnt= Counter()
+	for v in SA.bfsiter( vid=lastVertex ):	
+		atomsCnt += v['elementContent']
+		z.append( atomsCnt.copy() )	
+	return (c,z)
 
-
-	# This can be reduced in future
-VerticesDivision = {}
-for i, sA in enumerate(SuperAtoms):
-	for vName in sA.vs['name']:
-		VerticesDivision[vName] = i
-
-startVertexIdx 	= G.vs.find('0:Ccarbo').index
-SA_E = []
-SA_E_att = defaultdict(list)
-for v,_,parent in G.bfsiter( vid=startVertexIdx, mode='ALL', advanced=True ):
-	if parent:
-		bondType = G.es[G.get_eid( v.index, parent.index )]['Roep']
-		if bondType:
-			vFragNo = VerticesDivision[ v['name'] ] 
-			pFragNo = VerticesDivision[ parent['name'] ] 
-			if not vFragNo==pFragNo:
-				SA_E.append( (pFragNo,vFragNo) )
-				SA_E_att['Roep'].append( bondType )
-
-SA_V_att = defaultdict(list)
-SA_V_att['elementContent'] = [ elementContent(F) for F in SuperAtoms ]
-
-SuperAtomsGraph = ig.Graph( 
-	n 			= len(SuperAtoms), 
-	edges 		= SA_E, 
-	edge_attrs 	= SA_E_att,
-	vertex_attrs= SA_V_att )
+get_c_z_ions(SA)
 
 
+# Coloring = defaultdict(lambda: 'grey' )
+# Coloring[firstVertex]= 'red'
+# Coloring[lastVertex] = 'blue'
 
+# ig.plot( SA, bbox=(2000,1000), edge_label=SA.es['Roep'], vertex_color=[ Coloring[i] for i in xrange(len(SA.vs)) ] )
+SA_layout = SA.layout_lgl()
 
-ig.plot( SuperAtomsGraph, bbox=(2000,1000), edge_label=SA_E_att['Roep'] )
-plott(E, bbox=(20000,10000), target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin2.pdf')
+path = '/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/'
+
+ig.plot( SA, bbox=(2000,1000), edge_label=SA.es['Roep'], layout=SA_layout, target=path+'SuperAtomsUbiquitine.pdf' )
+plott(E, bbox=(20000,10000), target=path+'ubiquitin2.pdf')
+plott(E, bbox=(20000,10000), target=path+'ubiquitin2.pdf')
 
 
 # layout = E.layout_lgl()
