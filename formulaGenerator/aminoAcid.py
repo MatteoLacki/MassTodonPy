@@ -1,8 +1,11 @@
 import igraph as ig
 
-class MissingAminoAcid(Exception): pass
-class WrongArgument(Exception): pass
-class OH_already_deleted(Exception): pass
+class MissingAminoAcid(Exception): 
+	pass
+class WrongArgument(Exception): 
+	pass
+class OH_already_deleted(Exception): 
+	pass
 
 def getAttr(seq, attr_name):
     try:
@@ -63,6 +66,8 @@ class AminoAcid(object):
 		B = B + ('H0','N0')+('C0','H1')+('C1','O0')+('C1','O0')
 		B.vs['name'] = ['HNalpha', 'Halpha', 'Calpha', 'Ccarbo', 'Ocarbo', 'Nalpha']
 		return B
+
+########################################################################################
 
 	def A(self):
 		A = self.makeAtoms({'C':1, 'H':3})+('C0','H0')+('C0','H1')+('C0','H2')
@@ -331,6 +336,8 @@ class AminoAcid(object):
 			self.G.add_vertex(name='HNalpha2', elem='H')
 			self.G.add_edge('Nalpha','HNalpha2') # Might this be another by bond? Assume not
 
+
+print AminoAcid('V').getGraph()
 	# def __str__(self):
 	# 	return self.G.__str__()
 

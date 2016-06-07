@@ -3,10 +3,13 @@ from misc import plott
 import igraph as ig
 from collections import defaultdict, Counter
 
+# TO DO: add bonds labelling based on Roepstorf.
+
 # def Protein(object):
 # 	def __init__(fasta, bonds=[])
 
 def aminosIter(fasta):
+	"""Iterate over graphs of amino acids present in the fasta sequence."""
 	aas 	= ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
 	AAS 	= {}
 	for aa in aas:
@@ -21,8 +24,12 @@ def aminosIter(fasta):
 		else:
 			A = AAS[aa]
 		yield ( A.getLeft(), A.getRight(), A.getGraph() )
+# a = aminosIter('AAC')
+# a.next()
+
 
 def edges(fasta):
+	"""Enumerate all the edges in the overall molecule graphs."""
 	prevElemNo = 0
 	for left, right, G in aminosIter(fasta):
 		for e in G.es:
@@ -34,6 +41,7 @@ def edges(fasta):
 		prevElemNo += len(G.vs)
 
 def BondTypes(bonds = ['cz']):
+	"""Label edges according to their type."""
 	B2atoms = {	'cz': [ ('Nalpha', 'Calpha'), ('N1', 'C2') ],
 				'by': [ ('Nalpha', 'Ccarbo'), ('N1', 'Ccarbo') ],
 				'ax': [ ('Calpha','Ccarbo'), ('C2', 'Ccarbo') ]  	}
@@ -83,6 +91,7 @@ def elementContent(G):
 	return atomNo
 
 def getSuperAtomGraph(G):
+	"""Prepare a superatom graph containing counters of element atoms in vertices and edges reflecting chemical bonds."""
 	E = G.copy()
 	E.delete_edges( i for i,bond in enumerate(E.es['Roep']) if not bond == None )
 	SuperAtoms = E.decompose()
@@ -112,28 +121,30 @@ def getSuperAtomGraph(G):
 
 substanceP 	= 'RPKPQQFFGLM'
 ubiquitin 	= 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+# fasta 		= substanceP
 fasta 		= ubiquitin
 
 G 	= makeProtein(fasta,bonds=['cz'])		
+# plott(G)
 SA 	= getSuperAtomGraph(G)
 
 def get_c_z_ions(SA):
-	imp = SA.vs.select(_degree=1)	
-	if imp[0]['elementContent'] == Counter({'H': 2, 'N': 1}): # Not the brightest criterion...
-		firstVertex, lastVertex = imp[0].index, imp[1].index 
-	else:
-		firstVertex, lastVertex = imp[1].index, imp[0].index
-	c = []
-	atomsCnt= Counter()
-	for v in SA.bfsiter( vid=firstVertex ):	
-		atomsCnt += v['elementContent']
-		c.append( atomsCnt.copy() )	
-	z = []
-	atomsCnt= Counter()
-	for v in SA.bfsiter( vid=lastVertex ):	
-		atomsCnt += v['elementContent']
-		z.append( atomsCnt.copy() )	
-	return (c,z)
+imp = SA.vs.select(_degree=1)	
+if imp[0]['elementContent'] == Counter({'H': 2, 'N': 1}): # Not the brightest criterion...
+	firstVertex, lastVertex = imp[0].index, imp[1].index 
+else:
+	firstVertex, lastVertex = imp[1].index, imp[0].index
+c = []
+atomsCnt = Counter()
+for v in SA.bfsiter( vid=firstVertex ):	
+	atomsCnt += v['elementContent']
+	c.append( atomsCnt.copy() )	
+z = []
+atomsCnt= Counter()
+for v in SA.bfsiter( vid=lastVertex ):	
+	atomsCnt += v['elementContent']
+	z.append( atomsCnt.copy() )	
+return (c,z)
 
 get_c_z_ions(SA)
 
@@ -152,7 +163,7 @@ plott(E, bbox=(20000,10000), target=path+'ubiquitin2.pdf')
 plott(E, bbox=(20000,10000), target=path+'ubiquitin2.pdf')
 
 
-# layout = E.layout_lgl()
+# layount = E.layout_lgl()
 plott(E, bbox=(20000,10000), layout=layout, target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin2.pdf')
 
 # G 		= makeProtein(fasta, bonds=['cz','by','ax'])		

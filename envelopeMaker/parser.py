@@ -32,5 +32,5 @@ def parse( precursor ):
 
 	return ( fragments, residues )	
 
-fragments, residues = parse(ubiquitin)
-print fragments
+# fragments, residues = parse(ubiquitin)
+# print fragments
