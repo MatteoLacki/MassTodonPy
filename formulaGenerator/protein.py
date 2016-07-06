@@ -39,6 +39,8 @@ def edges(fasta):
 			yield ( prevElemNo+left, prevRight ) # bond between last AA and new AA
 		prevRight 	= right + prevElemNo
 		prevElemNo += len(G.vs)
+# a = edges('AAC')
+# a.next()
 
 def BondTypes(bonds = ['cz']):
 	"""Label edges according to their type."""
@@ -53,6 +55,9 @@ def BondTypes(bonds = ['cz']):
 		return B2B
 	except KeyError:
 		print 'This type of bond is yet not considered: '+str(b)
+# a = BondTypes(['by'])
+# a.next()
+
 
 def GetBonds(fasta, B2B):
 	bondTypes= set(B2B[k] for k in B2B)
@@ -67,6 +72,11 @@ def GetBonds(fasta, B2B):
 				yield None			
 		else:	
 			notFirst = True
+
+# a = GetBonds('AAC', BondTypes(['cz']))
+# a.next()
+
+
 
 def propGen(propName, fasta):
 	if propName == 'name':

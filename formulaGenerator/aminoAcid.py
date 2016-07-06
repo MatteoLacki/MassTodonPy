@@ -337,7 +337,14 @@ class AminoAcid(object):
 			self.G.add_edge('Nalpha','HNalpha2') # Might this be another by bond? Assume not
 
 
-print AminoAcid('V').getGraph()
+aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
+	AAS 	= {}
+	for aa in aas:
+		AAS[aa] = AminoAcid(aa)
+
+# print AminoAcid('V').getGraph()
+
+
 	# def __str__(self):
 	# 	return self.G.__str__()
 
