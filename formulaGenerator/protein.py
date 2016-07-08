@@ -23,24 +23,27 @@ def aminosIter(fasta):
 				A.add_OH()
 		else:
 			A = AAS[aa]
-		yield ( A.getLeft(), A.getRight(), A.getGraph() )
-# a = aminosIter('AAC')
-# a.next()
+		yield ( A.Nalpha(), A.Ccarbo(), A.getGraph() )
 
+# a = aminosIter('AAC')
+# x,y,G = next(a)
+# print(G)
+# plott(G)
+# G.es['Roep']
 
 def edges(fasta):
 	"""Enumerate all the edges in the overall molecule graphs."""
 	prevElemNo = 0
-	for left, right, G in aminosIter(fasta):
+	for N, right, G in aminosIter(fasta):
 		for e in G.es:
 			a, b = e.tuple 
 			yield ( a+prevElemNo, b+prevElemNo ) # bonds within new AA
 		if prevElemNo:
-			yield ( prevElemNo+left, prevRight ) # bond between last AA and new AA
-		prevRight 	= right + prevElemNo
+			yield ( prevElemNo+N, prevCcarbo ) # bond between last AA and new AA
+		prevCcarbo 	= C + prevElemNo
 		prevElemNo += len(G.vs)
 # a = edges('AAC')
-# a.next()
+# next(a)
 
 def BondTypes(bonds = ['cz']):
 	"""Label edges according to their type."""
@@ -54,15 +57,14 @@ def BondTypes(bonds = ['cz']):
 				B2B[(s,t)] = B2B[(t,s)] = b
 		return B2B
 	except KeyError:
-		print 'This type of bond is yet not considered: '+str(b)
+		print('This type of bond is yet not considered: '+str(b))
 # a = BondTypes(['by'])
-# a.next()
 
 
 def GetBonds(fasta, B2B):
 	bondTypes= set(B2B[k] for k in B2B)
 	notFirst = False
-	for left, right, G in aminosIter(fasta):
+	for N, C, G in aminosIter(fasta):
 		for e in G.es:
 			yield B2B[ tuple(vName for vName in G.vs[e.tuple]['name']) ]
 		if notFirst:
@@ -73,8 +75,32 @@ def GetBonds(fasta, B2B):
 		else:	
 			notFirst = True
 
-# a = GetBonds('AAC', BondTypes(['cz']))
-# a.next()
+a = GetBonds('AAC', BondTypes(['cz']))
+next(a)
+fasta = 'AAC'
+B2B = BondTypes(['cz'])
+bondTypes= set(B2B[k] for k in B2B)
+notFirst = False
+
+
+N, C, G = next(aminosIter(fasta))
+print(G)
+
+
+G.vs['name']
+G.es['Roep']
+
+
+for e in G.es:
+	print( B2B[ tuple(vName for vName in G.vs[e.tuple]['name']) ])
+
+	if notFirst:
+		if 'by' in bondTypes:
+			print('by')
+		else:
+			print(None)			
+	else:	
+		notFirst = True
 
 
 
