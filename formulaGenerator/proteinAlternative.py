@@ -1,13 +1,15 @@
 import igraph as ig
 import numpy  as np
 import itertools as it
-import pickle
+try:
+  import cPickle as pickle
+except:
+  import pickle
 
 from collections import Counter
 
 aminoAcids  = pickle.load(open('aminoAcids.p', 'rb'))
 ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
-fasta       = ubiquitin
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -17,6 +19,7 @@ def elementContent(G):
     return atomNo
 
 # def simplifyAminoAcid(aaTag, bonds2break = ('cz',)):
+#       '''Differentiates between precisely enumerated modifications and others.'''
 #     if isinstance( bonds2break, type(tuple()) ):
 #         pass
 #     elif isinstance( bonds2break, type(dict()) ):
@@ -66,7 +69,7 @@ def getSuperAtoms(fasta, fragmentTypes):
             else:
                 G = [ ('LR', G['LC']+G['R']) ]
         else:
-            print('Fuck a doodle doo!')
+            print('It is impossible to get here, but you did it. Immediately go to a casino, as this is your lucky day.')
         fragments[f] = G
     #
     superAtoms = [] # It must be a list to be mutable.
@@ -95,6 +98,7 @@ def getSuperAtoms(fasta, fragmentTypes):
     assert any( sA[1]<=sA[2] for sA in superAtoms )
     return superAtoms
 
+
 def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
     '''Makes tagged chemical formulas of fragments under given fragmentation scheme.'''    
     fragmentTypes   = set(fragmentTypes)
@@ -115,10 +119,15 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
         prevCnt = Counter()
         # abc fragments--------------------------------------------------
         for aaType, lFragNo, rFragNo, atomCnt in superAtoms:  
+            isCfragment = aaType[1] == 'L' 
             aaType  = 'L'+aaType[-1]
             lFragNo = 0
-            prevCnt = prevCnt + atomCnt
-            fragments.append([aaType, lFragNo, rFragNo, prevCnt])
+            prevCnt = prevCnt + atomCnt 
+            if isCfragment:
+                atomCnt = prevCnt + Counter({'H':1}) 
+            else:
+                atomCnt = prevCnt
+            fragments.append([aaType, lFragNo, rFragNo, atomCnt])
         #----------------------------------------------------------------
         precursor1  = fragments[-1]
         prevCnt     = Counter()
@@ -132,37 +141,33 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
             fragments.append([aaType, lFragNo, rFragNo, prevCnt])
         #----------------------------------------------------------------
         precursor2  = fragments[-1]
-        assert precursor1==precursor2, print('Precursors done from left and right differ.')
+        assert precursor1==precursor2
         # Removing extra precursor---------------------------------------
         del fragments[-1]
     return fragments
 
-print(
-len(makeFragments( fasta,['cz'] )),
-len(makeFragments( fasta,['cz','ax'] )),
-len(makeFragments( fasta,['cz','ax','by'],innerFragments=True)),
-len(makeFragments( fasta,['cz',],innerFragments=True)),
-len(makeFragments( fasta,['cz','ax',],innerFragments=True))
-)
 
-# Check this bloody function.
 def roepstorffy(fragment,fasta):
-    '''Convert my naming convention into something similar to Roepstorff fragmentation conventation.'''
-    lcr2abc = {'L':'c','C':'a','R':'b'}
-    lcr2xyz = {'L':'y','C':'z','R':'x'}
+    '''Sprinkle my naming convention with Roepstorff's pseudo-scientific naming.'''
     L = len(fasta)
     AAtype, AAleft, AAright, atomCnt = fragment
     lType, rType = AAtype
+    lcr2abc = {'L':'c','C':'a','R':'b'}
+    lcr2xyz = {'L':'y','C':'z','R':'x'}
     if lType=='L' and AAleft==0:
         nameL = ''
     else:
         lType = lcr2xyz[lType]
-        nameL = lType + str(L-AAleft+(0 if lType=='x' else 1))    
-    if rType=='R' and AAleft==L-1:
+        nameL = lType + str(L-AAleft-(1 if lType=='x' else 0))
+        # lType + str(L-AAleft+1+(0 if lType=='x' else 1))    
+    if rType=='R' and AAright==L-1:
         nameR = ''
     else:
         rType = lcr2abc[rType]
-        nameR = rType + str(AAright-(1 if rType=='c' else 0))
-    return nameL+nameR 
-# roepstorffy(superAtoms[10], fasta)
+        nameR = rType + str(AAright+1-(1 if rType=='c' else 0))
+    name = nameL+nameR 
+    if name=='':
+        return 'precursor'
+    else:
+        return name
 
