@@ -13,6 +13,14 @@ def openSpectrum(file):
 	else: 
 		raise IOError()
 
+def txt2ms(file):
+	filename, file_extension = os.path.splitext(file)
+	spectrum = []	
+	for line in open(file):
+		l = line.split()
+		spectrum.append( tuple( [ float(v) for v in l] ) )
+	return spectrum
 # file = '/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/MassTodonPy/spectraParsing/Melphalan_UBQ.txt'
 # A = openSpectrum(file)
-# openSpectrum('dupa.dup')
+# print(openSpectrum('Melphalan_UBQ.txt'))
+
