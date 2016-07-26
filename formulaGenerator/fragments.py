@@ -1,4 +1,4 @@
-import igraph as ig
+# import igraph as ig
 import numpy  as np
 import itertools as it
 try:
@@ -7,9 +7,18 @@ except:
   import pickle
 
 from collections import Counter
+from formulaGenerator.aminoAcid import AminoAcid
 
-aminoAcids  = pickle.load(open('aminoAcids.p', 'rb'))
-ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+
+def getAminoAcids():
+    aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
+    aminoAcids = {}
+    for aa in aas:
+        AA = AminoAcid(aa)
+        aminoAcids[aa] ={ 'graph' : AA.getGraph(), 'NalphaIDX' : AA.Nalpha(), 'CcarboIDX' : AA.Ccarbo() }
+    return aminoAcids
+
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -29,7 +38,12 @@ def elementContent(G):
 #         pass
 
 def establishFragmentType(fragment, aaType): 
-    '''Establish what is the fragment type: (L)eft, (C)enter, or (R)ight, or (LC) or (R) for proline.'''
+    '''Establishes what is the fragment type: (L)eft, (C)enter, or (R)ight, or (LC) or (R) for proline.
+
+        L fragment is a fictitious double fragmentation product of b-y and c-z cleavages,
+        C - of c-z and a-x cleavages,
+        R - of a-x and b-y cleavages.
+    '''
     if aaType == 'P':
         if 'Ccarbo' in fragment.vs['name']:
             return 'R'
@@ -45,8 +59,11 @@ def establishFragmentType(fragment, aaType):
 
 
 def getSuperAtoms(fasta, fragmentTypes):
-    '''Makes super atoms - basic bricks of differences that should be observed in the experimental spectrum.'''
+    '''Enlists all fictitious double fragmentation products. 
+
+    These are all basic chemical formulas obtainable in double fragmentation.'''
     fragments = {}
+    aminoAcids= getAminoAcids()
     for f in set(fasta):
         G = aminoAcids[f]['graph'].copy()
         G.delete_edges(Roep_ne=None)        
@@ -100,7 +117,10 @@ def getSuperAtoms(fasta, fragmentTypes):
 
 
 def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
-    '''Makes tagged chemical formulas of fragments under given fragmentation scheme.'''    
+    '''Makes tagged chemical formulas of fragments under given fragmentation scheme.
+
+    The tags contain information the cleavage sites: the left and/or right endings.
+    '''    
     fragmentTypes   = set(fragmentTypes)
     superAtoms      = getSuperAtoms(fasta, fragmentTypes)
     fragments = []
@@ -142,10 +162,11 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
         #----------------------------------------------------------------
         precursor2  = fragments[-1]
         assert precursor1==precursor2
-        # Removing extra precursor---------------------------------------
+        # Removin extra precursor---------------------------------------
         del fragments[-1]
     return fragments
 
+# makeFragments('AAA')
 
 def roepstorffy(fragment,fasta):
     '''Sprinkle my naming convention with Roepstorff's pseudo-scientific naming.'''
