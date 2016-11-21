@@ -1,12 +1,12 @@
 import igraph as ig
 
-class MissingAminoAcid(Exception): 
+class MissingAminoAcid(Exception):
     pass
 
-class WrongArgument(Exception): 
+class WrongArgument(Exception):
     pass
 
-class OH_already_deleted(Exception): 
+class OH_already_deleted(Exception):
     pass
 
 def getAttr(seq, attr_name):
@@ -33,7 +33,7 @@ class AminoAcid(object):
             if aa == 'P':
                 self.N = self.G.vs.find('N1').index
             else:
-                self.N = self.G.vs.find('Nalpha').index 
+                self.N = self.G.vs.find('Nalpha').index
         except AttributeError:
             print(aa + ' is not among acceptable amino acids:')
             print(['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'])
@@ -71,14 +71,12 @@ class AminoAcid(object):
         B.vs['name'] = ['HNalpha', 'Halpha', 'Calpha', 'Ccarbo', 'Ocarbo', 'Nalpha']
         return B
 
-########################################################################################
-
     def A(self):
         A = self.makeAtoms({'C':1, 'H':3})+('C0','H0')+('C0','H1')+('C0','H2')
         A.vs['name'] = ['Hbeta1', 'Hbeta2', 'Hbeta3', 'Cbeta']
         A = self.addBackbone(A)
-        A['name'] = 'Alanine' 
-        return A    
+        A['name'] = 'Alanine'
+        return A
 
     def R(self):
         R = self.makeAtoms({ 'C':4, 'H':10, 'N':3 })+\
@@ -259,18 +257,6 @@ class AminoAcid(object):
         T['name'] = 'Threonine'
         return T
 
-    # Alternative tryptophan.
-    # W = self.makeAtoms({ 'C':9, 'H':8, 'N':1 })+\
-    # ('C0','H0')+('C0','H1')+('C0','C1')+\
-    # ('C1','C2')+('C1','C3')+('C1','C3')+\
-    # ('C2','C4')+('C2','C5')+('C2','C5')+\
-    # ('C3','N0')+('C3','H2')+\
-    # ('N0','H3')+('N0','C5')+\
-    # ('C5','C6')+\
-    # ('C6','H4')+('C6','C7')+('C6','C7')+\
-    # ('C4','C8')+('C4','C8')+('C4','H5')+\
-    # ('C7','H6')+('C7','C8')+\
-    # ('C8','H7')
     def W(self):
         W = self.makeAtoms({ 'C':9, 'H':8, 'N':1 })+\
         ('C0','H0')+('C0','H1')+('C0','C1')+\
@@ -331,7 +317,7 @@ class AminoAcid(object):
         self.G.add_edge('Ocarbo2','HOcarbo2')
         self.G.add_edge('Ccarbo','Ocarbo2',Roep='by')
 
-    def add_H(self):    
+    def add_H(self):
         if self.G['name'] == 'Proline':
             self.G.add_vertex(name='HN1', elem='H')
             self.G.add_edge('N1','HN1')
@@ -340,13 +326,17 @@ class AminoAcid(object):
             self.G.add_vertex(name='HNalpha2', elem='H')
             self.G.add_edge('Nalpha','HNalpha2') # Might this be another by bond? Assume not
 
-# aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
-# AAS = {}
-# for aa in aas:
-#     AAS[aa] = AminoAcid(aa)
+
+
+aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
+
+
+AAS = {}
+for aa in aas:
+    AAS[aa] = AminoAcid(aa)
 
 # print(AAS)
-# print(AAS['A'].G)    
+# print(AAS['A'].G)
 # ig.plot(AAS['A'].G)
 # print(AminoAcid('V').getGraph())
 
@@ -390,3 +380,16 @@ class AminoAcid(object):
 #       ig.plot( G, **visual_style )
 #   else:
 #       ig.plot( G, target=target, **visual_style )
+
+# Alternative tryptophan.
+# W = self.makeAtoms({ 'C':9, 'H':8, 'N':1 })+\
+# ('C0','H0')+('C0','H1')+('C0','C1')+\
+# ('C1','C2')+('C1','C3')+('C1','C3')+\
+# ('C2','C4')+('C2','C5')+('C2','C5')+\
+# ('C3','N0')+('C3','H2')+\
+# ('N0','H3')+('N0','C5')+\
+# ('C5','C6')+\
+# ('C6','H4')+('C6','C7')+('C6','C7')+\
+# ('C4','C8')+('C4','C8')+('C4','H5')+\
+# ('C7','H6')+('C7','C8')+\
+# ('C8','H7')

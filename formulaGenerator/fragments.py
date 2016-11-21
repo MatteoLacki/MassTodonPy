@@ -23,7 +23,7 @@ def getAminoAcids():
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
-    atomNo = Counter()  
+    atomNo = Counter()
     for el in G.vs['elem']:
         atomNo[el] += 1
     return atomNo
@@ -54,7 +54,7 @@ def fasta2atomCount(fasta):
 #         print('Unrecognizable format of bonds to break.')
 #         pass
 
-def establishFragmentType(fragment, aaType): 
+def establishFragmentType(fragment, aaType):
     '''Establishes what is the fragment type: (L)eft, (C)enter, or (R)ight, or (LC) or (R) for proline.
 
         L fragment is a fictitious double fragmentation product of b-y and c-z cleavages,
@@ -67,27 +67,27 @@ def establishFragmentType(fragment, aaType):
         else:
             return 'LC'
     else:
-        if 'Calpha' in fragment.vs['name']: 
+        if 'Calpha' in fragment.vs['name']:
             return 'C'
-        elif 'Nalpha' in fragment.vs['name']: 
+        elif 'Nalpha' in fragment.vs['name']:
             return 'L'
         else:
             return 'R'
 
 
 def getSuperAtoms(fasta, fragmentTypes):
-    '''Enlists all fictitious double fragmentation products. 
+    '''Enlists all fictitious double fragmentation products.
 
     These are all basic chemical formulas obtainable in double fragmentation.'''
     fragments = {}
     aminoAcids= getAminoAcids()
     for f in set(fasta):
         G = aminoAcids[f]['graph'].copy()
-        G.delete_edges(Roep_ne=None)        
+        G.delete_edges(Roep_ne=None)
         G = G.decompose()
-        G = dict( (establishFragmentType(g,f), elementContent(g)) for g in G ) 
+        G = dict( (establishFragmentType(g,f), elementContent(g)) for g in G )
         if set(G) == set(['L','C','R']):
-            if 'ax' in fragmentTypes: 
+            if 'ax' in fragmentTypes:
                 if 'cz' in fragmentTypes:
                     G = [ ('LL', G['L']), ('CC',G['C']), ('RR',G['R']) ]
                 else:
@@ -96,10 +96,10 @@ def getSuperAtoms(fasta, fragmentTypes):
                 if 'cz' in fragmentTypes:
                     G = [ ('LL', G['L']), ('CR', G['C']+G['R']) ]
                 else:
-                    G = [ ('LR', G['L']+G['C']+G['R']) ]    
-        elif set(G) == set(['LC','R']): 
+                    G = [ ('LR', G['L']+G['C']+G['R']) ]
+        elif set(G) == set(['LC','R']):
             if 'ax' in fragmentTypes:
-                G = [ ('LC', G['LC']), ('RR', G['R']) ]            
+                G = [ ('LC', G['LC']), ('RR', G['R']) ]
             else:
                 G = [ ('LR', G['LC']+G['R']) ]
         else:
@@ -109,15 +109,15 @@ def getSuperAtoms(fasta, fragmentTypes):
     superAtoms = [] # It must be a list to be mutable.
     for fNo, f in enumerate(fasta):
         if fNo==0 or 'by' in fragmentTypes:
-            for aaType, atomCnt in fragments[f]:    
+            for aaType, atomCnt in fragments[f]:
                 superAtoms.append([ aaType, fNo, fNo, atomCnt.copy() ])
         else:
             for fragNo, fragment in enumerate(fragments[f]):
                 aaType, atomCnt = fragment
                 if fragNo==0:
                     # [ aaType, fNo, fNo, Counter() ]
-                    superAtoms[-1][-1].update(atomCnt)              
-                    # Update left right fragment tags.      
+                    superAtoms[-1][-1].update(atomCnt)
+                    # Update left right fragment tags.
                     superAtoms[-1][0] = superAtoms[-1][0][0] + aaType[-1]
                     # Upadate second fragment tag counter.
                     superAtoms[-1][2] = fNo
@@ -137,7 +137,7 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
     '''Makes tagged chemical formulas of fragments under given fragmentation scheme.
 
     The tags contain information the cleavage sites: the left and/or right endings.
-    '''    
+    '''
     fragmentTypes   = set(fragmentTypes)
     superAtoms      = getSuperAtoms(fasta, fragmentTypes)
     fragments = []
@@ -155,13 +155,13 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
     else:
         prevCnt = Counter()
         # abc fragments--------------------------------------------------
-        for aaType, lFragNo, rFragNo, atomCnt in superAtoms:  
-            isCfragment = aaType[1] == 'L' 
+        for aaType, lFragNo, rFragNo, atomCnt in superAtoms:
+            isCfragment = aaType[1] == 'L'
             aaType  = 'L'+aaType[-1]
             lFragNo = 0
-            prevCnt = prevCnt + atomCnt 
+            prevCnt = prevCnt + atomCnt
             if isCfragment:
-                atomCnt = prevCnt + Counter({'H':1}) 
+                atomCnt = prevCnt + Counter({'H':1})
             else:
                 atomCnt = prevCnt
             fragments.append([aaType, lFragNo, rFragNo, atomCnt])
@@ -171,7 +171,7 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
         superAtoms.reverse()
         L = len(fasta)
         # xyz fragments--------------------------------------------------
-        for aaType, lFragNo, rFragNo, atomCnt in superAtoms:  
+        for aaType, lFragNo, rFragNo, atomCnt in superAtoms:
             aaType  = aaType[0]+'R'
             rFragNo = L-1
             prevCnt = prevCnt + atomCnt
@@ -197,28 +197,27 @@ def roepstorffy(fragment,fasta):
     else:
         lType = lcr2xyz[lType]
         nameL = lType + str(L-AAleft-(1 if lType=='x' else 0))
-        # lType + str(L-AAleft+1+(0 if lType=='x' else 1))    
+        # lType + str(L-AAleft+1+(0 if lType=='x' else 1))
     if rType=='R' and AAright==L-1:
         nameR = ''
     else:
         rType = lcr2abc[rType]
         nameR = rType + str(AAright+1-(1 if rType=='c' else 0))
-    name = nameL+nameR 
+    name = nameL+nameR
     if name=='':
         return 'precursor'
     else:
         return name
 
 
-ubiFrags[1]
+
 ubiFrags = makeFragments(ubiquitin)
 subPfrags= makeFragments(substanceP)
 ubiRoep  = [ roepstorffy(x,ubiquitin) for x in ubiFrags ]
 subProep = [ roepstorffy(x,substanceP) for x in subPfrags ]
 
-with open('/Users/matteo/Documents/Science/MassTodon/MassTodonPy/formulaGenerator/ATOMCNTS.data', 'w') as f: 
+with open('/Users/matteo/Documents/MassTodon/MassTodonPy/formulaGenerator/ATOMCNTS.data', 'w') as f:
     pickle.dump( { 'ubiFrags': ubiFrags, 'subPfrags':subPfrags, 'ubiRoep':ubiRoep, 'subProep':subProep }, f )
-
 
 def sideChainsNo(fragment):
     '''Finds the number of side chains on a fragment.'''
@@ -240,13 +239,13 @@ def getProtonation(max_q, max_q_on_fragment):
         for g in range(max_q-q):
             yield (q,g)
 
-# list( getProtonation(10,9) )
+list( getProtonation(10,9) )
 
 
-def protonatedFragments(    fasta, 
-                            max_charge, 
-                            amino_acids_per_charge  = 5, 
-                            fragmentTypes           = ['cz'], 
+def protonatedFragments(    fasta,
+                            max_charge,
+                            amino_acids_per_charge  = 5,
+                            fragmentTypes           = ['cz'],
                             innerFragments          = False     ):
     fragments = makeFragments(fasta, fragmentTypes, innerFragments)
     for fragment in fragments:
@@ -255,4 +254,4 @@ def protonatedFragments(    fasta,
             yield (q,g, fragment)
 
 # res = list( protonatedFragments( ubiquitin, 20) )
-# len(res)  
+# len(res)
