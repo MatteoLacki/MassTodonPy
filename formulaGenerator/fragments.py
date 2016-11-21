@@ -1,5 +1,6 @@
 import numpy  as np
 import itertools as it
+import pandas as pd
 from collections import Counter
 from aminoAcid import AminoAcids, aas
 # from misc import listisize
@@ -12,6 +13,8 @@ except:
 ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 substanceP  = 'RPKPQQFFGLM'
 fastas      = [substanceP, ubiquitin]
+fragmentTypes = ['cz']
+
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -28,8 +31,7 @@ def fasta2atomCount(fastas):
     for f in fastas:
         aminos.union(set(fastas))
     assert aminos.issubset(aas), 'One of the fastas contained an unimplemented amino acid.'
-    AA = AminoAcids()
-    aminoAcids = AA.get()
+    aminoAcids = AminoAcids().get()
     result = {}
     for f in fastas:
         atomCnt = Counter()
@@ -44,15 +46,16 @@ def fasta2atomCount(fastas):
         result[f] = atomCnt
     return result
 
+# fasta2atomCount(fastas)
 
 
-def getAminoAcids():
-    aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
-    aminoAcids = {}
-    for aa in aas:
-        AA = AminoAcid(aa)
-        aminoAcids[aa] ={ 'graph' : AA.getGraph(), 'NalphaIDX' : AA.Nalpha(), 'CcarboIDX' : AA.Ccarbo() }
-    return aminoAcids
+# def getAminoAcids():
+#     aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
+#     aminoAcids = {}
+#     for aa in aas:
+#         AA = AminoAcid(aa)
+#         aminoAcids[aa] ={ 'graph' : AA.getGraph(), 'NalphaIDX' : AA.Nalpha(), 'CcarboIDX' : AA.Ccarbo() }
+#     return aminoAcids
 
 
 # def simplifyAminoAcid(aaTag, bonds2break = ('cz',)):
@@ -85,11 +88,31 @@ def establishFragmentType(fragment, aaType):
         else:
             return 'R'
 
-fragmentTypes = ['cz']
 
-#####
+def roepstorffy(fragment,fasta):
+    '''Sprinkle my naming convention with Roepstorff's pseudo-scientific naming.'''
+    L = len(fasta)
+    AAtype, AAleft, AAright, atomCnt = fragment
+    lType, rType = AAtype
+    lcr2abc = {'L':'c','C':'a','R':'b'}
+    lcr2xyz = {'L':'y','C':'z','R':'x'}
+    if lType=='L' and AAleft==0:
+        nameL = ''
+    else:
+        lType = lcr2xyz[lType]
+        nameL = lType + str(L-AAleft-(1 if lType=='x' else 0))
+        # lType + str(L-AAleft+1+(0 if lType=='x' else 1))
+    if rType=='R' and AAright==L-1:
+        nameR = ''
+    else:
+        rType = lcr2abc[rType]
+        nameR = rType + str(AAright+1-(1 if rType=='c' else 0))
+    name = nameL+nameR
+    if name=='':
+        return 'precursor'
+    else:
+        return name
 
-@listisize
 def getSuperAtoms(fasta, fragmentTypes):
     '''Enlists all fictitious double fragmentation products.
 
@@ -144,9 +167,7 @@ def getSuperAtoms(fasta, fragmentTypes):
     assert any( sA[1]<=sA[2] for sA in superAtoms )
     return superAtoms
 
-getSuperAtoms(substanceP, ['cz'])
 
-####
 def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
     '''Makes tagged chemical formulas of fragments under given fragmentation scheme.
 
@@ -168,7 +189,7 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
                 fragments.append([aaType, lFragNo, rFragNo, atomCnt])
     else:
         prevCnt = Counter()
-        # abc fragments--------------------------------------------------
+            # abc fragments
         for aaType, lFragNo, rFragNo, atomCnt in superAtoms:
             isCfragment = aaType[1] == 'L'
             aaType  = 'L'+aaType[-1]
@@ -179,56 +200,39 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
             else:
                 atomCnt = prevCnt
             fragments.append([aaType, lFragNo, rFragNo, atomCnt])
-        #----------------------------------------------------------------
+
         precursor1  = fragments[-1]
         prevCnt     = Counter()
         superAtoms.reverse()
         L = len(fasta)
-        # xyz fragments--------------------------------------------------
+            # xyz fragments
         for aaType, lFragNo, rFragNo, atomCnt in superAtoms:
             aaType  = aaType[0]+'R'
             rFragNo = L-1
             prevCnt = prevCnt + atomCnt
             fragments.append([aaType, lFragNo, rFragNo, prevCnt])
-        #----------------------------------------------------------------
+
         precursor2  = fragments[-1]
         assert precursor1==precursor2
-        # Removin extra precursor---------------------------------------
-        del fragments[-1]
+
+        del fragments[-1] # Removing extra precursor
     return fragments
 
+def niceFrags(frags, fasta):
+    for x in frags:
+        tag = roepstorffy( x, fasta )
+        atomCnt = x[3].copy()
+        atomCnt['fragmentType'] = tag
+        yield atomCnt
 
+def get_fragments(fasta):
+    frags = makeFragments(fasta)
+    return pd.DataFrame(niceFrags(frags, fasta))
 
-def roepstorffy(fragment,fasta):
-    '''Sprinkle my naming convention with Roepstorff's pseudo-scientific naming.'''
-    L = len(fasta)
-    AAtype, AAleft, AAright, atomCnt = fragment
-    lType, rType = AAtype
-    lcr2abc = {'L':'c','C':'a','R':'b'}
-    lcr2xyz = {'L':'y','C':'z','R':'x'}
-    if lType=='L' and AAleft==0:
-        nameL = ''
-    else:
-        lType = lcr2xyz[lType]
-        nameL = lType + str(L-AAleft-(1 if lType=='x' else 0))
-        # lType + str(L-AAleft+1+(0 if lType=='x' else 1))
-    if rType=='R' and AAright==L-1:
-        nameR = ''
-    else:
-        rType = lcr2abc[rType]
-        nameR = rType + str(AAright+1-(1 if rType=='c' else 0))
-    name = nameL+nameR
-    if name=='':
-        return 'precursor'
-    else:
-        return name
+fragments = dict( (f,get_fragments(f)) for f in fastas)
 
+fragments[substanceP]
 
-
-ubiFrags = makeFragments(ubiquitin)
-subPfrags= makeFragments(substanceP)
-ubiRoep  = [ roepstorffy(x,ubiquitin) for x in ubiFrags ]
-subProep = [ roepstorffy(x,substanceP) for x in subPfrags ]
 
 with open('/Users/matteo/Documents/MassTodon/MassTodonPy/formulaGenerator/ATOMCNTS.data', 'w') as f:
     pickle.dump( { 'ubiFrags': ubiFrags, 'subPfrags':subPfrags, 'ubiRoep':ubiRoep, 'subProep':subProep }, f )
