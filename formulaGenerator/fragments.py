@@ -15,14 +15,12 @@ substanceP  = 'RPKPQQFFGLM'
 fastas      = [substanceP, ubiquitin]
 fragmentTypes = ['cz']
 
-
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
     atomNo = Counter()
     for el in G.vs['elem']:
         atomNo[el] += 1
     return atomNo
-
 
 def fasta2atomCount(fastas):
     '''Represents a fasta sequence, or a list of fasta sequences, as an atom count of the underlying protein. Returns a dictionary of atom counts.'''
@@ -47,8 +45,6 @@ def fasta2atomCount(fastas):
     return result
 
 # fasta2atomCount(fastas)
-
-
 # def getAminoAcids():
 #     aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
 #     aminoAcids = {}
@@ -231,45 +227,56 @@ def get_fragments(fasta):
 
 fragments = dict( (f,get_fragments(f)) for f in fastas)
 
-fragments[substanceP]
 
 
-with open('/Users/matteo/Documents/MassTodon/MassTodonPy/formulaGenerator/ATOMCNTS.data', 'w') as f:
-    pickle.dump( { 'ubiFrags': ubiFrags, 'subPfrags':subPfrags, 'ubiRoep':ubiRoep, 'subProep':subProep }, f )
 
-def sideChainsNo(fragment):
-    '''Finds the number of side chains on a fragment.'''
-    pos, leftAA, rightAA, _ = fragment
-    leftPos, rightPos       = pos
-    res = rightAA - leftAA + 1
-    if leftPos == 'R':
-        res -= 1
-    if rightPos== 'L':
-        res -= 1
-    if res < 0:
-        res = 0
-    return res
+fragments[substanceP].to_csv(path_or_buf='/Users/matteo/Documents/MassTodon/MassTodonPy/formulaGenerator/results/substanceP.csv', index=False, na_rep='NA')
+
+fragments[ubiquitin].to_csv('~/Documents/MassTodon/MassTodonPy/formulaGenerator/results/ubiquitin.csv', index=False, na_rep='NA')
 
 
-def getProtonation(max_q, max_q_on_fragment):
-    '''Enumerated protonation and quenched protonation numbers.'''
-    for q in range(1, max_q_on_fragment):
-        for g in range(max_q-q):
-            yield (q,g)
-
-list( getProtonation(10,9) )
 
 
-def protonatedFragments(    fasta,
-                            max_charge,
-                            amino_acids_per_charge  = 5,
-                            fragmentTypes           = ['cz'],
-                            innerFragments          = False     ):
-    fragments = makeFragments(fasta, fragmentTypes, innerFragments)
-    for fragment in fragments:
-        maxQonFrag = round(sideChainsNo(fragment)/float(amino_acids_per_charge))
-        for q,g in getProtonation( max_charge, maxQonFrag ):
-            yield (q,g, fragment)
+# with open('~/Documents/MassTodon/MassTodonPy/formulaGenerator/results/substanceP.data', 'w') as f:
+#     pickle.dump( { 'ubiFrags': ubiFrags, 'subPfrags':subPfrags, 'ubiRoep':ubiRoep, 'subProep':subProep }, f )
+
+
+# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/formulaGenerator/ATOMCNTS.data', 'w') as f:
+#     pickle.dump( { 'ubiFrags': ubiFrags, 'subPfrags':subPfrags, 'ubiRoep':ubiRoep, 'subProep':subProep }, f )
+#
+# def sideChainsNo(fragment):
+#     '''Finds the number of side chains on a fragment.'''
+#     pos, leftAA, rightAA, _ = fragment
+#     leftPos, rightPos       = pos
+#     res = rightAA - leftAA + 1
+#     if leftPos == 'R':
+#         res -= 1
+#     if rightPos== 'L':
+#         res -= 1
+#     if res < 0:
+#         res = 0
+#     return res
+#
+#
+# def getProtonation(max_q, max_q_on_fragment):
+#     '''Enumerated protonation and quenched protonation numbers.'''
+#     for q in range(1, max_q_on_fragment):
+#         for g in range(max_q-q):
+#             yield (q,g)
+#
+# list( getProtonation(10,9) )
+#
+#
+# def protonatedFragments(    fasta,
+#                             max_charge,
+#                             amino_acids_per_charge  = 5,
+#                             fragmentTypes           = ['cz'],
+#                             innerFragments          = False     ):
+#     fragments = makeFragments(fasta, fragmentTypes, innerFragments)
+#     for fragment in fragments:
+#         maxQonFrag = round(sideChainsNo(fragment)/float(amino_acids_per_charge))
+#         for q,g in getProtonation( max_charge, maxQonFrag ):
+#             yield (q,g, fragment)
 
 # res = list( protonatedFragments( ubiquitin, 20) )
 # len(res)
