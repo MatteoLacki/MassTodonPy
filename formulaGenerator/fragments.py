@@ -10,6 +10,7 @@ from collections import Counter
 from aminoAcid import AminoAcid
 
 ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+substanceP= 'RPKPQQFFGLM'
 
 def getAminoAcids():
     aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
@@ -41,6 +42,8 @@ def fasta2atomCount(fasta):
     atomCnt['O'] += 1
     return(atomCnt)
 
+
+# fasta2atomCount('A')
 # def simplifyAminoAcid(aaTag, bonds2break = ('cz',)):
 #       '''Differentiates between precisely enumerated modifications and others.'''
 #     if isinstance( bonds2break, type(tuple()) ):
@@ -180,7 +183,7 @@ def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
         del fragments[-1]
     return fragments
 
-# makeFragments('AAA')
+
 
 def roepstorffy(fragment,fasta):
     '''Sprinkle my naming convention with Roepstorff's pseudo-scientific naming.'''
@@ -205,6 +208,16 @@ def roepstorffy(fragment,fasta):
         return 'precursor'
     else:
         return name
+
+
+ubiFrags[1]
+ubiFrags = makeFragments(ubiquitin)
+subPfrags= makeFragments(substanceP)
+ubiRoep  = [ roepstorffy(x,ubiquitin) for x in ubiFrags ]
+subProep = [ roepstorffy(x,substanceP) for x in subPfrags ]
+
+with open('/Users/matteo/Documents/Science/MassTodon/MassTodonPy/formulaGenerator/ATOMCNTS.data', 'w') as f: 
+    pickle.dump( { 'ubiFrags': ubiFrags, 'subPfrags':subPfrags, 'ubiRoep':ubiRoep, 'subProep':subProep }, f )
 
 
 def sideChainsNo(fragment):
