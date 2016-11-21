@@ -36,7 +36,7 @@ def edges(fasta):
 	prevElemNo = 0
 	for N, right, G in aminosIter(fasta):
 		for e in G.es:
-			a, b = e.tuple 
+			a, b = e.tuple
 			yield ( a+prevElemNo, b+prevElemNo ) # bonds within new AA
 		if prevElemNo:
 			yield ( prevElemNo+N, prevCcarbo ) # bond between last AA and new AA
@@ -51,9 +51,9 @@ def BondTypes(bonds = ['cz']):
 				'by': [ ('Nalpha', 'Ccarbo'), ('N1', 'Ccarbo') ],
 				'ax': [ ('Calpha','Ccarbo'), ('C2', 'Ccarbo') ]  	}
 	B2B = defaultdict(lambda: None)
-	try: 
+	try:
 		for b in bonds:
-			for s,t in B2atoms[b]:	
+			for s,t in B2atoms[b]:
 				B2B[(s,t)] = B2B[(t,s)] = b
 		return B2B
 	except KeyError:
@@ -71,12 +71,12 @@ def GetBonds(fasta, B2B):
 			if 'by' in bondTypes:
 				yield 'by'
 			else:
-				yield None			
-		else:	
+				yield None
+		else:
 			notFirst = True
 
 a = GetBonds('AAC', BondTypes(['cz']))
-next(a)
+
 fasta = 'AAC'
 B2B = BondTypes(['cz'])
 bondTypes= set(B2B[k] for k in B2B)
@@ -98,8 +98,8 @@ for e in G.es:
 		if 'by' in bondTypes:
 			print('by')
 		else:
-			print(None)			
-	else:	
+			print(None)
+	else:
 		notFirst = True
 
 
@@ -121,7 +121,7 @@ def makeProtein( fasta, attributeNames=('name', 'elem'), bonds=['cz','ax','by'] 
 	return G
 
 def elementContent(G):
-	atomNo = Counter()	
+	atomNo = Counter()
 	for el in G.vs['elem']:
 		atomNo[el] += 1
 	return atomNo
@@ -141,16 +141,16 @@ def getSuperAtomGraph(G):
 		if parent:
 			bondType = G.es[G.get_eid( v.index, parent.index )]['Roep']
 			if bondType:
-				vFragNo = VerticesDivision[ v['name'] ] 
-				pFragNo = VerticesDivision[ parent['name'] ] 
+				vFragNo = VerticesDivision[ v['name'] ]
+				pFragNo = VerticesDivision[ parent['name'] ]
 				if not vFragNo==pFragNo:
 					SA_E.append( (pFragNo,vFragNo) )
 					SA_E_att['Roep'].append( bondType )
 	SA_V_att = defaultdict(list)
 	SA_V_att['elementContent'] = [ elementContent(F) for F in SuperAtoms ]
-	SuperAtomsGraph = ig.Graph( 
-		n 			= len(SuperAtoms), 
-		edges 		= SA_E, 
+	SuperAtomsGraph = ig.Graph(
+		n 			= len(SuperAtoms),
+		edges 		= SA_E,
 		edge_attrs 	= SA_E_att,
 		vertex_attrs= SA_V_att )
 	return SuperAtomsGraph
@@ -160,27 +160,27 @@ ubiquitin 	= 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKEST
 # fasta 		= substanceP
 fasta 		= ubiquitin
 
-G 	= makeProtein(fasta,bonds=['cz'])		
+G 	= makeProtein(fasta,bonds=['cz'])
 # plott(G)
 SA 	= getSuperAtomGraph(G)
 
 def get_c_z_ions(SA):
-imp = SA.vs.select(_degree=1)	
-if imp[0]['elementContent'] == Counter({'H': 2, 'N': 1}): # Not the brightest criterion...
-	firstVertex, lastVertex = imp[0].index, imp[1].index 
-else:
-	firstVertex, lastVertex = imp[1].index, imp[0].index
-c = []
-atomsCnt = Counter()
-for v in SA.bfsiter( vid=firstVertex ):	
-	atomsCnt += v['elementContent']
-	c.append( atomsCnt.copy() )	
-z = []
-atomsCnt= Counter()
-for v in SA.bfsiter( vid=lastVertex ):	
-	atomsCnt += v['elementContent']
-	z.append( atomsCnt.copy() )	
-return (c,z)
+	imp = SA.vs.select(_degree=1)
+	if imp[0]['elementContent'] == Counter({'H': 2, 'N': 1}): # Not the brightest criterion...
+		firstVertex, lastVertex = imp[0].index, imp[1].index
+	else:
+		firstVertex, lastVertex = imp[1].index, imp[0].index
+	c = []
+	atomsCnt = Counter()
+	for v in SA.bfsiter( vid=firstVertex ):
+		atomsCnt += v['elementContent']
+		c.append( atomsCnt.copy() )
+	z = []
+	atomsCnt= Counter()
+	for v in SA.bfsiter( vid=lastVertex ):
+		atomsCnt += v['elementContent']
+		z.append( atomsCnt.copy() )
+	return (c,z)
 
 get_c_z_ions(SA)
 
@@ -192,7 +192,7 @@ get_c_z_ions(SA)
 # ig.plot( SA, bbox=(2000,1000), edge_label=SA.es['Roep'], vertex_color=[ Coloring[i] for i in xrange(len(SA.vs)) ] )
 SA_layout = SA.layout_lgl()
 
-path = '/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/'
+path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Visual/'
 
 ig.plot( SA, bbox=(2000,1000), edge_label=SA.es['Roep'], layout=SA_layout, target=path+'SuperAtomsUbiquitine.pdf' )
 plott(E, bbox=(20000,10000), target=path+'ubiquitin2.pdf')
@@ -202,11 +202,14 @@ plott(E, bbox=(20000,10000), target=path+'ubiquitin2.pdf')
 # layount = E.layout_lgl()
 plott(E, bbox=(20000,10000), layout=layout, target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin2.pdf')
 
-# G 		= makeProtein(fasta, bonds=['cz','by','ax'])		
-# layout 	= G.layout_lgl()
-# plott(G, edge_label=G.es['Roep'], bbox=(20000,10000), layout=layout, target='/Volumes/doom/Users/matteo/Dropbox/Science/MassSpectrometry/MassTodon/Visual/ubiquitin.pdf')
+G 		= makeProtein(fasta, bonds=['cz','by','ax'])
+layout 	= G.layout_lgl()
+plott(G, edge_label=G.es['Roep'], bbox=(20000,10000), layout=layout, target='/Users/matteo/Documents/MassTodon/MassTodonPy/formulaGenerator/ubiquitin.pdf')
+
+
+plott(G, edge_label=G.es['Roep'], bbox=(20000,10000), layout=layout)
+
+
 
 
 # ends, __,starts = G.bfs(0)
-
-

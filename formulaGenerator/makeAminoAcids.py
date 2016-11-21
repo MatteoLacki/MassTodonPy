@@ -21,4 +21,4 @@ def generateAminoAcids():
 		    pickle.dump( aminoAcids, f)
 
 with open('aminoAcids.p', 'rb') as f:
-    d = pickle.load(f, encoding='latin1') 
+    d = pickle.load(f)

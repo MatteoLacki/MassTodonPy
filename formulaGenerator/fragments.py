@@ -1,25 +1,15 @@
-# import igraph as ig
 import numpy  as np
 import itertools as it
+from collections import Counter
+from aminoAcid import AminoAcids
 try:
   import cPickle as pickle
 except:
   import pickle
 
-from collections import Counter
-from aminoAcid import AminoAcid
 
 ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 substanceP= 'RPKPQQFFGLM'
-
-def getAminoAcids():
-    aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
-    aminoAcids = {}
-    for aa in aas:
-        AA = AminoAcid(aa)
-        aminoAcids[aa] ={ 'graph' : AA.getGraph(), 'NalphaIDX' : AA.Nalpha(), 'CcarboIDX' : AA.Ccarbo() }
-    return aminoAcids
-
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -30,20 +20,40 @@ def elementContent(G):
 
 
 def fasta2atomCount(fasta):
-    '''Represents a fasta sequence as an atom count of the underlying protein.'''
-    aminoAcids      = getAminoAcids()
-    aminoAcidCounts = Counter(ubiquitin)
-    atomCnt         = Counter()
-    for aa in aminoAcidCounts:
-        atomCnt_of_aa = elementContent( aminoAcids[aa]['graph'] )
-        for atom in atomCnt_of_aa:
-            atomCnt[atom] += atomCnt_of_aa[atom]*aminoAcidCounts[aa]
-    atomCnt['H'] += 2
-    atomCnt['O'] += 1
-    return(atomCnt)
+    '''Represents a fasta sequence, or a list of fasta sequences, as an atom count of the underlying protein. Returns a dictionary of atom counts.'''
+    if isinstance(fasta, str):
+        fasta = [fasta]
+    AA = AminoAcids()
+    assert AA.are_encoded(fasta), 'Fuck'
+    aminoAcids = AA.get()
+    result = {}
+    for f in fasta:
+        atomCnt = Counter()
+        aminoAcidCounts = Counter(f)
+        for aa in aminoAcidCounts:
+            atomCnt_of_aa = elementContent( aminoAcids[aa]['graph'] )
+            for atom in atomCnt_of_aa:
+                atomCnt[atom] += atomCnt_of_aa[atom]*aminoAcidCounts[aa]
+        # Adding water.
+        atomCnt['H'] += 2
+        atomCnt['O'] += 1
+        result[f] = atomCnt
+    return result
 
-
+fasta = ['RPKPQQFFGLM','MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG']
+ubiquitin,substanceP = fasta
+# fasta2atomCount(fasta)
 # fasta2atomCount('A')
+
+def getAminoAcids():
+    aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
+    aminoAcids = {}
+    for aa in aas:
+        AA = AminoAcid(aa)
+        aminoAcids[aa] ={ 'graph' : AA.getGraph(), 'NalphaIDX' : AA.Nalpha(), 'CcarboIDX' : AA.Ccarbo() }
+    return aminoAcids
+
+
 # def simplifyAminoAcid(aaTag, bonds2break = ('cz',)):
 #       '''Differentiates between precisely enumerated modifications and others.'''
 #     if isinstance( bonds2break, type(tuple()) ):
