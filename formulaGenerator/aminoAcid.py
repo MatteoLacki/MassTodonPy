@@ -25,10 +25,12 @@ def join(g1, g2, vertex_attributes, edge_attributes):
         g.es[attr] = getAttr(g1.es, attr) + getAttr(g2.es, attr)
     return g
 
+aas = set(('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'))
+
 class AminoAcids(object):
     '''Makes a graph of an amino acid.'''
     def __init__(self ):
-        self.aas = set(('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'))
+        self.aas = aas
 
     def addBackbone(self, A):
         B = self.Backbone()

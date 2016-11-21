@@ -1,15 +1,17 @@
 import numpy  as np
 import itertools as it
 from collections import Counter
-from aminoAcid import AminoAcids
+from aminoAcid import AminoAcids, aas
+# from misc import listisize
 try:
   import cPickle as pickle
 except:
   import pickle
 
 
-ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
-substanceP= 'RPKPQQFFGLM'
+ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+substanceP  = 'RPKPQQFFGLM'
+fastas      = [substanceP, ubiquitin]
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -19,31 +21,30 @@ def elementContent(G):
     return atomNo
 
 
-def fasta2atomCount(fasta):
+def fasta2atomCount(fastas):
     '''Represents a fasta sequence, or a list of fasta sequences, as an atom count of the underlying protein. Returns a dictionary of atom counts.'''
-    if isinstance(fasta, str):
-        fasta = [fasta]
+    assert all( isinstance(f, str) for f in fastas ), 'A fasta you provided was not a string.'
+    aminos = set()
+    for f in fastas:
+        aminos.union(set(fastas))
+    assert aminos.issubset(aas), 'One of the fastas contained an unimplemented amino acid.'
     AA = AminoAcids()
-    assert AA.are_encoded(fasta), 'Fuck'
     aminoAcids = AA.get()
     result = {}
-    for f in fasta:
+    for f in fastas:
         atomCnt = Counter()
         aminoAcidCounts = Counter(f)
         for aa in aminoAcidCounts:
             atomCnt_of_aa = elementContent( aminoAcids[aa]['graph'] )
             for atom in atomCnt_of_aa:
                 atomCnt[atom] += atomCnt_of_aa[atom]*aminoAcidCounts[aa]
-        # Adding water.
+            # Adding water.
         atomCnt['H'] += 2
         atomCnt['O'] += 1
         result[f] = atomCnt
     return result
 
-fasta = ['RPKPQQFFGLM','MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG']
-ubiquitin,substanceP = fasta
-# fasta2atomCount(fasta)
-# fasta2atomCount('A')
+
 
 def getAminoAcids():
     aas = ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
@@ -84,18 +85,22 @@ def establishFragmentType(fragment, aaType):
         else:
             return 'R'
 
+fragmentTypes = ['cz']
 
+#####
+
+@listisize
 def getSuperAtoms(fasta, fragmentTypes):
     '''Enlists all fictitious double fragmentation products.
 
     These are all basic chemical formulas obtainable in double fragmentation.'''
     fragments = {}
-    aminoAcids= getAminoAcids()
-    for f in set(fasta):
-        G = aminoAcids[f]['graph'].copy()
+    AA = AminoAcids()
+    for aa in set(fasta):
+        G = getattr(AA, aa)()
         G.delete_edges(Roep_ne=None)
         G = G.decompose()
-        G = dict( (establishFragmentType(g,f), elementContent(g)) for g in G )
+        G = dict( (establishFragmentType(g,aa), elementContent(g)) for g in G )
         if set(G) == set(['L','C','R']):
             if 'ax' in fragmentTypes:
                 if 'cz' in fragmentTypes:
@@ -114,35 +119,34 @@ def getSuperAtoms(fasta, fragmentTypes):
                 G = [ ('LR', G['LC']+G['R']) ]
         else:
             print('It is impossible to get here, but you did it. Immediately go to a casino, as this is your lucky day.')
-        fragments[f] = G
-    #
+        fragments[aa] = G
     superAtoms = [] # It must be a list to be mutable.
-    for fNo, f in enumerate(fasta):
-        if fNo==0 or 'by' in fragmentTypes:
-            for aaType, atomCnt in fragments[f]:
-                superAtoms.append([ aaType, fNo, fNo, atomCnt.copy() ])
+    for aaNo, aa in enumerate(fasta):
+        if aaNo==0 or 'by' in fragmentTypes:
+            for aaType, atomCnt in fragments[aa]:
+                superAtoms.append([ aaType, aaNo, aaNo, atomCnt.copy() ])
         else:
-            for fragNo, fragment in enumerate(fragments[f]):
+            for fragNo, fragment in enumerate(fragments[aa]):
                 aaType, atomCnt = fragment
                 if fragNo==0:
-                    # [ aaType, fNo, fNo, Counter() ]
+                        # [ aaType, aaNo, aaNo, Counter() ]
                     superAtoms[-1][-1].update(atomCnt)
-                    # Update left right fragment tags.
+                        # Update left right fragment tags.
                     superAtoms[-1][0] = superAtoms[-1][0][0] + aaType[-1]
-                    # Upadate second fragment tag counter.
-                    superAtoms[-1][2] = fNo
+                        # Upadate second fragment tag counter.
+                    superAtoms[-1][2] = aaNo
                 else:
-                    superAtoms.append([ aaType, fNo, fNo, atomCnt.copy() ])
-    #
-    # Adding water to the molecule: acids' backbones were water free
+                    superAtoms.append([ aaType, aaNo, aaNo, atomCnt.copy() ])
+        # Adding water to the molecule: acids' backbones were water free
     superAtoms[0][-1]['H']  += 1
     superAtoms[-1][-1]['H'] += 1
     superAtoms[-1][-1]['O'] += 1
-    #
     assert any( sA[1]<=sA[2] for sA in superAtoms )
     return superAtoms
 
+getSuperAtoms(substanceP, ['cz'])
 
+####
 def makeFragments(fasta, fragmentTypes=['cz'], innerFragments = False):
     '''Makes tagged chemical formulas of fragments under given fragmentation scheme.
 
