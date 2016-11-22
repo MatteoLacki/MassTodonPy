@@ -26,18 +26,18 @@ class AminoAcid(object):
 			print aa + ' is not among acceptable amino acids:'
 			print ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
 			raise MissingAminoAcid
-		
+
 		if aa	== 'F' or aa == 'Y': # the only amino acids with ambigous IUPAC notation
 			self.OH = ( 'Ocarboxyl1_2', 'Hcarboxyl1')
 			self.C1 = 'Ccarboxyl'
-		else: 
+		else:
 			self.OH = ( 'O1_2', 'HO1_2')
 			self.C1 = 'C1'
 
 			# Now we rename all the things.
 		self.G.vs['IUPAC'] = self.G.vs['name']
 		self.updateVertexNames(0)
-		self.AAnoNext = 1			
+		self.AAnoNext = 1
 
 	def __str__(self):
 		return self.G.__str__()
@@ -65,14 +65,14 @@ class AminoAcid(object):
 		B.add_edge( 'N0', 'C0', Roep='cz' )
 		B.add_edge( 'C0', 'C1', Roep='ax' )
 		B = B + ('N0','H0') + ('N0','H1') + ('C0','H2')+\
-		('C1','O0')+('C1','O0')+('C1','O1') + ('O1','H3')	
+		('C1','O0')+('C1','O0')+('C1','O1') + ('O1','H3')
 		B.vs['PDB'] = ['H11', 'H12', 'HA', "H''", 'CA', 'C', "O'", "O''", 'N' ]
 		if acyclic:
 			Ccarboxyl = 'C1'
 			Ocarboxyl1= 'O1_1'
 			Ocarboxyl2= 'O1_2'
 			Hcarboxyl = 'HO1_2'
-		else: 
+		else:
 			Ccarboxyl = 'Ccarboxyl'
 			Ocarboxyl1= 'Ocarboxyl1_1'
 			Ocarboxyl2= 'Ocarboxyl1_2'
@@ -84,8 +84,8 @@ class AminoAcid(object):
 		A = self.makeAtoms({'C':1, 'H':3})+('C0','H0')+('C0','H1')+('C0','H2')
 		A.vs['name'] = ['Hbeta1', 'Hbeta2', 'Hbeta3', 'Cbeta']
 		A = self.addBackbone(A)
-		A['name'] = 'Alanine' 
-		return A	
+		A['name'] = 'Alanine'
+		return A
 
 	def R(self):
 		R = self.makeAtoms({ 'C':4, 'H':10, 'N':3 })+\
@@ -326,23 +326,23 @@ class AminoAcid(object):
 		visual_style['vertex_color']= [ elem_color[gender] for gender in self.G.vs['elem']]
 		visual_style['vertex_label']= self.G.vs['name']
 		visual_style['edge_label']	= self.G.es['Roep']
-		ig.plot( self.G, **visual_style )	
+		ig.plot( self.G, **visual_style )
 
 	def delOH(self):
 		AAno = str(self.AAnoNext-1)
 		self.G.delete_vertices([ AAno+'_'+name for name in self.OH ])
-			
+
 	def delH(self):
 		if self.AAnoNext > 1:
 			raise OH_already_deleted
 
 		# AAno = str(self.AAnoNext-1)
-		if self.G['name'] == 'Proline': 
-			self.G.delete_vertices( self.G.vs.find( '0_HN1' ).index )	
+		if self.G['name'] == 'Proline':
+			self.G.delete_vertices( self.G.vs.find( '0_HN1' ).index )
 		else:
 			self.G.delete_vertices( self.G.vs.find( '0_HNalpha1' ).index )
 			self.G.vs.find( '0_HNalpha2' )['IUPAC'] = 'HNalpha'
-		
+
 	def updateVertexNames(self, AAno):
 		self.AAno = AAno
 		self.G.vs['name'] = [ str(AAno)+'_'+name for name in self.G.vs['IUPAC'] ]
@@ -350,12 +350,12 @@ class AminoAcid(object):
 	def __iadd__(self, RightAA):
 		if isinstance(RightAA, AminoAcid):
 			RightAA.delH()
-			self.delOH()			
-			RightAA.updateVertexNames(self.AAnoNext)	
+			self.delOH()
+			RightAA.updateVertexNames(self.AAnoNext)
 
-			self.G = join( self.G, RightAA.G, 
-				vertex_attributes	= ['elem','name','IUPAC'], 
-				edge_attributes		= ['Roep'] )			
+			self.G = join( self.G, RightAA.G,
+				vertex_attributes	= ['elem','name','IUPAC'],
+				edge_attributes		= ['Roep'] )
 
 			AAno = str(self.AAnoNext-1)
 			AAnext = str(self.AAnoNext)
@@ -363,7 +363,7 @@ class AminoAcid(object):
 			if RightAA.G['name'] == 'Proline':
 				self.G.add_edge( AAno+'_'+self.C1, AAnext+'_N1', Roep='by' )
 			else:
-				self.G.add_edge( AAno+'_'+self.C1, AAnext+'_Nalpha', Roep='by' )			
+				self.G.add_edge( AAno+'_'+self.C1, AAnext+'_Nalpha', Roep='by' )
 
 				# Updating the IUPAC-like names of OH.
 			self.OH = RightAA.OH
@@ -372,7 +372,3 @@ class AminoAcid(object):
 		else:
 			print 'Ye cannot have +(Object,'+str(type(RightAA))+')'
 			raise WrongArgument
-
-
-
-

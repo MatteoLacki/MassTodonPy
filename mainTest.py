@@ -1,7 +1,8 @@
 %load_ext autoreload
 %autoreload
-from fragments import get_fragments
-from protonations import protonate
+from Formulator.fragments import get_fragments
+from Formulator.protonations import protonate
+
 
 ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 substanceP  = 'RPKPQQFFGLM'
@@ -16,6 +17,16 @@ frags = get_fragments(fastas, 'cz')
 frags[substanceP]
 
 list(protonate(Q,'c'))
+
+
+
+from Formulator.aminoAcid import AminoAcids
+
+G = AminoAcids().get()['A']['graph']
+
+print(G)
+
+
 
 # def sideChainsNo(fragment):
 #     '''Finds the number of side chains on a fragment.'''
