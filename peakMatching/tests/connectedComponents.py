@@ -19,4 +19,3 @@ q.enqueue(1)
 q.enqueue(10)
 
 print q.dequeue
-
