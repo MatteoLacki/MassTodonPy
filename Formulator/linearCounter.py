@@ -38,7 +38,7 @@ class LinearCounter(Counter):
             self[elem] += other[elem]
         for elem, count in other.items():
             if elem not in self:
-                result[elem] = count
+                self[elem] = count
         return self
 
     def __isub__(self, other):
@@ -67,9 +67,9 @@ class LinearCounter(Counter):
             result[elem] = count*scalar
         return result
 
-# x = LinearCounter({'H':10, 'O':5})
-# y = LinearCounter({'H':10.2, 'O':5.1})
-# z = LinearCounter({'H':10.3, 'O':5.112, 'M':24232.232})
+x = LinearCounter({'H':10, 'O':5})
+y = LinearCounter({'H':10.2, 'O':5.1})
+z = LinearCounter({'H':10.3, 'O':5.112, 'M':24232.232})
 #
 #
 # x += y
