@@ -2,10 +2,7 @@ import igraph as ig
 import pandas as pd
 from collections import Counter, defaultdict
 from aminoAcid import AminoAcids
-try:
-  import cPickle as pickle
-except:
-  import pickle
+from linearCounter import LinearCounter as lCnt
 
 substanceP = 'RPKPQQFFGLM'
 ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
@@ -20,20 +17,19 @@ backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
 #                     ('Calpha',5) :  Counter({'H': -2, 'S': +2, 'N': +2}),
 #                     ('C',6) :       Counter({'H': -2, 'S': +2, 'N': +2}) }
 
-modifications = {   ('N',2) :       Counter({'H': -1, 'O': +2, 'N': +3}),
-                    ('Calpha',2) :  Counter({'H': -1, 'O': +2, 'N': +3}),
-                    ('Calpha',5) :  Counter({'H': -2, 'S': +2, 'N': +2}),
-                    ('C',6) :       Counter({'H': -2, 'S': +2, 'N': +2}) }
-
+modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
+                    ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
+                    ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
+                    ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
 # modifications = {}
-modDiff = Counter()
-for mod in modifications:
-    modDiff.update(modifications[mod])
+
+
+modDiff = sum(modifications.values())
 
 def uniformifyModifications(modifications):
     R = defaultdict(lambda:defaultdict(Counter))
-    for tag in modifications:
-        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = modifications[tag]
+    for tag, atomCnt in modifications.items():
+        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = atomCnt
     return R
 
 modifications = uniformifyModifications(modifications)
@@ -81,6 +77,7 @@ def countIsNegative(atomCnt):
 
 def make_cz_ions(fasta):
     bricks = makeBricks()
+
     def getBrick(aaPart):
         brick = Counter( bricks[aa][aaPart] )
         brick.update( modifications[aaNo][aaPart] )
