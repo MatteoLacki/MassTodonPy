@@ -1,6 +1,6 @@
 %load_ext autoreload
 %autoreload
-from Formulator.fragments import get_fragments
+from Formulator.makeSuperAtoms import cz_fragments, pandizeSubstances
 from Formulator.protonations import protonate
 
 
@@ -9,22 +9,21 @@ substanceP  = 'RPKPQQFFGLM'
 fastas      = [substanceP, ubiquitin, ubiquitin+ubiquitin+ubiquitin]
 
 Q = 10
-fragmentTypes = ['cz']
-
-frags = get_fragments(fastas, 'cz', list)
-frags[substanceP]
-frags = get_fragments(fastas, 'cz')
-frags[substanceP]
-
 list(protonate(Q,'c'))
 
 
+# modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
+#                     ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
+#                     ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
+#                     ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
 
-from Formulator.aminoAcid import AminoAcids
-
-G = AminoAcids().get()['A']['graph']
-
-print(G)
+# modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
+                    # ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
+                    # ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
+                    # ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
+modifications = {}
+precursor, cFrags, zFrags = cz_fragments(substanceP, modifications)
+pandizeSubstances(precursor, cFrags, zFrags)
 
 
 

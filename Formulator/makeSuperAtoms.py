@@ -4,34 +4,13 @@ from collections import Counter, defaultdict
 from aminoAcid import AminoAcids
 from linearCounter import LinearCounter as lCnt
 
-substanceP = 'RPKPQQFFGLM'
-ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
-testFasta = 'IKKLMNNMMM'
-
-# fasta = substanceP
-fasta = testFasta
-
-backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
-# modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
-#                     ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
-#                     ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
-#                     ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
-
-# modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
-                    # ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
-                    # ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
-                    # ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
-modifications = {}
-
-modDiff = sum(modifications.values())
-
-def uniformifyModifications(modifications):
+def uniformify(modifications):
+    '''Uniformifisez modifications so that they meet the internal nomenclature scheme.'''
+    backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
     R = defaultdict(lambda:defaultdict(lCnt))
     for tag, atomCnt in modifications.items():
         R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = atomCnt
     return R
-
-modifications = uniformifyModifications(modifications)
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -41,6 +20,9 @@ def elementContent(G):
     return atomNo
 
 def makeBricks():
+    '''Prepare the base counters of atoms.
+
+    These will be later collected into superatoms that finally make up the observed fragments.'''
     AAS = AminoAcids().get()
     AAS = [ (aa, AAS[aa]['graph'],AAS[aa]['NalphaIDX'],AAS[aa]['CcarboIDX']) for aa in AAS ]
     bricks = {}
@@ -70,12 +52,24 @@ def makeBricks():
         bricks[aa] = brick
     return bricks
 
+
 def countIsNegative(atomCnt):
+    '''Check if any element of a dictionary is a negative number.'''
     return any( atomCnt[elem]<0 for elem in atomCnt )
 
-def make_cz_ions(fasta):
-    bricks = makeBricks()
+def prolineBlockedFragments(fasta):
+    '''Checks which c-z fragments cannot occur.'''
+    blocked = set('c0')
+    for i, f in enumerate(fasta):
+        if f=='P':
+            blocked.add( 'c' + str(i) )
+            blocked.add( 'z' + str( len(fasta)-i ) )
+    return blocked
 
+def cz_fragments(fasta, modifications):
+    '''Prepares the precursor and the c and z fragments atom counts.'''
+    modifications = uniformify(modifications)
+    bricks = makeBricks()
     def getBrick(aaPart):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
         if countIsNegative(brick):
@@ -93,35 +87,40 @@ def make_cz_ions(fasta):
     superAtoms[0] += lCnt({'H':1})
 
     precursor = sum(superAtoms)
+    blockedFragments = prolineBlockedFragments(fasta)
 
-    fragments = []
+    cFrags = []
     N = len(superAtoms)
     cFrag = lCnt({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
     for i in range(N-1):
         cFrag += superAtoms[i]
         cFrag_tmp = lCnt(cFrag)
-        cFrag_tmp['type'] = 'c'+str(i)
-        fragments.append(cFrag_tmp)
+        fragType = 'c'+str(i)
+        if not fragType in blockedFragments:
+            cFrag_tmp['type'] = fragType
+            cFrags.append(cFrag_tmp)
 
+    zFrags= []
     zFrag = lCnt()
     for i in range(1,N):
         zFrag += superAtoms[N-i]
         zFrag_tmp = lCnt(zFrag)
-        zFrag_tmp['type'] = 'z'+str(i)
-        fragments.append(zFrag_tmp)
+        fragType = 'z'+str(i)
+        if not fragType in blockedFragments:
+            zFrag_tmp['type'] = fragType
+            zFrags.append(zFrag_tmp)
 
-    return precursor, fragments
+    return precursor, cFrags, zFrags
 
-
-def pandizeSubstances(precursor, fragments):
+def pandizeSubstances(precursor, cFrags, zFrags):
+    '''Turns results into a pandas data frame.'''
     precursor['type'] = 'precursor'
-    result = fragments
-    result.append(precursor)
+    result = [precursor]
+    result.extend(cFrags)
+    result.extend(zFrags)
     result = pd.DataFrame(result).fillna(0)
     result[list('CHNOS')] = result[list('CHNOS')].astype(int)
     idx = ['type']
     idx.extend(list('CHNOS'))
     result = result[idx]
     return result
-
-pandizeSubstances(*make_cz_ions(fasta))
