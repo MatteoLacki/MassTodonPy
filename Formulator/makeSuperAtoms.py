@@ -79,53 +79,59 @@ def countIsNegative(atomCnt):
     return any( atomCnt[elem]<0 for elem in atomCnt )
 
 
-# def make_cz_ions(fasta):
-bricks = makeBricks()
-def getBrick(aaPart):
-    brick = Counter( bricks[aa][aaPart] )
-    brick.update( modifications[aaNo][aaPart] )
-    if countIsNegative(brick):
-        print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
-    return brick
+def make_cz_ions(fasta):
+    bricks = makeBricks()
+    def getBrick(aaPart):
+        brick = Counter( bricks[aa][aaPart] )
+        brick.update( modifications[aaNo][aaPart] )
+        if countIsNegative(brick):
+            print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
+        return brick
 
-superAtoms = []
-sA = Counter()
-for aaNo, aa in enumerate(fasta):
-    sA.update( getBrick('L') )
-    superAtoms.append( sA.copy() )
-    sA = Counter( getBrick('C') )
-    sA.update( getBrick('R') )
-sA.update({'O':1,'H':1})
-superAtoms.append(sA)
-superAtoms[0].update({'H':1})
+    superAtoms = []
+    sA = Counter()
+    for aaNo, aa in enumerate(fasta):
+        sA.update( getBrick('L') )
+        superAtoms.append( sA.copy() )
+        sA = Counter( getBrick('C') )
+        sA.update( getBrick('R') )
+    sA.update({'O':1,'H':1})
+    superAtoms.append(sA)
+    superAtoms[0].update({'H':1})
 
-precursor = Counter()
-for sA in superAtoms:
-    precursor.update(sA)
+    precursor = Counter()
+    for sA in superAtoms:
+        precursor.update(sA)
+    precursor.update(modDiff)
 
-precursor.update(modDiff)
-pd.DataFrame([precursor])
+    fragments = []
+    N = len(superAtoms)
+    cFrag = Counter({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
+    for i in range(N-1):
+        cFrag.update( superAtoms[i] )
+        cFrag_tmp = Counter(cFrag)
+        cFrag_tmp['type'] = 'c'+str(i)
+        fragments.append(cFrag_tmp)
 
-fragments = []
-N = len(superAtoms)
-cFrag = Counter({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
-for i in range(N-1):
-    cFrag.update( superAtoms[i] )
-    cFrag_tmp = Counter(cFrag)
-    cFrag_tmp['type'] = 'c'+str(i)
-    fragments.append(cFrag_tmp)
+    zFrag = Counter()
+    for i in range(1,N):
+        zFrag.update( superAtoms[N-i] )
+        zFrag_tmp = Counter(zFrag)
+        zFrag_tmp['type'] = 'z'+str(i)
+        fragments.append(zFrag_tmp)
 
-zFrag = Counter()
-for i in range(1,N):
-    zFrag.update( superAtoms[N-i] )
-    zFrag_tmp = Counter(zFrag)
-    zFrag_tmp['type'] = 'z'+str(i)
-    fragments.append(zFrag_tmp)
+    return precursor, fragments
 
-D = pd.DataFrame(fragments).fillna(0)
-D[list('CHNOS')] = D[list('CHNOS')].astype(int)
-idx = ['type']
-idx.extend(list('CHNOS'))
-D[idx]
 
-modDiff
+def pandizeSubstances(precursor, fragments):
+    precursor['type'] = 'precursor'
+    result = fragments
+    result.append(precursor)
+    result = pd.DataFrame(result).fillna(0)
+    result[list('CHNOS')] = result[list('CHNOS')].astype(int)
+    idx = ['type']
+    idx.extend(list('CHNOS'))
+    result = result[idx]
+    return result
+
+pandizeSubstances(*make_cz_ions(fasta))
