@@ -1,6 +1,6 @@
 %load_ext autoreload
 %autoreload
-from Formulator.makeSuperAtoms import cz_fragments, pandizeSubstances
+from Formulator.formulator import makeFragments, pandizeSubstances, fasta2atomCnt
 from Formulator.protonations import protonate
 
 
@@ -8,23 +8,23 @@ ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKES
 substanceP  = 'RPKPQQFFGLM'
 fastas      = [substanceP, ubiquitin, ubiquitin+ubiquitin+ubiquitin]
 
-Q = 10
-list(protonate(Q,'c'))
+modifications = {   ('N',2) :       {'H': -1, 'O': +2, 'N': +3},
+                    ('Calpha',2) :  {'H': -1, 'O': +2, 'N': +3},
+                    ('Calpha',5) :  {'H': -2, 'S': +2, 'N': +2},
+                    ('C',6) :       {'H': -2, 'S': +2, 'N': +2} }
 
+modifications = {   ('N',2) :       {'H': -1, 'O': +2, 'N': +3},
+                    ('Calpha',2) :  {'H': -1, 'O': +2, 'N': +3},
+                    ('Calpha',5) :  {'H': -2, 'S': +2, 'N': +2},
+                    ('C',6) :       {'H': -2, 'S': +2, 'N': +2} }
+# modifications = {}
 
-# modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
-#                     ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
-#                     ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
-#                     ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
-
-# modifications = {   ('N',2) :       lCnt({'H': -1, 'O': +2, 'N': +3}),
-                    # ('Calpha',2) :  lCnt({'H': -1, 'O': +2, 'N': +3}),
-                    # ('Calpha',5) :  lCnt({'H': -2, 'S': +2, 'N': +2}),
-                    # ('C',6) :       lCnt({'H': -2, 'S': +2, 'N': +2}) }
-modifications = {}
-precursor, cFrags, zFrags = cz_fragments(substanceP, modifications)
+precursor, cFrags, zFrags = makeFragments(substanceP, 'cz', modifications)
 pandizeSubstances(precursor, cFrags, zFrags)
 
+
+Q = 10
+list(protonate(Q,'c'))
 
 
 # def sideChainsNo(fragment):

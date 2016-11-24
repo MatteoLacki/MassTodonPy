@@ -4,13 +4,15 @@ from collections import Counter, defaultdict
 from aminoAcid import AminoAcids
 from linearCounter import LinearCounter as lCnt
 
+
 def uniformify(modifications):
     '''Uniformifisez modifications so that they meet the internal nomenclature scheme.'''
     backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
     R = defaultdict(lambda:defaultdict(lCnt))
     for tag, atomCnt in modifications.items():
-        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = atomCnt
+        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = lCnt(atomCnt)
     return R
+
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -18,6 +20,7 @@ def elementContent(G):
     for el in G.vs['elem']:
         atomNo[el] += 1
     return atomNo
+
 
 def makeBricks():
     '''Prepare the base counters of atoms.
@@ -57,6 +60,7 @@ def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
     return any( atomCnt[elem]<0 for elem in atomCnt )
 
+
 def prolineBlockedFragments(fasta):
     '''Checks which c-z fragments cannot occur.'''
     blocked = set('c0')
@@ -66,9 +70,25 @@ def prolineBlockedFragments(fasta):
             blocked.add( 'z' + str( len(fasta)-i ) )
     return blocked
 
-def cz_fragments(fasta, modifications):
-    '''Prepares the precursor and the c and z fragments atom counts.'''
+
+def fasta2atomCnt(fasta, modifications = {}):
+    '''Translates a fasta with modifications into a atom count.'''
     modifications = uniformify(modifications)
+    bricks = makeBricks()
+    def getBrick(aaPart):
+        brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
+        if countIsNegative(brick):
+            print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
+        return brick
+    atomCnt = lCnt()
+    for aaNo, aa in enumerate(fasta):
+        atomCnt += getBrick('L') + getBrick('C') + getBrick('R')
+    atomCnt += lCnt({'O':1,'H':2})
+    return Counter(atomCnt)
+
+
+def make_cz_fragments(fasta, modifications):
+    '''Prepares the precursor and the c and z fragments atom counts.'''
     bricks = makeBricks()
     def getBrick(aaPart):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
@@ -112,6 +132,7 @@ def cz_fragments(fasta, modifications):
 
     return precursor, cFrags, zFrags
 
+
 def pandizeSubstances(precursor, cFrags, zFrags):
     '''Turns results into a pandas data frame.'''
     precursor['type'] = 'precursor'
@@ -124,3 +145,11 @@ def pandizeSubstances(precursor, cFrags, zFrags):
     idx.extend(list('CHNOS'))
     result = result[idx]
     return result
+
+
+def makeFragments(fasta, type, modifications):
+    modifications = uniformify(modifications)
+    fragmentator = {
+        'cz': make_cz_fragments
+    }[type]
+    return fragmentator(fasta, modifications)
