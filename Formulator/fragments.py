@@ -207,6 +207,8 @@ def get_fragments(fastas, fragmentTypes='cz', output=pd.DataFrame):
     return frags
 
 
+fasta
+frags = get_fragments(fasta, 'cz', list)
 
 
 

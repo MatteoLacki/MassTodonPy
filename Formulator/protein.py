@@ -1,5 +1,5 @@
-from aminoAcid import AminoAcid
-from misc import plott
+from aminoAcid import AminoAcids
+# from misc import plott
 import igraph as ig
 from collections import defaultdict, Counter
 
@@ -8,22 +8,52 @@ from collections import defaultdict, Counter
 # def Protein(object):
 # 	def __init__(fasta, bonds=[])
 
+substanceP = 'RPKPQQFFGLM'
+fasta = substanceP
+
+# def aminosIter(fasta):
+# 	"""Iterate over graphs of amino acids present in the fasta sequence."""
+# 	aas 	= ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
+# 	AAS 	= {}
+# 	for aa in aas:
+# 		AAS[aa] = AminoAcid(aa)
+# 	for i,aa in enumerate(fasta):
+# 		if i in (0, len(fasta)-1):
+# 			A = AminoAcid(aa)
+# 			if i == 0:
+# 				A.add_H()
+# 			if i == len(fasta)-1:
+# 				A.add_OH()
+# 		else:
+# 			A = AAS[aa]
+# 		yield ( A.Nalpha(), A.Ccarbo(), A.getGraph() )
+
 def aminosIter(fasta):
 	"""Iterate over graphs of amino acids present in the fasta sequence."""
 	aas 	= ('A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V')
-	AAS 	= {}
-	for aa in aas:
-		AAS[aa] = AminoAcid(aa)
+	AAS = AminoAcids().get()
 	for i,aa in enumerate(fasta):
-		if i in (0, len(fasta)-1):
-			A = AminoAcid(aa)
-			if i == 0:
-				A.add_H()
-			if i == len(fasta)-1:
-				A.add_OH()
-		else:
-			A = AAS[aa]
-		yield ( A.Nalpha(), A.Ccarbo(), A.getGraph() )
+		G = AAS[aa]['graph'].copy()
+		N = AAS[aa]['NalphaIDX']
+		C = AAS[aa]['CcarboIDX']
+		if i == 0:
+			A.add_H()
+		if i == len(fasta)-1:
+			A.add_OH()
+		yield ( N,C,G )
+
+# def aminosIter(fasta):
+
+
+AAS['A']['NalphaIDX']
+G = AAS['A']['graph'].copy()
+
+
+AAS['A']['graph']
+for aa in fasta
+
+
+
 
 # a = aminosIter('AAC')
 # x,y,G = next(a)

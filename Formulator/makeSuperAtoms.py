@@ -1,16 +1,42 @@
 import igraph as ig
-from collections import Counter
+import pandas as pd
+from collections import Counter, defaultdict
 from aminoAcid import AminoAcids
 try:
   import cPickle as pickle
 except:
   import pickle
 
+substanceP = 'RPKPQQFFGLM'
+ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+testFasta = 'IKKLMNNMMM'
 
-fasta = ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
-modifications = {   ('N', 10) :     Counter({'H': -1, 'O': +2, 'N': +3}),
-                    ('Calpha',52) : Counter({'H': -2, 'S': +2, 'N': +2}),
-                    ('C',69) :      Counter({'H': -2, 'S': +2, 'N': +2}) }
+# fasta = substanceP
+fasta = testFasta
+
+backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
+# modifications = {   ('N',2) :       Counter({'H': -1, 'O': +2, 'N': +3}),
+#                     ('Calpha',2) :  Counter({'H': -1, 'O': +2, 'N': +3}),
+#                     ('Calpha',5) :  Counter({'H': -2, 'S': +2, 'N': +2}),
+#                     ('C',6) :       Counter({'H': -2, 'S': +2, 'N': +2}) }
+
+modifications = {   ('N',2) :       Counter({'H': -1, 'O': +2, 'N': +3}),
+                    ('Calpha',2) :  Counter({'H': -1, 'O': +2, 'N': +3}),
+                    ('Calpha',5) :  Counter({'H': -2, 'S': +2, 'N': +2}),
+                    ('C',6) :       Counter({'H': -2, 'S': +2, 'N': +2}) }
+
+# modifications = {}
+modDiff = Counter()
+for mod in modifications:
+    modDiff.update(modifications[mod])
+
+def uniformifyModifications(modifications):
+    R = defaultdict(lambda:defaultdict(Counter))
+    for tag in modifications:
+        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = modifications[tag]
+    return R
+
+modifications = uniformifyModifications(modifications)
 
 def elementContent(G):
     '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
@@ -49,29 +75,57 @@ def makeBricks():
         bricks[aa] = brick
     return bricks
 
-bricks = makeBricks()
-
-
+def countIsNegative(atomCnt):
+    return any( atomCnt[elem]<0 for elem in atomCnt )
 
 
 # def make_cz_ions(fasta):
+bricks = makeBricks()
+def getBrick(aaPart):
+    brick = Counter( bricks[aa][aaPart] )
+    brick.update( modifications[aaNo][aaPart] )
+    if countIsNegative(brick):
+        print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
+    return brick
+
 superAtoms = []
 sA = Counter()
 for aaNo, aa in enumerate(fasta):
-    sA += bricks[aa]['L']+bricks[aa]['C']
-    superAtoms.append(sA)
-    sA = Counter(bricks[aa]['R'])
-sA += Counter({'O':1,'H':1})
+    sA.update( getBrick('L') )
+    superAtoms.append( sA.copy() )
+    sA = Counter( getBrick('C') )
+    sA.update( getBrick('R') )
+sA.update({'O':1,'H':1})
 superAtoms.append(sA)
-superAtoms[0] += Counter({'H':1})
+superAtoms[0].update({'H':1})
 
+precursor = Counter()
+for sA in superAtoms:
+    precursor.update(sA)
 
+precursor.update(modDiff)
+pd.DataFrame([precursor])
 
+fragments = []
+N = len(superAtoms)
+cFrag = Counter({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
+for i in range(N-1):
+    cFrag.update( superAtoms[i] )
+    cFrag_tmp = Counter(cFrag)
+    cFrag_tmp['type'] = 'c'+str(i)
+    fragments.append(cFrag_tmp)
 
-modifications
+zFrag = Counter()
+for i in range(1,N):
+    zFrag.update( superAtoms[N-i] )
+    zFrag_tmp = Counter(zFrag)
+    zFrag_tmp['type'] = 'z'+str(i)
+    fragments.append(zFrag_tmp)
 
-G.delete_edges
-G.es['Roep']
-G.delete_edges(Roep_ne=None)
+D = pd.DataFrame(fragments).fillna(0)
+D[list('CHNOS')] = D[list('CHNOS')].astype(int)
+idx = ['type']
+idx.extend(list('CHNOS'))
+D[idx]
 
-G.decompose()
+modDiff
