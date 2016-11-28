@@ -3,3 +3,5 @@
 vePy2
 *.p
 __pycache__
+*.ipynb
+*.pdf

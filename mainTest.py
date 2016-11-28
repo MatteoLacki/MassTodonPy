@@ -5,6 +5,7 @@ from Formulator.protonations import protonate
 
 
 ubiquitin   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+
 substanceP  = 'RPKPQQFFGLM'
 fastas      = [substanceP, ubiquitin, ubiquitin+ubiquitin+ubiquitin]
 
@@ -13,18 +14,18 @@ modifications = {   ('N',2) :       {'H': -1, 'O': +2, 'N': +3},
                     ('Calpha',5) :  {'H': -2, 'S': +2, 'N': +2},
                     ('C',6) :       {'H': -2, 'S': +2, 'N': +2} }
 
-modifications = {   ('N',2) :       {'H': -1, 'O': +2, 'N': +3},
-                    ('Calpha',2) :  {'H': -1, 'O': +2, 'N': +3},
-                    ('Calpha',5) :  {'H': -2, 'S': +2, 'N': +2},
-                    ('C',6) :       {'H': -2, 'S': +2, 'N': +2} }
+# modifications = {   ('N',2) :       {'H': -1, 'O': +2, 'N': +3},
+#                     ('Calpha',2) :  {'H': -1, 'O': +2, 'N': +3},
+#                     ('Calpha',5) :  {'H': -2, 'S': +2, 'N': +2},
+#                     ('C',6) :       {'H': -2, 'S': +2, 'N': +2} }
 # modifications = {}
 
-precursor, cFrags, zFrags = makeFragments(substanceP, 'cz', modifications)
+precursor, cFrags, zFrags = makeFragments(ubiquitin, 'cz', modifications)
 pandizeSubstances(precursor, cFrags, zFrags)
 
 
 Q = 10
-list(protonate(Q,'c'))
+list(protonate(Q,'precursor'))
 
 
 # def sideChainsNo(fragment):

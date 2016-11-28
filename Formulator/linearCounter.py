@@ -24,14 +24,14 @@ class LinearCounter(Counter):
         return result
 
     def __radd__(self, other):
+        '''Add counts from two LinearCounters.'''
         if other == 0:
             return self
         else:
             return self.__add__(other)
 
     def __iadd__(self, other):
-        '''Add counts from two LinearCounters.
-        '''
+        '''Add counts from two LinearCounters.'''
         if not isinstance(other, LinearCounter):
             return NotImplemented
         for elem in self.keys():
@@ -42,7 +42,7 @@ class LinearCounter(Counter):
         return self
 
     def __isub__(self, other):
-        '''Add counts from two LinearCounters.
+        '''Substracts counts from two LinearCounters.
         '''
         if not isinstance(other, LinearCounter):
             return NotImplemented
@@ -67,13 +67,9 @@ class LinearCounter(Counter):
             result[elem] = count*scalar
         return result
 
-x = LinearCounter({'H':10, 'O':5})
-y = LinearCounter({'H':10.2, 'O':5.1})
-z = LinearCounter({'H':10.3, 'O':5.112, 'M':24232.232})
-#
-#
+# x = LinearCounter({'H':10, 'O':5})
+# y = LinearCounter({'H':10.2, 'O':5.1})
+# z = LinearCounter({'H':10.3, 'O':5.112, 'M':24232.232})
 # x += y
-# x
 # x -= z
-# x
 # sum([x,y,z])
