@@ -1,65 +1,10 @@
-import igraph as ig
 import pandas as pd
-from collections import Counter, defaultdict
-from aminoAcid import AminoAcids
 from linearCounter import LinearCounter as lCnt
 from itertools import chain
-
-def standardize(modifications):
-    '''Standardize modifications so that they meet the internal nomenclature scheme.'''
-    backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
-    R = defaultdict(lambda:defaultdict(lCnt))
-    for tag, atomCnt in modifications.items():
-        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = lCnt(atomCnt)
-    return R
-
-
-def elementContent(G):
-    '''Extracts numbes of atoms of elements that make up the graph of a molecule.'''
-    atomNo = lCnt()
-    for el in G.vs['elem']:
-        atomNo[el] += 1
-    return atomNo
-
-
-def makeBricks():
-    '''Prepare the base counters of atoms.
-
-    These will be later collected into superatoms that finally make up the observed fragments.'''
-    AAS = AminoAcids().get()
-    AAS = [ (aa, AAS[aa]['graph'],AAS[aa]['NalphaIDX'],AAS[aa]['CcarboIDX']) for aa in AAS ]
-    bricks = {}
-    for aa, G, N, C in AAS:
-        N = G.vs[N]['name']
-        C = G.vs[C]['name']
-        G.delete_edges(Roep_ne=None)
-        G = G.decompose()
-        brick = {}
-        if len(G) == 2:
-            assert aa=='P'
-            brick['C'] = lCnt()
-        while len(G) > 0:
-            g = G.pop()
-            isN = N in g.vs['name']
-            isC = C in g.vs['name']
-            if isN or isC:
-                if isN:
-                    tag = 'L'
-                elif isC:
-                    tag = 'R'
-                else:
-                    raise ValueError
-            else:
-                tag = 'C'
-            brick[tag] = elementContent(g)
-        bricks[aa] = brick
-    return bricks
-
-
-def countIsNegative(atomCnt):
-    '''Check if any element of a dictionary is a negative number.'''
-    return any( atomCnt[elem]<0 for elem in atomCnt )
-
+from isotopeCalculator import IsotopeCalculations
+from protonations import protonate
+from bricks import makeBricks
+from misc import standardize, countIsNegative
 
 def prolineBlockedFragments(fasta):
     '''Checks which c-z fragments cannot occur.'''
@@ -69,23 +14,6 @@ def prolineBlockedFragments(fasta):
             blocked.add( 'c' + str(i) )
             blocked.add( 'z' + str( len(fasta)-i ) )
     return blocked
-
-
-def fasta2atomCnt(fasta, modifications = {}):
-    '''Translates a fasta with modifications into a atom count.'''
-    modifications = uniformify(modifications)
-    bricks = makeBricks()
-    def getBrick(aaPart):
-        brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
-        if countIsNegative(brick):
-            print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
-        return brick
-    atomCnt = lCnt()
-    for aaNo, aa in enumerate(fasta):
-        atomCnt += getBrick('L') + getBrick('C') + getBrick('R')
-    atomCnt += lCnt({'O':1,'H':2})
-    return Counter(atomCnt)
-
 
 def make_cz_fragments(fasta, modifications):
     '''Prepares the precursor and the c and z fragments atom counts.'''
@@ -154,3 +82,19 @@ def makeFragments(fasta, type, modifications):
         'cz': make_cz_fragments
     }[type]
     return fragmentator(fasta, modifications)
+
+
+def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
+    '''Generate protonated molecules following a given fragmentation scheme.
+    '''
+    IC = IsotopeCalculations()
+    precursor, cFrags, zFrags = makeFragments(fasta, fragmentationScheme, modifications)
+    for mol in chain(precursor(),cFrags(),zFrags()):
+        for q,g in protonate( Q, mol['type'] ):
+            if q * aaPerOneCharge < mol['sideChainsNo']:
+                atomCnt = dict(mol['atomCnt'])
+                atomCnt['H'] += q + g
+                monoisotopicMass= IC.getMonoisotopicMass(mol['atomCnt'])/float(q)
+                massMean = IC.getMassMean(mol['atomCnt'])/float(q)
+                massVar  = IC.getMassVar(mol['atomCnt'])/float(q**2)
+                yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )
