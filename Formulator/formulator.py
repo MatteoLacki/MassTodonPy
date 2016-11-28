@@ -3,10 +3,10 @@ import pandas as pd
 from collections import Counter, defaultdict
 from aminoAcid import AminoAcids
 from linearCounter import LinearCounter as lCnt
+from itertools import chain
 
-
-def uniformify(modifications):
-    '''Uniformifisez modifications so that they meet the internal nomenclature scheme.'''
+def standardize(modifications):
+    '''Standardize modifications so that they meet the internal nomenclature scheme.'''
     backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
     R = defaultdict(lambda:defaultdict(lCnt))
     for tag, atomCnt in modifications.items():
@@ -105,50 +105,51 @@ def make_cz_fragments(fasta, modifications):
     sA += lCnt({'O':1,'H':1})
     superAtoms.append(sA)
     superAtoms[0] += lCnt({'H':1})
+    N = len(superAtoms)
 
-    precursor = sum(superAtoms)
+    def getPrecursor():
+        precursor = sum(superAtoms)
+        yield {'moleculeType': 'precursor', 'atomCnt': dict(precursor), 'sideChainsNo' : len(fasta), 'type':'p' }
+
     blockedFragments = prolineBlockedFragments(fasta)
 
-    cFrags = []
-    N = len(superAtoms)
-    cFrag = lCnt({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
-    for i in range(N-1):
-        cFrag += superAtoms[i]
-        cFrag_tmp = lCnt(cFrag)
-        fragType = 'c'+str(i)
-        if not fragType in blockedFragments:
-            cFrag_tmp['type'] = fragType
-            cFrags.append(cFrag_tmp)
+    def getCfrags():
+        cFrag = lCnt({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
+        for i in range(N-1):
+            cFrag += superAtoms[i]
+            cFrag_tmp = lCnt(cFrag)
+            fragType = 'c'+str(i)
+            if not fragType in blockedFragments and not i == 0:
+                yield {'moleculeType': fragType, 'atomCnt': dict(cFrag_tmp), 'sideChainsNo' : i, 'type':'c' }
 
-    zFrags= []
-    zFrag = lCnt()
-    for i in range(1,N):
-        zFrag += superAtoms[N-i]
-        zFrag_tmp = lCnt(zFrag)
-        fragType = 'z'+str(i)
-        if not fragType in blockedFragments:
-            zFrag_tmp['type'] = fragType
-            zFrags.append(zFrag_tmp)
+    def getZfrags():
+        zFrag = lCnt()
+        for i in range(1,N):
+            zFrag += superAtoms[N-i]
+            zFrag_tmp = lCnt(zFrag)
+            fragType = 'z'+str(i)
+            if not fragType in blockedFragments:
+                yield {'moleculeType': fragType, 'atomCnt': dict(zFrag_tmp), 'sideChainsNo' : i, 'type':'z' }
 
-    return precursor, cFrags, zFrags
+    return getPrecursor, getCfrags, getZfrags
 
 
 def pandizeSubstances(precursor, cFrags, zFrags):
     '''Turns results into a pandas data frame.'''
-    precursor['type'] = 'precursor'
-    result = [precursor]
-    result.extend(cFrags)
-    result.extend(zFrags)
-    result = pd.DataFrame(result).fillna(0)
+    def combineMolecules():
+        for x in chain(precursor(), cFrags(), zFrags()):
+            x['atomCnt']['moleculeType'] = x['moleculeType']
+            yield x['atomCnt']
+    result = pd.DataFrame(combineMolecules()).fillna(0)
     result[list('CHNOS')] = result[list('CHNOS')].astype(int)
-    idx = ['type']
+    idx = ['moleculeType']
     idx.extend(list('CHNOS'))
     result = result[idx]
     return result
 
 
 def makeFragments(fasta, type, modifications):
-    modifications = uniformify(modifications)
+    modifications = standardize(modifications)
     fragmentator = {
         'cz': make_cz_fragments
     }[type]
