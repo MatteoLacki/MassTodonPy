@@ -1,0 +1,7 @@
+*.pyc
+.DS_Store
+vePy2
+*.p
+__pycache__
+*.ipynb
+*.pdf

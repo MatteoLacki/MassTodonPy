@@ -6,7 +6,7 @@ except:
 class IsotopeCalculations:
     def __init__(self, isoMasses=None, isoProbs=None):
         if isoMasses==None or isoProbs==None:
-            self.isoMasses, self.isoProbs = pickle.load(open('../data/isotopes.txt', 'rb'))
+            self.isoMasses, self.isoProbs = pickle.load(open('data/isotopes.txt', 'rb'))
 
         self.elementsMassMean = dict(
             (el, sum( pr*m for pr, m in zip(self.isoProbs[el], self.isoMasses[el]) ) )

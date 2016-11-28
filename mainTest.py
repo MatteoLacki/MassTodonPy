@@ -17,44 +17,53 @@ Q = 3
 #                     ('Calpha',5) :  {'H': -2, 'S': +2, 'N': +2},
 #                     ('C',6) :       {'H': -2, 'S': +2, 'N': +2} }
 modifications = {}
-
-precursor, cFrags, zFrags = makeFragments(fasta, 'cz', modifications)
 # pandizeSubstances(precursor, cFrags, zFrags)
 
-
-
-# def getMonoisotopicMass(mol):
-
-mol = list(precursor())[0]
-
-
-
-
-IC = IsotopeCalculations()
-IC.getMonoisotopicMass(mol['atomCnt'])
-IC.getMassMean(mol['atomCnt'])
-IC.getMassVar(mol['atomCnt'])
-
-for mol in chain(precursor(),cFrags(),zFrags()):
-    for q,g in protonate(Q,mol['type']):
-        print q,g,mol
-
-
-i = IsoSpecPy.IsoSpec.IsoFromFormula("H2O1", 0.9)
-
-defProtonizeMolecules
-
-def C():
-    for c in cFrags():
-        for q,c in protonate(Q,'c'):
-            print c
-            c['q'] = q
-            c['g'] = g
-            yield c
-
-
-list(protonate(Q,'precursor'))
+def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
+    '''Generate protonated molecules following a given fragmentation scheme.
+    '''
+    IC = IsotopeCalculations()
+    precursor, cFrags, zFrags = makeFragments(fasta, fragmentationScheme, modifications)
+    for mol in chain(precursor(),cFrags(),zFrags()):
+        for q,g in protonate( Q, mol['type'] ):
+            if q * aaPerOneCharge < mol['sideChainsNo']:
+                atomCnt = dict(mol['atomCnt'])
+                atomCnt['H'] += q + g
+                monoisotopicMass= IC.getMonoisotopicMass(mol['atomCnt'])/float(q)
+                massMean = IC.getMassMean(mol['atomCnt'])/float(q)
+                massVar  = IC.getMassVar(mol['atomCnt'])/float(q**2)
+                yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )
 
 
 
-print i.getConfs()
+from numpy.random import multinomial
+molecules = list( getMolecules(fasta, 3, 'cz', modifications) )
+
+ionsNo = 100000
+f_charges = [ float(mol[1]**2) for mol in molecules ]
+total_f_charges = sum(f_charges)
+probs  = [ q/total_f_charges for q in charges ]
+
+moleculeNo = multinomial( ionsNo, probs )
+
+def atomCnt2string(atomCnt):
+    return "".join( el+str(cnt) for el, cnt in atomCnt.items() )
+
+atomCnt = molecules[0][3]
+jointProb =.999
+N = moleculeNo[0]
+
+def simulateIsotopicEnvelope(isotopologuesN, atomCnt, jointProb=.999):
+    atomCnt_str = atomCnt2string(atomCnt)
+    envelope = IsoSpecPy.IsoSpec.IsoFromFormula( atomCnt_str, jointProb )
+    masses = []
+    probs = []
+    for x in i.getConfs():
+        masses.append(x[0])
+        probs.append(exp(x[1]))
+    counts = multinomial( isotopologuesN, probs )
+    return list(zip(masses, counts))
+
+
+
+simulateIsotopicEnvelope(N, atomCnt)
