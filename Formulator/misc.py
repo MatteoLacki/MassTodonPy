@@ -12,3 +12,6 @@ def standardize(modifications):
 def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
     return any( atomCnt[elem]<0 for elem in atomCnt )
+
+def atomCnt2string(atomCnt):
+    return "".join( el+str(cnt) for el, cnt in atomCnt.items() )

@@ -76,7 +76,9 @@ def pandizeSubstances(precursor, cFrags, zFrags):
     return result
 
 
-def makeFragments(fasta, type, modifications):
+def makeFragments(fasta, type='cz', modifications={}):
+    '''Generate all possible fragments given a Roepstorf Scheme.
+    '''
     modifications = standardize(modifications)
     fragmentator = {
         'cz': make_cz_fragments

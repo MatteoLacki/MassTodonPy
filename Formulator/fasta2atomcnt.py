@@ -1,5 +1,7 @@
 from linearCounter import LinearCounter as lCnt
 from aminoAcid import AminoAcids
+from misc import standardize, countIsNegative
+from bricks import makeBricks
 
 def fasta2atomCnt(fasta, modifications = {}):
     '''Translates a fasta with modifications into a atom count.'''
