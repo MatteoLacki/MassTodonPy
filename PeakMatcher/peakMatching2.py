@@ -1,7 +1,7 @@
 ##### The (ever growing) list of dependencies
 from 	data.proteins import deconvolutionProblem, substanceP
 import 	intervaltree as it
-# from exampleData import theory, tol, minExpSupp, empiria, savePath
+# from exampleData import theory, tol, minExpSupp, empiria, savePath§
 from 	collections import Counter, defaultdict
 import 	igraph as ig
 from 	scipy.optimize import linprog

@@ -96,7 +96,7 @@ def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneC
             if q * aaPerOneCharge < mol['sideChainsNo']:
                 atomCnt = dict(mol['atomCnt'])
                 atomCnt['H'] += q + g
-                monoisotopicMass= IC.getMonoisotopicMass(mol['atomCnt'])/float(q)
-                massMean = IC.getMassMean(mol['atomCnt'])/float(q)
-                massVar  = IC.getMassVar(mol['atomCnt'])/float(q**2)
+                monoisotopicMass= IC.getMonoisotopicMass(atomCnt)/float(q)
+                massMean = IC.getMassMean(atomCnt)/float(q)
+                massVar  = IC.getMassVar(atomCnt)/float(q**2)
                 yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )
