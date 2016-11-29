@@ -1,18 +1,21 @@
-from formulaGenerator.fragments import makeFragments, ubiquitin, roepstorffy, fasta2atomCount, protonatedFragments
+%load_ext autoreload
+%autoreload
+from Formulator.formulator import genMolecules, makeFragments, pandizeSubstances
+from Formulator.fasta2atomcnt import fasta2atomCnt
+from InSilico.spectrumGenerator import insilicoSpectrum, genIsotopicEnvelope, flatten, makeNoise
+from math import sqrt
 
-	# Getting atomic composition of a fasta.
-ubi_atomCnt = fasta2atomCount(ubiquitin)
-print(ubi_atomCnt)		
+fasta = substanceP  = 'RPKPQQFFGLM'
+Q = 3; modifications = {}; ionsNo = 1000000; P = .999
+molecules = list(genMolecules(fasta, 3, 'cz',modifications))
+IS = insilicoSpectrum(fasta, Q, ionsNo, P)
+sample, probs = IS.rvs(ionsNo)
+MassSpectrum = [ (m, float(i))for m, i in flatten(sample)]
+Noise = makeNoise(MassSpectrum, percentPeaks = .2)
+MassSpectrum.extend(Noise)
 
+from operator import itemgetter
+MassSpectrum.sort(key=itemgetter(0))
 
-	# Making pure fragments:
-# res = makeFragments('AAAPPP')
-# res = makeFragments('A', fragmentTypes=['ax','cz'])
-# res = makeFragments('AAAA', fragmentTypes=['ax','cz'], innerFragments=True)
-res = makeFragments(ubiquitin, fragmentTypes=['cz'])
-len(res) # Don't know what to kill? Kill runtime.
-
-
-	
-	# Fragments with protonation numbers.
-res = list( protonatedFragments( ubiquitin, 20) )
+import 	igraph as ig
+import 	intervaltree as it

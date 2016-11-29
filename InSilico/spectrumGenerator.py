@@ -1,11 +1,13 @@
 from IsoSpecPy import IsoSpecPy
 from Formulator.isotopeCalculator import IsotopeCalculations
 from numpy.random import multinomial
-from math import exp
+from math import exp, floor
 from Formulator.formulator import genMolecules
 from Formulator.misc import atomCnt2string
 from itertools import chain
 import scipy.stats as ss
+from operator import itemgetter
+
 
 def genIsotopicEnvelope(isotopologuesNo, atomCnt, jointProb=.999):
     atomCnt_str = atomCnt2string(atomCnt)
@@ -32,9 +34,23 @@ class insilicoSpectrum:
         total_f_charges = sum(f_charges)
         probs = [ q/total_f_charges for q in f_charges ]
         moleculeCounts = multinomial( ionsNo, probs )
-        getMols = ( genIsotopicEnvelope(isoCnt, mol[3], self.P)
-            for isoCnt, mol in zip(moleculeCounts, self.molecules) )
-        result = []
-        for m,n in chain(*getMols):
-            result.extend(ss.norm.rvs(loc=m, size=n) )
-        return result
+        return [
+            list(genIsotopicEnvelope(isoCnt, mol[3], self.P))
+            for isoCnt, mol in zip(moleculeCounts, self.molecules)
+        ], probs
+
+def flatten(massSpectra):
+    result = []
+    for sp in massSpectra:
+        result.extend(sp)
+    return result
+
+def makeNoise(MassSpectrum, percentPeaks = .2):
+    '''Produces noise peaks using a strategy that is totally atheoretic.'''
+    M = max(MassSpectrum, key=itemgetter(0))[0]
+    Imean = sum(i for m,i in MassSpectrum)/len(MassSpectrum)
+    masses = ss.uniform.rvs(
+        loc = .0, scale = 1.1*M,
+        size=floor(len(MassSpectrum)*percentPeaks) )
+    intensities = ss.poisson.rvs(mu=Imean, size=M )
+    return list(zip(masses, intensities))

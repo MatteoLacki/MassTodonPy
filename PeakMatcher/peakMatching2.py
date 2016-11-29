@@ -51,13 +51,13 @@ def genGraph(EXP, TH, tol, minExpSupp, realValuesTmp):
 			atheoretic['experimentalPeaks'].append(info)
 	BFG = ig.Graph.DictList(vertices=V, edges=E)
 	# This can be done using the BFS iterator. Simplify later..
-	for f in BFG.vs(type='F'): 								# Establishing experimental support for individual compounds.	
+	for f in BFG.vs(type='F'): 								# Establishing experimental support for individual compounds.
 		for peakNo in BFG.neighbors(f): 					# Just the envelopes here. Root not yet added
 			if BFG.neighborhood_size( peakNo, order=1 ) > 2: 	# Ascertain that there are some experimental groups G around the P peak. Not include P and F (order at most 1)
-				f['potentialSupport'] += BFG.vs[peakNo]['intensity'] 	
+				f['potentialSupport'] += BFG.vs[peakNo]['intensity']
 		if f['potentialSupport'] < minExpSupp:
 			for peakNo in BFG.neighbors(f):
-		 		BFG.delete_edges( 	BFG.get_eid(peakNo, nodeNo) for nodeNo in BFG.neighbors( peakNo )  
+		 		BFG.delete_edges( 	BFG.get_eid(peakNo, nodeNo) for nodeNo in BFG.neighbors( peakNo )
 		 							if nodeNo != f.index ) # Severe edges between peaks and experimental peaks, not between peaks and family nodes
 	nodesToDelete = [] 						# Deletion of the G nodes without any envelope peaks around left
 	for g in BFG.vs(type='G'):
@@ -75,7 +75,7 @@ def genGraph(EXP, TH, tol, minExpSupp, realValuesTmp):
 	return (realValues, subproblems)
 
 def notRoot(tup, RootNo):
-	a, b = tup 
+	a, b = tup
 	if a == RootNo:
 		return b
 	else:
@@ -97,10 +97,10 @@ def anal(subG):
 				node = subG.vs[nodeNo]
 				isFamilyNode = node['type'] == 'F'
 				if isFamilyNode: 								# edge between either:
-					edge = subG.es[ subG.get_eid(nodeNo, RootNo) ] 		# the root and a family 
+					edge = subG.es[ subG.get_eid(nodeNo, RootNo) ] 		# the root and a family
 				else:													# or
 					edge = subG.es[ subG.get_eid( P.index, nodeNo) ]		# an experimental peak and an envelope peak
-				if edge['varNo'] == None: 			
+				if edge['varNo'] == None:
 					edge['varNo'] 	= varNoMax 	# Assign number to the flow variable in the optimisation problem
 					edge['varType'] = 'flow' 	# Tag as flow
 					varNoMax += 1
@@ -134,9 +134,9 @@ def anal(subG):
 	for i in xrange(I):
 		Aineq.append(zeros[:])
 	for i,j,v in AineqSparse:
-		Aineq[i][j] = v 
+		Aineq[i][j] = v
 	c0Sparse = [ (e['varNo'], 1.) for e in subG.es( varType = 'flow' ) ]
-	c0 = [0.0]*varNoMax 
+	c0 = [0.0]*varNoMax
 	for i,v in c0Sparse:
 		c0[i]=-v 		# minus for the optimisation is minimising and we want max flow.
 	c1 = c0[:]
@@ -149,7 +149,7 @@ def analyze(massNoise=0.01):
 	tol 		= .05
 	minExpSupp 	= .6
 	chosenValues = [[10000, 20000, 15000],[5000, 23000, 6000]]
-	realValuesTmp = [ v for cnt in chosenValues for v in cnt] 
+	realValuesTmp = [ v for cnt in chosenValues for v in cnt]
 	EXP, TH 	= deconvolutionProblem( substanceP, chosenValues[0], massNoise=massNoise, digit=2)
 	EXP2, TH2 	= deconvolutionProblem( substanceP+'A', chosenValues[1], massNoise=massNoise, digit=2)
 	EXP.extend(EXP2)
