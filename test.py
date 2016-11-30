@@ -33,47 +33,74 @@ G = nx.Graph()
 tolIntervals= it.IntervalTree()
 molecules 	= genMolecules(fasta, 3, 'cz',modifications)
 
+# Nodes of molecules.
 for i, molInfo in enumerate(molecules):
 	molType, q, g, atomCnt, massMono, massMean, massStDev = molInfo
-	tag = ('molecule', str(i))
+	tag = ('molecule',i)
 	tolIntervals[ massMean-massStDev/sqrt(chebyshevEps) : massMean+massStDev/sqrt(chebyshevEps) ] = tag
 	G.add_node( tag, q=q, g=g, atomCnt=atomCnt, massMono=massMono, massMean=massMean, massStDev=massStDev )
 
+# Nodes of experimental peaks
+# Edges beteen experimental peaks and molecules
 for i, (mass,intensity) in enumerate(MassSpectrum):
-	tag = ('experimental',str(i))
-	G.add_node(tag)
+	experimentalPeak = ('experimental',i)
+	G.add_node( experimentalPeak, mz=mass, I=intensity)
 	for tolData in tolIntervals[mass]:
-		moleculeTag = tolData.data
-		G.add_edge(tag, moleculeTag, filtering=0)
+		molecule = tolData.data
+		G.add_edge( experimentalPeak, molecule, experiment2molecule=True)
 
 IC = IsotopeCalculations()
-
 tolIntervals 	= it.IntervalTree()
 isotopologueCnt = 0
+
+# Isotopologue nodes added
 for node, data in G.nodes_iter(data=True):
 	nodeType, nodeNo = node
 	if nodeType=='molecule' and G.neighbors(node) > 0:
 		for mz, prob in IC.getIsotopicEnvelope(data['atomCnt'], jointProb, precisionDigits):
-			tag = ('isotopologue',isotopologueCnt)
-			G.add_node(tag, mz=mz, prob=prob)
-			G.add_edge(tag, node, filtering=1)
+			isotopologue = ('isotopologue',isotopologueCnt)
+			G.add_node( isotopologue, mz=mz, prob=prob)
+			G.add_edge( isotopologue, node)
 			isotopologueCnt += 1
-			tolIntervals[ mz-precisionMass : mz+precisionMass ] = tag
+			tolIntervals[ mz-precisionMass : mz+precisionMass ] = isotopologue
 
+# Edges between isotopologue nodes and experimental peaks added
 for node, data in G.nodes_iter(data=True):
 	nodeType, nodeNo = node
-	if nodeType=='experimental' and G.neighbors(node) > 0:
-		for tolData in tolIntervals[mass]:
+	if nodeType=='experimental':
+		for tolData in tolIntervals[data['mz']]:
 			isotopologueTag = tolData.data
-			G.add_edge(node, isotopologueTag, filtering=1)
+			G.add_edge(node, isotopologueTag, experiment2isotopologue=True)
 
-G.edges(data=True)
+# Removing edges between experimental peaks and molecules
+G.remove_edges_from( (v1, v2) for v1, v2, d in G.edges_iter(data=True) if 'experiment2molecule' in d )
 
+# Form groups of experimental peaks
+Gcnt = 0
+experimentalGroups = dict()
+for experimentalPeak, experimentalPeakData in G.nodes_iter(data=True):
+	nodeType, experimentalPeakNo = experimentalPeak
+	if nodeType=='experimental':
+		nbrs = frozenset(G.neighbors(experimentalPeak))
+		if len(nbrs)>0:
+			if not nbrs in experimentalGroups:
+				experimentalGroup = ('experimentalGroup', Gcnt)
+				experimentalGroups[nbrs]= experimentalGroup
+				Gcnt += 1
+				G.add_node( experimentalGroup, I=0.0 )
+			experimentalGroup = experimentalGroups[nbrs]
+			G.node[experimentalGroup]['I'] += experimentalPeakData['I']
+			G.add_edge( experimentalPeak, experimentalGroup )
 
-G.edges()
+# Remove edges between experimental peaks and isotopologues: bridging through groups of experimental peaks only
+G.remove_edges_from( (v1, v2) for v1, v2, d in G.edges_iter(data=True) if 'experiment2isotopologue' in d )
 
-len(G.edges())
+len(list(nx.connected_component_subgraphs(G)))
 
+len(G.nodes(data=True))
+len(G.edges(data=True))
+
+experimentalGroups
 
 
 import matplotlib.pyplot as plt
