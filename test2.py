@@ -31,17 +31,30 @@ PP = peakPicker(    molecules_iter,
                     jointProb,
                     precisionDigits )
 
-# PP.add_M_n_E()
-# PP.add_I()
-# PP.add_eG()
-
 G = PP.pickPeaks()
 deconvProbs = deconvIter(G)
 solutions   = solutions_iter(deconvProbs)
+alphaType   = frozenset('MR')
+alphas = []
+explainedRatios = []
 
-sols = list(solutions)
+successful      = []
+not_successful  = []
+for sol in solutions:
+    res, g, coord2edges, linprogInput = sol
+    if res.success:
+        successful.append(sol)
+        explainedRatios.append( -res.fun/( res.slack.sum()-res.fun ) )
+        for k, (n1, n2) in enumerate(coord2edges):
+            if frozenset((n1[0], n2[0])) == alphaType:
+                if n1[0]=='M':
+                    M = g.node[n1]
+                else:
+                    M = G.node[n2]
+                M['est_intensity'] = res.x[k]
+                alphas.append(M)
+    else:
+        not_successful.append(sol)
 
-sols[0][0]
-
-type(sols[0])
-sols[0][1]
+len(alphas)
+explainedRatios

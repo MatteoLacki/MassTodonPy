@@ -18,7 +18,7 @@ def get_linprog_input(g):
 	xEdge 		= frozenset(('I','eG'))
 	for (t1,n1), (t2,n2) in g.edges_iter():
 		types = frozenset((t1, t2))
-		if types==alphaEdge or types==xEdge:
+		if types == alphaEdge or types == xEdge:
 			coord2edges.append(((t1,n1), (t2,n2)))
 			edges2coord[ frozenset(((t1,n1), (t2,n2))) ] = varNo
 			if types==alphaEdge:
@@ -56,11 +56,15 @@ def get_linprog_input(g):
 	linprogInput = {'c':c, 'A_eq':A_eq, 'b_eq':b_eq, 'A_ub':A_ub, 'b_ub':b_ub}
 	return g, coord2edges, linprogInput
 
+
 def solveProblem(g):
+	'''Apply the simplex algorithm to solve the modified max flow problem.'''
 	g, coord2edges, linprogInput = get_linprog_input(g)
 	res = linprog(**linprogInput)
 	return res, g, coord2edges, linprogInput
 
+
 def solutions_iter(deconvolutionProblems_iter):
+	'''Iterate over all solutions.'''
 	for g in deconvolutionProblems_iter:
 		yield solveProblem(g)
