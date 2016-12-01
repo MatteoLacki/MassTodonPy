@@ -27,7 +27,7 @@ import networkx as nx
 ########################################################################
 cheb = .01
 jointProb 		= .999
-precisionDigits = 2
+precisionDigits = 3
 precisionMass  	= .05 # In Daltons; the radius of mass bucket around theoretical peaks
 
 G = nx.Graph()
@@ -108,25 +108,17 @@ def isDeconvoProb(g):
 
 from itertools import ifilter
 
+def solve(g):
+	g, coord2edges, linprogInput = get_linprog_input(g)
+	res = linprog(**linprogInput)
+	return res, g, coord2edges, linprogInput
+
 deconvoProbs = ifilter( isDeconvoProb, nx.connected_component_subgraphs(G) )
+X = [ solve(g) for g in deconvoProbs ]
 
+all( x[0].success for x in X )
+X[0][0].success
 
-
-# dProbs = list(deconvoProbs)
-# g = dProbs[3]
-
-
-X = [ get_linprog_input(g) for g in deconvoProbs]
-g, coord2edges, linprogInput = X[0]
-linprog(options={"disp": True}, **linprogInput)
-
-
-
-res = linprog(c, A_ub, b_ub, A_eq, b_eq, (0.0, None), 'simplex', None, {"disp": True})
-
-res
-
-# X[0][0]
 # import matplotlib.pyplot as plt
 # nx.draw(X[2][0])
 # plt.show()
