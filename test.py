@@ -4,8 +4,9 @@ from Formulator.formulator import genMolecules, makeFragments, pandizeSubstances
 from Formulator.fasta2atomcnt import fasta2atomCnt
 from InSilico.spectrumGenerator import insilicoSpectrum, genIsotopicEnvelope, flatten, makeNoise
 from math import sqrt
-from collections import Counter
 from Formulator.isotopeCalculator import IsotopeCalculations
+from Solver.solver import get_linprog_input
+from scipy.optimize import linprog
 
 fasta = substanceP  = 'RPKPQQFFGLM'
 Q = 3; modifications = {}; ionsNo = 1000000; P = .999
@@ -24,91 +25,108 @@ import igraph as ig
 import intervaltree as it
 import networkx as nx
 ########################################################################
-chebyshevEps 	= .01
+cheb = .01
 jointProb 		= .999
-precisionDigits = 3
+precisionDigits = 2
 precisionMass  	= .05 # In Daltons; the radius of mass bucket around theoretical peaks
 
 G = nx.Graph()
-tolIntervals= it.IntervalTree()
-molecules 	= genMolecules(fasta, 3, 'cz',modifications)
+tolInt 	= it.IntervalTree()
+mols 	= genMolecules(fasta, 3, 'cz',modifications)
 
 # Nodes of molecules.
-for i, molInfo in enumerate(molecules):
-	molType, q, g, atomCnt, massMono, massMean, massStDev = molInfo
-	tag = ('molecule',i)
-	tolIntervals[ massMean-massStDev/sqrt(chebyshevEps) : massMean+massStDev/sqrt(chebyshevEps) ] = tag
-	G.add_node( tag, q=q, g=g, atomCnt=atomCnt, massMono=massMono, massMean=massMean, massStDev=massStDev )
+for i, molInfo in enumerate(mols):
+	molType, q, g, atomCnt, monoM, meanM, stDevM = molInfo
+	mol = ('M',i)
+	tolInt[ meanM-stDevM/sqrt(cheb) : meanM+stDevM/sqrt(cheb) ] = mol
+	G.add_node( mol, q=q, g=g, atomCnt=atomCnt, massMono=monoM, massMean=meanM, massStDev=stDevM )
 
-# Nodes of experimental peaks
-# Edges beteen experimental peaks and molecules
-for i, (mass,intensity) in enumerate(MassSpectrum):
-	experimentalPeak = ('experimental',i)
-	G.add_node( experimentalPeak, mz=mass, I=intensity)
-	for tolData in tolIntervals[mass]:
+# Nodes of experimental peaks; edges beteen experimental peaks and molecules
+for i, (mz,intensity) in enumerate(MassSpectrum):
+	exp_peak = ('E',i)
+	G.add_node( exp_peak, mz=mz, intensity=intensity)
+	for tolData in tolInt[mz]:
 		molecule = tolData.data
-		G.add_edge( experimentalPeak, molecule, experiment2molecule=True)
+		G.add_edge( molecule, exp_peak, M2E=True )
 
 IC = IsotopeCalculations()
-tolIntervals 	= it.IntervalTree()
-isotopologueCnt = 0
+tolInt = it.IntervalTree()
+isoCnt = 0
 
 # Isotopologue nodes added
-for node, data in G.nodes_iter(data=True):
-	nodeType, nodeNo = node
-	if nodeType=='molecule' and G.neighbors(node) > 0:
-		for mz, prob in IC.getIsotopicEnvelope(data['atomCnt'], jointProb, precisionDigits):
-			isotopologue = ('isotopologue',isotopologueCnt)
-			G.add_node( isotopologue, mz=mz, prob=prob)
-			G.add_edge( isotopologue, node)
-			isotopologueCnt += 1
-			tolIntervals[ mz-precisionMass : mz+precisionMass ] = isotopologue
+for mol, data in G.nodes_iter(data=True):
+	nodeType, nodeNo = mol
+	if nodeType=='M' and G.neighbors(mol) > 0:
+		for mz, prob in IC.getIsotopicEnvelope( data['atomCnt'], jointProb, precisionDigits):
+			iso = ('I',isoCnt)
+			G.add_node( iso, mz=mz, prob=prob )
+			G.add_edge( mol, iso )
+			isoCnt += 1
+			tolInt[ mz-precisionMass : mz+precisionMass ] = iso
 
 # Edges between isotopologue nodes and experimental peaks added
-for node, data in G.nodes_iter(data=True):
-	nodeType, nodeNo = node
-	if nodeType=='experimental':
-		for tolData in tolIntervals[data['mz']]:
-			isotopologueTag = tolData.data
-			G.add_edge(node, isotopologueTag, experiment2isotopologue=True)
+for exp_peak, data in G.nodes_iter(data=True):
+	nodeType, nodeNo = exp_peak
+	if nodeType=='E':
+		for tolData in tolInt[data['mz']]:
+			iso = tolData.data
+			G.add_edge( iso, exp_peak, I2E=True )
 
 # Removing edges between experimental peaks and molecules
-G.remove_edges_from( (v1, v2) for v1, v2, d in G.edges_iter(data=True) if 'experiment2molecule' in d )
+G.remove_edges_from( (v1, v2) for v1, v2, d in G.edges_iter(data=True) if 'M2E' in d )
 
 # Form groups of experimental peaks
 Gcnt = 0
-experimentalGroups = dict()
-for experimentalPeak, experimentalPeakData in G.nodes_iter(data=True):
-	nodeType, experimentalPeakNo = experimentalPeak
-	if nodeType=='experimental':
-		nbrs = frozenset(G.neighbors(experimentalPeak))
-		if len(nbrs)>0:
-			if not nbrs in experimentalGroups:
-				experimentalGroup = ('experimentalGroup', Gcnt)
-				experimentalGroups[nbrs]= experimentalGroup
+eGs = dict()
+
+for exp_peak, exp_peakData in G.nodes_iter(data=True):
+	nodeType, exp_peakNo = exp_peak
+	if nodeType=='E':
+		I_neigh = frozenset(G.neighbors(exp_peak))
+		if len(I_neigh)>0:
+			if not I_neigh in eGs:
+				eG = ('eG', Gcnt) # Experiment Group
+				eGs[ I_neigh ] = eG
 				Gcnt += 1
-				G.add_node( experimentalGroup, I=0.0 )
-			experimentalGroup = experimentalGroups[nbrs]
-			G.node[experimentalGroup]['I'] += experimentalPeakData['I']
-			G.add_edge( experimentalPeak, experimentalGroup )
+				G.add_node( eG, intensity = 0.0 )
+				for iso in I_neigh:
+					G.add_edge( iso, eG )
+			eG = eGs[ I_neigh ]
+			G.node[ eG ]['intensity'] += exp_peakData['intensity']
+			G.add_edge( eG, exp_peak )
 
 # Remove edges between experimental peaks and isotopologues: bridging through groups of experimental peaks only
-G.remove_edges_from( (v1, v2) for v1, v2, d in G.edges_iter(data=True) if 'experiment2isotopologue' in d )
+G.remove_edges_from( (v1, v2) for v1, v2, d in G.edges_iter(data=True) if 'I2E' in d )
 
-len(list(nx.connected_component_subgraphs(G)))
+def isDeconvoProb(g):
+	isProblem = False
+	for (n1,id1), (n2,id2) in g.edges_iter():
+		if n1 == 'eG' or n2 == 'eG':
+			isProblem = True
+			break
+	return isProblem
 
-len(G.nodes(data=True))
-len(G.edges(data=True))
+from itertools import ifilter
 
-experimentalGroups
+deconvoProbs = ifilter( isDeconvoProb, nx.connected_component_subgraphs(G) )
 
 
-import matplotlib.pyplot as plt
-nx.draw(G)
-plt.show()
-G.edges(data=True)
 
-tolIntervals
-MassSpectrum
+# dProbs = list(deconvoProbs)
+# g = dProbs[3]
 
-molecules
+
+X = [ get_linprog_input(g) for g in deconvoProbs]
+g, coord2edges, linprogInput = X[0]
+linprog(options={"disp": True}, **linprogInput)
+
+
+
+res = linprog(c, A_ub, b_ub, A_eq, b_eq, (0.0, None), 'simplex', None, {"disp": True})
+
+res
+
+# X[0][0]
+# import matplotlib.pyplot as plt
+# nx.draw(X[2][0])
+# plt.show()
