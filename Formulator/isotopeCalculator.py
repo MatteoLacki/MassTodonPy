@@ -31,7 +31,7 @@ class IsotopeCalculations:
     def getMassVar(self, atomCnt):
         return sum( self.elementsMassVar[el]*elCnt for el, elCnt in atomCnt.items() )
 
-    def getIsotopicEnvelope(self, atomCnt, jointProb, precisionDigits = 3):
+    def isoEnvelope(self, atomCnt, jointProb, precisionDigits = 3):
         counts = []
         masses = []
         probs  = []

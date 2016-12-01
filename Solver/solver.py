@@ -1,4 +1,5 @@
 from collections import defaultdict
+from scipy.optimize import linprog
 
 def get_linprog_input(g):
 	'''Prepares the input for the scipy linprog solver.'''
@@ -8,10 +9,10 @@ def get_linprog_input(g):
 		if nodeType=='M':
 			g.add_edge(R, (nodeType,nodeNo))
 
-	edges2coord = {}    # edges to solver output
-	coord2edges = [] 	# solver output to edges
+	edges2coord = {} # edges to solver output
+	coord2edges = [] # solver output to edges
 	varNo = 0
-	c = [] 				# costs
+	c = [] # costs
 
 	alphaEdge 	= frozenset(('R','M'))
 	xEdge 		= frozenset(('I','eG'))
@@ -54,3 +55,12 @@ def get_linprog_input(g):
 	# coord2edges will be necessary to translate the results back
 	linprogInput = {'c':c, 'A_eq':A_eq, 'b_eq':b_eq, 'A_ub':A_ub, 'b_ub':b_ub}
 	return g, coord2edges, linprogInput
+
+def solveProblem(g):
+	g, coord2edges, linprogInput = get_linprog_input(g)
+	res = linprog(**linprogInput)
+	return res, g, coord2edges, linprogInput
+
+def solutions_iter(deconvolutionProblems_iter):
+	for g in deconvolutionProblems_iter:
+		yield solveProblem(g)

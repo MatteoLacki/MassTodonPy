@@ -32,7 +32,7 @@ precisionMass  	= .05 # In Daltons; the radius of mass bucket around theoretical
 
 G = nx.Graph()
 tolInt 	= it.IntervalTree()
-mols 	= genMolecules(fasta, 3, 'cz',modifications)
+mols = genMolecules(fasta, 3, 'cz',modifications)
 
 # Nodes of molecules.
 for i, molInfo in enumerate(mols):
@@ -57,7 +57,7 @@ isoCnt = 0
 for mol, data in G.nodes_iter(data=True):
 	nodeType, nodeNo = mol
 	if nodeType=='M' and G.neighbors(mol) > 0:
-		for mz, prob in IC.getIsotopicEnvelope( data['atomCnt'], jointProb, precisionDigits):
+		for mz, prob in IC.isoEnvelope( data['atomCnt'], jointProb, precisionDigits):
 			iso = ('I',isoCnt)
 			G.add_node( iso, mz=mz, prob=prob )
 			G.add_edge( mol, iso )
@@ -80,7 +80,7 @@ Gcnt = 0
 eGs = dict()
 
 for exp_peak, exp_peakData in G.nodes_iter(data=True):
-	nodeType, exp_peakNo = exp_peak
+	nodeType,_ = exp_peak
 	if nodeType=='E':
 		I_neigh = frozenset(G.neighbors(exp_peak))
 		if len(I_neigh)>0:
