@@ -1,5 +1,5 @@
 import igraph as ig
-from linearCounter import LinearCounter as lCnt
+from linearCounter.linearCounter import LinearCounter as lCnt
 from aminoAcid import AminoAcids
 
 def elementContent(G):

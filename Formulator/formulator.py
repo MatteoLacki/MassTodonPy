@@ -1,5 +1,5 @@
 import pandas as pd
-from linearCounter import LinearCounter as lCnt
+from linearCounter.linearCounter import LinearCounter as lCnt
 from itertools import chain
 from isotopeCalculator import IsotopeCalculations
 from protonations import protonate

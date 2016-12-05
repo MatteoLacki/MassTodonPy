@@ -1,4 +1,4 @@
-from linearCounter import LinearCounter as lCnt
+from linearCounter.linearCounter import LinearCounter as lCnt
 from aminoAcid import AminoAcids
 from misc import standardize, countIsNegative
 from bricks import makeBricks

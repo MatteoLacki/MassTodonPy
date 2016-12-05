@@ -22,7 +22,7 @@ def genIsotopicEnvelope(isotopologuesNo, atomCnt, jointProb=.999):
 
 class insilicoSpectrum:
     def __init__(self, fasta, Q, ionsNo, jointProb=.999, fragScheme='cz', isoMasses=None, isoProbs=None, modifications={}):
-        '''Simulates a mass spectrumin silico.'''
+        '''Simulate a mass spectrumin silico.'''
         self.P = jointProb
         self.fasta = fasta
         self.Q = Q
@@ -39,18 +39,19 @@ class insilicoSpectrum:
             for isoCnt, mol in zip(moleculeCounts, self.molecules)
         ], probs
 
-def flatten(massSpectra):
+def flatten( massSpectra ):
     result = []
     for sp in massSpectra:
         result.extend(sp)
     return result
 
-def makeNoise(MassSpectrum, percentPeaks = .2):
-    '''Produces noise peaks using a strategy that is totally atheoretic.'''
+def makeNoise( MassSpectrum, percentPeaks = .2 ):
+    '''Produce noise peaks using a strategy that is totally atheoretic.'''
     M = max(MassSpectrum, key=itemgetter(0))[0]
-    Imean = sum(i for m,i in MassSpectrum)/len(MassSpectrum)
-    masses = ss.uniform.rvs(
-        loc = .0, scale = 1.1*M,
-        size=floor(len(MassSpectrum)*percentPeaks) )
-    intensities = ss.poisson.rvs(mu=Imean, size=M )
+    Imean   = sum(i for m,i in MassSpectrum)/len(MassSpectrum)
+    size    = int(floor(len(MassSpectrum)*percentPeaks))
+    masses = ss.uniform.rvs(    loc     = .0,
+                                scale   = 1.1*M,
+                                size    = size  )
+    intensities = ss.poisson.rvs(mu=Imean, size=size )
     return list(zip(masses, intensities))

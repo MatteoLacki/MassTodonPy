@@ -1,5 +1,5 @@
 from collections import defaultdict
-from linearCounter import LinearCounter as lCnt
+from linearCounter.linearCounter import LinearCounter as lCnt
 
 def standardize(modifications):
     '''Standardize modifications so that they meet the internal nomenclature scheme.'''
