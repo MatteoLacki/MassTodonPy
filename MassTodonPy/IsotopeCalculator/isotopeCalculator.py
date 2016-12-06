@@ -6,12 +6,12 @@ try:
   import cPickle as pickle
 except:
   import pickle
+from Formulator import makeFragments
 
 def atomCnt2string(atomCnt):
     keys = atomCnt.keys()
     keys.sort()
     return "".join( el+str(atomCnt[el]) for el in keys )
-
 
 class isotopeCalculator:
     '''A class for isotope calculations.'''
@@ -83,3 +83,8 @@ class isotopeCalculator:
             masses.round( decimals = self.massPrecDigits )
 
         return masses, probs
+    #TODO add a version that perform all possible calculations.
+    #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
+
+    def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', modifications={} ):
+        '''Get random spectrum following a heuristical data generation process.'''
