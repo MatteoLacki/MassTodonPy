@@ -28,11 +28,11 @@ P       = .999
 # with open('data/spectrum.spec','w') as f:
 #     pickle.dump( (MassSpectrum, Noise), f)
 
-MassSpectrum, Noise =  pickle.load( open('data/spectrum.spec', 'rb') )
-
-MassSpectrum.extend(Noise)
-MassSpectrum.sort(key=itemgetter(0))
-
+# MassSpectrum, Noise =  pickle.load( open('data/spectrum.spec', 'rb') )
+#
+# MassSpectrum.extend(Noise)
+# MassSpectrum.sort(key=itemgetter(0))
+#
 
 
 #

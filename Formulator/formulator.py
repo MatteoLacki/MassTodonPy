@@ -1,5 +1,5 @@
 import pandas as pd
-from linearCounter.linearCounter import LinearCounter as lCnt
+from linearCounter import linearCounter as lCnt
 from itertools import chain
 from isotopeCalculator import IsotopeCalculations
 from protonations import protonate
@@ -60,7 +60,7 @@ def make_cz_fragments(fasta, modifications):
                 yield {'moleculeType': fragType, 'atomCnt': dict(zFrag_tmp), 'sideChainsNo' : i, 'type':'z' }
 
     return getPrecursor, getCfrags, getZfrags
-
+#TODO It seems very strange to return these functions. Inspect it later on.
 
 def pandizeSubstances(precursor, cFrags, zFrags):
     '''Turns results into a pandas data frame.'''

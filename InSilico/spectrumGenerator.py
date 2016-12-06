@@ -22,7 +22,7 @@ def genIsotopicEnvelope(isotopologuesNo, atomCnt, jointProb=.999):
 
 class insilicoSpectrum:
     def __init__(self, fasta, Q, ionsNo, jointProb=.999, fragScheme='cz', isoMasses=None, isoProbs=None, modifications={}):
-        '''Simulate a mass spectrumin silico.'''
+        '''Simulate a mass spectrum in silico or in blanco.'''
         self.P = jointProb
         self.fasta = fasta
         self.Q = Q
