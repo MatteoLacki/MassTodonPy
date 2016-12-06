@@ -1,1 +1,1 @@
-from formulator import makeFragments
+from formulator import makeFragments, protonate

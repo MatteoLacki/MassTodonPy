@@ -6,7 +6,9 @@ try:
   import cPickle as pickle
 except:
   import pickle
-from Formulator import makeFragments
+from Formulator import makeFragments, protonate
+from itertools import chain
+from numpy.random import multinomial
 
 def atomCnt2string(atomCnt):
     keys = atomCnt.keys()
@@ -78,13 +80,34 @@ class isotopeCalculator:
 
             self.isotopicEnvelopes[atomCnt_str] = ( masses.copy(), probs.copy() ) # memoization
 
-        if q > 0 or g > 0:
-            masses = (masses + g)/(q+g)
-            masses.round( decimals = self.massPrecDigits )
-
+        masses = np.around( (masses + g + q)/q, decimals=self.massPrecDigits )
         return masses, probs
     #TODO add a version that perform all possible calculations.
     #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
 
-    def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', modifications={} ):
+    def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', aaPerOneCharge=5, jointProb=.999, modifications={} ):
         '''Get random spectrum following a heuristical data generation process.'''
+
+        averageSpectrum     = Counter()
+        chargesSquaredSum   = 0.0
+        precs, cfrags, zfrags = makeFragments( fasta, fragScheme, modifications )
+        for mol in chain( precs(), cfrags(), zfrags() ):
+            for q,g in protonate( Q, mol['type'] ):
+                if q * aaPerOneCharge < mol['sideChainsNo']:
+                    chargesSquaredSum += q**2
+                    masses, probs = self.isoEnvelope( mol['atomCnt'], jointProb, q, g )
+                    for mass, prob in zip(masses,probs):
+                        averageSpectrum[mass] += prob * q**2
+
+        masses = averageSpectrum.keys()
+        probs  = np.empty(len(masses))
+        for i, m in enumerate(masses):
+            probs[i] = averageSpectrum[m]
+        probs = probs/chargesSquaredSum
+        ionsPerMass = multinomial(ionsNo, probs)
+
+        return ionsPerMass
+
+# self.molecules = list( genMolecules(fasta, Q, fragScheme, modifications) )
+# f_charges = [ float(mol[1]**2) for mol in self.molecules ]
+# makeFragments
