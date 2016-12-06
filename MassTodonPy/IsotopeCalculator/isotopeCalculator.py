@@ -85,7 +85,7 @@ class isotopeCalculator:
     #TODO add a version that perform all possible calculations.
     #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
 
-    def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', aaPerOneCharge=5, jointProb=.999, modifications={} ):
+    def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
         '''Get random spectrum following a heuristical data generation process.'''
 
         averageSpectrum     = Counter()
@@ -105,9 +105,18 @@ class isotopeCalculator:
             probs[i] = averageSpectrum[m]
         probs = probs/chargesSquaredSum
         ionsPerMass = multinomial(ionsNo, probs)
+        spectrum    = np.empty(ionsNo)
+        i = 0
+        for mass, ionCnt in zip(masses, ionsPerMass):
+            if ionCnt > 0:
+                for mz in np.random.normal( loc=mass, scale=.01, size=ionCnt ):
+                    spectrum[i] = mz
+                    i += 1
 
-        return ionsPerMass
-
-# self.molecules = list( genMolecules(fasta, Q, fragScheme, modifications) )
-# f_charges = [ float(mol[1]**2) for mol in self.molecules ]
-# makeFragments
+        spectrum = np.around(spectrum, self.massPrecDigits)
+        spectrum = Counter(spectrum)
+        masses   = spectrum.keys()
+        intensities = np.empty(len(masses))
+        for i, m in enumerate(masses):
+            intensities[i] = spectrum[m]
+        return masses, intensities

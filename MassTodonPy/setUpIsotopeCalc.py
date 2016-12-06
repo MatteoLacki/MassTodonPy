@@ -31,6 +31,5 @@ isoCalc = isotopeCalculator()
 # masses, probs = isoCalc.isoEnvelope({'H':1000,'O':200,'S':20},P)
 # isoCalc.isotopicEnvelopes.keys()
 
-# %%time
-X = isoCalc.randomSpectrum(fasta, Q, ionsNo)
-X
+%%time
+masses, intensities = isoCalc.randomSpectrum(fasta, Q, 10000000)
