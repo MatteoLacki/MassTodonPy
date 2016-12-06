@@ -1,7 +1,7 @@
 import pandas as pd
 from linearCounter import linearCounter as lCnt
 from itertools import chain
-from isotopeCalculator import IsotopeCalculations
+# from isotopeCalculator import isotopeCalculations
 from protonations import protonate
 from bricks import makeBricks
 from misc import standardize, countIsNegative
@@ -85,18 +85,17 @@ def makeFragments(fasta, type='cz', modifications={}):
     }[type]
     return fragmentator(fasta, modifications)
 
-
-def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
-    '''Generate protonated molecules following a given fragmentation scheme.
-    '''
-    IC = IsotopeCalculations()
-    precursor, cFrags, zFrags = makeFragments(fasta, fragmentationScheme, modifications)
-    for mol in chain(precursor(),cFrags(),zFrags()):
-        for q,g in protonate( Q, mol['type'] ):
-            if q * aaPerOneCharge < mol['sideChainsNo']:
-                atomCnt = dict(mol['atomCnt'])
-                atomCnt['H'] += q + g
-                monoisotopicMass= IC.getMonoisotopicMass(atomCnt)/float(q)
-                massMean = IC.getMassMean(atomCnt)/float(q)
-                massVar  = IC.getMassVar(atomCnt)/float(q**2)
-                yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )
+# def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
+#     '''Generate protonated molecules following a given fragmentation scheme.
+#     '''
+#     IC = isotopeCalculations()
+#     precursor, cFrags, zFrags = makeFragments(fasta, fragmentationScheme, modifications)
+#     for mol in chain(precursor(),cFrags(),zFrags()):
+#         for q,g in protonate( Q, mol['type'] ):
+#             if q * aaPerOneCharge < mol['sideChainsNo']:
+#                 atomCnt = dict(mol['atomCnt'])
+#                 atomCnt['H'] += q + g
+#                 monoisotopicMass= IC.getMonoisotopicMass(atomCnt)/float(q)
+#                 massMean = IC.getMassMean(atomCnt)/float(q)
+#                 massVar  = IC.getMassVar(atomCnt)/float(q**2)
+#                 yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )

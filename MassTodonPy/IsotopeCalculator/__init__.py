@@ -1,0 +1,1 @@
+from isotopeCalculator import isotopeCalculator, atomCnt2string
