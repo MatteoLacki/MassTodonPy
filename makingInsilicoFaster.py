@@ -106,16 +106,9 @@ for isoCnt, mol in zip(moleculeCounts, IS.molecules):
     logIntensities.extend(logInts)
 ###
 
-masses
-
 envelope = IsoSpecPy.IsoSpec.IsoFromFormula( atomCnt_str, IS.P )
 masses, logIntensities,_ = envelope.getConfsRaw()
-for m, logInt in zip(masses, logIntensities):
-
-
-
-
-len(res)
+# for m, logInt in zip(masses, logIntensities):
 
 lcnt(dict( (round(e[0], spectrumDigits), exp(e[1]))  ))
 
@@ -127,11 +120,36 @@ genIsotopicEnvelope(isoCnt, mol[3], IS.P) for isoCnt, mol in zip(moleculeCounts,
 ################################################
 ############ Checking how big gains when considering no charges.
 from Formulator.formulator import makeFragments
+from itertools import chain
+import numpy as np
 
+jointProb  = .999
 prec, c, z = makeFragments(fasta)
 prec, c, z = [ list(s()) for s in [prec,c,z] ]
 
-len(prec) + len(c) + len(z)
+%%time
+masses = []
+logIntensities = []
+for mol in chain(prec,c,z):
+    atomCnt_str = atomCnt2string(mol['atomCnt'])
+    envelope    = IsoSpecPy.IsoSpec.IsoFromFormula( atomCnt_str, jointProb )
+    mass, logInts,_ = envelope.getConfsRaw()
+    masses.extend(mass)
+    logIntensities.extend(logInts)
+
+def getArray(cdata):
+    L = len(cdata)
+    A = np.empty(L)
+    for i, c in enumerate(cdata):
+        A[i] = c
+    return A
+
+getArray(mass)
+
+for i, el in enumerate(gimme()): my_array[i] = el
+np.array(m for m in mass)
+
 
 for mol in chain(prec,c,z):
-    mol['atomCnt']
+    atomCnt_str = atomCnt2string(mol['atomCnt'])
+    IsoSpecPy.IsoSpec.IsoFromFormula( atomCnt_str, jointProb )
