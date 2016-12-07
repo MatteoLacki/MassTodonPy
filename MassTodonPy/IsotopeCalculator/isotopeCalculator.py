@@ -7,7 +7,6 @@ try:
 except:
   import pickle
 from Formulator import makeFragments, protonate
-from itertools import chain
 from numpy.random import multinomial
 import scipy.stats as ss
 
@@ -116,7 +115,7 @@ class isotopeCalculator:
 
         spectrum = np.around(spectrum, self.massPrecDigits)
         spectrum = Counter(spectrum)
-        masses   = spectrum.keys()
+        masses   = np.array(spectrum.keys())
         intensities = np.empty(len(masses))
         for i, m in enumerate(masses):
             intensities[i] = spectrum[m]

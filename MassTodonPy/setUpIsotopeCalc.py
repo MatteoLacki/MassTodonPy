@@ -26,5 +26,5 @@ masses, probs = isoCalc.isoEnvelope({'H':1000,'O':200,'S':20},P)
 # isoCalc.isotopicEnvelopes.keys()
 
 
-masses, intensities = isoCalc.randomSpectrum(fasta, Q, 100000)
-noise_masses,noise_intensities = isoCalc.addNoise(masses,intensities)
+masses, intensities             = isoCalc.randomSpectrum(fasta, Q, 100000)
+noise_masses,noise_intensities  = isoCalc.addNoise(masses,intensities)

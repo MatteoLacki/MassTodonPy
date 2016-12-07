@@ -1,25 +1,27 @@
-import intervaltree
-import networkx as nx
-from Formulator.isotopeCalculator import IsotopeCalculations
-from InSilico.spectrumGenerator import genIsotopicEnvelope
-from math import sqrt
+import  intervaltree
+import  networkx        as      nx
+from    math            import  sqrt
 
-class peakPicker():
+class PeakPicker():
     '''Class for peak picking.'''
 
     def __init__(self,
-            molecules_iter,
-            MassSpectrum,
+            fragmentator,
+            massSpectrum,
+            isotopeCalculator,
             chebyshevCoverage       = 0.99,
             jointProbabilityIsoSpec = .999,
             precisionDigits         = 2,
-            precisionMass           = .05
-    ):
+            precisionMass           = .05   ):
+
         self.cheb   = 1.0 - chebyshevCoverage
         self.G      = nx.Graph()
-        self.mols   = molecules_iter
+
+        self.fragmentator = fragmentator
+        self.isoCalc= isotopeCalculator
+
         self.jP     = jointProbabilityIsoSpec
-        self.MS     = MassSpectrum
+        self.MS     = massSpectrum
         self.prec   = precisionDigits
         self.massPrec = precisionMass
 
@@ -28,7 +30,7 @@ class peakPicker():
 
         # Nodes of molecules.
         tolInt  = intervaltree.IntervalTree()
-        for i, molInfo in enumerate(self.mols):
+        for i, molInfo in enumerate(self.fragmentator.makeMolecules()):
             molType, q, g, atomCnt, monoM, meanM, stDevM = molInfo
             mol = ('M',i)
             chebDev = stDevM/sqrt(self.cheb)
@@ -45,7 +47,6 @@ class peakPicker():
 
     def add_I(self):
         '''Add isotopologue nodes (I) to the problem graph G.'''
-        IC      = IsotopeCalculations()
         tolInt  = intervaltree.IntervalTree()
         isoCnt  = 0
 
@@ -53,7 +54,9 @@ class peakPicker():
         for mol, data in self.G.nodes_iter(data=True):
         	nodeType, nodeNo = mol
         	if nodeType=='M' and self.G.neighbors(mol) > 0:
-        		for mz, prob in IC.isoEnvelope( data['atomCnt'], self.jP, self.prec):
+        		for mz, prob in self.isoCalc.isoEnvelope(data['atomCnt'], self.jP):
+                    #TODO Need to add q and g above
+
         			iso = ('I',isoCnt)
         			self.G.add_node( iso, mz=mz, prob=prob )
         			self.G.add_edge( mol, iso )

@@ -1,7 +1,5 @@
-import pandas as pd
 from linearCounter import linearCounter as lCnt
 from itertools import chain
-# from isotopeCalculator import isotopeCalculations
 from protonations import protonate
 from bricks import makeBricks
 from misc import standardize, countIsNegative
@@ -62,28 +60,29 @@ def make_cz_fragments(fasta, modifications):
     return getPrecursor, getCfrags, getZfrags
 #TODO It seems very strange to return these functions. Inspect it later on.
 
-def pandizeSubstances(precursor, cFrags, zFrags):
-    '''Turns results into a pandas data frame.'''
-    def combineMolecules():
-        for x in chain(precursor(), cFrags(), zFrags()):
-            x['atomCnt']['moleculeType'] = x['moleculeType']
-            yield x['atomCnt']
-    result = pd.DataFrame(combineMolecules()).fillna(0)
-    result[list('CHNOS')] = result[list('CHNOS')].astype(int)
-    idx = ['moleculeType']
-    idx.extend(list('CHNOS'))
-    result = result[idx]
-    return result
 
+class Fragmentator:
+    def __init__(self, fasta, modifications={} ):
+        self.fasta  = fasta
+        self.modifications = modifications
+
+class CZfragmentator(Fragmentator):
+    def __init__(self, fasta, modifications={} ):
+        super(CZfragmentator, self).__init__(fasta, modifications)
+        self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
+
+    def makeMolecules(self):
+        for mol in chain( precs(), cfrags(), zfrags() ):
+            for q,g in protonate( Q, mol['type'] ):
+                if q * aaPerOneCharge < mol['sideChainsNo']:
+                    yield mol, q, g
 
 def makeFragments(fasta, type='cz', modifications={}):
-    '''Generate all possible fragments given a Roepstorf Scheme.
+    '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
     '''
-    modifications = standardize(modifications)
-    fragmentator = {
-        'cz': make_cz_fragments
-    }[type]
-    return fragmentator(fasta, modifications)
+    modifications       = standardize(modifications)
+    fragmentatorClass   = { 'cz': CZfragmentator }[type](fasta, modifications )
+    return fragmentatorClass
 
 # def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
 #     '''Generate protonated molecules following a given fragmentation scheme.
@@ -99,3 +98,17 @@ def makeFragments(fasta, type='cz', modifications={}):
 #                 massMean = IC.getMassMean(atomCnt)/float(q)
 #                 massVar  = IC.getMassVar(atomCnt)/float(q**2)
 #                 yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )
+
+# import pandas as pd
+# def pandizeSubstances(precursor, cFrags, zFrags):
+#     '''Turns results into a pandas data frame.'''
+#     def combineMolecules():
+#         for x in chain(precursor(), cFrags(), zFrags()):
+#             x['atomCnt']['moleculeType'] = x['moleculeType']
+#             yield x['atomCnt']
+#     result = pd.DataFrame(combineMolecules()).fillna(0)
+#     result[list('CHNOS')] = result[list('CHNOS')].astype(int)
+#     idx = ['moleculeType']
+#     idx.extend(list('CHNOS'))
+#     result = result[idx]
+#     return result
