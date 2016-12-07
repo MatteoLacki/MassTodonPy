@@ -19,17 +19,12 @@ P       = .999
 
 # atomCnt = prec[0]['atomCnt']
 # atomCnt2string(atomCnt)
-
 isoCalc = isotopeCalculator()
-# masses, probs = isoCalc.isoEnvelope({'H':10,'O':2},P)
-# isoCalc.isotopicEnvelopes.keys()
-#
-# %%time
-# masses, probs = isoCalc.isoEnvelope({'H':1000,'O':200,'S':20},P)
 
-# %%time
-# masses, probs = isoCalc.isoEnvelope({'H':1000,'O':200,'S':20},P)
+
+masses, probs = isoCalc.isoEnvelope({'H':1000,'O':200,'S':20},P)
 # isoCalc.isotopicEnvelopes.keys()
 
-%%time
-masses, intensities = isoCalc.randomSpectrum(fasta, Q, 10000000)
+
+masses, intensities = isoCalc.randomSpectrum(fasta, Q, 100000)
+noise_masses,noise_intensities = isoCalc.addNoise(masses,intensities)

@@ -1,6 +1,6 @@
 import numpy as np
 from IsoSpecPy import IsoSpecPy
-from math import exp
+from math import exp, floor
 from collections import Counter
 try:
   import cPickle as pickle
@@ -9,6 +9,7 @@ except:
 from Formulator import makeFragments, protonate
 from itertools import chain
 from numpy.random import multinomial
+import scipy.stats as ss
 
 def atomCnt2string(atomCnt):
     keys = atomCnt.keys()
@@ -82,7 +83,7 @@ class isotopeCalculator:
 
         masses = np.around( (masses + g + q)/q, decimals=self.massPrecDigits )
         return masses, probs
-    #TODO add a version that perform all possible calculations.
+    #TODO add a version that performs all possible calculations.
     #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
 
     def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
@@ -120,3 +121,15 @@ class isotopeCalculator:
         for i, m in enumerate(masses):
             intensities[i] = spectrum[m]
         return masses, intensities
+
+    def addNoise(self, masses, intensities, percentPeaks = .2):
+        '''Produce noise peaks using a strategy that is totally atheoretic.'''
+        M       = max(masses)
+        Imean   = intensities.mean()
+        size    = int(floor(len(masses)*percentPeaks))
+        noise_masses = ss.uniform.rvs(
+            loc     = .0,
+            scale   = 1.1*M,
+            size    = size  )
+        noise_intensities = ss.poisson.rvs(mu=Imean, size=size )
+        return noise_masses, noise_intensities
