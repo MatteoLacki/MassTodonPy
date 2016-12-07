@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+#
+#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
+#
+#   This file is part of MassTodon.
+#
+#   MassTodon is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3.
+#
+#   MassTodon is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3 along with MassTodon.  If not, see
+#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
 from linearCounter import linearCounter as lCnt
 from itertools import chain
 from protonations import protonate
@@ -61,27 +79,28 @@ def make_cz_fragments(fasta, modifications):
 #TODO It seems very strange to return these functions. Inspect it later on.
 
 
-class Fragmentator:
-    def __init__(self, fasta, modifications={} ):
+class Fragmentator(object):
+    def __init__(self, fasta, Q, modifications={} ):
         self.fasta  = fasta
+        self.Q      = Q
         self.modifications = modifications
 
 class CZfragmentator(Fragmentator):
-    def __init__(self, fasta, modifications={} ):
-        super(CZfragmentator, self).__init__(fasta, modifications)
+    def __init__(self, fasta, Q, modifications={} ):
+        super(CZfragmentator,self).__init__(fasta, Q, modifications)
         self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
 
-    def makeMolecules(self):
-        for mol in chain( precs(), cfrags(), zfrags() ):
-            for q,g in protonate( Q, mol['type'] ):
+    def makeMolecules(self, aaPerOneCharge=5):
+        for mol in chain( self.precs(), self.cfrags(), self.zfrags() ):
+            for q,g in protonate( self.Q, mol['type'] ):
                 if q * aaPerOneCharge < mol['sideChainsNo']:
                     yield mol, q, g
 
-def makeFragments(fasta, type='cz', modifications={}):
+def makeFragments(fasta, Q, type='cz', modifications={}):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
     '''
     modifications       = standardize(modifications)
-    fragmentatorClass   = { 'cz': CZfragmentator }[type](fasta, modifications )
+    fragmentatorClass   = { 'cz': CZfragmentator }[type](fasta, Q, modifications )
     return fragmentatorClass
 
 # def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
