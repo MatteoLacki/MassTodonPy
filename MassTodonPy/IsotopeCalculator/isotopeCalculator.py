@@ -16,17 +16,16 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-import numpy as np
-from IsoSpecPy import IsoSpecPy
-from math import exp, floor
-from collections import Counter
+from IsoSpecPy      import IsoSpecPy
+from math           import exp, floor
+from collections    import Counter
 try:
   import cPickle as pickle
 except:
   import pickle
-from Formulator import makeFragments, protonate
-from numpy.random import multinomial
-import scipy.stats as ss
+from numpy.random   import multinomial
+import scipy.stats  as ss
+import numpy        as np
 
 def atomCnt2string(atomCnt):
     keys = atomCnt.keys()
@@ -63,14 +62,14 @@ class isotopeCalculator:
         return sum( self.elementsMassMean[el]*elCnt for el, elCnt in atomCnt.items() )
 
     def getMassVar(self, atomCnt):
-        '''Calculate standard deviation around average mass of an atom count.'''
+        '''Calculate mass variance of an atom count.'''
         return sum( self.elementsMassVar[el]*elCnt for el, elCnt in atomCnt.items() )
 
     def getOldEnvelope(self, atomCnt_str):
         masses, probs = self.isotopicEnvelopes[atomCnt_str]
         return masses.copy(), probs.copy()
 
-    def isoEnvelope(self, atomCnt, jointProb, q=0, g=0):
+    def isoEnvelope(self, atomCnt, jointProb, q, g):
         '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
 
         atomCnt_str = atomCnt2string(atomCnt)
@@ -103,19 +102,17 @@ class isotopeCalculator:
     #TODO add a version that performs all possible calculations.
     #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
 
-    def randomSpectrum(self, fasta, Q, ionsNo, fragScheme='cz', aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
+    def randomSpectrum(self, fasta, Q, ionsNo, fragmentator, aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
         '''Get random spectrum following a heuristical data generation process.'''
 
         averageSpectrum     = Counter()
         chargesSquaredSum   = 0.0
-        precs, cfrags, zfrags = makeFragments( fasta, fragScheme, modifications )
-        for mol in chain( precs(), cfrags(), zfrags() ):
-            for q,g in protonate( Q, mol['type'] ):
-                if q * aaPerOneCharge < mol['sideChainsNo']:
-                    chargesSquaredSum += q**2
-                    masses, probs = self.isoEnvelope( mol['atomCnt'], jointProb, q, g )
-                    for mass, prob in zip(masses,probs):
-                        averageSpectrum[mass] += prob * q**2
+
+        for mol, q, g in fragmentator.makeMolecules(aaPerOneCharge):
+            chargesSquaredSum += q**2
+            masses, probs = self.isoEnvelope( mol['atomCnt'], jointProb, q, g )
+            for mass, prob in zip(masses,probs):
+                averageSpectrum[mass] += prob * q**2
 
         masses = averageSpectrum.keys()
         probs  = np.empty(len(masses))

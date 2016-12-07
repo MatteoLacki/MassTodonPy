@@ -16,7 +16,6 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-
 import  intervaltree
 import  networkx        as      nx
 from    math            import  sqrt
@@ -26,7 +25,6 @@ class PeakPicker():
 
     def __init__(self,
             fragmentator,
-            massSpectrum,
             isotopeCalculator,
             chebyshevCoverage       = 0.99,
             jointProbabilityIsoSpec = .999,
@@ -37,50 +35,56 @@ class PeakPicker():
         self.G      = nx.Graph()
 
         self.fragmentator = fragmentator
-        self.isoCalc= isotopeCalculator
+        self.isoCalc = isotopeCalculator
 
         self.jP     = jointProbabilityIsoSpec
-        self.MS     = massSpectrum
         self.prec   = precisionDigits
         self.massPrec = precisionMass
+
+    def setMassSpectrum(self, massSpectrum):
+        self.MS = massSpectrum
 
     def add_M_n_E(self):
         '''Add molecule (M) and experimental (E) peak nodes to the problem graph G and links them using the idea of tolerance interval.'''
 
         # Nodes of molecules.
         tolInt  = intervaltree.IntervalTree()
-        for i, molInfo in enumerate(self.fragmentator.makeMolecules()):
-            molType, q, g, atomCnt, monoM, meanM, stDevM = molInfo
-            mol = ('M',i)
-            chebDev = stDevM/sqrt(self.cheb)
-            tolInt[ meanM-chebDev : meanM+chebDev ] = mol
-            self.G.add_node( mol, q=q, g=g, atomCnt=atomCnt, massMono=monoM, massMean=meanM, massStDev=stDevM )
+        for mol_cnt, (mol, q, g) in enumerate(self.fragmentator.makeMolecules()):
+            atomCnt = mol['atomCnt']
+            meanM   = self.isoCalc.getMassMean(atomCnt)
+            monoM   = self.isoCalc.getMonoisotopicMass(atomCnt)
+            M       = ('M', mol_cnt)
+            massVar = self.isoCalc.getMassVar(atomCnt)
+            chebDev = sqrt(massVar/self.cheb)
+            tolInt[ meanM-chebDev : meanM+chebDev ] = M
+            self.G.add_node( M, q=q, g=g, atomCnt=atomCnt, massMono=monoM, massMean=meanM, massStDev=sqrt(massVar) )
 
         # Nodes of experimental peaks; edges beteen experimental peaks and molecules
-        for i, (mz,intensity) in enumerate(self.MS):
-            exp_peak = ('E',i)
-            self.G.add_node( exp_peak, mz=mz, intensity=intensity)
+        for E_cnt, (mz,intensity) in enumerate(self.MS):
+            E = ('E', E_cnt) # experimental peak
+            self.G.add_node( E, mz=mz, intensity=intensity )
             for tolData in tolInt[mz]:
-                molecule = tolData.data
-                self.G.add_edge( molecule, exp_peak, M2E=True )
+                M = tolData.data
+                self.G.add_edge( M, E, M2E=True )
 
     def add_I(self):
         '''Add isotopologue nodes (I) to the problem graph G.'''
         tolInt  = intervaltree.IntervalTree()
         isoCnt  = 0
 
-        # Add isotopologue nodes I
         for mol, data in self.G.nodes_iter(data=True):
-        	nodeType, nodeNo = mol
-        	if nodeType=='M' and self.G.neighbors(mol) > 0:
-        		for mz, prob in self.isoCalc.isoEnvelope(data['atomCnt'], self.jP):
-                    #TODO Need to add q and g above
-
-        			iso = ('I',isoCnt)
-        			self.G.add_node( iso, mz=mz, prob=prob )
-        			self.G.add_edge( mol, iso )
-        			isoCnt += 1
-        			tolInt[ mz - self.massPrec : mz + self.massPrec ] = iso
+            nodeType, nodeNo = mol
+            if (nodeType=='M') and (self.G.neighbors(mol) > 0):
+                print data
+                atomCnt = data['atomCnt']
+                q, g = data['q'], data['g']
+                masses, probs = self.isoCalc.isoEnvelope(atomCnt, self.jP, q, g)
+                for mz, prob in zip(masses, probs):
+                	iso = ('I',isoCnt)
+                	self.G.add_node( iso, mz=mz, prob=prob )
+                	self.G.add_edge( mol, iso )
+                	isoCnt += 1
+	                tolInt[ mz - self.massPrec : mz + self.massPrec ] = iso
 
         # Edges between isotopologue nodes and experimental peaks added
         for exp_peak, data in self.G.nodes_iter(data=True):
