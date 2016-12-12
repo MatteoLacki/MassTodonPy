@@ -78,15 +78,15 @@ def make_cz_fragments(fasta, modifications):
     return getPrecursor, getCfrags, getZfrags
 #TODO It seems very strange to return these functions. Inspect it later on.
 
-class Fragmentator(object):
+class Formulator(object):
     def __init__(self, fasta, Q, modifications={} ):
         self.fasta  = fasta
         self.Q      = Q
         self.modifications = modifications
 
-class CZfragmentator(Fragmentator):
+class CZformulator(Formulator):
     def __init__(self, fasta, Q, modifications={} ):
-        super(CZfragmentator,self).__init__(fasta, Q, modifications)
+        super(CZformulator,self).__init__(fasta, Q, modifications)
         self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
 
     def makeMolecules(self, aaPerOneCharge=5):
@@ -95,12 +95,12 @@ class CZfragmentator(Fragmentator):
                 if q * aaPerOneCharge < mol['sideChainsNo']:
                     yield mol, q, g
 
-def makeFragments(fasta, Q, fragType='cz', modifications={}):
+def makeFormulas(fasta, Q, fragType='cz', modifications={}):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
     '''
     modifications   = standardize(modifications)
-    fragClass       = {'cz':CZfragmentator}[fragType](fasta, Q, modifications )
-    return fragClass
+    formClass       = {'cz':CZformulator}[fragType](fasta, Q, modifications )
+    return formClass
 
 # def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
 #     '''Generate protonated molecules following a given fragmentation scheme.

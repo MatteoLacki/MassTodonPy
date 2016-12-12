@@ -24,7 +24,7 @@ class PeakPicker():
     '''Class for peak picking.'''
 
     def __init__(self,
-            fragmentator,
+            formulator,
             isotopeCalculator,
             chebyshevCoverage       = 0.99,
             jointProbabilityIsoSpec = .999,
@@ -34,7 +34,7 @@ class PeakPicker():
         self.cheb   = 1.0 - chebyshevCoverage
         self.G      = nx.Graph()
 
-        self.fragmentator = fragmentator
+        self.formulator = formulator
         self.isoCalc = isotopeCalculator
 
         self.jP     = jointProbabilityIsoSpec
@@ -49,7 +49,7 @@ class PeakPicker():
 
         # Nodes of molecules.
         tolInt  = intervaltree.IntervalTree()
-        for mol_cnt, (mol, q, g) in enumerate(self.fragmentator.makeMolecules()):
+        for mol_cnt, (mol, q, g) in enumerate(self.formulator.makeMolecules()):
             atomCnt = mol['atomCnt']
             meanM   = self.isoCalc.getMassMean(atomCnt)
             monoM   = self.isoCalc.getMonoisotopicMass(atomCnt)
@@ -75,7 +75,6 @@ class PeakPicker():
         for mol, data in self.G.nodes_iter(data=True):
             nodeType, nodeNo = mol
             if (nodeType=='M') and (self.G.neighbors(mol) > 0):
-                print data
                 atomCnt = data['atomCnt']
                 q, g = data['q'], data['g']
                 masses, probs = self.isoCalc.isoEnvelope(atomCnt, self.jP, q, g)
@@ -97,6 +96,7 @@ class PeakPicker():
         # Removing edges between experimental peaks and molecules
         self.G.remove_edges_from(
             (v1, v2) for v1, v2, d in self.G.edges_iter(data=True) if 'M2E' in d )
+        print 'done'
 
     def add_eG(self):
         '''Add experimental group nodes (eG) to the problem graph G.'''

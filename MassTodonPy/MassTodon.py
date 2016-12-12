@@ -66,7 +66,7 @@
 # ................................................................................
 
 
-from Formulator         import makeFragments
+from Formulator         import makeFormulas
 from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
 
@@ -84,11 +84,11 @@ class MassTodon():
         self.fasta  = fasta
         self.Q      = precursorCharge
 
-        self.isoCalc        = isotopeCalculator(massPrecDigits, isoMasses, isoProbs)
+        self.isoCalc     = isotopeCalculator(massPrecDigits, isoMasses, isoProbs)
 
-        self.fragmentator   = makeFragments(fasta, precursorCharge, fragmentationType)
+        self.formulator  = makeFormulas(fasta, precursorCharge, fragmentationType)
 
-        self.peakPicker     = PeakPicker(self.fragmentator, self.isoCalc, chebyshevCoverage, jointProbabilityIsoSpec, precisionDigits, precisionMass )
+        self.peakPicker  = PeakPicker(self.formulator, self.isoCalc, chebyshevCoverage, jointProbabilityIsoSpec, precisionDigits, precisionMass )
 
     def randomSpectrum(
             self,
@@ -98,7 +98,7 @@ class MassTodon():
             scale           = .01,
             percentPeaks    = .2     ):
 
-        masses, intensities = self.isoCalc.randomSpectrum( self.fasta, self.Q, ionsNo, self.fragmentator, aaPerOneCharge, jointProb, scale )
+        masses, intensities = self.isoCalc.randomFragmentationExperiment( self.fasta, self.Q, ionsNo, self.formulator, aaPerOneCharge, jointProb, scale )
 
         noise_masses, noise_intensities = self.isoCalc.addNoise( masses, intensities, percentPeaks )
 
@@ -107,6 +107,5 @@ class MassTodon():
     def pickPeaks(self, massSpectrum):
         self.peakPicker.setMassSpectrum(massSpectrum)
         self.peakPicker.add_M_n_E()
-        # self.add_I()
-        # self.add_eG()
-        
+        self.add_I()
+        self.add_eG()

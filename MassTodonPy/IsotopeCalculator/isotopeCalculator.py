@@ -17,8 +17,8 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from IsoSpecPy      import IsoSpecPy
-from math           import exp, floor
-from collections    import Counter
+from math           import exp, floor, fsum
+from collections    import Counter, defaultdict
 try:
   import cPickle as pickle
 except:
@@ -28,9 +28,34 @@ import scipy.stats  as ss
 import numpy        as np
 
 def atomCnt2string(atomCnt):
+    '''Translate a dictionary of atom counts into a uniquely defined string.'''
     keys = atomCnt.keys()
     keys.sort()
     return "".join( el+str(atomCnt[el]) for el in keys )
+
+def cdata2numpyarray(x):
+    '''Turn c-data into a numpy array.'''
+    res = np.empty(len(x))
+    for i in xrange(len(x)):
+        res[i] = x[i]
+    return res
+
+def agg_spec_proper(masses, probs, digits=2):
+    '''Aggregate values with the same keys.'''
+    lists = defaultdict(list)
+    for mass, prob in zip(masses, probs):
+        lists[mass].append(prob)
+    newMasses = np.array(lists.keys())
+    newProbs  = np.empty(len(newMasses))
+    for prob, mass in zip(np.nditer(newProbs,op_flags=['readwrite']), newMasses):
+        prob[...] = fsum(lists[mass])
+    return newMasses, newProbs
+
+def aggregate2( keys, values, digits=2 ):
+    '''Aggregate values with the same keys.'''
+    uniqueKeys, indices = np.unique( keys, return_inverse=True)
+    return uniqueKeys, np.bincount( indices, weights=values )
+
 
 class isotopeCalculator:
     '''A class for isotope calculations.'''
@@ -65,45 +90,50 @@ class isotopeCalculator:
         '''Calculate mass variance of an atom count.'''
         return sum( self.elementsMassVar[el]*elCnt for el, elCnt in atomCnt.items() )
 
-    def getOldEnvelope(self, atomCnt_str):
+    def getOldEnvelope(self, atomCnt):
+        atomCnt_str = atomCnt2string(atomCnt)
         masses, probs = self.isotopicEnvelopes[atomCnt_str]
         return masses.copy(), probs.copy()
 
-    def isoEnvelope(self, atomCnt, jointProb, q, g):
-        '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
+    def getNewEnvelope(self, atomCnt, jointProb=.9999, precDigits=2):
+        atomCnt_str = atomCnt2string(atomCnt)
+        counts = []
+        isotope_masses = []
+        isotope_probs  = []
 
+        for el, cnt in atomCnt.items():
+            counts.append(cnt)
+            isotope_masses.append(self.isoMasses[el])
+            isotope_probs.append(self.isoProbs[el])
+
+        envelope = IsoSpecPy.IsoSpec( counts, isotope_masses, isotope_probs, jointProb )
+        masses, logprobs, _ = envelope.getConfsRaw()
+        masses  = cdata2numpyarray(masses)
+        probs   = np.exp(cdata2numpyarray(logprobs))
+
+        masses, probs = agg_spec_proper(masses, probs, precDigits)
+
+        # memoization
+        self.isotopicEnvelopes[ atomCnt_str ] = ( masses, probs )
+        return masses.copy(), probs.copy()
+
+    def getEnvelope(self, atomCnt, jointProb, precDigits=2):
         atomCnt_str = atomCnt2string(atomCnt)
         if atomCnt_str in self.isotopicEnvelopes:
-            masses, probs = self.getOldEnvelope(atomCnt_str)
+            masses, probs = self.getOldEnvelope(atomCnt)
         else:
-            counts = []
-            isotope_masses = []
-            isotope_probs  = []
-            for el, cnt in atomCnt.items():
-                counts.append(cnt)
-                isotope_masses.append(self.isoMasses[el])
-                isotope_probs.append(self.isoProbs[el])
-            envelope = IsoSpecPy.IsoSpec( counts, isotope_masses, isotope_probs, jointProb )
+            masses, probs = self.getNewEnvelope(atomCnt, jointProb, precDigits)
+        return masses, probs
 
-            masses, logprobs, _ = envelope.getConfsRaw()
-            aggregator = Counter()
-            for mass, logprob in zip(masses, logprobs):
-                aggregator[ round(mass, self.massPrecDigits) ] += exp(logprob)
-
-            masses = np.array(aggregator.keys())
-            probs  = np.empty(len(masses))
-            for i, mass in enumerate(masses):
-                probs[i] = aggregator[mass]
-
-            self.isotopicEnvelopes[atomCnt_str] = ( masses.copy(), probs.copy() ) # memoization
-
+    def isoEnvelope(self, atomCnt, jointProb, q, g):
+        '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
+        masses, probs = self.getEnvelope(atomCnt, jointProb)
         masses = np.around( (masses + g + q)/q, decimals=self.massPrecDigits )
         return masses, probs
-    #TODO add a version that performs all possible calculations.
-    #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
+        #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
 
-    def randomSpectrum(self, fasta, Q, ionsNo, fragmentator, aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
-        '''Get random spectrum following a heuristical data generation process.'''
+    def randomFragmentationExperiment(self, fasta, Q, ionsNo, fragmentator, aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
+        '''Get random spectrum of a fragmentation experiment.'''
 
         averageSpectrum     = Counter()
         chargesSquaredSum   = 0.0
@@ -147,3 +177,22 @@ class isotopeCalculator:
             size    = size  )
         noise_intensities = ss.poisson.rvs(mu=Imean, size=size )
         return noise_masses, noise_intensities
+
+    def randomSpectrum(self, atomCnt, Q, ionsNo, digits, jointProb=.9999, sigma=.01):
+        '''Generate a random spectrum.'''
+        #TODO this should be all in all replaced by Michał's software that uses online data generation.
+        atomCnt_str     = atomCnt2string(atomCnt)
+        masses, probs   = self.getEnvelope(atomCnt, jointProb)
+        counts  = multinomial(ionsNo, probs)
+        masses  = masses[ counts > 0 ]
+        counts  = counts[ counts > 0 ]
+        masses  = (masses + Q)/Q
+        noise_masses = np.empty(ionsNo)
+        sigma   = .01
+        cnt     = 0
+        for mass, c in zip(masses, counts):
+            noise_masses[cnt:(cnt+c)] = np.random.normal(mass, sigma, c)
+            cnt += c
+        noise_masses = noise_masses.round(digits)
+        masses, counts = np.unique(noise_masses, return_counts=True)
+        return masses, counts
