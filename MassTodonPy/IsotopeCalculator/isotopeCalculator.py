@@ -43,7 +43,7 @@ def cdata2numpyarray(x):
 def agg_spec_proper(masses, probs, digits=2):
     '''Aggregate values with the same keys.'''
     lists = defaultdict(list)
-    for mass, prob in zip(masses, probs):
+    for mass, prob in zip(masses.round(digits), probs):
         lists[mass].append(prob)
     newMasses = np.array(lists.keys())
     newProbs  = np.empty(len(newMasses))
@@ -178,21 +178,23 @@ class isotopeCalculator:
         noise_intensities = ss.poisson.rvs(mu=Imean, size=size )
         return noise_masses, noise_intensities
 
-    def randomSpectrum(self, atomCnt, Q, ionsNo, digits, jointProb=.9999, sigma=.01):
+    def randomSpectrum(self, atomCnt, ionsNo, digits=2, jointProb=.9999, Q=0, sigma=None):
         '''Generate a random spectrum.'''
         #TODO this should be all in all replaced by Michał's software that uses online data generation.
         atomCnt_str     = atomCnt2string(atomCnt)
-        masses, probs   = self.getEnvelope(atomCnt, jointProb)
+        masses, probs   = self.getEnvelope(atomCnt, jointProb, digits)
         counts  = multinomial(ionsNo, probs)
         masses  = masses[ counts > 0 ]
         counts  = counts[ counts > 0 ]
-        masses  = (masses + Q)/Q
+        if Q > 0:
+            masses  = (masses + Q)/Q
         noise_masses = np.empty(ionsNo)
-        sigma   = .01
-        cnt     = 0
-        for mass, c in zip(masses, counts):
-            noise_masses[cnt:(cnt+c)] = np.random.normal(mass, sigma, c)
-            cnt += c
-        noise_masses = noise_masses.round(digits)
-        masses, counts = np.unique(noise_masses, return_counts=True)
+        if not sigma==None:
+            sigma   = .01
+            cnt     = 0
+            for mass, c in zip(masses, counts):
+                noise_masses[cnt:(cnt+c)] = np.random.normal(mass, sigma, c)
+                cnt += c
+            noise_masses = noise_masses.round(digits)
+            masses, counts = np.unique(noise_masses, return_counts=True)
         return masses, counts

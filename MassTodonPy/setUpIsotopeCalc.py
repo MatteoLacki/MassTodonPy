@@ -7,26 +7,35 @@ from math import exp, fsum
 
 
 fasta ='MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
-Q = 9
+Q = 1
 modifications = {}
-ionsNo  = 1000000
-P       = .999
+ionsNo  = 10000000
+P       = 2.999
 isoCalc = isotopeCalculator()
 digits  = 2
-molecule= {'H':1000,'C':500,'O':200,'S':20,'N':200}
+# molecule= {'H':1000,'C':500,'O':200,'S':20,'N':200}
+molecule= {'C':100,'H':202}
+masses, counts = isoCalc.randomSpectrum( molecule, ionsNo, digits, P, 0)
 
-def agggregate( keys, values, digits=2):
-    lists = defaultdict(list)
-    keys  = keys.round(digits)
-    for k, v in zip(keys, values):
-        lists[k].append(v)
-    newKeys     = np.array(lists.keys())
-    newValues   = np.empty(len(newKeys))
-    for k, v in zip( newKeys, np.nditer( newValues, op_flags=['readwrite'] )):
-        v[...] = fsum(lists[k])
-    return newKeys, newValues
+isoCalc.isoProbs['C']
+isoCalc.isoProbs['H']
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
 
 
-# masses, probs = isoCalc.getEnvelope( molecule, P, digits)
+DF = pd.DataFrame({'mass':masses, 'intensity':counts})
+DF.shape
+sns.lmplot('mass', 'intensity',data=DF,fit_reg=False)
+plt.show()
 
-masses, counts = isoCalc.randomSpectrum( molecule, Q, ionsNo, digits, P)
+try:
+  import cPickle as pickle
+except:
+  import pickle
+
+
+with open('/Users/matteo/Documents/Isotoper/data/randomSpectrum.pickle', 'wb') as f:
+    pickle.dump( (masses, counts), f, protocol = pickle.HIGHEST_PROTOCOL )
