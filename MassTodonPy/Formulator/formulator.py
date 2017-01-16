@@ -53,10 +53,7 @@ def make_cz_fragments(fasta, modifications):
 
     def getPrecursor():
         precursor = sum(superAtoms)
-        yield { 'moleculeType': 'precursor',
-                'atomCnt_str' : atomCnt2string(precursor),
-                'sideChainsNo': len(fasta),
-                'type':         'p' }
+        yield ('precursor', atomCnt2string(precursor), len(fasta) )
 
     blockedFragments = prolineBlockedFragments(fasta)
 
@@ -67,10 +64,7 @@ def make_cz_fragments(fasta, modifications):
             cFrag_tmp = lCnt(cFrag)
             fragType = 'c'+str(i)
             if not fragType in blockedFragments and not i == 0:
-                yield { 'moleculeType': fragType,
-                        'atomCnt_str':  atomCnt2string(cFrag_tmp),
-                        'sideChainsNo': i,
-                        'type':         'c' }
+                yield (fragType, atomCnt2string(cFrag_tmp), i)
 
     def getZfrags():
         zFrag = lCnt()
@@ -79,10 +73,7 @@ def make_cz_fragments(fasta, modifications):
             zFrag_tmp = lCnt(zFrag)
             fragType = 'z'+str(i)
             if not fragType in blockedFragments:
-                yield { 'moleculeType': fragType,
-                        'atomCnt_str':  atomCnt2string(zFrag_tmp),
-                        'sideChainsNo': i,
-                        'type':         'z' }
+                yield (fragType, atomCnt2string(zFrag_tmp), i)
 
     return getPrecursor, getCfrags, getZfrags
 #TODO It seems very strange to return these functions. Inspect it later on.
@@ -99,10 +90,10 @@ class CZformulator(Formulator):
         self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
 
     def makeMolecules(self, aaPerOneCharge=5):
-        for mol in chain( self.precs(), self.cfrags(), self.zfrags() ):
-            for q,g in protonate( self.Q, mol['type'] ):
-                if q * aaPerOneCharge < mol['sideChainsNo']:
-                    yield mol, q, g
+        for molType, atomCnt_str, sideChainsNo in chain( self.precs(), self.cfrags(), self.zfrags() ):
+            for q,g in protonate( self.Q, molType[0] ):
+                if q * aaPerOneCharge < sideChainsNo:
+                    yield molType, atomCnt_str, sideChainsNo, q, g
 
 def makeFormulas(fasta, Q, fragType='cz', modifications={}):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].

@@ -88,6 +88,13 @@ class isotopeCalculator:
         '''Calculate mass variance of an atom count.'''
         return sum( self.elementsMassVar[el]*elCnt for el, elCnt in atomCnt.items() )
 
+    def getSummary(self, atomCnt_str):
+        atomCnt = self.formParser.parse(atomCnt_str)
+        return (    self.getMonoisotopicMass(atomCnt),
+                    self.getMassMean(atomCnt),
+                    self.getMassVar(atomCnt)    )
+
+
     def getOldEnvelope(self, atomCnt_str):
         masses, probs = self.isotopicEnvelopes[atomCnt_str]
         return masses.copy(), probs.copy()
@@ -134,9 +141,9 @@ class isotopeCalculator:
         averageSpectrum     = Counter()
         chargesSquaredSum   = 0.0
 
-        for mol, q, g in fragmentator.makeMolecules(aaPerOneCharge):
+        for molType, atomCnt_str, sideChainsNo, q, g in fragmentator.makeMolecules(aaPerOneCharge):
             chargesSquaredSum += q**2
-            masses, probs = self.isoEnvelope( mol['atomCnt_str'], jointProb, q, g )
+            masses, probs = self.isoEnvelope( atomCnt_str, jointProb, q, g )
             for mass, prob in zip(masses,probs):
                 averageSpectrum[mass] += prob * q**2
 

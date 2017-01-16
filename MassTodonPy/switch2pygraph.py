@@ -10,8 +10,10 @@ Q = 9; modifications = {}; ionsNo  = 10000; P = .999
 massTodon = MassTodon(fasta, Q, massPrecDigits = 1)
 masses, intensities, noise_masses, noise_intensities = massTodon.randomSpectrum(ionsNo)
 
-mz      = np.append(masses, noise_masses)
-ints    = np.append(intensities, noise_intensities)
+import numpy as np
+
+mz = np.append(masses, noise_masses)
+ints = np.append(intensities, noise_intensities)
 
 massSpectrum = list(zip(mz,ints))
 massTodon.peakPicker.setMassSpectrum(massSpectrum)
@@ -23,23 +25,22 @@ from math import sqrt
 
 #####
 
-from IsotopeCalculator.isotopeCalculator import atomCnt2string
-
-
 
 %%time
 tolInt  = intervaltree.IntervalTree()
 molecules = []
 edges   = []
 
-for mol_cnt, (mol, q, g) in enumerate( massTodon.formulator.makeMolecules()):
-    atomCnt = atomCnt2string(mol['atomCnt'])
+
+list(enumerate( massTodon.formulator.makeMolecules()))
+
+for mol_cnt, (molType, atomCnt_str, sideChainsNo, q, g) in enumerate( massTodon.formulator.makeMolecules()):
     name    = 'M'+str(mol_cnt)
-    meanMass= massTodon.isoCalc.getMassMean(mol['atomCnt'])
-    massVar = massTodon.isoCalc.getMassVar(mol['atomCnt'])
+    monoMass, meanMass, massVar = massTodon.isoCalc.getSummary(atomCnt_str)
+    meanMass= (float(meanMass)+g+q)/q
     chebDev = sqrt(massVar/massTodon.peakPicker.cheb)
     tolInt[ meanMass-chebDev : meanMass+chebDev ] = name
-    molecules.append({'name':name, 'q':q, 'g':g, 'atomCnt':atomCnt, 'type':'M'})
+    molecules.append({'name':name, 'q':q, 'g':g, 'atomCnt_str':atomCnt_str, 'type':'M'})
 
 for E_cnt, (mz,intensity) in enumerate(massTodon.peakPicker.MS):
     E = 'E'+str(E_cnt)
