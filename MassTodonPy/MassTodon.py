@@ -81,13 +81,11 @@ class MassTodon():
                     jointProbabilityIsoSpec = .999,
                     precisionDigits     = 2,
                     precisionMass       = .05 ):
+
         self.fasta  = fasta
         self.Q      = precursorCharge
-
         self.isoCalc     = isotopeCalculator(massPrecDigits, isoMasses, isoProbs)
-
         self.formulator  = makeFormulas(fasta, precursorCharge, fragmentationType)
-
         self.peakPicker  = PeakPicker(self.formulator, self.isoCalc, chebyshevCoverage, jointProbabilityIsoSpec, precisionDigits, precisionMass )
 
     def randomSpectrum(

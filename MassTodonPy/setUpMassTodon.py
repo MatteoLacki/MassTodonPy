@@ -24,12 +24,11 @@ massTodon.peakPicker.add_I()
 massTodon.peakPicker.add_eG()
 G = massTodon.peakPicker.G
 
-
 import networkx as nx
-
 
 %%time
 deconvs = [isDeconvoProb(g) for g in nx.connected_component_subgraphs(G)]
+
 len(deconvs)
 from collections import Counter
 Counter(deconvs)

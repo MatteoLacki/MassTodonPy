@@ -27,9 +27,9 @@ class PeakPicker():
             formulator,
             isotopeCalculator,
             chebyshevCoverage       = 0.99,
-            jointProbabilityIsoSpec = .999,
+            jointProbabilityIsoSpec = 0.999,
             precisionDigits         = 2,
-            precisionMass           = .05   ):
+            precisionMass           = 0.05   ):
 
         self.cheb   = 1.0 - chebyshevCoverage
         self.G      = nx.Graph()
@@ -45,7 +45,7 @@ class PeakPicker():
         self.MS = massSpectrum
 
     def add_M_n_E(self):
-        '''Add molecule (M) and experimental (E) peak nodes to the problem graph G and links them using the idea of tolerance interval.'''
+        '''Add molecule (M) and experimental (E) peak nodes to the problem graph G and link them using the idea of tolerance interval.'''
 
         # Nodes of molecules.
         tolInt  = intervaltree.IntervalTree()
