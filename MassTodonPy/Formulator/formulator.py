@@ -20,7 +20,7 @@ from linearCounter import linearCounter as lCnt
 from itertools import chain
 from protonations import protonate
 from bricks import makeBricks
-from misc import standardize, countIsNegative
+from misc import standardize, countIsNegative, atomCnt2string
 
 def prolineBlockedFragments(fasta):
     '''Checks which c-z fragments cannot occur.'''
@@ -53,7 +53,10 @@ def make_cz_fragments(fasta, modifications):
 
     def getPrecursor():
         precursor = sum(superAtoms)
-        yield {'moleculeType': 'precursor', 'atomCnt': dict(precursor), 'sideChainsNo' : len(fasta), 'type':'p' }
+        yield { 'moleculeType': 'precursor',
+                'atomCnt_str' : atomCnt2string(precursor),
+                'sideChainsNo': len(fasta),
+                'type':         'p' }
 
     blockedFragments = prolineBlockedFragments(fasta)
 
@@ -64,7 +67,10 @@ def make_cz_fragments(fasta, modifications):
             cFrag_tmp = lCnt(cFrag)
             fragType = 'c'+str(i)
             if not fragType in blockedFragments and not i == 0:
-                yield {'moleculeType': fragType, 'atomCnt': dict(cFrag_tmp), 'sideChainsNo' : i, 'type':'c' }
+                yield { 'moleculeType': fragType,
+                        'atomCnt_str':  atomCnt2string(cFrag_tmp),
+                        'sideChainsNo': i,
+                        'type':         'c' }
 
     def getZfrags():
         zFrag = lCnt()
@@ -73,7 +79,10 @@ def make_cz_fragments(fasta, modifications):
             zFrag_tmp = lCnt(zFrag)
             fragType = 'z'+str(i)
             if not fragType in blockedFragments:
-                yield {'moleculeType': fragType, 'atomCnt': dict(zFrag_tmp), 'sideChainsNo' : i, 'type':'z' }
+                yield { 'moleculeType': fragType,
+                        'atomCnt_str':  atomCnt2string(zFrag_tmp),
+                        'sideChainsNo': i,
+                        'type':         'z' }
 
     return getPrecursor, getCfrags, getZfrags
 #TODO It seems very strange to return these functions. Inspect it later on.

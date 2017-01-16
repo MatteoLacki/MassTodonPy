@@ -65,10 +65,10 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
-
 from Formulator         import makeFormulas
 from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
+
 
 class MassTodon():
     def __init__(   self, fasta, precursorCharge,

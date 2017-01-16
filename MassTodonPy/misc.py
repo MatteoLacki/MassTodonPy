@@ -18,6 +18,9 @@
 
 from collections import defaultdict
 from linearCounter import linearCounter as lCnt
+from itertools import ifilter
+from networkx import connected_component_subgraphs as connectedComponents
+
 
 def standardize(modifications):
     '''Standardize modifications so that they meet the internal nomenclature scheme.'''
@@ -30,3 +33,29 @@ def standardize(modifications):
 def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
     return any( atomCnt[elem]<0 for elem in atomCnt )
+
+def toDeconvolve(g):
+	isProblem = False
+	for (n1,id1), (n2,id2) in g.edges_iter():
+		if n1 == 'eG' or n2 == 'eG':
+			isProblem = True
+			break
+	return isProblem
+
+def deconvIter(G):
+    return ifilter(toDeconvolve, connectedComponents(G))
+
+def atomCnt2string(atomCnt):
+    '''Translate a dictionary of atom counts into a uniquely defined string.'''
+    keys = atomCnt.keys()
+    keys.sort()
+    return "".join( el+str(atomCnt[el]) for el in keys )
+
+
+# class Indexer(dict):
+# 	def get(self, v1, v2):
+# 		args = frozenset( (v1,v2) )
+# 		return super(Indexer, self).__getitem__(args)
+# 	def add(self, v1, v2, val):
+# 		args = frozenset( (v1,v2) )
+# 		super(Indexer, self).__setitem__(args, val)

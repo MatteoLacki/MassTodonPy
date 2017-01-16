@@ -3,15 +3,13 @@
 %load_ext line_profiler
 
 from MassTodon import MassTodon
-import numpy as np
-from Solver import solveProblem, isDeconvoProb
 
 fasta='MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q = 9; modifications = {}; ionsNo  = 10000; P = .999
 
 massTodon = MassTodon(fasta, Q, massPrecDigits = 1)
-
 masses, intensities, noise_masses, noise_intensities = massTodon.randomSpectrum(ionsNo)
+
 mz      = np.append(masses, noise_masses)
 ints    = np.append(intensities, noise_intensities)
 
@@ -56,6 +54,15 @@ G = ig.Graph.DictList(vertices=molecules, edges=edges, iterative=False)
 # Add isotopologue nodes (I) to the problem graph G.
 tolInt  = intervaltree.IntervalTree()
 isoCnt  = 0
+
+
+
+
+fP = formulaParser()
+fP.parse('C100H200')
+
+
+
 
 f
 # _neigborhood_size_gt

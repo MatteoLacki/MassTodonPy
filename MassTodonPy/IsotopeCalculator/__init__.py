@@ -16,4 +16,4 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from isotopeCalculator import isotopeCalculator, atomCnt2string
+from isotopeCalculator import isotopeCalculator

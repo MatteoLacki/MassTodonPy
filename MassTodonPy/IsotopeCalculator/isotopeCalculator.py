@@ -17,6 +17,7 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from IsoSpecPy      import IsoSpecPy
+from formulaParser  import formulaParser
 from math           import exp, floor, fsum
 from collections    import Counter, defaultdict
 try:
@@ -27,11 +28,6 @@ from numpy.random   import multinomial
 import scipy.stats  as ss
 import numpy        as np
 
-def atomCnt2string(atomCnt):
-    '''Translate a dictionary of atom counts into a uniquely defined string.'''
-    keys = atomCnt.keys()
-    keys.sort()
-    return "".join( el+str(atomCnt[el]) for el in keys )
 
 def cdata2numpyarray(x):
     '''Turn c-data into a numpy array.'''
@@ -78,6 +74,8 @@ class isotopeCalculator:
         self.isotopicEnvelopes = {}
         self.massPrecDigits    = massPrecDigits
 
+        self.formParser = formulaParser()
+
     def getMonoisotopicMass(self, atomCnt):
         '''Calculate monoisotopic mass of an atom count.'''
         return sum( self.isoMasses[el][0]*elCnt for el, elCnt in atomCnt.items() )
@@ -90,17 +88,16 @@ class isotopeCalculator:
         '''Calculate mass variance of an atom count.'''
         return sum( self.elementsMassVar[el]*elCnt for el, elCnt in atomCnt.items() )
 
-    def getOldEnvelope(self, atomCnt):
-        atomCnt_str = atomCnt2string(atomCnt)
+    def getOldEnvelope(self, atomCnt_str):
         masses, probs = self.isotopicEnvelopes[atomCnt_str]
         return masses.copy(), probs.copy()
 
-    def getNewEnvelope(self, atomCnt, jointProb=.9999, precDigits=2):
-        atomCnt_str = atomCnt2string(atomCnt)
+    def getNewEnvelope(self, atomCnt_str, jointProb=.9999, precDigits=2):
         counts = []
         isotope_masses = []
         isotope_probs  = []
 
+        atomCnt = self.formParser.parse(atomCnt_str)
         for el, cnt in atomCnt.items():
             counts.append(cnt)
             isotope_masses.append(self.isoMasses[el])
@@ -117,12 +114,11 @@ class isotopeCalculator:
         self.isotopicEnvelopes[ atomCnt_str ] = ( masses, probs )
         return masses.copy(), probs.copy()
 
-    def getEnvelope(self, atomCnt, jointProb, precDigits=2):
-        atomCnt_str = atomCnt2string(atomCnt)
+    def getEnvelope(self, atomCnt_str, jointProb, precDigits=2):
         if atomCnt_str in self.isotopicEnvelopes:
-            masses, probs = self.getOldEnvelope(atomCnt)
+            masses, probs = self.getOldEnvelope(atomCnt_str)
         else:
-            masses, probs = self.getNewEnvelope(atomCnt, jointProb, precDigits)
+            masses, probs = self.getNewEnvelope(atomCnt_str, jointProb, precDigits)
         return masses, probs
 
     def isoEnvelope(self, atomCnt, jointProb, q, g):
@@ -140,7 +136,7 @@ class isotopeCalculator:
 
         for mol, q, g in fragmentator.makeMolecules(aaPerOneCharge):
             chargesSquaredSum += q**2
-            masses, probs = self.isoEnvelope( mol['atomCnt'], jointProb, q, g )
+            masses, probs = self.isoEnvelope( mol['atomCnt_str'], jointProb, q, g )
             for mass, prob in zip(masses,probs):
                 averageSpectrum[mass] += prob * q**2
 
