@@ -1,5 +1,5 @@
-from igraph import *
-# import igraph as ig
+# from igraph import *
+import igraph as ig
 
 # g = ig.Graph( directed = True )
 g = Graph()

@@ -83,7 +83,7 @@ class PeakPicker():
                 	self.G.add_node( iso, mz=mz, prob=prob )
                 	self.G.add_edge( mol, iso )
                 	isoCnt += 1
-	                tolInt[ mz - self.massPrec : mz + self.massPrec ] = iso
+                tolInt[ mz - self.massPrec : mz + self.massPrec ] = iso
 
         # Edges between isotopologue nodes and experimental peaks added
         for exp_peak, data in self.G.nodes_iter(data=True):

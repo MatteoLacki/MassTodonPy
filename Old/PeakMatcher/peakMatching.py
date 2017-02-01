@@ -29,12 +29,12 @@ for famNo in xrange(len(theory)):
 		V.append({ 'name':peakName, 'mass':m, 'intensity':p })
 		E.append({ 'source': familyName, 'target': peakName})
 		tolIntervals[ m-tol : m+tol ] = peakName
-		
+
 for empNo, info in enumerate(empiria):
 	m, i = info
 	empName = 'E_'+str(empNo)
 	V.append({ 'name':empName, 'mass':m, 'intensity':i })
-	
+
 
 
 
@@ -59,7 +59,7 @@ EG 		= defaultdict( lambda: None )
 for eNo, info in enumerate(empiria):
 	mass, intensity = info
 	intervals = tolIntervals[mass]
-	if intervals:					# experimental peak touches 
+	if intervals:					# experimental peak touches
 		Ename = 'E_' + str(eNo)
 		BFG.add_vertex( type='E', name=Ename, mass=mass, intensity=intensity )
 		grandparentNames = frozenset( interval.data for interval in intervals)
@@ -78,21 +78,21 @@ for eNo, info in enumerate(empiria):
 
 def getAtheoreticalPeaks(G):
 	'Masses and intensities of peaks that cannot be attributed to any theoretically observable chemical compound.'
-	return [ 	( experim['mass'], experim['intensity'] ) for 
-				experim in BFG.vs(type='E') if experim.degree() == 0 	]	
+	return [ 	( experim['mass'], experim['intensity'] ) for
+				experim in BFG.vs(type='E') if experim.degree() == 0 	]
 
 # def getUnsupportedFamilies(G, minimalProbability):
 # 	'Info on the chemical compounds with potentially less support in data than the minimalProbability value.'
 # 	print 'IMPLEMENT IT'
 # 	pass
 
-for family in BFG.vs(type='F'): 							# Establishing experimental support for individual compounds.	
+for family in BFG.vs(type='F'): 							# Establishing experimental support for individual compounds.
 	for peakNo in BFG.neighbors(family): 					# Just the envelopes here. Root not yet added
 		if BFG.neighborhood_size( peakNo, order=1 ) > 2: 	# Ascertain that there are some experimental groups G around the P peak. Not include P and F (order at most 1)
-			family['potentialSupport'] += BFG.vs[peakNo]['intensity'] 	
+			family['potentialSupport'] += BFG.vs[peakNo]['intensity']
 	if family['potentialSupport'] < minExpSupp:
 		for peakNo in BFG.neighbors(family):
-	 		BFG.delete_edges( 	BFG.get_eid(peakNo, nodeNo) for nodeNo in BFG.neighbors( peakNo )  
+	 		BFG.delete_edges( 	BFG.get_eid(peakNo, nodeNo) for nodeNo in BFG.neighbors( peakNo )
 	 							if nodeNo != family.index ) # Severe edges between peaks and experimental peaks, not between peaks and family nodes
 
 nodesToDelete = [] 						# Deletion of the G nodes without any envelope peaks around left
@@ -109,7 +109,7 @@ for G in BFG.vs(type='G'):
 BFG.delete_vertices( nodesToDelete )
 
 subproblems = [ subG for subG in BFG.decompose() 				# subproblems for the deconvolution
-				if {'F','E'} <= set( subG.vs['type']) ]		# Only good subproblems have both a family node and an empirical node 
+				if {'F','E'} <= set( subG.vs['type']) ]		# Only good subproblems have both a family node and an empirical node
 
 # for s in subproblems:
 # 	print s
@@ -130,15 +130,15 @@ for i,P in enumerate( subG.vs( type = 'P' ) ):
 			node = subG.vs[nodeNo]
 			isFamilyNode = node['type'] == 'F'
 			if isFamilyNode: 								# edge between either:
-				edge = subG.es[ subG.get_eid(nodeNo, RootNo) ] 		# the root and a family 
+				edge = subG.es[ subG.get_eid(nodeNo, RootNo) ] 		# the root and a family
 			else:													# or
 				edge = subG.es[ subG.get_eid( P.index, nodeNo) ]		# an experimental peak and an envelope peak
-			
-			if edge['varNo'] == None: 			
+
+			if edge['varNo'] == None:
 				edge['varNo'] 	= varNoMax 	# Assign number to the flow variable in the optimisation problem
 				edge['varType'] = 'flow' 	# Tag as flow
 				varNoMax += 1
-			
+
 			if isFamilyNode:
 				AeqSparse.append(( i, edge['varNo'], -float(P['intensity']) ))
 			else:
@@ -148,7 +148,7 @@ normalize = False
 if normalize:
 	for alphaEdge in subG.es[ subG.adjacent('Root') ]: 		# This assures that alphas sum to one. This is not necessary or wanted...
 		AeqSparse.append((i,alphaEdge['varNo'],1.0))
-	
+
 zeros = [0.0] * varNoMax 	# Densify the sparse representation
 Aeq = []
 I = i+1
@@ -174,10 +174,10 @@ Aineq = []
 for i in xrange(I):
 	Aineq.append(zeros[:])
 for i,j,v in AineqSparse:
-	Aineq[i][j] = v 
+	Aineq[i][j] = v
 
 c0Sparse = [ (e['varNo'], 1.) for e in subG.es( varType = 'flow' ) ]
-c0 = [0.0]*varNoMax 
+c0 = [0.0]*varNoMax
 for i,v in c0Sparse:
 	c0[i]=-v 		# minus for the optimisation is minimising and we want max flow.
 

@@ -94,7 +94,6 @@ class isotopeCalculator:
                     self.getMassMean(atomCnt),
                     self.getMassVar(atomCnt)    )
 
-
     def getOldEnvelope(self, atomCnt_str):
         masses, probs = self.isotopicEnvelopes[atomCnt_str]
         return masses.copy(), probs.copy()

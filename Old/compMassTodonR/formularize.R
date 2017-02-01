@@ -38,11 +38,11 @@ getSubsequence 		<- function(
 	}
 }
 
-fasta = MassTodonR::ubiquitin
-proteinogenicAAs = MassTodonR::proteinogenicAAs
-formularize <- function(fasta, proteinogenicAAs = MassTodonR::proteinogenicAAs)
-{
-	precursor 	<- seqinr::s2c(fasta)
+load('/Users/matteo/Documents/MassTodon/MassTodonR/R/sysdata.rda')
+# fasta = MassTodonR::ubiquitin
+formularize = function(){
+
+
 	aminoAcidNo <- length( precursor )
 	notProline 	<- !precursor == "P"
 
@@ -52,21 +52,43 @@ formularize <- function(fasta, proteinogenicAAs = MassTodonR::proteinogenicAAs)
 		# Restrict to elements that are forming the molecule.
 	aminoAcidResiduals <- lapply(precursor, function(aa) proteinogenicAAs[[aa]] )
 
+		# Adding the modifications
+	if( 'aaMods' %in% names(modifications) ){
+
+		AAwithDiffIdx <- modifications$aaMods %>% dplyr::select( aminoAcidNo ) %>% unlist
+
+		aminoAcidResiduals[ AAwithDiffIdx ] <-
+			Map(
+				function( AAatomCnt, diff ) add_vectors( unlist(diff), unlist(AAatomCnt) ),
+				aminoAcidResiduals[AAwithDiffIdx],
+				modifications$aaMods %>% dplyr::select(-aminoAcidNo ) %>% split(1:nrow(modifications$aaMods))
+			)
+	}
+
 		# adding the c0 part.
 			# Simply: add H for the non-residual n-Terminus H
 			# Add the NH as part of the c0 fragment (reparametrization).
 	c0 <- c( H = 2L, N = 1L )
+
+	if( 'cTermMod' %in% names(modifications) ){
+		c0 <- add_vectors( c0, unlist(modifications$cTermMod) )
+	}
+
 	z1idx <- length(aminoAcidResiduals)
-	z1 <- aminoAcidResiduals[[ z1idx ]] 
+	z1 <- aminoAcidResiduals[[ z1idx ]]
+
 	z1 <- z1 %>%
 		add_vectors( c( H =-1L,  N =-1L ) ) %>% # The NH cannot be stolen from the next AA, cause there is no next AA.
-		add_vectors( c( H = 1L,  O = 1L ) )		# The residual form lacks OH. 
+		add_vectors( c( H = 1L,  O = 1L ) )		# The residual form lacks OH.
+
+	if( 'nTermMod' %in% names(modifications) ) z1 <-
+		z1 %>% add_vectors( unlist(modifications$nTermMod)	)
 
 	aminoAcidResiduals[[z1idx]] <- z1
 	aminoAcidResiduals <- c(c0=list(c0), aminoAcidResiduals)
-	
-	AAR4precursorCalc <- dplyr::bind_rows(aminoAcidResiduals %>% lapply(function(x) x %>% t %>% data.frame)) %>% as.matrix	
-	AAR4precursorCalc[ is.na(AAR4precursorCalc) ] <- 0L 
+
+	AAR4precursorCalc <- bind_rows(aminoAcidResiduals %>% lapply(function(x) x %>% t %>% data.frame)) %>% as.matrix
+	AAR4precursorCalc[ is.na(AAR4precursorCalc) ] <- 0L
 
 			# Making precursors
 	precursors <- cbind(
@@ -75,20 +97,19 @@ formularize <- function(fasta, proteinogenicAAs = MassTodonR::proteinogenicAAs)
 		subsequence 	= seqinr::c2s( precursor )
 	)
 	rownames(precursors) <- 'precursor'
-	
+
 		# Here we prepare a modified list of residuals. We add an extra H
-		# to the c1 fragment, assuring that the extra H gets counted in every
-		# c fragment, and omitted in every z fragment. The extra H comes from the C=O turning into C-O-H with 
-		# H coming from the ionized residual to the right. c0 hasn't got a free C=O to do this form of things.
+		# to the c0 fragment, assuring that the extra H gets counted in every
+		# c fragment, and omitted in every z fragment.
 
 	AAR4fragmentCalc <- AAR4precursorCalc
 	if( !('H' %in% colnames(AAR4fragmentCalc)) ) stop("You're protein has no hydrogens left. If this is not an issue find this place in code and comment it.")
-	
-	AAR4fragmentCalc[1,'H'] <- AAR4fragmentCalc[1,'H'] + 1L # This line added an extra H.
+
+	AAR4fragmentCalc[1,'H'] <- AAR4fragmentCalc[1,'H'] + 1L
 
 	if( any(AAR4fragmentCalc < 0) ) stop('Your modifications resulted in negative counts of atoms (told ya to be careful).')
 
-		# These are all the elements that make up the 
+		# These are all the elements that make up the
 	presentElements <<- colnames(AAR4fragmentCalc)
 
 		# This internal function will calculate the fragments
@@ -122,12 +143,14 @@ formularize <- function(fasta, proteinogenicAAs = MassTodonR::proteinogenicAAs)
 		return(fragments)
 	}
 
+
 		# Making fragments
 		#
 		# observation by Frederik: indeed, we change the definition of the
 		# c ions by substracting one hydrogen, for it seems more intuitive.
 	cFragments <- getFragments('c')
 	zFragments <- getFragments('z')
+
 
 	# If there are prolines certain fragments won't appear.
 	if( any(!notProline) )
@@ -148,14 +171,12 @@ formularize <- function(fasta, proteinogenicAAs = MassTodonR::proteinogenicAAs)
 		# Adding subsequence tags.
 	cFragments$subsequence <- sapply(
 		as.character(cFragments$fragmentName),
-		getSubsequence,
-		precursor=precursor
+		getSubsequence
 	)
 
 	zFragments$subsequence <- sapply(
 		as.character(zFragments$fragmentName),
-		getSubsequence,
-		precursor=precursor
+		getSubsequence
 	)
 
 	ions <- rbind(
@@ -164,5 +185,99 @@ formularize <- function(fasta, proteinogenicAAs = MassTodonR::proteinogenicAAs)
 		zFragments
 	)
 
-	return(ions)
+	####################### protonations
+	precursorProtonation<- do.call(
+		rbind,
+		lapply(
+			1:maxProtonsNo,
+			function( activeProtonation )
+				data.frame(
+					active 	= activeProtonation,
+					neutral	= 0:(maxProtonsNo - activeProtonation)
+				)
+		)
+	)
+
+	# formulas$forFit <<- merge(
+	# 	do.call(
+	# 		rbind,
+	# 		apply(
+	# 			ions[ c('fragmentName', 'subsequence')],
+	# 			1,
+	# 			function(ion)
+	# 				data.frame(
+	# 					fragmentName = ion[1],
+	# 					switch( seqinr::s2c(ion[1])[1],
+	# 						'p' = precursorProtonation,
+	# 						'z' = subset(
+	# 							precursorProtonation,
+	# 							active <= (nchar(ion[2]) %/% 5) + 1 # The charge restriction
+	# 						),
+	# 						'c' = subset(
+	# 							precursorProtonation %>% mutate( neutral = neutral-1L ),
+	# 							active <= (nchar(ion[2]) %/% 5) + 1 # The charge restriction
+	# 						)
+	# 					),
+	# 					row.names = NULL
+	# 				)
+	# 		)
+	# 	),
+	# 	ions
+	# )
+
+	potentialCharges <- function(ions, distanceBetweenCharges=5){
+		aasNo 		= nchar(ion[2])
+		potentialQ 	= aasNo %/% distanceBetweenCharges	
+		if( aasNo %% distanceBetweenCharges > 0 ) potentialQ = potentialQ + 1
+		potentialQ
+	}
+
+	formulas$forFit <<- merge(
+		do.call(
+			rbind,
+			apply(
+				ions[ c('fragmentName', 'subsequence')],
+				1,
+				function(ion)
+					data.frame(
+						fragmentName = ion[1],
+						switch( seqinr::s2c(ion[1])[1],
+							'p' = precursorProtonation,
+							'z' = subset(
+								precursorProtonation,
+								active <= potentialCharges(ion) # The charge restriction
+							),
+							'c' = subset(
+								precursorProtonation %>% mutate( neutral = neutral-1L ),
+								active <= potentialCharges(ion) # The charge restriction
+							)
+						),
+						row.names = NULL
+					)
+			)
+		),
+		ions
+	)
+
+	ionsType <- substring( formulas$forFit$fragmentName, 1, 1 )
+
+	cond <- ionsType == 'p' | (ionsType != 'p' & formulas$forFit$active < maxProtonsNo)
+
+	formulas$forFit <<- formulas$forFit[cond,]
+
+		### Adding the monoisotopic masses.
+	presentMonoIsotopes <- monoisotopes[ monoisotopes$element %in% presentElements, ]
+	rownames(presentMonoIsotopes) <- presentMonoIsotopes$element
+			# reordering according to the order of atoms in presentElements
+	presentMonoIsotopes <- presentMonoIsotopes[presentElements,]
+	rownames(presentMonoIsotopes) <- NULL
+
+	formulas$forFit <<- formulas$forFit %>%
+		dplyr::mutate( H = H + active + neutral )
+
+	formulas$forFit <<- formulas$forFit %>% dplyr::mutate(
+		monoisotopicMass = as.vector(as.matrix(formulas$forFit[,presentElements]) %*% presentMonoIsotopes$mass)
+	)
+
+	return(invisible())
 }
