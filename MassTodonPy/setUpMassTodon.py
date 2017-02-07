@@ -6,6 +6,13 @@ from MassTodon import MassTodon
 import numpy as np
 from Solver import solveProblem, isDeconvoProb
 
+from Parsers import ParseMzXML
+
+path = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
+spectrum_file = path+'Ubiquitin_ETD_10 ms_1071.mzXML'
+spectrum = ParseMzXML(spectrum_file)
+spectrum
+
 fasta='MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q = 9; modifications = {}; ionsNo  = 10000; P = .999
 
