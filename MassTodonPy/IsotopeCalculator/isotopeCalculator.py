@@ -47,11 +47,10 @@ def agg_spec_proper(masses, probs, digits=2):
         prob[...] = fsum(lists[mass])
     return newMasses, newProbs
 
-def aggregate2( keys, values, digits=2 ):
+def aggregate( keys, values ):
     '''Aggregate values with the same keys.'''
     uniqueKeys, indices = np.unique( keys, return_inverse=True)
     return uniqueKeys, np.bincount( indices, weights=values )
-
 
 class isotopeCalculator:
     '''A class for isotope calculations.'''
@@ -131,8 +130,10 @@ class isotopeCalculator:
         '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
         masses, probs = self.getEnvelope(atomCnt, jointProb)
         masses = np.around( (masses + g + q)/q, decimals=self.massPrecDigits )
+        masses, probs = aggregate(masses, probs)
         return masses, probs
-        #TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
+        #NOT-TODO add a version that uses precalculated spectra for some substances like proteins/metabolites/so on .. so on.. This would save massively time for generation.
+        # Alas: this thing is sooo quick that there is absolutely no reason for this modification.
 
     def randomFragmentationExperiment(self, fasta, Q, ionsNo, fragmentator, aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
         '''Get random spectrum of a fragmentation experiment.'''

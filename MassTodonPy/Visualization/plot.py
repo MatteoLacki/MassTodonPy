@@ -38,7 +38,7 @@ def plot_connected_component(cc):
 
 def plot_deconvolution_graph(   G,
                                 colors = {'M':'green','I':'blue','G':'red'},
-                                sizes  = {'M':500,'I':20,'G':20} ):
+                                sizes  = {'M':40,'I':20,'G':20} ):
     '''Plot the graph for deconvolution problem.
 
     G       : graph of a deconvolution problem.
@@ -51,5 +51,5 @@ def plot_deconvolution_graph(   G,
         nodes[ G.node[N]['type'] ].append(N)
     for Ntype in nodes:
         nx.draw_networkx_nodes(G, pos=pos, nodelist=nodes[Ntype], node_color=colors[Ntype], node_size=sizes[Ntype])
-    nx.draw_networkx_edges(G, pos, width=1.0 )
+    nx.draw_networkx_edges(G, pos, width=1.0, alpha=.1)
     plt.show()

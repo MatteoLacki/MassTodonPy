@@ -15,82 +15,86 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+from    collections import Counter
+from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
 
-from collections import defaultdict
-from scipy.optimize import linprog
-
-def get_linprog_input(g):
-	'''Prepares the input for the scipy linprog solver.'''
-	R = ('R',0) 	# the root node
-	g.add_node(R)  	# root is linked to molecules, M
-	for nodeType, nodeNo in g.nodes_iter():
-		if nodeType=='M':
-			g.add_edge(R, (nodeType,nodeNo))
-
-	edges2coord = {} # edges to solver output
-	coord2edges = [] # solver output to edges
-	varNo = 0
-	c = [] # costs
-
-	alphaEdge 	= frozenset(('R','M'))
-	xEdge 		= frozenset(('I','eG'))
-	for (t1,n1), (t2,n2) in g.edges_iter():
-		types = frozenset((t1, t2))
-		if types == alphaEdge or types == xEdge:
-			coord2edges.append(((t1,n1), (t2,n2)))
-			edges2coord[ frozenset(((t1,n1), (t2,n2))) ] = varNo
-			if types==alphaEdge:
-				c.append(0.0)
-			else:
-				c.append(-1.0)
-			varNo += 1
-
-	A_eq = []
-	A_ub_tmp = defaultdict(lambda: [0]*varNo)
-	b_ub_tmp = {}
-
-	for M in g.edge[R]:
-		for I in g.edge[M]:
-			if len(g.edge[I]) > 1:
-				if not I == R:
-					A_eq_row = [.0] * varNo
-					for eG in g.edge[I]:
-						if not eG == M:
-							IeGidx = edges2coord[frozenset((I,eG))]
-							A_eq_row[ IeGidx ] = 1.0
-							A_ub_tmp[eG][ IeGidx ] = 1.0
-							b_ub_tmp[eG] = g.node[eG]['intensity']
-					A_eq_row[ edges2coord[frozenset((R,M))] ] = -g.node[I]['prob']
-					A_eq.append(A_eq_row)
-
-	b_eq = [0]*len(A_eq)
-	A_ub = []; b_ub = []
-
-	for eG in b_ub_tmp:
-		A_ub.append(A_ub_tmp[eG])
-		b_ub.append(b_ub_tmp[eG])
-
-	# coord2edges will be necessary to translate the results back
-	linprogInput = {'c':c, 'A_eq':A_eq, 'b_eq':b_eq, 'A_ub':A_ub, 'b_ub':b_ub}
-	return g, coord2edges, linprogInput
-
-def isDeconvoProb(g):
-	isProblem = False
-	for (n1,id1), (n2,id2) in g.edges_iter():
-		if n1 == 'eG' or n2 == 'eG':
-			isProblem = True
-			break
-	return isProblem
+def add_missing_experimental_groups(SFG):
+    '''Add experimental graphs to graph to isotopologues nodes that were unpaired.
+    '''
+    cnts = Counter(SFG.node[N]['type'] for N in SFG)
+    Gcnt = cnts['G']
+    newGnodes = []
+    newGIedges= []
+    for I in SFG:
+        if SFG.node[I]['type'] == 'I':
+            if len( SFG[I] ) == 1:
+                G = 'G' + str(Gcnt)
+                newGnodes.append( (G,{'intensity':0.0, 'type':'G'}) )
+                newGIedges.append( (G,I) )
+                Gcnt += 1
+    SFG.add_nodes_from(newGnodes)
+    SFG.add_edges_from(newGIedges)
 
 
-def solveProblem(g):
-	'''Apply the simplex algorithm to solve the modified max flow problem.'''
-	g, coord2edges, linprogInput = get_linprog_input(g)
-	res = linprog(**linprogInput)
-	return res, g, coord2edges, linprogInput
+def normalize_rows(M):
+    '''Divide rows of a matrix by their sums.'''
+    for i in xrange(M.size[0]):
+        row_hopefully = M[i,:]
+        M[i,:] = row_hopefully/sum(row_hopefully)
 
 
-def solutions_iter(deconvolutionProblems_iter):
-	'''Iterate over all solutions.'''
-	for g in deconvolutionProblems_iter:
-		yield solveProblem(g)
+def prepare_deconvolution(SFG, L2_percent=0.0):
+    '''Prepare input for CVXOPT routines (as sparse as possible).'''
+    cnts = Counter()
+    for N in SFG: # ordering some of the SFG graph nodes and edges
+        Ntype = SFG.node[N]['type']
+        SFG.node[N]['cnt'] = cnts[Ntype]
+        cnts[Ntype] += 1
+        if Ntype == 'G':
+            for I in SFG.edge[N]:
+                SFG.edge[N][I]['cnt'] = cnts['GI']
+                cnts['GI'] += 1
+    varNo  = cnts['GI']+cnts['M']
+    squared_G_intensity = 0.0
+    total_G_intensity   = 0.0
+    q_list = []
+    P_list = []
+    for G in SFG:
+        if SFG.node[G]['type']=='G':
+            G_intensity = SFG.node[G]['intensity']
+            squared_G_intensity += G_intensity
+            total_G_intensity   += G_intensity
+            G_degree = len(SFG[G])
+            q_list.append(  matrix( -G_intensity, size=(G_degree,1) )  )
+            ones = matrix( 1.0, (G_degree,1))
+            P_list.append( 2.0 * ones * ones.T ) # 2 because of .5 x'Px parametrization.
+    q_list.append(  matrix( 0.0, ( cnts['M'], 1 ) )  )
+    q_vec = matrix(q_list)
+    P_spectral_norm = 2.0 * max(p_mat.size[0] for  p_mat in P_list) # spec(11')=dim 1
+    P_list.append(  matrix( 0.0, ( cnts['M'], cnts['M'] ) )  )
+    P_mat = spdiag(P_list)/P_spectral_norm      # normalization with spectral norm
+    q_vec = q_vec/P_spectral_norm               # normalization with spectral norm
+    G_mat = spmatrix(-1.0, xrange(varNo), xrange(varNo))
+    if L2_percent:
+        P_mat = P_mat + L2_percent*max(P_mat)*G_mat # L2 regularization. Sort of.
+    h_vec = matrix(0.0, size=(varNo,1) )
+    A_x = [];A_i = [];A_j = []
+    for M in SFG:
+        if SFG.node[M]['type']=='M':
+            M_cnt = SFG.node[M]['cnt']
+            for I in SFG[M]:
+                i_cnt = SFG.node[I]['cnt']
+                A_x.append(-SFG.node[I]['intensity'] ) # probability (not intensity)
+                A_i.append( i_cnt )
+                A_j.append( M_cnt + cnts['GI'] )
+                for G in SFG[I]:
+                    if not G == M:
+                        A_x.append( 1.0 )
+                        A_i.append( i_cnt )
+                        A_j.append( SFG.edge[G][I]['cnt'] )
+    A_mat   = spmatrix( A_x, A_i, A_j, size=( cnts['I'], varNo ) )
+    normalize_rows(A_mat)
+    b_vec   = matrix( 0.0, ( cnts['I'], 1)  )
+    initvals= {}
+    initvals['x'] = matrix( 0.0, ( varNo, 1)  )
+    return total_G_intensity, cnts, varNo, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals

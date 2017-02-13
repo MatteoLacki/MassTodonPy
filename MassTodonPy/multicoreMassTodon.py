@@ -15,13 +15,17 @@ import  matplotlib.pyplot as plt
 from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
 from    PeakPicker import group_experimental_peaks, getGraphs, trim_unlikely_molecules, contains_experimental_peaks
 import cPickle as pickle
+from    Solver import add_missing_experimental_groups, prepare_deconvolution
+# import  multiprocessing as multiKulti
 
 path = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
 spectrum = ParseMzXML(path+'Ubiquitin_ETD_10 ms_1071.mzXML',cut_off_intensity=100)
 # plot_spectrum(spectrum, 1215, 1230) # plot_spectrum(spectrum, 0,8000)
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q = 8; modifications = {}; jointProb = .999; mzPrec = .05;
-massTodon = MassTodon(fasta, Q, massPrecDigits=2)
+massTodon = MassTodon(fasta, Q, massPrecDigits=1)
+
+massTodon.isoCalc.isoEnvelope('C100H200',.999,3,1)[0]
 
 # BFG     = massTodon.peakPicker.BFG_representation(spectrum)
 # css     = nx.connected_component_subgraphs(BFG)
@@ -34,28 +38,98 @@ problems = pickle.load( open( problems_file, "rb" ) )
 for P in problems:
     group_experimental_peaks(P)
 
-smallProblems = [P for P in problems if len(P) < 20]
-# problem = problems[0].copy()
-problem = smallProblems[0].copy()
+def deconvolve(SFG, L2_percent=0.0):
+    SFG = SFG.copy()
+    add_missing_experimental_groups(SFG)
+    cnts, varNo, G_intensity, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals = prepare_deconvolution(SFG, L2_percent)
+    sol = solvers.qp(P_mat,q_vec,G_mat,h_vec,A_mat,b_vec, initvals=initvals)
+    return sol
 
-    # adding missing G edges with 0 intensity
-cnts = Counter(problem.node[N]['type'] for N in problem)
+solvers.options['show_progress'] = False
+%%time
+sols = [deconvolve(P, 0.0) for P in  problems]
 
-Gcnt = cnts['G']
-newGnodes = []
-newGIedges= []
-for I in problem:
-    if problem.node[I]['type'] == 'I':
-        if len( problem[I] ) == 1:
-            G = 'G' + str(Gcnt)
-            newGnodes.append( (G,{'intensity':0.0, 'type':'G'}) )
-            newGIedges.append( (G,I) )
-            Gcnt += 1
 
-problem.add_nodes_from(newGnodes)
-problem.add_edges_from(newGIedges)
+# total intensities of problems
+def get_total_intensity(SFG):
+    SFG = SFG.copy()
+    add_missing_experimental_groups(SFG)
+    return prepare_deconvolution(SFG)[0]
+
+totalI = [ get_total_intensity(P) for P in problems ]
+
+solutions_n     = Counter()
+total_intensity = Counter()
+for intensity, sol in zip(totalI, sols):
+    solutions_n[sol['status']] += 1
+    total_intensity[sol['status']] += intensity
+
+for t in solutions_n.keys():
+    total_intensity[t] /= solutions_n[t]
+
+total_intensity
+
+Counter( s['status'] for s in sols)
+totalI
+
+
+# P = multiKulti.Pool(3)
+# %%time
+# sols = P.map( deconvolve, problems )
+
+Counter( s['status'] for s in sols)
+Counter( s['iterations'] for s in sols if s['status'] == 'unknown')
+Counter( s['iterations'] for s in sols if s['status'] == 'optimal')
+
+[s['x'] for s in sols if s['status'] == 'unknown']
+
+
+[s['x'] for s in sols if s['status'] == 'optimal']
+
+
+def check_info(SFG):
+    SFG = SFG.copy()
+    add_missing_experimental_groups(SFG)
+    return prepare_deconvolution(SFG)
+
+infos = [check_info(P) for P in problems]
+info = infos[0]
+
+from scipy.linalg import norm
+P_mat = np.matrix(matrix(info[3]))
+norm(P_mat,ord=2)
+
+
+def check_rank(SFG):
+    SFG = SFG.copy()
+    add_missing_experimental_groups(SFG)
+    cnts, varNo, G_intensity, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals = prepare_deconvolution(SFG)
+    rank = np.linalg.matrix_rank(np.array(matrix(A_mat)))
+    size = A_mat.size
+    return rank, size[0], size[1]
+
+ranks = [check_rank(P) for s, P in zip(sols,problems) if s['status'] == 'unknown']
+ranks
+
+
+
+
+
+
 
 # ordering some of the problem graph nodes and edges
+smallProblems = [P for P in problems if len(P) < 20]
+doubleMolProblem = [P for P in problems if len([N for N in P if P.node[N]['type']=='M']) == 2]
+tripleMolProblem = [P for P in problems if len([N for N in P if P.node[N]['type']=='M']) == 3]
+# problem = problems[0].copy()
+# problem = smallProblems[0].copy()
+# problem = doubleMolProblem[0].copy()
+problem = tripleMolProblem[0].copy()
+add_missing_experimental_groups(problem)
+# plot_deconvolution_graph(problem)
+problem
+
+
 cnts = Counter()
 for N in problem:
     Ntype = problem.node[N]['type']
@@ -77,15 +151,19 @@ for G in problem:
         squared_G_intensity += G_intensity
         G_degree = len(problem[G])
         q_list.append(  matrix( -G_intensity, size=(G_degree,1) )  )
-        twos = matrix(2.0, (G_degree,1)) # 2 because of .5 x'Px parametrization.
-        P_list.append( twos * twos.T )
+        twos = matrix( 1.0, (G_degree,1))
+        P_list.append( 2.0 * twos * twos.T ) # 2 because of .5 x'Px parametrization.
 
 q_list.append(  matrix( 0.0, ( cnts['M'], 1 ) )  )
 q_vec = matrix(q_list)
 P_list.append(  matrix( 0.0, ( cnts['M'], cnts['M'] ) )  )
-P_mat = spdiag(P_list)
+P_spectral_norm = 2.0 * max(p_mat.size[0] for  p_mat in P_list) # spec(11')=dim 1
+P_mat = spdiag(P_list)/P_spectral_norm
+q_vec = q_vec/P_spectral_norm
 G_mat = spmatrix(-1.0, xrange(varNo), xrange(varNo))
 h_vec = matrix(0.0, size=(varNo,1) )
+
+
 
 A_x = [];A_i = [];A_j = []
 probabilities = Counter()
@@ -106,22 +184,40 @@ for M in problem:
                     A_i.append( i_cnt )
                     A_j.append( problem.edge[G][I]['cnt'] )
 
-A_mat = spmatrix( A_x, A_i, A_j, size=( cnts['I'], varNo ) )
-b_vec = matrix( 0.0, ( cnts['I'], 1)  )
+A_mat   = spmatrix( A_x, A_i, A_j, size=( cnts['I'], varNo ) )
+b_vec   = matrix( 0.0, ( cnts['I'], 1)  )
+initvals= {}
+initvals['x'] = matrix( 0.0, ( varNo, 1)  )
+
+
+def normalize_rows(M):
+    for i in xrange(M.size[0]):
+        row_hopefully = M[i,:]
+        M[i,:] = row_hopefully/sum(row_hopefully)
+
+normalize_rows(A_mat)
+
+
+
+
+solvers.options['show_progress'] = True
+sol = solvers.qp(P_mat,q_vec,G_mat,h_vec,A_mat,b_vec, initvals=initvals)
 sol = solvers.qp(P_mat,q_vec,G_mat,h_vec,A_mat,b_vec)
 
+print sol['x']
 
-A_mat.size
-print A_mat
+sol['status']
 
-plot_deconvolution_graph(problem)
+varNo
 
-# A
-# A_np = np.matrix(matrix(A))
-# np.linalg.matrix_rank(A_np)
+# solvers.options['show_progress'] = False
+
+np.array(matrix(A_mat))
+
+
 #
 # cnts
-# B = np.array([[1,1,-.05,0,0,0],[0,0,0,1,1,-.4]])
+B = np.array([[1,1,-.05,0,0,0],[0,0,0,1,1,-.4]])
 # np.linalg.matrix_rank(B)
 #
 # BB = np.array([[1,1,-.05],[0,0,-.4]])
