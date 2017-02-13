@@ -1,7 +1,8 @@
 import  pylab as pl
 from    matplotlib import collections  as mc
-import matplotlib.pyplot as plt
+import  matplotlib.pyplot as plt
 import  networkx as nx
+from    collections import defaultdict
 
 def plot_spectrum(spectrum, mz_min=0, mz_max=float('Inf')):
     spec = []
@@ -44,7 +45,8 @@ def plot_deconvolution_graph(   G,
     colors  : dictionary mapping tags of graph to colors of nodes
     sizez   : dictionary mapping tags of graph to sizes of nodes
     '''
-    nodes = defaultdict(list)
+    pos     = nx.spring_layout(G)
+    nodes   = defaultdict(list)
     for N in G:
         nodes[ G.node[N]['type'] ].append(N)
     for Ntype in nodes:

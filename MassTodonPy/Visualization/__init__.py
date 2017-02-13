@@ -16,4 +16,4 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from plot import plot_spectrum, plot_connected_component
+from plot import plot_spectrum, plot_deconvolution_graph

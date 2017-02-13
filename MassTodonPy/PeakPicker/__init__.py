@@ -16,4 +16,4 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from peakPicker import PeakPicker
+from peakPicker import PeakPicker, contains_experimental_peaks, trim_unlikely_molecules, getGraphs, group_experimental_peaks
