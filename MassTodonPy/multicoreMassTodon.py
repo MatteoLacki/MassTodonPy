@@ -8,11 +8,11 @@ from    intervaltree import Interval as I, IntervalTree as Itree
 from    math import sqrt
 from    pandas import DataFrame
 from    frozendict import frozendict
-from    collections import Counter
+from    collections import Counter, defaultdict
 import  networkx as nx
 import  igraph as ig
 from    Parsers import ParseMzXML
-from    Visualization import plot_spectrum, plot_connected_component
+from    Visualization import plot_spectrum, plot_deconvolution_graph
 import  matplotlib.pyplot as plt
 from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
 
@@ -21,6 +21,7 @@ spectrum = ParseMzXML(
     path + 'Ubiquitin_ETD_10 ms_1071.mzXML', cut_off_intensity=100)
 
 # plot_spectrum(spectrum, 1215, 1230)
+# plot_spectrum(spectrum, 0,8000)
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q = 8
 modifications = {}
@@ -49,7 +50,6 @@ for cnt, (mType, formula, aaNo, q, g) in enumerate(massTodon.formulator.makeMole
                 BFG.add_node(expMZ, intensity=expI, type='E')
             BFG.add_edge(I, expMZ)
         iso_cnt += 1
-
 
 def contains_experimental_peaks(cc):
     return any(isinstance(N, float) for N in cc)
@@ -82,11 +82,6 @@ def getGraphs(ccs, minimal_prob=.7):
 css = nx.connected_component_subgraphs(BFG)
 problems = list(getGraphs(css, 0.7))
 
-# P = problems[0].copy()
-# len(P)
-# len(P.edges())
-# establish groups of empirical peaks G
-
 def group_experimental_peaks(P):
     E2remove = []
     Gs = Counter()
@@ -106,11 +101,9 @@ def group_experimental_peaks(P):
 for P in problems:
     group_experimental_peaks(P)
 
-problem = problems[0].copy()
-
-
-x = Counter( len(problem[G]) for G in problem if problem.node[G]['type'] == 'G' )
-
+smallProblems = [P for P in problems if len(P) < 20]
+# problem = problems[0].copy()
+problem = smallProblems[0].copy()
 
 # adding missing G edges with 0 intensity
 cnts = Counter(problem.node[N]['type'] for N in problem)
@@ -139,9 +132,6 @@ for N in problem:
         for I in problem.edge[N]:
             problem.edge[N][I]['cnt'] = cnts['GI']
             cnts['GI'] += 1
-
-
-x = Counter( len(problem[G]) for G in problem if problem.node[G]['type'] == 'G' )
 
 varNo = cnts['GI']+cnts['M']
 
@@ -194,10 +184,17 @@ b_vec = matrix( 0.0, ( cnts['I'], 1)  )
 sol = solvers.qp(P_mat,q_vec,G_mat,h_vec,A_mat,b_vec)
 
 
-x = Counter( len(problem[N]) for N in problem if problem.node[N]['type']=='G' )
-x
+A_mat.size
+print A_mat
 
-print A
+
+cnts
+pos = nx.spring_layout(problem)
+
+
+
+
+plot_deconvolution_graph(problem)
 
 A
 A_np = np.matrix(matrix(A))
