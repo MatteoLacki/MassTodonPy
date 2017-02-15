@@ -119,7 +119,12 @@ class CZformulator_qg_competition(CZformulator):
                     yield molType, atomCnt_str, sideChainsNo, q, g
 
 
-def makeFormulas(fasta, Q, fragType='cz', modifications={}):
+def makeFormulas(
+        fasta,
+        Q,
+        fragType     ='cz',
+        modifications={}
+    ):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
     '''
     modifications   = standardize(modifications)

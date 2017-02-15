@@ -18,24 +18,6 @@
 from    collections import Counter
 from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
 
-def add_missing_experimental_groups(SFG):
-    '''Add experimental graphs to graph to isotopologues nodes that were unpaired.
-    '''
-    cnts = Counter(SFG.node[N]['type'] for N in SFG)
-    Gcnt = cnts['G']
-    newGnodes = []
-    newGIedges= []
-    for I in SFG:
-        if SFG.node[I]['type'] == 'I':
-            if len( SFG[I] ) == 1:
-                G = 'G' + str(Gcnt)
-                newGnodes.append( (G,{'intensity':0.0, 'type':'G'}) )
-                newGIedges.append( (G,I) )
-                Gcnt += 1
-    SFG.add_nodes_from(newGnodes)
-    SFG.add_edges_from(newGIedges)
-
-
 def normalize_rows(M):
     '''Divide rows of a matrix by their sums.'''
     for i in xrange(M.size[0]):

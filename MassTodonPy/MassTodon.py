@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #
+# -*- coding: utf-8 -*-
 #   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
 #
 #   This file is part of MassTodon.
@@ -69,22 +69,38 @@ from PeakPicker         import PeakPicker
 
 
 class MassTodon():
-    def __init__(   self, fasta, precursorCharge,
-                    modifications       = {},
-                    fragmentationType   = 'cz',
-                    massPrecDigits      = 2,
-                    isoMasses           = None,
-                    isoProbs            = None,
-                    chebyshevCoverage   = 0.99,
-                    jointProbabilityIsoSpec = .999,
-                    precisionDigits     = 2,
-                    precisionMass       = .05 ):
-
+    def __init__(   self,
+                    fasta,
+                    precursorCharge,
+                    fragType        = 'cz',
+                    precDigits      = 2,
+                    mzPrec          = .05,
+                    jointProbability= 0.999,
+                    isoMasses       = None,
+                    isoProbs        = None,
+                    modifications   = {} ):
         self.fasta  = fasta
         self.Q      = precursorCharge
-        self.isoCalc     = isotopeCalculator(massPrecDigits, isoMasses, isoProbs)
-        self.formulator  = makeFormulas(fasta, precursorCharge, fragmentationType)
-        self.peakPicker  = PeakPicker(self.formulator, self.isoCalc, chebyshevCoverage, jointProbabilityIsoSpec, precisionDigits, precisionMass )
+
+        self.Forms  = makeFormulas(
+            fasta   = fasta,
+            Q       = self.Q,
+            fragType= fragType,
+            modifications = modifications
+        )
+
+        self.IsoCalc = isotopeCalculator(
+            jP          = jointProbability,
+            precDigits  = precDigits,
+            isoMasses   = isoMasses,
+            isoProbs    = isoProbs
+        )
+
+        self.peakPicker = PeakPicker(
+            Forms   = self.Forms,
+            IsoCalc = self.IsoCalc,
+            mzPrec  = mzPrec
+        )
 
     def randomSpectrum(
             self,

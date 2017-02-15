@@ -13,34 +13,38 @@ from    Parsers import ParseMzXML
 from    Visualization import plot_spectrum, plot_deconvolution_graph
 import  matplotlib.pyplot as plt
 from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
-from    PeakPicker import group_experimental_peaks, getGraphs, trim_unlikely_molecules, contains_experimental_peaks
-import cPickle as pickle
-from    Solver import add_missing_experimental_groups, prepare_deconvolution
+from    PeakPicker import create_G_nodes, getGraphs, trim_unlikely_molecules, contains_experimental_peaks
+import  cPickle as pickle
+from    Solver import prepare_deconvolution
 # import  multiprocessing as multiKulti
 
-path = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
-spectrum = ParseMzXML(path+'Ubiquitin_ETD_10 ms_1071.mzXML',cut_off_intensity=100)
-# plot_spectrum(spectrum, 1215, 1230) # plot_spectrum(spectrum, 0,8000)
+path    = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
+spectrum= ParseMzXML(path+'Ubiquitin_ETD_10 ms_1071.mzXML',cut_off_intensity=100)
+    # plot_spectrum(spectrum, 1215, 1230) # plot_spectrum(spectrum, 0,8000)
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
-Q = 8; modifications = {}; jointProb = .999; mzPrec = .05;
-massTodon = MassTodon(fasta, Q, massPrecDigits=1)
+Q = 8; modifications = {}; jP = .999; mzPrec = .05; precDigits = 2
 
-massTodon.isoCalc.isoEnvelope('C100H200',.999,3,1)[0]
+massTodon = MassTodon(  fasta           = fasta,
+                        precursorCharge = Q,
+                        precDigits      = precDigits,
+                        mzPrec          = mzPrec )
 
-# BFG     = massTodon.peakPicker.BFG_representation(spectrum)
-# css     = nx.connected_component_subgraphs(BFG)
-# problems= list(getGraphs(css, 0.7))
-
+recalculate   = True
 problems_file = "/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/problems.p"
-# pickle.dump( problems, open( problems_file, "wb" ) )
+
+
+if recalculate:
+    BFG     = massTodon.peakPicker.BFG_representation(spectrum)
+    css     = nx.connected_component_subgraphs(BFG)
+    problems= list(getGraphs(css, 0.9))
+    pickle.dump( problems, open( problems_file, "wb" ) )
 problems = pickle.load( open( problems_file, "rb" ) )
 
 for P in problems:
-    group_experimental_peaks(P)
+    create_G_nodes(P)
 
 def deconvolve(SFG, L2_percent=0.0):
     SFG = SFG.copy()
-    add_missing_experimental_groups(SFG)
     cnts, varNo, G_intensity, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals = prepare_deconvolution(SFG, L2_percent)
     sol = solvers.qp(P_mat,q_vec,G_mat,h_vec,A_mat,b_vec, initvals=initvals)
     return sol
@@ -49,12 +53,29 @@ solvers.options['show_progress'] = False
 %%time
 sols = [deconvolve(P, 0.0) for P in  problems]
 
+unknowns = [ P for s,P in zip(sols,problems) if s['status']=='unknown' ]
+len(unknowns)
+U = unknowns[-3]
+# [len(u) for u in unknowns]
+len(unknown)
+plot_deconvolution_graph(unknown)
 
-# total intensities of problems
-def get_total_intensity(SFG):
-    SFG = SFG.copy()
-    add_missing_experimental_groups(SFG)
-    return prepare_deconvolution(SFG)[0]
+
+for G in U:
+    if U.node[G]['type']=='G':
+        print U.node[G]
+
+
+
+
+
+def get_total_intensity(G):
+    G = G.copy()
+    add_missing_experimental_groups(G)
+    return prepare_deconvolution(G)[0]
+
+get_total_intensity(unknown)
+
 
 totalI = [ get_total_intensity(P) for P in problems ]
 
@@ -64,13 +85,16 @@ for intensity, sol in zip(totalI, sols):
     solutions_n[sol['status']] += 1
     total_intensity[sol['status']] += intensity
 
+solutions_n
+
 for t in solutions_n.keys():
     total_intensity[t] /= solutions_n[t]
 
-total_intensity
-
+total_intensity['optimal']/total_intensity['unknown']*100
 Counter( s['status'] for s in sols)
-totalI
+
+
+
 
 
 # P = multiKulti.Pool(3)
@@ -82,7 +106,6 @@ Counter( s['iterations'] for s in sols if s['status'] == 'unknown')
 Counter( s['iterations'] for s in sols if s['status'] == 'optimal')
 
 [s['x'] for s in sols if s['status'] == 'unknown']
-
 
 [s['x'] for s in sols if s['status'] == 'optimal']
 

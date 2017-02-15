@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #
+# -*- coding: utf-8 -*-
 #   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
 #
 #   This file is part of MassTodon.
@@ -48,7 +48,38 @@ def getGraphs(ccs, minimal_prob=.7):
                 if len(G) > 1:
                     yield G
 
-def group_experimental_peaks(P):
+
+def add_zero_intensity_G_nodes(P):
+    '''Pair unpaired isotopologue peaks I with zero-intensity experimental groups G.
+    '''
+    cnts = Counter(P.node[N]['type'] for N in P)
+    Gcnt = cnts['G']+1
+    newGnodes = []
+    newGIedges= []
+    for I in P:
+        if P.node[I]['type'] == 'I':
+            if len(P[I]) == 1:
+                G = 'G' + str(Gcnt)
+                newGnodes.append( (G,{'intensity':0.0, 'type':'G'}) )
+                newGIedges.append( (G,I) )
+                Gcnt += 1
+    P.add_nodes_from(newGnodes)
+    P.add_edges_from(newGIedges)
+# G = nx.Graph()
+# G.add_node('M1', type='M')
+# G.add_node('I1', type='I')
+# G.add_node('I2', type='I')
+# G.add_node('I3', type='I')
+# G.add_node('I4', type='I')
+# G.add_node('G1', type='G')
+# G.add_node('G1', type='G')
+# G.add_edges_from([('M1','I1'),('M1','I2'),('M1','I3'),('M1','I4'),('G1','I1')])
+# plot_deconvolution_graph(G)
+# add_zero_intensity_G_nodes(G)
+# plot_deconvolution_graph(G)
+
+
+def create_G_nodes(P):
     E2remove = []
     Gs = Counter()
     for E in P:
@@ -62,33 +93,27 @@ def group_experimental_peaks(P):
         P.add_node(G, intensity=G_intensity, type='G')
         for I in Is:
             P.add_edge(I, G)
+    add_zero_intensity_G_nodes(P)
 
 
 class PeakPicker():
     '''Class for peak picking.'''
 
-    def __init__(self,
-            formulator,
-            isotopeCalculator,
-            chebyshevCoverage       = 0.99,
-            jointProbabilityIsoSpec = 0.999,
-            precisionDigits         = 2,
-            precisionMass           = 0.05   ):
-
-        self.cheb   = 1.0 - chebyshevCoverage
-        self.forms  = formulator
-        self.isoCalc= isotopeCalculator
-        self.jP     = jointProbabilityIsoSpec
-        self.prec   = precisionDigits
-        self.mzPrec = precisionMass
+    def __init__(   self,
+                    Forms,
+                    IsoCalc,
+                    mzPrec = 0.05 ):
+        self.Forms  = Forms
+        self.IsoCalc= IsoCalc
+        self.mzPrec = mzPrec
 
     def BFG_representation(self, massSpectrum):
         ePeaks  = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) )
                             for mz, intensity in np.rollaxis(massSpectrum,0))
         iso_cnt = 0
         BFG     = nx.Graph()
-        for cnt, (mType, formula, aaNo, q, g) in enumerate(self.forms.makeMolecules()):
-            iso_mzs, iso_intensities = self.isoCalc.isoEnvelope(formula, self.jP, q, g)
+        for cnt, (mType, formula, aaNo, q, g) in enumerate(self.Forms.makeMolecules()):
+            iso_mzs, iso_intensities = self.IsoCalc.isoEnvelope( atomCnt_str=formula, q=q, g=g )
             M = mType + '_' + str(q) + '_' + str(g)
             BFG.add_node(M, formula=formula, type='M')
             for isoMZ, isoI in zip(iso_mzs, iso_intensities):
