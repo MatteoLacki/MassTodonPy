@@ -112,10 +112,10 @@ class PeakPicker():
                             for mz, intensity in np.rollaxis(massSpectrum,0))
         iso_cnt = 0
         BFG     = nx.Graph()
-        for cnt, (mType, formula, aaNo, q, g) in enumerate(self.Forms.makeMolecules()):
+        for cnt, (molType, formula, aaNo, q, g) in enumerate(self.Forms.makeMolecules()):
             iso_mzs, iso_intensities = self.IsoCalc.isoEnvelope( atomCnt_str=formula, q=q, g=g )
-            M = mType + '_' + str(q) + '_' + str(g)
-            BFG.add_node(M, formula=formula, type='M')
+            M = 'M'+str(cnt)
+            BFG.add_node(M, formula=formula, type='M', q=q, g=g, molType=molType )
             for isoMZ, isoI in zip(iso_mzs, iso_intensities):
                 I = 'I' + str(iso_cnt)
                 BFG.add_node(I, mz=isoMZ, intensity=isoI, type='I')

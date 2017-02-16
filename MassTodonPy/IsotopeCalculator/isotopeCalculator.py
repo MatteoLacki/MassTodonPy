@@ -128,7 +128,6 @@ class isotopeCalculator:
 
     def isoEnvelope(self, atomCnt_str, jP=None, q=0, g=0, precDigits=None):
         '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
-
         if jP is None:
             jP = self.jP
         if precDigits is None:
