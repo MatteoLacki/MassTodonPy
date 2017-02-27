@@ -25,7 +25,7 @@ def normalize_rows(M):
         M[i,:] = row_hopefully/sum(row_hopefully)
 
 
-def prepare_deconvolution(SFG, L2_percent=0.0):
+def prepare_deconvolution(SFG, L2_percent=0.0, normalize_by_spectral_norm=False):
     '''Prepare input for CVXOPT routines (as sparse as possible).'''
     cnts = Counter()
     for N in SFG: # ordering some of the SFG graph nodes and edges
@@ -36,7 +36,8 @@ def prepare_deconvolution(SFG, L2_percent=0.0):
             for I in SFG.edge[N]:
                 SFG.edge[N][I]['cnt'] = cnts['GI']
                 cnts['GI'] += 1
-    varNo  = cnts['GI']+cnts['M']
+    varNo = cnts['GI']+cnts['M']
+
     squared_G_intensity = 0.0
     total_G_intensity   = 0.0
     q_list = []
@@ -44,23 +45,27 @@ def prepare_deconvolution(SFG, L2_percent=0.0):
     for G in SFG:
         if SFG.node[G]['type']=='G':
             G_intensity = SFG.node[G]['intensity']
-            squared_G_intensity += G_intensity
+            squared_G_intensity += G_intensity**2
             total_G_intensity   += G_intensity
             G_degree = len(SFG[G])
             q_list.append(  matrix( -G_intensity, size=(G_degree,1) )  )
             ones = matrix( 1.0, (G_degree,1))
-            P_list.append( 2.0 * ones * ones.T ) # 2 because of .5 x'Px parametrization.
+            P_list.append( ones * ones.T )
     q_list.append(  matrix( 0.0, ( cnts['M'], 1 ) )  )
     q_vec = matrix(q_list)
-    P_spectral_norm = 2.0 * max(p_mat.size[0] for  p_mat in P_list) # spec(11')=dim 1
+
+    P_spectral_norm = 1.0 # normalization with spectral norm
+    if normalize_by_spectral_norm:
+        P_spectral_norm = max(p_mat.size[0] for  p_mat in P_list) # spec(11')=dim 1
     P_list.append(  matrix( 0.0, ( cnts['M'], cnts['M'] ) )  )
-    P_mat = spdiag(P_list)/P_spectral_norm      # normalization with spectral norm
-    q_vec = q_vec/P_spectral_norm               # normalization with spectral norm
+    P_mat = spdiag(P_list)/P_spectral_norm
+    q_vec = q_vec/P_spectral_norm
+
     G_mat = spmatrix(-1.0, xrange(varNo), xrange(varNo))
-    if L2_percent:
-        P_mat = P_mat + L2_percent*max(P_mat)*G_mat # L2 regularization. Sort of.
+    if L2_percent: # L2 regularization. - because G_mat is -Id
+        P_mat = P_mat - L2_percent * max(P_mat) * G_mat
     h_vec = matrix(0.0, size=(varNo,1) )
-    A_x = [];A_i = [];A_j = []
+    A_x=[]; A_i=[]; A_j=[]
     for M in SFG:
         if SFG.node[M]['type']=='M':
             M_cnt = SFG.node[M]['cnt']
@@ -74,9 +79,9 @@ def prepare_deconvolution(SFG, L2_percent=0.0):
                         A_x.append( 1.0 )
                         A_i.append( i_cnt )
                         A_j.append( SFG.edge[G][I]['cnt'] )
-    A_mat   = spmatrix( A_x, A_i, A_j, size=( cnts['I'], varNo ) )
+    A_mat = spmatrix( A_x, A_i, A_j, size=( cnts['I'], varNo ) )
     normalize_rows(A_mat)
-    b_vec   = matrix( 0.0, ( cnts['I'], 1)  )
+    b_vec = matrix( 0.0, ( cnts['I'], 1)  )
     initvals= {}
     initvals['x'] = matrix( 0.0, ( varNo, 1)  )
-    return total_G_intensity, cnts, varNo, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals
+    return total_G_intensity, squared_G_intensity, cnts, varNo, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals

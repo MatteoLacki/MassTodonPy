@@ -39,15 +39,6 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
                 nodes_to_remove.append(M)
     cc.remove_nodes_from(nodes_to_remove)
 
-def getGraphs(ccs, minimal_prob=.7):
-    for cc in ccs:
-        # consider only good connected components
-        if contains_experimental_peaks(cc):
-            trim_unlikely_molecules(cc)
-            for G in nx.connected_component_subgraphs(cc):
-                if len(G) > 1:
-                    yield G
-
 
 def add_zero_intensity_G_nodes(P):
     '''Pair unpaired isotopologue peaks I with zero-intensity experimental groups G.
@@ -79,21 +70,32 @@ def add_zero_intensity_G_nodes(P):
 # plot_deconvolution_graph(G)
 
 
-def create_G_nodes(P):
+def create_G_nodes(SFG):
     E2remove = []
     Gs = Counter()
-    for E in P:
-        if P.node[E]['type'] == 'E':
-            G = frozenset(P[E])
-            Gs[G] += P.node[E]['intensity']
+    for E in SFG:
+        if SFG.node[E]['type'] == 'E':
+            G = frozenset(SFG[E])
+            Gs[G] += SFG.node[E]['intensity']
             E2remove.append(E)
-    P.remove_nodes_from(E2remove)
+    SFG.remove_nodes_from(E2remove)
     for Gcnt, (Is, G_intensity) in enumerate(Gs.items()):
         G = 'G' + str(Gcnt)
-        P.add_node(G, intensity=G_intensity, type='G')
+        SFG.add_node(G, intensity=G_intensity, type='G')
         for I in Is:
-            P.add_edge(I, G)
-    add_zero_intensity_G_nodes(P)
+            SFG.add_edge(I, G)
+    add_zero_intensity_G_nodes(SFG)
+
+
+def getGraphs(ccs, minimal_prob=.7):
+    for cc in ccs:
+        # consider only good connected components
+        if contains_experimental_peaks(cc):
+            trim_unlikely_molecules(cc)
+            for SFG in nx.connected_component_subgraphs(cc):
+                if len(SFG) > 1:
+                    create_G_nodes(SFG)
+                    yield SFG
 
 
 class PeakPicker():
