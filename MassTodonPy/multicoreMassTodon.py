@@ -1,33 +1,37 @@
 %load_ext autoreload
 %load_ext line_profiler
 %autoreload
-from    MassTodon import MassTodon
-import  numpy as np
+from    MassTodon   import MassTodon
+import  numpy       as np
 from    collections import Counter
-from    Parsers import ParseMzXML, trim_spectrum
-from    Visualization import plot_spectrum, plot_deconvolution_graph
+from    Parsers     import ParseMzXML, trim_spectrum
+from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
+import  cPickle     as pickle
+from    Solver      import Deconvolutor_Min_Sum_Squares
+from    Visualization   import plot_spectrum, plot_deconvolution_graph
 import  matplotlib.pyplot as plt
-from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
-import  cPickle as pickle
-from    Solver import prepare_deconvolution
 
 spectrum_intensity_cut_off = 1000
-path = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
-spectrum = ParseMzXML(path+'Ubiquitin_ETD_10 ms_1071.mzXML',cut_off_intensity=spectrum_intensity_cut_off)
-spectrum = trim_spectrum(spectrum)
-# plot_spectrum(spectrum, 0, 4000)
-fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
+path    = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
+spectrum= ParseMzXML(   path+'Ubiquitin_ETD_10 ms_1071.mzXML',
+                        cut_off_intensity = spectrum_intensity_cut_off )
+spectrum= trim_spectrum(spectrum) # plot_spectrum(spectrum, 0, 4000)
+fasta   = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q = 8;      jP = .999;  modifications = {};     mzPrec = .05;   precDigits = 2
-L2_percent= 0.00001;   percentOnEnvelopes = .95
+L2_percent= 0.00001;   percentOnEnvelopes = .7
 massTodon = MassTodon(  fasta           = fasta,
                         precursorCharge = Q,
                         precDigits      = precDigits,
                         jointProbability= jP,
                         mzPrec          = mzPrec )
 
-problems_gen = massTodon.get_problems( spectrum, percentOnEnvelopes )
-problems = list(problems_gen)
+problems_gen= massTodon.get_problems( spectrum, percentOnEnvelopes )
+problems    = list(problems_gen)
+SFG = problems[0]
+deconvolutor = Deconvolutor_Min_Sum_Squares(SFG)
+# deconvolutor.SFG.nodes(data=1)
 
+alphas, error= deconvolutor.deconvolve()
 
 def deconvolve(SFG, L2_percent=0.0):
     SFG = SFG.copy()
@@ -41,12 +45,8 @@ sols = [deconvolve(P, L2_percent) for P in problems]
 
 P   = problems[0]
 SFG = P.copy()
-
 total_G_intensity, squared_G_intensity, cnts, varNo, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals = prepare_deconvolution(SFG, L2_percent)
-
 SFG.nodes(data=1)
-
-
 
 
 len(sols)
@@ -55,7 +55,7 @@ len(unknowns)
 
 [ s['status'] for s in sols ]
 
-plot_deconvolution_graph(U)
+|plot_deconvolution_graph(U)
 U.nodes(data=1)
 
 

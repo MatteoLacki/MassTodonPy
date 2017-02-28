@@ -73,5 +73,3 @@ for G in SFG:
 
 from math import sqrt
 error = sqrt(error)
-
-error

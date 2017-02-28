@@ -15,8 +15,10 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+from    math        import sqrt
 from    collections import Counter
-from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
+from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
+solvers.options['show_progress'] = False
 
 def normalize_rows(M):
     '''Divide rows of a matrix by their sums.'''
@@ -24,9 +26,14 @@ def normalize_rows(M):
         row_hopefully = M[i,:]
         M[i,:] = row_hopefully/sum(row_hopefully)
 
+class Solver(object):
+    def __init__(self):
+        pass
+    def run(self):
+        pass
 
-def prepare_deconvolution(SFG, L2_percent=0.0, normalize_by_spectral_norm=False):
-    '''Prepare input for CVXOPT routines (as sparse as possible).'''
+def number_graph(SFG):
+    '''Add numbers to graph nodes and GI edges and return the counts thereof.'''
     cnts = Counter()
     for N in SFG: # ordering some of the SFG graph nodes and edges
         Ntype = SFG.node[N]['type']
@@ -36,52 +43,113 @@ def prepare_deconvolution(SFG, L2_percent=0.0, normalize_by_spectral_norm=False)
             for I in SFG.edge[N]:
                 SFG.edge[N][I]['cnt'] = cnts['GI']
                 cnts['GI'] += 1
-    varNo = cnts['GI']+cnts['M']
+    return cnts
 
-    squared_G_intensity = 0.0
-    total_G_intensity   = 0.0
+def get_P_q_Gintensity2(SFG, M_No, varNo, L2=0.0, spectral_norm=False):
+    '''Prepare cost function 0.5 <x|P|x> + <q|x>.'''
+
+    Gintensity2 = 0.0
     q_list = []
     P_list = []
-    for G in SFG:
-        if SFG.node[G]['type']=='G':
-            G_intensity = SFG.node[G]['intensity']
-            squared_G_intensity += G_intensity**2
-            total_G_intensity   += G_intensity
-            G_degree = len(SFG[G])
-            q_list.append(  matrix( -G_intensity, size=(G_degree,1) )  )
-            ones = matrix( 1.0, (G_degree,1))
-            P_list.append( ones * ones.T )
-    q_list.append(  matrix( 0.0, ( cnts['M'], 1 ) )  )
-    q_vec = matrix(q_list)
+    for G_name in SFG:
+        if SFG.node[G_name]['type']=='G':
+            G_intensity = SFG.node[G_name]['intensity']
+            Gintensity2 += G_intensity**2
+            G_degree = len(SFG[G_name])
+            q_list.append(matrix( -G_intensity, size=(G_degree,1) ))
+            ones = matrix(1.0, (G_degree,1))
+            P_list.append(ones * ones.T)
 
-    P_spectral_norm = 1.0 # normalization with spectral norm
-    if normalize_by_spectral_norm:
+    q_list.append( matrix(0.0, (M_No,1)) )
+    q_vec = matrix(q_list)
+    P_spectral_norm = 1.0   # spectral normalization
+    if spectral_norm:
         P_spectral_norm = max(p_mat.size[0] for  p_mat in P_list) # spec(11')=dim 1
-    P_list.append(  matrix( 0.0, ( cnts['M'], cnts['M'] ) )  )
+    P_list.append( matrix(0.0, (M_No, M_No)) )
     P_mat = spdiag(P_list)/P_spectral_norm
     q_vec = q_vec/P_spectral_norm
+    Id_mat = spmatrix(1.0, xrange(varNo), xrange(varNo))
+    if L2:          # L2 regularization
+        P_mat = P_mat+L2*max(P_mat)*Id_mat
+    return P_mat, q_vec, Gintensity2
 
+def get_initvals(varNo):
+    '''Initial values of flows.'''
+    initvals= {}
+    initvals['x'] = matrix( 0.0, ( varNo, 1)  )
+    return initvals
+
+
+def get_G_h(varNo):
+    '''Prepare for conditions Gx <= h'''
     G_mat = spmatrix(-1.0, xrange(varNo), xrange(varNo))
-    if L2_percent: # L2 regularization. - because G_mat is -Id
-        P_mat = P_mat - L2_percent * max(P_mat) * G_mat
     h_vec = matrix(0.0, size=(varNo,1) )
+    return G_mat, h_vec
+
+def get_A_b(SFG, varNo, I_No, GI_No):
     A_x=[]; A_i=[]; A_j=[]
     for M in SFG:
         if SFG.node[M]['type']=='M':
             M_cnt = SFG.node[M]['cnt']
             for I in SFG[M]:
                 i_cnt = SFG.node[I]['cnt']
-                A_x.append(-SFG.node[I]['intensity'] ) # probability (not intensity)
+                A_x.append(-SFG.node[I]['intensity'])# probability
                 A_i.append( i_cnt )
-                A_j.append( M_cnt + cnts['GI'] )
+                A_j.append( M_cnt + GI_No )
                 for G in SFG[I]:
                     if not G == M:
                         A_x.append( 1.0 )
                         A_i.append( i_cnt )
                         A_j.append( SFG.edge[G][I]['cnt'] )
-    A_mat = spmatrix( A_x, A_i, A_j, size=( cnts['I'], varNo ) )
+    A_mat = spmatrix( A_x, A_i, A_j, size=(I_No, varNo) )
     normalize_rows(A_mat)
-    b_vec = matrix( 0.0, ( cnts['I'], 1)  )
-    initvals= {}
-    initvals['x'] = matrix( 0.0, ( varNo, 1)  )
-    return total_G_intensity, squared_G_intensity, cnts, varNo, P_mat, q_vec, G_mat, h_vec, A_mat, b_vec, initvals
+    b_vec = matrix( 0.0, (I_No, 1)  )
+    return A_mat, b_vec
+
+class Deconvolutor(object):
+    '''Class for deconvolving individual Small Graphs.'''
+    def __init__(self, SFG):
+        self.SFG    = SFG
+        self.cnts   = number_graph(self.SFG)
+        self.varNo  = self.cnts['GI'] + self.cnts['M']
+        self.M_No   = self.cnts['M']
+        self.GI_No  = self.cnts['GI']
+        self.I_No   = self.cnts['I']
+
+    def deconvolve(self):
+        raise NotImplementedError
+
+class Deconvolutor_Min_Sum_Squares(Deconvolutor):
+    def deconvolve(self, L2=0.0, spectral_norm=False):
+        '''Prepare input for CVXOPT QP minimization with linear constraints.'''
+
+        P, q, Gint2 = get_P_q_Gintensity2(self.SFG, self.M_No, self.varNo, L2, spectral_norm)
+        x0   = get_initvals(self.varNo)
+        G, h = get_G_h(self.varNo)
+        A, b = get_A_b(self.SFG, self.varNo, self.I_No, self.GI_No)
+        sol  = solvers.qp(P, q, G, h, A, b, initvals=x0)
+        Xopt = sol['x']
+
+        alphas = []
+        for N_name in self.SFG:
+            N = self.SFG.node[N_name]
+            if N['type'] == 'M':
+                N['estimate'] = Xopt[self.GI_No + N['cnt']]
+                alphas.append(N.copy())
+            if N['type'] == 'G':
+                for I_name in self.SFG[N_name]:
+                    NI = self.SFG.edge[N_name][I_name]
+                    NI['estimate'] = Xopt[NI['cnt']]
+
+        error = 0.0
+        for G_name in self.SFG:
+            if self.SFG.node[G_name]['type'] == 'G':
+                I_intensity = self.SFG.node[G_name]['intensity']
+                outflow = 0.0
+                for I_name in self.SFG[G_name]:
+                    GI = self.SFG.edge[G_name][I_name]
+                    outflow += sol['x'][GI['cnt']]
+                error += (I_intensity - outflow)**2
+        error = sqrt(error)
+
+        return alphas, error

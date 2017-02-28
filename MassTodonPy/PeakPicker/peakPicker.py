@@ -80,7 +80,7 @@ def create_G_nodes(SFG):
     add_zero_intensity_G_nodes(SFG)
 
 
-class PeakPicker():
+class PeakPicker(object):
     '''Class for peak picking.'''
     def __init__(   self,
                     Forms,
