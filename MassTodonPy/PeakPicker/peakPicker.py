@@ -23,9 +23,11 @@ import  numpy           as      np
 from    collections     import Counter
 
 def contains_experimental_peaks(cc):
+    '''Check if a given problem contains any experimental peaks.'''
     return any(isinstance(N, float) for N in cc)
 
 def trim_unlikely_molecules(cc, minimal_prob=0.7):
+    '''Trim molecules whose isotopic envelopes cover potentially less than the minimal_prob threshold.'''
     nodes_to_remove = []
     for M in cc:
         if cc.node[M]['type'] == 'M':  # we are looking at a molecule node
@@ -56,21 +58,12 @@ def add_zero_intensity_G_nodes(P):
                 Gcnt += 1
     P.add_nodes_from(newGnodes)
     P.add_edges_from(newGIedges)
-# G = nx.Graph()
-# G.add_node('M1', type='M')
-# G.add_node('I1', type='I')
-# G.add_node('I2', type='I')
-# G.add_node('I3', type='I')
-# G.add_node('I4', type='I')
-# G.add_node('G1', type='G')
-# G.add_node('G1', type='G')
-# G.add_edges_from([('M1','I1'),('M1','I2'),('M1','I3'),('M1','I4'),('G1','I1')])
-# plot_deconvolution_graph(G)
-# add_zero_intensity_G_nodes(G)
-# plot_deconvolution_graph(G)
 
 
 def create_G_nodes(SFG):
+    '''Collect experimental peaks into groups of experimental data G.
+
+    This is done without any loss in resolution.'''
     E2remove = []
     Gs = Counter()
     for E in SFG:
@@ -87,20 +80,8 @@ def create_G_nodes(SFG):
     add_zero_intensity_G_nodes(SFG)
 
 
-def getGraphs(ccs, minimal_prob=.7):
-    for cc in ccs:
-        # consider only good connected components
-        if contains_experimental_peaks(cc):
-            trim_unlikely_molecules(cc)
-            for SFG in nx.connected_component_subgraphs(cc):
-                if len(SFG) > 1:
-                    create_G_nodes(SFG)
-                    yield SFG
-
-
 class PeakPicker():
     '''Class for peak picking.'''
-
     def __init__(   self,
                     Forms,
                     IsoCalc,
@@ -109,7 +90,8 @@ class PeakPicker():
         self.IsoCalc= IsoCalc
         self.mzPrec = mzPrec
 
-    def BFG_representation(self, massSpectrum):
+    def represent_as_BFG(self, massSpectrum):
+        '''Prepare the Big Graph based on mass spectrum and the formulas.'''
         ePeaks  = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) )
                             for mz, intensity in np.rollaxis(massSpectrum,0))
         iso_cnt = 0
@@ -129,3 +111,15 @@ class PeakPicker():
                     BFG.add_edge(I, expMZ)
                 iso_cnt += 1
         return BFG
+
+    def get_problem_generator(self, massSpectrum, minimal_prob_per_molecule=.7):
+        '''Enumerate deconvolution problems.'''
+        BFG = self.represent_as_BFG(massSpectrum)
+        for cc in nx.connected_component_subgraphs(BFG):
+            # considesr only good connected components
+            if contains_experimental_peaks(cc):
+                trim_unlikely_molecules(cc, minimal_prob_per_molecule)
+                for SFG in nx.connected_component_subgraphs(cc):
+                    if len(SFG) > 1:
+                        create_G_nodes(SFG)
+                        yield SFG

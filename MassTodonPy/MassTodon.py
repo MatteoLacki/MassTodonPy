@@ -86,21 +86,18 @@ class MassTodon():
             fasta   = fasta,
             Q       = self.Q,
             fragType= fragType,
-            modifications = modifications
-        )
+            modifications = modifications )
 
         self.IsoCalc = isotopeCalculator(
             jP          = jointProbability,
             precDigits  = precDigits,
             isoMasses   = isoMasses,
-            isoProbs    = isoProbs
-        )
+            isoProbs    = isoProbs )
 
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
-            mzPrec  = mzPrec
-        )
+            mzPrec  = mzPrec )
 
     def randomSpectrum(
             self,
@@ -116,8 +113,5 @@ class MassTodon():
 
         return masses, intensities, noise_masses, noise_intensities
 
-    def pickPeaks(self, massSpectrum):
-        self.peakPicker.setMassSpectrum(massSpectrum)
-        self.peakPicker.add_M_n_E()
-        self.add_I()
-        self.add_eG()
+    def get_problems(self, massSpectrum, minimal_prob_per_molecule):
+        return self.peakPicker.get_problem_generator(massSpectrum, minimal_prob_per_molecule)

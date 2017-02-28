@@ -3,20 +3,13 @@
 %autoreload
 from    MassTodon import MassTodon
 import  numpy as np
-from    math import sqrt
-from    pandas import DataFrame
-from    frozendict import frozendict
-from    collections import Counter, defaultdict
-import  networkx as nx
-import  igraph as ig
+from    collections import Counter
 from    Parsers import ParseMzXML, trim_spectrum
 from    Visualization import plot_spectrum, plot_deconvolution_graph
 import  matplotlib.pyplot as plt
 from    cvxopt import matrix, spmatrix, sparse, spdiag, solvers
-from    PeakPicker import create_G_nodes, getGraphs, trim_unlikely_molecules, contains_experimental_peaks
 import  cPickle as pickle
 from    Solver import prepare_deconvolution
-import  pandas
 
 spectrum_intensity_cut_off = 1000
 path = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
@@ -25,21 +18,16 @@ spectrum = trim_spectrum(spectrum)
 # plot_spectrum(spectrum, 0, 4000)
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q = 8;      jP = .999;  modifications = {};     mzPrec = .05;   precDigits = 2
-L2_percent = 0.00001;   percentOnEnvelopes = .95
+L2_percent= 0.00001;   percentOnEnvelopes = .95
 massTodon = MassTodon(  fasta           = fasta,
                         precursorCharge = Q,
                         precDigits      = precDigits,
                         jointProbability= jP,
                         mzPrec          = mzPrec )
-recalculate   = False
-problems_file = "/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/problems.p"
-if recalculate:
-    BFG     = massTodon.peakPicker.BFG_representation(spectrum)
-    css     = nx.connected_component_subgraphs(BFG)
-    problems= list(getGraphs(css, percentOnEnvelopes))
-    pickle.dump( problems, open( problems_file, "wb" ) )
-else:
-    problems = pickle.load( open( problems_file, "rb" ) )
+
+problems_gen = massTodon.get_problems( spectrum, percentOnEnvelopes )
+problems = list(problems_gen)
+
 
 def deconvolve(SFG, L2_percent=0.0):
     SFG = SFG.copy()
