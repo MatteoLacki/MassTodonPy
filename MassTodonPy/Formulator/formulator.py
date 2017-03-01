@@ -88,6 +88,7 @@ class CZformulator(Formulator):
     def __init__(self, fasta, Q, modifications={} ):
         super(CZformulator,self).__init__(fasta, Q, modifications)
         self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
+        
                             # aaPerOneCharge
     def makeMolecules(self, distanceBetweenCharges=5):
         '''Generate possible molecules in c/z fragmentation.

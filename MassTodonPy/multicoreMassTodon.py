@@ -3,12 +3,12 @@
 %autoreload
 from    MassTodon   import MassTodon
 import  numpy       as np
-from    collections import Counter
+from    collections import Counter, defaultdict
 from    Parsers     import ParseMzXML, trim_spectrum
 from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
 import  cPickle     as pickle
-from    Visualization   import plot_spectrum, plot_deconvolution_graph
-import  matplotlib.pyplot as plt
+from    Visualization       import plot_spectrum, plot_deconvolution_graph
+import  matplotlib.pyplot   as plt
 
 spectrum_intensity_cut_off = 1000
 path = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
@@ -29,23 +29,28 @@ M = MassTodon(  fasta = fasta,
                 jointProbability= jP,
                 mzPrec          = mzPrec )
 
+M.prepare_problems(spectrum, M_minProb)
+
 %%time
-res = M.run(spectrum,M_minProb,'sequential','MSE',L2=L2)
+res = M.run('sequential','MSE',L2=L2)
 
 alphas, error, status = res[0]
-
 Counter(s for a,e,s in res)
 
+##### in silico spectrum
+N  = 100000
+jP = .9999
+masses, cnts = M.IsoCalc.randomSpectrum(ionsNo=N, atomCnt_str='C100H200', jointProb=jP)
+masses, cnts
 
+M.IsoCalc.addNoise(masses, cnts)
+res[0][0][0]
 
+res2 = defaultdict(list)
 
+res
+for r, e, s in res:
+    print r['q'], r['molType']
+    # res2[(r['q'], r['molType'])].append( (r,e) )
 
-
-
-
-
-
-
-# P = multiKulti.Pool(3)
-# %%time
-# sols = P.map( deconvolve, problems )
+list(M.Forms.makeMolecules())

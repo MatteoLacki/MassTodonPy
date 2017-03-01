@@ -15,6 +15,4 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
-from isotopeCalculator import isotopeCalculator, aggregate
-from formulaParser     import formulaParser # to remove
+from parser import readSpectrum

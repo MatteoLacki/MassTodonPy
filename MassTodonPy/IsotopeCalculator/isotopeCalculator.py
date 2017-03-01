@@ -223,8 +223,9 @@ class isotopeCalculator:
     def randomSpectrum(self, atomCnt_str, ionsNo, digits=2, jointProb=.9999, Q=0, sigma=None):
         '''Generate a random spectrum.'''
         #TODO this should be all in all replaced by Michał's software that uses online data generation.
+        #TODO NOT but why oh why
         # atomCnt_str     = atomCnt2string(atomCnt)
-        masses, probs   = self.getEnvelope(atomCnt, jointProb, digits)
+        masses, probs = self.getEnvelope(atomCnt_str, jointProb, digits)
         counts  = multinomial(ionsNo, probs)
         masses  = masses[ counts > 0 ]
         counts  = counts[ counts > 0 ]

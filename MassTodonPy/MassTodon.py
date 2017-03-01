@@ -52,9 +52,9 @@
 # ................................................................................
 # ................................................................................
 # ................................................................................
-# .7O......O............................ZZZZZZZ...................................
-# .7......I$...............................Z......................................
-# .7.Z....O7....,ZZZ.....OZZ......ZZO .....Z.....OZZ......OZO.....,ZZO....ZOOZ+...
+# .7O......O............................ZZZZZZZ..............Z....................
+# .7......I$...............................Z.................Z....................
+# .7.Z....O7....,ZZZ.....OZZ......ZZO .....Z.....OZZ......OZOZ....,ZZO....ZOOZ+...
 # .7..$..Z.7...7....Z...Z....=.......O.....Z....O....?...=...?...I....Z...Z....O..
 # .7..O..~.7........Z.. Z........7.........Z....O....O...O...O...Z....Z...O....Z..
 # .7...ZZ..7.....8Z.Z.....O.......$Z.......Z....O....O...O...O...Z....Z...O....Z..
@@ -67,6 +67,7 @@ from Formulator         import makeFormulas
 from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
+from Parsers            import readSpectrum
 
 class MassTodon():
     def __init__(   self,
@@ -113,13 +114,13 @@ class MassTodon():
 
         return masses, intensities, noise_masses, noise_intensities
 
+    def readSpectrum(self, path, cutOff, digits):
+        self.spectrum = readSpectrum(path, cutOff, digits)
+
+    def prepare_problems(self, M_minProb=.75):
+        self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
+
         #TODO: add multiprocessing
-    def run(self,
-            spectrum,
-            M_minProb   = .75,
-            solver      = 'sequential',
-            method      = 'MSE',
-            **args
-        ):
-        problems = self.peakPicker.get_problems(spectrum, M_minProb)
-        return solve(problems,solver,method,**args)
+    def run(self, solver='sequential', method='MSE',**args):
+        res = solve(self.problems, solver, method, **args)
+        return res
