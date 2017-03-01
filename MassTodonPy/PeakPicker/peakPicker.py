@@ -112,7 +112,7 @@ class PeakPicker(object):
                 iso_cnt += 1
         return BFG
 
-    def get_problem_generator(self, massSpectrum, minimal_prob_per_molecule=.7):
+    def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
         '''Enumerate deconvolution problems.'''
         BFG = self.represent_as_BFG(massSpectrum)
         for cc in nx.connected_component_subgraphs(BFG):

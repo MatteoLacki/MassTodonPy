@@ -66,7 +66,7 @@
 from Formulator         import makeFormulas
 from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
-
+from Solver             import solve
 
 class MassTodon():
     def __init__(   self,
@@ -113,5 +113,13 @@ class MassTodon():
 
         return masses, intensities, noise_masses, noise_intensities
 
-    def get_problems(self, massSpectrum, minimal_prob_per_molecule):
-        return self.peakPicker.get_problem_generator(massSpectrum, minimal_prob_per_molecule)
+        #TODO: add multiprocessing
+    def run(self,
+            spectrum,
+            M_minProb   = .75,
+            solver      = 'sequential',
+            method      = 'MSE',
+            **args
+        ):
+        problems = self.peakPicker.get_problems(spectrum, M_minProb)
+        return solve(problems,solver,method,**args)

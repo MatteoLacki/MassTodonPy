@@ -20,17 +20,13 @@ from    collections import Counter
 from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
 solvers.options['show_progress'] = False
 
+
 def normalize_rows(M):
     '''Divide rows of a matrix by their sums.'''
     for i in xrange(M.size[0]):
         row_hopefully = M[i,:]
         M[i,:] = row_hopefully/sum(row_hopefully)
 
-class Solver(object):
-    def __init__(self):
-        pass
-    def run(self):
-        pass
 
 def number_graph(SFG):
     '''Add numbers to graph nodes and GI edges and return the counts thereof.'''
@@ -45,17 +41,15 @@ def number_graph(SFG):
                 cnts['GI'] += 1
     return cnts
 
-def get_P_q_Gintensity2(SFG, M_No, varNo, L2=0.0, spectral_norm=False):
-    '''Prepare cost function 0.5 <x|P|x> + <q|x>.'''
 
-    Gintensity2 = 0.0
+def get_P_q(SFG, M_No, varNo, L2=0.0, spectral_norm=False):
+    '''Prepare cost function 0.5 <x|P|x> + <q|x>.'''
     q_list = []
     P_list = []
     for G_name in SFG:
         if SFG.node[G_name]['type']=='G':
             G_intensity = SFG.node[G_name]['intensity']
-            Gintensity2 += G_intensity**2
-            G_degree = len(SFG[G_name])
+            G_degree    = len(SFG[G_name])
             q_list.append(matrix( -G_intensity, size=(G_degree,1) ))
             ones = matrix(1.0, (G_degree,1))
             P_list.append(ones * ones.T)
@@ -71,7 +65,8 @@ def get_P_q_Gintensity2(SFG, M_No, varNo, L2=0.0, spectral_norm=False):
     Id_mat = spmatrix(1.0, xrange(varNo), xrange(varNo))
     if L2:          # L2 regularization
         P_mat = P_mat+L2*max(P_mat)*Id_mat
-    return P_mat, q_vec, Gintensity2
+    return P_mat, q_vec
+
 
 def get_initvals(varNo):
     '''Initial values of flows.'''
@@ -86,7 +81,9 @@ def get_G_h(varNo):
     h_vec = matrix(0.0, size=(varNo,1) )
     return G_mat, h_vec
 
+
 def get_A_b(SFG, varNo, I_No, GI_No):
+    '''Prepare for conditions Ax = b'''
     A_x=[]; A_i=[]; A_j=[]
     for M in SFG:
         if SFG.node[M]['type']=='M':
@@ -106,6 +103,7 @@ def get_A_b(SFG, varNo, I_No, GI_No):
     b_vec = matrix( 0.0, (I_No, 1)  )
     return A_mat, b_vec
 
+
 class Deconvolutor(object):
     '''Class for deconvolving individual Small Graphs.'''
     def __init__(self, SFG):
@@ -116,20 +114,22 @@ class Deconvolutor(object):
         self.GI_No  = self.cnts['GI']
         self.I_No   = self.cnts['I']
 
-    def deconvolve(self):
+    def run(self):
+        '''Perform deconvolution.'''
         raise NotImplementedError
 
-class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def deconvolve(self, L2=0.0, spectral_norm=False):
-        '''Prepare input for CVXOPT QP minimization with linear constraints.'''
 
-        P, q, Gint2 = get_P_q_Gintensity2(self.SFG, self.M_No, self.varNo, L2, spectral_norm)
+class Deconvolutor_Min_Sum_Squares(Deconvolutor):
+    def run(self, L2=0.000001, spectral_norm=False):
+        '''Perform deconvolution that minimizes the mean square error.'''
+
+        P, q = get_P_q(self.SFG, self.M_No, self.varNo, L2, spectral_norm)
         x0   = get_initvals(self.varNo)
         G, h = get_G_h(self.varNo)
         A, b = get_A_b(self.SFG, self.varNo, self.I_No, self.GI_No)
         sol  = solvers.qp(P, q, G, h, A, b, initvals=x0)
         Xopt = sol['x']
-
+        # reporting results
         alphas = []
         for N_name in self.SFG:
             N = self.SFG.node[N_name]
@@ -140,7 +140,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 for I_name in self.SFG[N_name]:
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
-
+        # fit error: evaluation of the cost function at the minimizer
         error = 0.0
         for G_name in self.SFG:
             if self.SFG.node[G_name]['type'] == 'G':
@@ -152,4 +152,16 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 error += (I_intensity - outflow)**2
         error = sqrt(error)
 
-        return alphas, error
+        return alphas, error, sol['status']
+
+class Deconvolutor_Max_Flow(Deconvolutor):
+    def run(self):
+        pass
+
+def deconvolve(SFG, method='MSE', **args):
+    deconvolutor = {
+        'MSE':      Deconvolutor_Min_Sum_Squares,
+        'MaxFlow':  Deconvolutor_Max_Flow
+    }[method](SFG)
+    alphas, error, status = deconvolutor.run(**args)
+    return alphas, error, status
