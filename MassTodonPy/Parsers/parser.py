@@ -65,13 +65,13 @@ def get_mzxml(path, cutOff=100, digits=2):
             yield (mz, intensity)
 
 
-def readMzXml(path, cutOff=100, digits=2):
+def read_mzxml(path, cutOff=100, digits=2):
     '''Read and merge runs of the instrument.'''
     mz, intensity = reduce(merge_runs, get_mzxml(path, cutOff, digits))
     return mz, intensity
 
 
-def readTxt(path, cutOff=100, digits=2):
+def read_txt(path, cutOff=100, digits=2):
     mz = []
     intensity = []
     with open(path) as f:
@@ -86,13 +86,13 @@ def readTxt(path, cutOff=100, digits=2):
     mz, intensity = round_spec(mz, intensity, digits=2)
     return mz, intensity
 
-
+#TODO: add support for mzml files.
 def readSpectrum(path, cutOff=100, digits=2, P=1.0):
     file_path, ext = os.path.splitext(path)
     ext = ext.lower()
-    reader = {  '':         readTxt,
-                '.txt':     readTxt,
-                '.mzxml':   readMzXml
+    reader = {  '':         read_txt,
+                '.txt':     read_txt,
+                '.mzxml':   read_mzxml
     }[ext]
     mz, intensity = reader(path, cutOff, digits)
     if P < 1.0:

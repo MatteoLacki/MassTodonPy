@@ -6,13 +6,11 @@ from    collections import defaultdict
 
 def plot_spectrum(spectrum, mz_min=0, mz_max=float('Inf')):
     spec = []
-    for i in xrange(spectrum.shape[0]):
-        mz, intensity = spectrum[i,0:2]
+    for mz, intensity in zip(*spectrum):
         if mz >= mz_min and mz <= mz_max:
             spec.append( ( (mz, 0),(mz,intensity) ) )
 
     lc = mc.LineCollection( spec, linewidths=1 )
-
     fig, ax = pl.subplots()
     ax.add_collection(lc)
     ax.autoscale()

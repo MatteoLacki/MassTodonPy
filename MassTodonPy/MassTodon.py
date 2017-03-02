@@ -100,13 +100,13 @@ class MassTodon():
             IsoCalc = self.IsoCalc,
             mzPrec  = mzPrec )
 
-    def randomSpectrum(
-            self,
-            ionsNo,
-            aaPerOneCharge  = 5,
-            jointProb       = .999,
-            scale           = .01,
-            percentPeaks    = .2     ):
+    def randomSpectrum( self,
+                        ionsNo,
+                        aaPerOneCharge  = 5,
+                        jointProb       = .999,
+                        scale           = .01,
+                        percentPeaks    = .2 ):
+        '''Make a random spectrum.'''
 
         masses, intensities = self.isoCalc.randomFragmentationExperiment( self.fasta, self.Q, ionsNo, self.formulator, aaPerOneCharge, jointProb, scale )
 
@@ -114,13 +114,32 @@ class MassTodon():
 
         return masses, intensities, noise_masses, noise_intensities
 
-    def readSpectrum(self, path, cutOff, digits):
-        self.spectrum = readSpectrum(path, cutOff, digits)
+    def readSpectrum(   self,
+                        spectrum=None,
+                        path=None,
+                        cutOff=100.,
+                        digits=2,
+                        topPercent=1.0 ):
+        '''Read in a mass spectrum.
+
+        Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
+        '''
+        if path:
+            self.spectrum = readSpectrum( path,
+            cutOff, digits, topPercent)
+        else:
+            if spectrum:
+                self.spectrum = spectrum # a tupple of two numpy arrays
+            else:
+                print 'Wrong path or you did not provide a spectrum.'
+                raise KeyError
 
     def prepare_problems(self, M_minProb=.75):
+        '''Prepare a generator of deconvolution problems.'''
         self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
 
         #TODO: add multiprocessing
     def run(self, solver='sequential', method='MSE',**args):
+        '''Perform the deconvolution of problems.'''
         res = solve(self.problems, solver, method, **args)
         return res

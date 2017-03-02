@@ -92,8 +92,7 @@ class PeakPicker(object):
 
     def represent_as_BFG(self, massSpectrum):
         '''Prepare the Big Graph based on mass spectrum and the formulas.'''
-        ePeaks  = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) )
-                            for mz, intensity in np.rollaxis(massSpectrum,0))
+        ePeaks  = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum))
         iso_cnt = 0
         BFG     = nx.Graph()
         for cnt, (molType, formula, aaNo, q, g) in enumerate(self.Forms.makeMolecules()):
