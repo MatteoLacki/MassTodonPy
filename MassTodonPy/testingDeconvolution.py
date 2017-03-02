@@ -17,14 +17,23 @@ M = MassTodon(  fasta = fasta,
                 mzPrec          = mzPrec )
 
 path='/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
-path_file=path+'Ubiquitin_ETD_10 ms_1071.mzXML'
+path_file = path+'Ubiquitin_ETD_10 ms_1071.mzXML'
+path_file = path+'dummySpec.txt'
 cutOff = 100
 M.readSpectrum(path_file, cutOff, precDigits)
-M.spectrum
-
-
+mz, intensity = M.spectrum
+len(mz)
 
 M.prepare_problems(spectrum, M_minProb)
 
 %%time
 res = M.run('sequential','MSE',L2=L2)
+
+
+
+
+
+
+
+
+readTxt(path_file)

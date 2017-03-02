@@ -18,6 +18,7 @@
 
 from pyteomics          import mzxml # >= 3.41
 from IsotopeCalculator  import aggregate
+from collections        import defaultdict
 import numpy as np
 import os
 
@@ -26,26 +27,74 @@ def merge_runs(spec1, spec2):
     I  = np.concatenate((spec1[1], spec2[1]))
     return aggregate(mz, I)
 
-def get_spectra(path, cutOff=100, digits=2):
-    with mzxml.read(path) as reader:
-        for spectrum in reader:
-            mz          = spectrum['m/z array']
-            intensity   = spectrum['intensity array']
-            mz          = mz[intensity > cutOff]
-            intensity   = intensity[intensity > cutOff]
-            mz          = np.round(mz, digits)
-            mz, intensity= aggregate(mz, intensity)
-            yield (mz, intensity)
 
-def readMzXml(path, cutOff=100, digits=2):
-    mz, intensity = reduce(merge_runs, get_spectra(path, cutOff, digits))
+def round_spec(mz, intensity, digits=2):
+    '''Aggregate the spectrum so that intensities of masses with the same number of significant digits are summed.'''
+    mz = np.round(mz, digits)
+    mz, intensity = aggregate(mz, intensity)
     return mz, intensity
 
-def readSpectrum(path, cutOff=100, digits=2):
+
+def trim_spectrum(mz, intensity, cutOff=100):
+    '''Remove peaks below a given cut off.'''
+    mz = mz[intensity > cutOff]
+    intensity = intensity[intensity > cutOff]
+    return mz, intensity
+
+
+def percent_trim(mz, intensity, cutOff=.999):
+    '''Retrieve P percent of the highest peaks.'''
+    order= np.argsort(intensity)[::-1]
+    spec = np.column_stack((mz,intensity))[order,]
+    totalIntensity = sum(intensity)
+    spec = spec[ np.cumsum(spec[:,1])/totalIntensity < cutOff, ]
+    spec.sort(0)
+    mz, intensity = spec[:,0], spec[:,1]
+    return mz, intensity
+
+
+def get_mzxml(path, cutOff=100, digits=2):
+    '''Generate a sequence of rounded and trimmed spectra from individual runs of the instrument.'''
+    with mzxml.read(path) as reader:
+        for spectrum in reader:
+            mz = spectrum['m/z array']
+            intensity = spectrum['intensity array']
+            if cutOff:
+                mz, intensity = trim_spectrum(mz, intensity, cutOff)
+            mz, intensity = round_spec(mz, intensity, )
+            yield (mz, intensity)
+
+
+def readMzXml(path, cutOff=100, digits=2):
+    '''Read and merge runs of the instrument.'''
+    mz, intensity = reduce(merge_runs, get_mzxml(path, cutOff, digits))
+    return mz, intensity
+
+
+def readTxt(path, cutOff=100, digits=2):
+    mz = []
+    intensity = []
+    with open(path) as f:
+        for l in f:
+            l = l.split()
+            I = float(l[1])
+            if I>= cutOff:
+                mz.append(float(l[0]))
+                intensity.append(I)
+    mz = np.array(mz)
+    intensity = np.array(intensity)
+    mz, intensity = round_spec(mz, intensity, digits=2)
+    return mz, intensity
+
+
+def readSpectrum(path, cutOff=100, digits=2, P=1.0):
     file_path, ext = os.path.splitext(path)
     ext = ext.lower()
-    reader = {
-        '.mzxml':readMzXml
+    reader = {  '':         readTxt,
+                '.txt':     readTxt,
+                '.mzxml':   readMzXml
     }[ext]
     mz, intensity = reader(path, cutOff, digits)
+    if P < 1.0:
+        mz, intensity = percent_trim(mz, intensity, P)
     return mz, intensity
