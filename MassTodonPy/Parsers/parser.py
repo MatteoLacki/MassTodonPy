@@ -17,16 +17,10 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from pyteomics          import mzxml # >= 3.41
-from IsotopeCalculator  import aggregate
+from IsotopeCalculator  import aggregate, merge_runs
 from collections        import defaultdict
 import numpy as np
 import os
-
-def merge_runs(spec1, spec2):
-    mz = np.concatenate((spec1[0], spec2[0]))
-    I  = np.concatenate((spec1[1], spec2[1]))
-    return aggregate(mz, I)
-
 
 def round_spec(mz, intensity, digits=2):
     '''Aggregate the spectrum so that intensities of masses with the same number of significant digits are summed.'''

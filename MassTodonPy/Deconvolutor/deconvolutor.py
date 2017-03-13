@@ -43,7 +43,7 @@ def number_graph(SFG):
     return cnts
 
 
-def get_P_q(SFG, M_No, varNo, L2=0.0, spectral_norm=False):
+def get_P_q(SFG, M_No, var_No, L2=0.0, spectral_norm=False):
     '''Prepare cost function 0.5 <x|P|x> + <q|x>.'''
     q_list = []
     P_list = []
@@ -63,27 +63,27 @@ def get_P_q(SFG, M_No, varNo, L2=0.0, spectral_norm=False):
     P_list.append( matrix(0.0, (M_No, M_No)) )
     P_mat = spdiag(P_list)/P_spectral_norm
     q_vec = q_vec/P_spectral_norm
-    Id_mat = spmatrix(1.0, xrange(varNo), xrange(varNo))
+    Id_mat = spmatrix(1.0, xrange(var_No), xrange(var_No))
     if L2:          # L2 regularization
         P_mat = P_mat+L2*max(P_mat)*Id_mat
     return P_mat, q_vec
 
 
-def get_initvals(varNo):
+def get_initvals(var_No):
     '''Initial values of flows.'''
     initvals= {}
-    initvals['x'] = matrix( 0.0, ( varNo, 1)  )
+    initvals['x'] = matrix( 0.0, (var_No, 1)  )
     return initvals
 
 
-def get_G_h(varNo):
+def get_G_h(var_No):
     '''Prepare for conditions Gx <= h'''
-    G_mat = spmatrix(-1.0, xrange(varNo), xrange(varNo))
-    h_vec = matrix(0.0, size=(varNo,1) )
+    G_mat = spmatrix(-1.0, xrange(var_No), xrange(var_No))
+    h_vec = matrix(0.0, size=(var_No, 1) )
     return G_mat, h_vec
 
 
-def get_A_b(SFG, varNo, I_No, GI_No):
+def get_A_b(SFG, M_No, I_No, GI_No):
     '''Prepare for conditions Ax = b'''
     A_x=[]; A_i=[]; A_j=[]
     for M in SFG:
@@ -99,7 +99,7 @@ def get_A_b(SFG, varNo, I_No, GI_No):
                         A_x.append( 1.0 )
                         A_i.append( i_cnt )
                         A_j.append( SFG.edge[G][I]['cnt'] )
-    A_mat = spmatrix( A_x, A_i, A_j, size=(I_No, varNo) )
+    A_mat = spmatrix( A_x, A_i, A_j, size=(I_No, M_No+GI_No ) )
     normalize_rows(A_mat)
     b_vec = matrix( 0.0, (I_No, 1)  )
     return A_mat, b_vec
@@ -109,27 +109,43 @@ class Deconvolutor(object):
     '''Class for deconvolving individual Small Graphs.'''
     def __init__(self, SFG):
         self.SFG    = SFG
-        self.cnts   = number_graph(self.SFG)
-        self.varNo  = self.cnts['GI'] + self.cnts['M']
-        self.M_No   = self.cnts['M']
-        self.GI_No  = self.cnts['GI']
-        self.I_No   = self.cnts['I']
+        cnts        = number_graph(self.SFG)
+        self.set_names(cnts)
 
-    def run(self):
+    def set_names(self, cnts):
+        self.var_No = cnts['GI'] + cnts['M']
+        self.M_No   = cnts['M']
+        self.GI_No  = cnts['GI']
+        self.I_No   = cnts['I']
+        self.G_No   = cnts['G']
+
+    def run(self, **args):
         '''Perform deconvolution.'''
         raise NotImplementedError
 
+    def get_mean_square_error(self):
+        error = 0.0
+        for G_name in self.SFG:
+            if self.SFG.node[G_name]['type'] == 'G':
+                I_intensity = self.SFG.node[G_name]['intensity']
+                outflow = 0.0
+                for I_name in self.SFG[G_name]:
+                    GI = self.SFG.edge[G_name][I_name]
+                    outflow += self.sol['x'][GI['cnt']]
+                error += (I_intensity - outflow)**2
+        error = sqrt(error)
+        return error
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
     def run(self, L2=0.000001, spectral_norm=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
-        P, q = get_P_q(self.SFG, self.M_No, self.varNo, L2, spectral_norm)
-        x0   = get_initvals(self.varNo)
-        G, h = get_G_h(self.varNo)
-        A, b = get_A_b(self.SFG, self.varNo, self.I_No, self.GI_No)
-        sol  = solvers.qp(P, q, G, h, A, b, initvals=x0)
-        Xopt = sol['x']
+        P, q = get_P_q(self.SFG, self.M_No, self.var_No, L2, spectral_norm)
+        x0   = get_initvals(self.var_No)
+        G, h = get_G_h(self.var_No)
+        A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
+        self.sol  = solvers.qp(P, q, G, h, A, b, initvals=x0)
+        Xopt = self.sol['x']
         # reporting results
         alphas = []
         for N_name in self.SFG:
@@ -141,25 +157,75 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 for I_name in self.SFG[N_name]:
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
-        # fit error: evaluation of the cost function at the minimizer
-        error = 0.0
-        for G_name in self.SFG:
-            if self.SFG.node[G_name]['type'] == 'G':
-                I_intensity = self.SFG.node[G_name]['intensity']
-                outflow = 0.0
-                for I_name in self.SFG[G_name]:
-                    GI = self.SFG.edge[G_name][I_name]
-                    outflow += sol['x'][GI['cnt']]
-                error += (I_intensity - outflow)**2
-        error = sqrt(error)
 
-        return alphas, error, sol['status']
+        error = self.get_mean_square_error()
+
+        return alphas, error, self.sol['status']
 
 class Deconvolutor_Max_Flow(Deconvolutor):
-    def run(self):
-        pass
+    def set_names(self, cnts):
+        self.var_No = cnts['GI'] + cnts['M'] + + cnts['G']
+        self.M_No   = cnts['M']
+        self.GI_No  = cnts['GI']
+        self.I_No   = cnts['I']
+        self.G_No   = cnts['G']
 
-def deconvolve(SFG, method='MSE', **args):
+    def run(self, lam=10.0, mu=0.0, eps=0.0, s0_val=0.001):
+        G_tmp, h_tmp = get_G_h(self.var_No)
+        h_eps = matrix(0.0, (self.G_No,1))
+        G_x=[]; G_i=[]; G_j=[]
+        for G_name in self.SFG:
+            G = self.SFG.node[G_name]
+            if G['type'] == 'G':
+                g_cnt = G['cnt']
+                h_eps[g_cnt] = G['intensity'] + eps
+                for I_name in self.SFG[G_name]:
+                    i_cnt = self.SFG.node[I_name]['cnt']
+                    G_x.append(1.0)
+                    G_i.append(g_cnt)
+                    G_j.append(i_cnt)
+                G_x.append(-1.0)
+                G_i.append(g_cnt)
+                G_j.append(self.GI_No + self.M_No + g_cnt)
+        G_tmp2 = spmatrix( G_x, G_i, G_j, size=( self.G_No, self.var_No ) )
+        G = sparse([G_tmp, G_tmp2])
+        h = matrix([h_tmp, h_eps])
+
+        A_tmp, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
+        A_eps = spmatrix([],[],[], (self.I_No, self.G_No))
+        A = sparse([[A_tmp],[A_eps]])
+
+        x0 = get_initvals(self.var_No)
+        x0['s'] = matrix(s0_val, size=h.size)
+
+        c = matrix([
+                matrix( -1.0,       size=(self.GI_No,1) ),
+                matrix( mu,         size=(self.M_No,1)  ),
+                matrix( (1.0+lam),  size=(self.G_No,1)  )   ])
+
+        self.sol = solvers.conelp(c=c,G=G,h=h,A=A,b=b,primalstart=x0)
+        Xopt = self.sol['x']
+
+        alphas = [] # reporting results
+        for N_name in self.SFG:
+            N = self.SFG.node[N_name]
+            if N['type'] == 'M':
+                N['estimate'] = Xopt[self.GI_No + N['cnt']]
+                alphas.append(N.copy())
+            if N['type'] == 'G':
+                for I_name in self.SFG[N_name]:
+                    NI = self.SFG.edge[N_name][I_name]
+                    NI['estimate'] = Xopt[NI['cnt']]
+                    g_cnt = self.GI_No + self.M_No + N['cnt']
+                    N['relaxation'] = Xopt[g_cnt]
+
+        # fit error: evaluation of the cost function at the minimizer
+        error = self.get_mean_square_error()
+
+        return alphas, error, self.sol['status']
+
+
+def deconvolve(SFG, args, method):
     deconvolutor = {
         'MSE':      Deconvolutor_Min_Sum_Squares,
         'MaxFlow':  Deconvolutor_Max_Flow

@@ -139,7 +139,11 @@ class MassTodon():
         self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
 
         #TODO: add multiprocessing
-    def run(self, solver='sequential', method='MSE',**args):
+    def run(self, solver='sequential', method='MSE', **args):
         '''Perform the deconvolution of problems.'''
-        res = solve(self.problems, solver, method, **args)
+        res = solve(
+            problemsGenerator = self.problems,
+            solver = solver,
+            method = method,
+            args = args)
         return res

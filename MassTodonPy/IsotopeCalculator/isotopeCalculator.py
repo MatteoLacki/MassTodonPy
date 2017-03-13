@@ -24,7 +24,7 @@ try:
   import cPickle as pickle
 except:
   import pickle
-from numpy.random   import multinomial
+from numpy.random   import multinomial, normal
 import scipy.stats  as ss
 import numpy        as np
 
@@ -35,6 +35,7 @@ def cdata2numpyarray(x):
     for i in xrange(len(x)):
         res[i] = x[i]
     return res
+
 
 def agg_spec_proper(masses, probs, digits=2):
     '''Aggregate values with the same keys.'''
@@ -47,10 +48,18 @@ def agg_spec_proper(masses, probs, digits=2):
         prob[...] = fsum(lists[mass])
     return newMasses, newProbs
 
-def aggregate( keys, values ):
+
+def aggregate( keys, values=None ):
     '''Aggregate values with the same keys.'''
     uniqueKeys, indices = np.unique( keys, return_inverse=True)
     return uniqueKeys, np.bincount( indices, weights=values )
+
+
+def merge_runs(spec1, spec2):
+    mz = np.concatenate((spec1[0], spec2[0]))
+    I  = np.concatenate((spec1[1], spec2[1]))
+    return aggregate(mz, I)
+
 
 class isotopeCalculator:
     '''A class for isotope calculations.'''
@@ -220,7 +229,7 @@ class isotopeCalculator:
         noise_intensities = ss.poisson.rvs(mu=Imean, size=size )
         return noise_masses, noise_intensities
 
-    def randomSpectrum(self, atomCnt_str, ionsNo, digits=2, jointProb=.9999, Q=0, sigma=None):
+    def random_spectrum_mol(self, atomCnt_str, ionsNo, digits=2, jointProb=.9999, Q=0, sigma=None):
         '''Generate a random spectrum.'''
         #TODO this should be all in all replaced by Michał's software that uses online data generation.
         #TODO NOT but why oh why
@@ -241,3 +250,33 @@ class isotopeCalculator:
             noise_masses = noise_masses.round(digits)
             masses, counts = np.unique(noise_masses, return_counts=True)
         return masses, counts
+
+    def makeRandomSpectrum(self, mols, quants, sigma, jP=None, precDigits=None):
+        x0 = sum(quants)
+        if not precDigits:
+            precDigits = self.precDigits
+        if not jP:
+            jP = self.jP
+
+        def get_intensity_measure(mols, quants):
+            for mol, quant in zip(mols, quants):
+                _, atomCnt_str, _, q, g = mol
+                ave_mz, ave_intensity = self.isoEnvelope(atomCnt_str=atomCnt_str, jP=jP, q=q, g=g, precDigits=2)
+                ave_intensity = quant * ave_intensity
+                yield ave_mz, ave_intensity
+
+        mz_average, intensity = reduce(merge_runs, get_intensity_measure(mols, quants))
+        probs   = intensity/sum(intensity)
+        counts  = np.array( multinomial(x0, probs), dtype='int')
+
+        if sigma>0.0:
+            spectrum = Counter()
+            for m_average,cnt in zip(mz_average, counts):
+                if cnt > 0:
+                    m_over_z = np.round(normal(loc=m_average, scale=sigma, size=cnt), precDigits)
+                    spectrum.update(m_over_z)
+
+            spectrum = np.array(spectrum.keys()), np.array([ spectrum[k] for k in spectrum ])
+        else:
+            spectrum = (mz_average, counts)
+        return spectrum

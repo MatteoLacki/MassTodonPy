@@ -20,24 +20,26 @@ from Deconvolutor import deconvolve
 class Solver(object):
     def __init__(self, problemsGenerator):
         self.prob_gen = problemsGenerator
-    def run(self):
+    def run(self, args, method='MSE'):
         raise NotImplementedError
 
 
 class SequentialSolver(Solver):
-    def run(self, method='MSE', **deconvolutorArgs):
-        return [ deconvolve(SFG, method='MSE', **deconvolutorArgs) for SFG in self.prob_gen ]
+    def run(self, args, method='MSE'):
+        return [ deconvolve(
+            SFG = SFG, args = args,
+            method=method) for SFG in self.prob_gen ]
 
 #TODO: add multiprocessing
 class MultiprocessingSolver(Solver):
-    def run(self, method='MSE', **deconvolutorArgs):
+    def run(self, args, method='MSE'):
         raise NotImplementedError
 
 
-def solve(problemsGenerator, solver='sequential', method='MSE', **args):
+def solve(problemsGenerator, args, solver='sequential', method='MSE'):
     solver = {
         'sequential':   SequentialSolver,
         'MaxFlow':      MultiprocessingSolver
     }[solver](problemsGenerator)
-    res = solver.run(method, **args)
+    res = solver.run(args=args, method=method )
     return res
