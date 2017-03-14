@@ -41,5 +41,5 @@ def solve(problemsGenerator, args, solver='sequential', method='MSE'):
         'sequential':   SequentialSolver,
         'MaxFlow':      MultiprocessingSolver
     }[solver](problemsGenerator)
-    res = solver.run(args=args, method=method )
+    res = solver.run(args=args, method=method)
     return res

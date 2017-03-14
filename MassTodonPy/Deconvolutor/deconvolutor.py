@@ -22,6 +22,10 @@ from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
 solvers.options['show_progress'] = False
 
 
+def diag(val, dim):
+    return spdiag([spmatrix(val,[0],[0]) for i in xrange(dim)])
+
+
 def normalize_rows(M):
     '''Divide rows of a matrix by their sums.'''
     for i in xrange(M.size[0]):
@@ -43,29 +47,22 @@ def number_graph(SFG):
     return cnts
 
 
-def get_P_q(SFG, M_No, var_No, L2=0.0, spectral_norm=False):
-    '''Prepare cost function 0.5 <x|P|x> + <q|x>.'''
+def get_P_q( SFG, M_No, var_No, mu=0.0, lam=0.0 ):
+    '''Prepare cost function 0.5 <x|P|x> + <q|x> + mu * sum|alpha_m| + lam * sum |x_i|.'''
     q_list = []
     P_list = []
     for G_name in SFG:
         if SFG.node[G_name]['type']=='G':
             G_intensity = SFG.node[G_name]['intensity']
             G_degree    = len(SFG[G_name])
-            q_list.append(matrix( -G_intensity, size=(G_degree,1) ))
+            q_list.append( matrix( -G_intensity, size=(G_degree,1)) )
             ones = matrix(1.0, (G_degree,1))
-            P_list.append(ones * ones.T)
-
-    q_list.append( matrix(0.0, (M_No,1)) )
+            P_g  = ones * ones.T + diag(lam,G_degree)
+            P_list.append(P_g)
+    q_list.append(matrix(0.0, (M_No,1)))
     q_vec = matrix(q_list)
-    P_spectral_norm = 1.0   # spectral normalization
-    if spectral_norm:
-        P_spectral_norm = max(p_mat.size[0] for  p_mat in P_list) # spec(11')=dim 1
-    P_list.append( matrix(0.0, (M_No, M_No)) )
-    P_mat = spdiag(P_list)/P_spectral_norm
-    q_vec = q_vec/P_spectral_norm
-    Id_mat = spmatrix(1.0, xrange(var_No), xrange(var_No))
-    if L2:          # L2 regularization
-        P_mat = P_mat+L2*max(P_mat)*Id_mat
+    P_list.append(diag(mu, M_No))
+    P_mat = spdiag(P_list)
     return P_mat, q_vec
 
 
@@ -78,8 +75,8 @@ def get_initvals(var_No):
 
 def get_G_h(var_No):
     '''Prepare for conditions Gx <= h'''
-    G_mat = spmatrix(-1.0, xrange(var_No), xrange(var_No))
-    h_vec = matrix(0.0, size=(var_No, 1) )
+    G_mat = diag(-1.0, var_No)
+    h_vec = matrix(0.0, size=(var_No, 1))
     return G_mat, h_vec
 
 
@@ -137,10 +134,10 @@ class Deconvolutor(object):
         return error
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def run(self, L2=0.000001, spectral_norm=False):
+    def run(self, mu=1e-5, lam=0.0, spectral_norm=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
-        P, q = get_P_q(self.SFG, self.M_No, self.var_No, L2, spectral_norm)
+        P, q = get_P_q(self.SFG, self.M_No, self.var_No, mu, lam)
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
