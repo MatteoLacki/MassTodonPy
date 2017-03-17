@@ -56,6 +56,8 @@ def list_for_shell_script(arg):
     return " ".join( str(x) for x in arg)
 
 
+
+
 ## These are the standard deviations we test.
 # sigmas = np.linspace(0.01,.3,60)
 # array([ 0.01      ,  0.01491525,  0.01983051,  0.02474576,  0.02966102,
