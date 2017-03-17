@@ -30,9 +30,11 @@ for molsNo in xrange(1, maxMolsNo+1):
     with open(filepath, 'w') as f:
         pickle.dump( partial_results, f)
 
-# with open(path_to_results+'sigma_999999426697_molsNo_1.matteo', 'rb') as f:
-#     x = pickle.load(f)
 
+/'/Users/matteo/Documents/MassTodon/in_silico_results/'
+with open(path_to_results+'sigma_01_molsNo_1.matteo', 'rb') as f:
+    x = pickle.load(f)
+x
 
 #
 # x0 = 10 ** x0_exp
