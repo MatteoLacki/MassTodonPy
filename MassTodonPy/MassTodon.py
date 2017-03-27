@@ -100,19 +100,6 @@ class MassTodon():
             IsoCalc = self.IsoCalc,
             mzPrec  = mzPrec )
 
-    # def randomSpectrum( self,
-    #                     ionsNo,
-    #                     aaPerOneCharge  = 5,
-    #                     jointProb       = .999,
-    #                     scale           = .01,
-    #                     percentPeaks    = .2 ):
-    #     '''Make a random spectrum.'''
-    #
-    #     masses, intensities = self.isoCalc.randomFragmentationExperiment( self.fasta, self.Q, ionsNo, self.formulator, aaPerOneCharge, jointProb, scale )
-    #
-    #     noise_masses, noise_intensities = self.isoCalc.addNoise( masses, intensities, percentPeaks )
-    #
-    #     return masses, intensities, noise_masses, noise_intensities
 
     def readSpectrum(   self,
                         spectrum=None,

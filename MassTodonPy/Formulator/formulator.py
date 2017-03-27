@@ -34,7 +34,8 @@ def prolineBlockedFragments(fasta):
 def make_cz_fragments(fasta, modifications):
     '''Prepares the precursor and the c and z fragments atom counts.'''
     bricks = makeBricks()
-    def getBrick(aaPart):
+
+    def getBrick(aaPart, aa):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
         if countIsNegative(brick):
             print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
@@ -43,9 +44,9 @@ def make_cz_fragments(fasta, modifications):
     superAtoms = []
     sA = lCnt()
     for aaNo, aa in enumerate(fasta):
-        sA += getBrick('L')
+        sA += getBrick('L', aa)
         superAtoms.append( sA )
-        sA = getBrick('C') + getBrick('R')
+        sA = getBrick('C', aa) + getBrick('R', aa)
     sA += lCnt({'O':1,'H':1})
     superAtoms.append(sA)
     superAtoms[0] += lCnt({'H':1})
@@ -88,7 +89,7 @@ class CZformulator(Formulator):
     def __init__(self, fasta, Q, modifications={} ):
         super(CZformulator,self).__init__(fasta, Q, modifications)
         self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
-        
+
                             # aaPerOneCharge
     def makeMolecules(self, distanceBetweenCharges=5):
         '''Generate possible molecules in c/z fragmentation.
