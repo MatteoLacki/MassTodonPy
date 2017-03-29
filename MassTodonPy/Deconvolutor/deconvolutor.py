@@ -47,7 +47,7 @@ def number_graph(SFG):
     return cnts
 
 
-def get_P_q( SFG, M_No, var_No, mu=0.0, lam=0.0 ):
+def get_P_q( SFG, M_No, var_No, mu=0.0, lam=0.0, nu=0.0 ):
     '''Prepare cost function 0.5 <x|P|x> + <q|x> + mu * sum|alpha_m| + lam * sum |x_i|.'''
     q_list = []
     P_list = []
@@ -59,7 +59,7 @@ def get_P_q( SFG, M_No, var_No, mu=0.0, lam=0.0 ):
             ones = matrix(1.0, (G_degree,1))
             P_g  = ones * ones.T + diag(lam,G_degree)
             P_list.append(P_g)
-    q_list.append(matrix(0.0, (M_No,1)))
+    q_list.append(matrix(nu, (M_No,1))) # L1 penalty for alphas
     q_vec = matrix(q_list)
     P_list.append(diag(mu, M_No))
     P_mat = spdiag(P_list)
@@ -134,10 +134,10 @@ class Deconvolutor(object):
         return error
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def run(self, mu=1e-5, lam=0.0, spectral_norm=False):
+    def run(self, mu=1e-5, lam=0.0, nu=0.0, spectral_norm=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
-        P, q = get_P_q(self.SFG, self.M_No, self.var_No, mu, lam)
+        P, q = get_P_q(self.SFG, self.M_No, self.var_No, mu, lam, nu)
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)

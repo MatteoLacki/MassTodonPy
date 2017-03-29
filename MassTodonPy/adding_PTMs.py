@@ -19,9 +19,6 @@ modifications = {   ('N',2) :       {'H': 1, 'O': +2, 'N': +3},
 Forms = makeFormulas(fasta=fasta, Q=Q, fragType='cz', modifications=modifications)
 list(Forms.makeMolecules())
 
-
-
-
 # M = MassTodon(  fasta           = fasta,
 #                 precursorCharge = Q,
 #                 precDigits      = precDigits,
