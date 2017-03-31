@@ -32,11 +32,12 @@ Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 with open(file_path, 'rb') as f:
     res = pickle.load(f)
 
-from collections import defaultdict, Counter
+from    collections     import defaultdict, Counter
+from    matplotlib      import collections  as mc
+import  numpy as np
+import  pylab as pl
+import  matplotlib.pyplot as plt
 
-
-# Counter(x['molType'] for e,E,s in res for x in e)
-res
 
 def update_nators(mol, nominator=0.0, denominator=0.0):
     ETnoDs  = mol['g']
@@ -45,171 +46,92 @@ def update_nators(mol, nominator=0.0, denominator=0.0):
     denominator += (ETnoDs+PTRs)*mol['estimate']
     return nominator, denominator
 
-import numpy as np
-import scipy as spy
-from scipy.optimize import linprog as SimplexAlgorithm
-
-# denominator_PTR = nominator_PTR = 0.0
-# fragments = defaultdict(lambda:defaultdict(Counter))
-# L = len(fasta)
-#
-# for mols, error, status in res:
-#     if status=='optimal':
-#         for mol in mols:
-#             if mol['molType']=='precursor':
-#                 if mol['q']==Q and mol['g']==0:
-#                     precursor_no_reaction = mol['estimate'] # this might be missing. use a dictionary and a absent key exception
-#                 else:
-#                     nominator_PTR, denominator_PTR = update_nators(mol, nominator, denominator)
-#             else:
-#                 mt = mol['molType']
-#                 if mt[0]=='c':
-#                     breakpoint=int(mt[1:])
-#                 if mt[0]=='z':
-#                     breakpoint=L-int(mt[1:])
-#                 q=mol['q']
-#                 fragments[breakpoint][mt[0]][(mt, q)]+= mol['estimate']
-
-denominator_PTR = nominator_PTR = 0.0
-FG = nx.Graph()
+no_reactions = denominator = nominator = 0.0
 L = len(fasta)
+IDG = nx.Graph() # the intensity division graph
+minimal_estimated_intensity = 100.
 
 for mols, error, status in res:
-    if status=='optimal':
+    if status=='optimal': #TODO what to do otherwise?
         for mol in mols:
-            if mol['molType']=='precursor':
-                if mol['q']==Q and mol['g']==0:
-                    precursor_no_reaction = mol['estimate'] # this might be missing. use a dictionary and a absent key exception
+            if mol['estimate'] > minimal_estimated_intensity:
+                if mol['molType']=='precursor':
+                    if mol['q']==Q and mol['g']==0:
+                        no_reactions = mol['estimate']
+                    else:
+                        nominator, denominator = update_nators(mol, nominator, denominator)
                 else:
-                    nominator_PTR, denominator_PTR = update_nators(mol, nominator, denominator)
-            else:
-                frag = (mol['molType'],mol['q'])
-                FG.add_node(frag, intensity=mol['estimate'] )
-                FG.add_edge(frag,frag)
+                    frag = (mol['molType'],mol['q'])
+                    IDG.add_node(frag, intensity=mol['estimate'] )
+                    IDG.add_edge(frag,frag)
 
-prob_PTR = nominator_PTR/denominator_PTR
+prob_PTR = nominator/denominator
 prob_ETnoD = 1.0 - prob_PTR
+reactions_on_precursors = denominator
 
-for C, qC in FG:
+for C, qC in IDG: # adding edges between c and z fragments
     if C[0]=='c':
-        for Z, qZ in FG:
+        for Z, qZ in IDG:
             if Z[0]=='z':
                 bpC = int(C[1:])
                 bpZ = L - int(Z[1:])
                 if bpC==bpZ and qC + qZ < Q-1:
-                    FG.add_edge((C,qC),(Z,qZ))
+                    IDG.add_edge((C,qC),(Z,qZ))
 
-import  pylab as pl
-from    matplotlib import collections  as mc
-import  matplotlib.pyplot as plt
-FG
+def min_cost_flow(G, verbose=False):
+    '''Finds the minimal number of reactions necessary to explain the MassTodon results.
 
-nx.draw(FG, node_size=10, pos=nx.random_layout(FG))
-plt.show()
-
-ccs = [cc for cc in nx.connected_component_subgraphs(FG)]
-
-[ (i,len(cc)) for i,cc in enumerate(ccs) ]
-
-ccs[23].nodes()
-ccs[22].nodes()
-ccs[23].edges()
-
-frags = fragments[2]
-
-ccs[22].nodes(data=True)
-frags.node[('z45',3)]['intensity']
-
-frags.nodes()
-frags = ccs[0]
-
-[collect_fragments(cc,Q) for cc in ccs]
-
-
-frags = ccs[23]
-
-frags.edges()
-
-
-# numbering edges
-for i, E in enumerate(frags.edges(data=True)):
-    frags.edge[E[0]][E[1]]['cnt'] = i
-
-# finding costs
-c = []
-for A, B in frags.edges():
-    if A == B:
-        c.append(Q-1-A[1])
-    else:
-        c.append(Q-1-A[1]-B[1])
-
-c = np.array(c)
-b = np.array([ x[1]['intensity'] for x in frags.nodes(data=True) ])
-
-def get_incidence_matrix(frags):
-    A = np.zeros((len(frags), len(frags.edges())))
-    for i, N in enumerate(frags):
-        for M in frags.edge[N]:
-            j = frags.edge[N][M]['cnt']
-            A[i,j] = 1.0
-    return A
-
-A = get_incidence_matrix(frags)
-
-A, b, c
-
-optim_result = SimplexAlgorithm(c, A_eq=A, b_eq=b, options={"disp": True})
-
-
-
-
-# def collect_fragments(frags, Q):
-if len(frags)>0:
-    cNodes = []
-    zNodes = []
-    for node in frags.nodes():
-        nodeType, q = node
-        if nodeType[0]=='c':
-            l = cNodes
+    Uses the min_cost_flow algorithm.'''
+    FG = nx.DiGraph() # flow graph
+    FG.add_node('T', demand=0) # we gonna play with integers to eliminate real numbers' imprecisions.
+    for N in G:
+        intensity = int(G.node[N]['intensity'])
+        FG.add_node( N, demand = -intensity )
+        FG.node['T']['demand'] += intensity
+    for N, M in G.edges_iter():
+        if N == M:
+            FG.add_edge( N, 'T', weight=Q-1-N[1] )
         else:
-            l = zNodes
-        l.append( ( node, frags.node[node]['intensity'] ) )
-    nodes = []
-    intensities = []
-    interactions= []
-    costs = []
-    for (cz, q), I in cNodes + zNodes:
-        intensities.append(I)
-        nodes.append( (cz,q) )
-        interactions.append(frozenset([(cz,q)]))
-        costs.append( Q-1-q )
-    for (c, cQ), cI in cNodes:
-        for (z, zQ), zI in zNodes:
-            if cQ + zQ <= Q-2:
-                interactions.append(frozenset([(c,cQ),(z,zQ)]))
-                costs.append(Q-1-cQ-zQ)
+            FG.add_node((N,M))
+            FG.add_edge( N, (N,M))
+            FG.add_edge( M, (N,M))
+            FG.add_edge( (N,M), 'T', weight=Q-1-N[1]-M[1])
+    res = nx.min_cost_flow_cost(FG)
+    if verbose:
+        res = (res, nx.min_cost_flow(FG))
+    return res
 
+%%time
+res = [min_cost_flow(cc, verbose=True) for cc in nx.connected_component_subgraphs(IDG)]
 
-    A = np.zeros((len(nodes), len(interactions)))
-    for i,n in enumerate(nodes):
-        for j, interaction in enumerate(interactions):
-            if n in interaction:
-                A[i,j] = 1
-    optim_result = SimplexAlgorithm( costs, A_eq=A, b_eq=intensities, options={"disp": False})
-    res = {}
-    for inter, I in zip(interactions, optim_result.x):
-        if I > 0:
-            res[inter] = I
-else:
-    node = frags.nodes(data=True)[0]
-    res = {frozenset(node[0]): node[1]['intensity']}
-# return res
+fragmentations_no_aas = Counter()
+reactions_on_frags_other_than_fragmentation = 0
+for reactionNo, flow in res:
+    for N in flow:
+        for M in flow[N]:
+            if M=='T':
+                if N[0][0] == 'c':
+                    breakPoint = int(N[0][1:])
+                if N[0][0] == 'z':
+                    breakPoint = L-int(N[0][1:])
+                fragmentations_no_aas[ breakPoint ] += flow[N][M]
+    reactions_on_frags_other_than_fragmentation += reactionNo
 
+## Testing if all prolines have zero estimates
+# [ fragmentations_no_aas[i] for i,f in enumerate(fasta) if f=='P']
+## They do.
 
-fragments[10]
-collect_fragments(fragments[2],Q)
+fragmentations_no_total = sum(fragmentations_no_aas.values())
+fragmentations_no_total
+fragmentations_no_aas
 
+prob_no_reaction = float(no_reactions)/ (no_reactions+reactions_on_precursors+reactions_on_frags_other_than_fragmentation+fragmentations_no_total)
+prob_reaction = 1.0 - prob_no_reaction
 
-for frags in fragments:
-    print fragments[frags]
-[ collect_fragments(fragments[frags],Q) for frags in fragments]
+prob_fragmentation = float(fragmentations_no_total)/( fragmentations_no_total+reactions_on_frags_other_than_fragmentation+reactions_on_precursors )
+
+prob_fragmentation
+prob_no_fragmentation = 1.0 - prob_fragmentation
+
+probs_fragmentation_on_aas = [ float(fragmentations_no_aas[i])/fragmentations_no_total for i in xrange(len(fasta)+1)]
+probs_fragmentation_on_aas

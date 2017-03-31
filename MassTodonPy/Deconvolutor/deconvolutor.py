@@ -105,8 +105,8 @@ def get_A_b(SFG, M_No, I_No, GI_No):
 class Deconvolutor(object):
     '''Class for deconvolving individual Small Graphs.'''
     def __init__(self, SFG):
-        self.SFG    = SFG
-        cnts        = number_graph(self.SFG)
+        self.SFG = SFG
+        cnts = number_graph(self.SFG)
         self.set_names(cnts)
 
     def set_names(self, cnts):
@@ -143,7 +143,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
         self.sol  = solvers.qp(P, q, G, h, A, b, initvals=x0)
         Xopt = self.sol['x']
-        # reporting results
+        #################### reporting results
         alphas = []
         for N_name in self.SFG:
             N = self.SFG.node[N_name]
@@ -154,9 +154,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 for I_name in self.SFG[N_name]:
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
-
         error = self.get_mean_square_error()
-
         return alphas, error, self.sol['status']
 
 class Deconvolutor_Max_Flow(Deconvolutor):
