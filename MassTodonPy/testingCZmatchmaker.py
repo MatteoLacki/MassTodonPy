@@ -32,11 +32,31 @@ Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 with open(file_path, 'rb') as f:
     res = pickle.load(f)
 
+from MatchMaker import reaction_analist_basic
+
+reaction_analist_basic(res, fasta, Q)
+
+
+len(fasta)
+frags = set()
+for re,e,s in res:
+    for r in re:
+        frags.add(r['molType'])
+
+'z76' in frags
+Forms = makeFormulas(fasta=fasta, Q=Q, fragType='cz')
+list(Forms.makeMolecules())
+frags_made = set()
+for t,_,b,_,_ in Forms.makeMolecules():
+    frags_made.add(t[0]+str(b))
+'z76' in frags_made
+res
+
 from    collections     import defaultdict, Counter
-from    matplotlib      import collections  as mc
-import  numpy as np
-import  pylab as pl
-import  matplotlib.pyplot as plt
+# from    matplotlib      import collections  as mc
+# import  pylab as pl
+# import  matplotlib.pyplot as plt
+
 
 
 def update_nators(mol, nominator=0.0, denominator=0.0):
@@ -45,6 +65,10 @@ def update_nators(mol, nominator=0.0, denominator=0.0):
     nominator   += PTRs*mol['estimate']
     denominator += (ETnoDs+PTRs)*mol['estimate']
     return nominator, denominator
+
+
+
+
 
 no_reactions = denominator = nominator = 0.0
 L = len(fasta)
@@ -102,7 +126,7 @@ def min_cost_flow(G, verbose=False):
     return res
 
 %%time
-res = [min_cost_flow(cc, verbose=True) for cc in nx.connected_component_subgraphs(IDG)]
+res = [ min_cost_flow(cc, verbose=True) for cc in nx.connected_component_subgraphs(IDG) ]
 
 fragmentations_no_aas = Counter()
 reactions_on_frags_other_than_fragmentation = 0
@@ -130,7 +154,6 @@ prob_reaction = 1.0 - prob_no_reaction
 
 prob_fragmentation = float(fragmentations_no_total)/( fragmentations_no_total+reactions_on_frags_other_than_fragmentation+reactions_on_precursors )
 
-prob_fragmentation
 prob_no_fragmentation = 1.0 - prob_fragmentation
 
 probs_fragmentation_on_aas = [ float(fragmentations_no_aas[i])/fragmentations_no_total for i in xrange(len(fasta)+1)]
