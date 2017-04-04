@@ -32,47 +32,21 @@ Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 with open(file_path, 'rb') as f:
     res = pickle.load(f)
 
-from MatchMaker import reaction_analist_basic
-
-reaction_analist_basic(res, fasta, Q)
-
-
-len(fasta)
-frags = set()
-for re,e,s in res:
-    for r in re:
-        frags.add(r['molType'])
-
-'z76' in frags
-Forms = makeFormulas(fasta=fasta, Q=Q, fragType='cz')
-list(Forms.makeMolecules())
-frags_made = set()
-for t,_,b,_,_ in Forms.makeMolecules():
-    frags_made.add(t[0]+str(b))
-'z76' in frags_made
 res
+
+# from MatchMaker import reaction_analist_basic
+# %%time
+# reaction_analist_basic(res, fasta, Q) # works perfectly!!!
+
 
 from    collections     import defaultdict, Counter
 # from    matplotlib      import collections  as mc
 # import  pylab as pl
 # import  matplotlib.pyplot as plt
 
-
-
-def update_nators(mol, nominator=0.0, denominator=0.0):
-    ETnoDs  = mol['g']
-    PTRs    = Q-mol['q']-mol['g']
-    nominator   += PTRs*mol['estimate']
-    denominator += (ETnoDs+PTRs)*mol['estimate']
-    return nominator, denominator
-
-
-
-
-
-no_reactions = denominator = nominator = 0.0
+no_reactions = ETnoD_cnt = PTR_cnt = 0.0
 L = len(fasta)
-IDG = nx.Graph() # the intensity division graph
+FG = nx.DiGraph() # flow graph
 minimal_estimated_intensity = 100.
 
 for mols, error, status in res:
@@ -80,12 +54,15 @@ for mols, error, status in res:
         for mol in mols:
             if mol['estimate'] > minimal_estimated_intensity:
                 if mol['molType']=='precursor':
+                    I_estimated = mol['estimate']
                     if mol['q']==Q and mol['g']==0:
-                        no_reactions = mol['estimate']
+                        no_reactions += I_estimated
                     else:
-                        nominator, denominator = update_nators(mol, nominator, denominator)
+                        ETnoD_cnt  += mol['g']*I_estimated
+                        PTR_cnt    += (Q-mol['q']-mol['g'])*I_estimated
                 else:
-                    frag = (mol['molType'],mol['q'])
+
+                    frag = (mol['molType'],mol['q'],mol['g'])
                     IDG.add_node(frag, intensity=mol['estimate'] )
                     IDG.add_edge(frag,frag)
 
