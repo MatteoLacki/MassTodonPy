@@ -30,54 +30,69 @@ Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 # with open(file_path, 'w') as f:
     # pickle.dump(res, f)
 with open(file_path, 'rb') as f:
-    res = pickle.load(f)
+    MassTodonResults = pickle.load(f)
 
-res
-
-# from MatchMaker import reaction_analist_basic
-# %%time
-# reaction_analist_basic(res, fasta, Q) # works perfectly!!!
-
+MassTodonResults
 
 from    collections     import defaultdict, Counter
-# from    matplotlib      import collections  as mc
-# import  pylab as pl
-# import  matplotlib.pyplot as plt
+from    matplotlib      import collections  as mc
+import  pylab as pl
+import  matplotlib.pyplot as plt
 
 no_reactions = ETnoD_cnt = PTR_cnt = 0.0
-L = len(fasta)
-FG = nx.DiGraph() # flow graph
+L   = len(fasta)
+BFG = nx.Graph()
 minimal_estimated_intensity = 100.
 
-for mols, error, status in res:
+for mols, error, status in MassTodonResults:
     if status=='optimal': #TODO what to do otherwise?
         for mol in mols:
-            if mol['estimate'] > minimal_estimated_intensity:
+            if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
                 if mol['molType']=='precursor':
-                    I_estimated = mol['estimate']
                     if mol['q']==Q and mol['g']==0:
-                        no_reactions += I_estimated
+                        no_reactions = mol['estimate']
                     else:
-                        ETnoD_cnt  += mol['g']*I_estimated
-                        PTR_cnt    += (Q-mol['q']-mol['g'])*I_estimated
+                        ETnoD_cnt  += mol['g'] * mol['estimate']
+                        PTR_cnt    += (Q-mol['q']-mol['g']) * mol['estimate']
                 else:
+                    frag = (mol['molType'], mol['q'], mol['g'])
+                    BFG.add_node( frag, intensity=int(mol['estimate']) )
 
-                    frag = (mol['molType'],mol['q'],mol['g'])
-                    IDG.add_node(frag, intensity=mol['estimate'] )
-                    IDG.add_edge(frag,frag)
-
-prob_PTR = nominator/denominator
+reactions_on_precursors = ETnoD_cnt + PTR_cnt
+prob_PTR   = float(PTR_cnt)/reactions_on_precursors
 prob_ETnoD = 1.0 - prob_PTR
-reactions_on_precursors = denominator
 
-for C, qC in IDG: # adding edges between c and z fragments
+for C, qC, gC in BFG: # adding edges between c and z fragments
     if C[0]=='c':
-        for Z, qZ in IDG:
+        for Z, qZ, gZ in BFG:
             if Z[0]=='z':
                 bpC = int(C[1:])
                 bpZ = L - int(Z[1:])
-                if bpC==bpZ and qC + qZ < Q-1:
-                    IDG.add_edge((C,qC),(Z,qZ))
+                if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
+                    BFG.add_edge( (C,qC,gC), (Z,qZ,gZ))
+
+ccs = list(nx.connected_component_subgraphs(BFG))
+len(ccs)
+Counter(map( lambda G: ( len(G),len(G.edges()) ), ccs ))
+G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==11][0]
+
+nx.draw(G, with_labels=True )
+plt.show()
+
+from    cvxopt          import matrix, spmatrix, sparse, spdiag, solvers
+import numpy as np
+
+L = nx.incidence_matrix(G).todense()
+G.edges(data=True)
+G.nodes(data=True)
+
+b = np.matrix( G.node[N]['intensity'] for N in G )
+
+
+
+from scipy.optimize import linprog
+linprog
+
 
 def min_cost_flow(G, verbose=False):
     '''Finds the minimal number of reactions necessary to explain the MassTodon results.
@@ -103,7 +118,7 @@ def min_cost_flow(G, verbose=False):
     return res
 
 %%time
-res = [ min_cost_flow(cc, verbose=True) for cc in nx.connected_component_subgraphs(IDG) ]
+res = [ min_cost_flow(cc, verbose=True) for cc in nx.connected_component_subgraphs(BFG) ]
 
 fragmentations_no_aas = Counter()
 reactions_on_frags_other_than_fragmentation = 0

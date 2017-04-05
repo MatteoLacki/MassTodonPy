@@ -19,86 +19,102 @@
 from    collections     import  Counter
 import  networkx        as      nx
 
-def update_nators(mol, Q, nominator=0.0, denominator=0.0):
-    ETnoDs  = mol['g']
-    PTRs    = Q-mol['q']-mol['g']
-    nominator   += PTRs*mol['estimate']
-    denominator += (ETnoDs+PTRs)*mol['estimate']
-    return nominator, denominator
-
-def min_cost_flow(G, Q, verbose=False):
+def minimal_cost(G, Q):
     '''Finds the minimal number of reactions necessary to explain the MassTodon results.
 
-    Uses the min_cost_flow algorithm.'''
-    FG = nx.DiGraph() # flow graph
-    FG.add_node('T', demand=0) # we gonna play with integers to eliminate real numbers' imprecisions.
-    for N in G:
-        intensity = int(G.node[N]['intensity'])
-        FG.add_node( N, demand = -intensity )
-        FG.node['T']['demand'] += intensity
-    for N, M in G.edges_iter():
-        if N == M:
-            FG.add_edge( N, 'T', weight=Q-1-N[1] )
-        else:
-            FG.add_node((N,M))
-            FG.add_edge( N, (N,M))
-            FG.add_edge( M, (N,M))
-            FG.add_edge( (N,M), 'T', weight=Q-1-N[1]-M[1])
-    res = nx.min_cost_flow_cost(FG)
-    if verbose:
-        res = (res, nx.min_cost_flow(FG))
-    return res
+    Uses the max flow algorithm in all but trivial cases.
+    '''
+        # The number of reactions other than fragmentation
+        # that would result from not having any edges between C and Z ions.
+    no_edges_reactions_cnt = sum( (Q-1-N[1])*G.node[N]['intensity'] for N in G)
+
+    if len(G)>1:
+        FG = nx.DiGraph()
+        FG.add_node('S') # start
+        FG.add_node('T') # terminus/sink
+        for C in G:
+            if C[0][0]=='c':
+                Cintensity = G.node[C]['intensity']
+                FG.add_node(C)
+                FG.add_edge( 'S', C, capacity=Cintensity )
+                for Z in G[C]:
+                    Zintensity = G.node[Z]['intensity']
+                    FG.add_node(Z)
+                    FG.add_edge(C,Z)
+                    FG.add_edge( Z, 'T', capacity=Zintensity )
+        flow_val, flows = nx.maximum_flow(FG,'S','T')
+        min_cost = no_edges_reactions_cnt - (Q-1)*flow_val
+        for N in G:
+            G.add_edge(N,N)
+        for N in flows:
+            for M in flows[N]:
+                if N=='S': # M is a C fragment
+                    G.edge[M][M]['flow'] = G.node[M]['intensity']-flows[N][M]
+                elif M=='T': # N is a Z fragment
+                    G.edge[N][N]['flow'] = G.node[N]['intensity']-flows[N][M]
+                else: # N is a C and M a Z fragment
+                    G.edge[N][M]['flow'] = flows[N][M]
+    else:
+        min_cost = no_edges_reactions_cnt
+        G.nodes(data=True)
+        N = G.nodes()[0]
+        G.add_edge( N, N, flow=G.node[N]['intensity'] )
+    return min_cost, G
+
 
 def reaction_analist_basic(MassTodonResults, fasta, Q):
     '''Estimate probabilities of reactions out of the MassTodon results.
 
     Divide the molecules using a c-z molecules that can be obtained by minimizing the total number of reactions needed to express the MassTodon output.'''
-    no_reactions = denominator = nominator = 0.0
-    L = len(fasta)
-    IDG = nx.Graph() # the intensity division graph
+
+    no_reactions = ETnoD_cnt = PTR_cnt = 0.0
+    L   = len(fasta)
+    BFG = nx.Graph()
     minimal_estimated_intensity = 100.
 
     for mols, error, status in MassTodonResults:
         if status=='optimal': #TODO what to do otherwise?
             for mol in mols:
-                if mol['estimate'] > minimal_estimated_intensity:
+                if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
                     if mol['molType']=='precursor':
                         if mol['q']==Q and mol['g']==0:
                             no_reactions = mol['estimate']
                         else:
-                            nominator, denominator = update_nators(mol, Q, nominator, denominator)
+                            ETnoD_cnt  += mol['g'] * mol['estimate']
+                            PTR_cnt    += (Q-mol['q']-mol['g']) * mol['estimate']
                     else:
-                        frag = (mol['molType'],mol['q'])
-                        IDG.add_node(frag, intensity=mol['estimate'] )
-                        IDG.add_edge(frag,frag)
+                        frag = ( mol['molType'], mol['q'] )
+                        if not frag in BFG:
+                            BFG.add_node( frag, intensity=0 ) # intensities will be integers
+                        BFG.node[frag]['intensity'] += int(mol['estimate']) # convert the intensities to ints
 
-    prob_PTR = nominator/denominator
+    reactions_on_precursors = ETnoD_cnt + PTR_cnt
+    prob_PTR   = float(PTR_cnt)/reactions_on_precursors
     prob_ETnoD = 1.0 - prob_PTR
-    reactions_on_precursors = denominator
 
-    for C, qC in IDG: # adding edges between c and z fragments
+    for C, qC in BFG: # adding edges between c and z fragments
         if C[0]=='c':
-            for Z, qZ in IDG:
+            for Z, qZ in BFG:
                 if Z[0]=='z':
                     bpC = int(C[1:])
                     bpZ = L - int(Z[1:])
                     if bpC==bpZ and qC + qZ < Q-1:
-                        IDG.add_edge((C,qC),(Z,qZ))
+                        BFG.add_edge((C,qC),(Z,qZ))
 
-    res = [ min_cost_flow(cc, Q, verbose=True) for cc in nx.connected_component_subgraphs(IDG) ]
 
     fragmentations_no_aas = Counter()
     reactions_on_frags_other_than_fragmentation = 0
-    for reactionNo, flow in res:
-        for N in flow:
-            for M in flow[N]:
-                if M=='T':
-                    if N[0][0] == 'c':
-                        breakPoint = int(N[0][1:])
-                    if N[0][0] == 'z':
-                        breakPoint = L-int(N[0][1:])
-                    fragmentations_no_aas[ breakPoint ] += flow[N][M]
+
+    for cc in nx.connected_component_subgraphs(BFG):
+        reactionNo, G = minimal_cost(cc, Q)
         reactions_on_frags_other_than_fragmentation += reactionNo
+        for N in G:
+            for M in G[N]:
+                if M[0][0]=='z':
+                    fragmented_AA = L-int(M[0][1:])
+                else:
+                    fragmented_AA = int(M[0][1:])
+                fragmentations_no_aas[ fragmented_AA ] += G[N][M]['flow']
 
     fragmentations_no_total = sum(fragmentations_no_aas.values())
 
@@ -108,7 +124,7 @@ def reaction_analist_basic(MassTodonResults, fasta, Q):
     prob_fragmentation = float(fragmentations_no_total)/( fragmentations_no_total+reactions_on_frags_other_than_fragmentation+reactions_on_precursors )
     prob_no_fragmentation = 1.0 - prob_fragmentation
 
-    probs_fragmentation_on_aas = [ float(fragmentations_no_aas[i])/fragmentations_no_total for i in xrange(len(fasta))]
+    probs_fragmentation_on_aas = [ float(fragmentations_no_aas[i])/fragmentations_no_total for i in xrange(len(fasta)+1)]
 
     results = { 'prob_PTR'          :   prob_PTR,
                 'prob_ETnoD'        :   prob_ETnoD,
@@ -117,4 +133,5 @@ def reaction_analist_basic(MassTodonResults, fasta, Q):
                 'prob_fragmentation':   prob_fragmentation,
                 'prob_no_fragmentation': prob_no_fragmentation,
                 'probs_fragmentation_on_aas':   probs_fragmentation_on_aas }
+
     return results
