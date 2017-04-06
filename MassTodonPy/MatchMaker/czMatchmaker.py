@@ -101,7 +101,6 @@ def reaction_analist_basic(MassTodonResults, fasta, Q):
                     if bpC==bpZ and qC + qZ < Q-1:
                         BFG.add_edge((C,qC),(Z,qZ))
 
-
     fragmentations_no_aas = Counter()
     reactions_on_frags_other_than_fragmentation = 0
 

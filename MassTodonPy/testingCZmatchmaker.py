@@ -5,41 +5,23 @@ from    MassTodon       import  MassTodon
 from    Formulator      import  makeFormulas
 import  cPickle         as      pickle
 import  networkx        as      nx
+from    collections     import defaultdict, Counter
+from    matplotlib      import collections  as mc
+from    cvxopt          import matrix, spmatrix, sparse, spdiag, solvers
+import  pylab as pl
+import  matplotlib.pyplot as plt
+import  numpy           as np
 
 file_path = '/Users/matteo/Documents/MassTodon/Results/Ubiquitin_ETD_10_ms_1071.matteo'
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
-# modifications = {   ('N',2) :       {'H': 1, 'O': +2, 'N': +3},
-#                     ('Calpha',2) :  {'H': 1, 'O': +2, 'N': +3},
-#                     ('Calpha',5) :  {'H': 2, 'S': +2, 'N': +2},
-#                     ('C',6) :       {'H': 2, 'S': +2, 'N': +200} }
-# Forms = makeFormulas(fasta=fasta, Q=Q, fragType='cz')
-# M = MassTodon(  fasta           = fasta,
-#                 precursorCharge = Q,
-#                 precDigits      = precDigits,
-#                 jointProbability= jP,
-#                 mzPrec          = mzPrec )
-# path  = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
-# path += 'Ubiquitin_ETD_10 ms_1071.mzXML'
-# cutOff = 100; topPercent = .999
-# M.readSpectrum(path=path, cutOff=cutOff, digits=precDigits, topPercent=topPercent)
-# M.prepare_problems(M_minProb)
-# mu=1e-5; lam=0.0; nu=0.001
-# %%time
-# res = M.run(solver='sequential', method='MSE', mu=mu, lam=lam, nu=0.001)
-# with open(file_path, 'w') as f:
-    # pickle.dump(res, f)
+
 with open(file_path, 'rb') as f:
     MassTodonResults = pickle.load(f)
 
-MassTodonResults
+############################################################
 
-from    collections     import defaultdict, Counter
-from    matplotlib      import collections  as mc
-import  pylab as pl
-import  matplotlib.pyplot as plt
-
-no_reactions = ETnoD_cnt = PTR_cnt = 0.0
+unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
 L   = len(fasta)
 BFG = nx.Graph()
 minimal_estimated_intensity = 100.
@@ -50,17 +32,19 @@ for mols, error, status in MassTodonResults:
             if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
                 if mol['molType']=='precursor':
                     if mol['q']==Q and mol['g']==0:
-                        no_reactions = mol['estimate']
+                        unreacted_precursors = mol['estimate']
                     else:
-                        ETnoD_cnt  += mol['g'] * mol['estimate']
-                        PTR_cnt    += (Q-mol['q']-mol['g']) * mol['estimate']
+                        ETnoDs_on_precursors+= mol['g'] * mol['estimate']
+                        PTRs_on_precursors  += (Q-mol['q']-mol['g']) * mol['estimate']
                 else:
-                    frag = (mol['molType'], mol['q'], mol['g'])
-                    BFG.add_node( frag, intensity=int(mol['estimate']) )
+                    molG = max(mol['g'],0) # glue together HTR and ETD: have to add probs then.
+                    frag = (mol['molType'], mol['q'], molG)
+                    if not frag in BFG:
+                        BFG.add_node( frag, intensity=0 )
+                    BFG.node[frag]['intensity'] += int(mol['estimate'])
 
-reactions_on_precursors = ETnoD_cnt + PTR_cnt
-prob_PTR   = float(PTR_cnt)/reactions_on_precursors
-prob_ETnoD = 1.0 - prob_PTR
+reactions_on_precursors = ETnoDs_on_precursors + PTRs_on_precursors
+# reactions_on_precursors, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
 
 for C, qC, gC in BFG: # adding edges between c and z fragments
     if C[0]=='c':
@@ -71,27 +55,55 @@ for C, qC, gC in BFG: # adding edges between c and z fragments
                 if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
                     BFG.add_edge( (C,qC,gC), (Z,qZ,gZ))
 
+BFG.edges()
+BFG.nodes()
+
+len(BFG.edges())+len(BFG)
+fragmentation_probs = Counter()
+
+for Ntype, q, g in BFG:
+    if Ntype[0] == 'c':
+        fragmentation_probs[]
+
+
 ccs = list(nx.connected_component_subgraphs(BFG))
 len(ccs)
 Counter(map( lambda G: ( len(G),len(G.edges()) ), ccs ))
-G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==11][0]
+G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==8][0]
+# nx.draw_circular(G, with_labels=True, node_size=50 )
+# plt.show()
 
-nx.draw(G, with_labels=True )
-plt.show()
 
-from    cvxopt          import matrix, spmatrix, sparse, spdiag, solvers
-import numpy as np
+#### Preparing the minimization task.
+from scipy.optimize import linprog
 
 L = nx.incidence_matrix(G).todense()
 G.edges(data=True)
 G.nodes(data=True)
 
-b = np.matrix( G.node[N]['intensity'] for N in G )
+J = np.matrix(list( G.node[N]['intensity'] for N in G ))
+J
+R = lambda x: -np.log(x)
+
+Pptr, Petnod, Pf = .2, .8, .2
+Rptr, Retnod, Rf = map(R, (Pptr, Petnod, Pf))
+
+from math import lgamma
+
+c = []
+for C,Z in G.edges_iter():
+    if C[0][0]=='z':
+        C,Z = Z,C
+    C, qC, gC = C
+    Z, qZ, gZ = Z
+    Nptr = Q-1-qC-qZ-gC-gZ
+    Netnod = gC+gZ
+    print Nptr, Netnod
+    c.append( Nptr*Rptr - lgamma(Nptr+Netnod+1.0) + lgamma(Nptr+1.0) + lgamma(Netnod+1.0) - Rf )
 
 
 
-from scipy.optimize import linprog
-linprog
+
 
 
 def min_cost_flow(G, verbose=False):
