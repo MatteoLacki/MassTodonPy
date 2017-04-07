@@ -35,7 +35,7 @@ def get_path_params(BFAG, path, parname):
         ret.append(BFAG[path[i]][path[i+1]][parname])
     return ret
 
-    
+
 def add_flaw_to_residual_graph(BFRG, path, flow, capacity="capacity"):
     for i in xrange(len(path)-1):
         BFRG[path[i]][path[i+1]][capacity] -= flow
@@ -62,7 +62,7 @@ def select_augmenting_path(BFRG, cost="cost", capacity="capacity"):
         return None
     return augmenting_cycles[0]
 
-    
+
 
 
 
@@ -95,22 +95,19 @@ def max_cost_flaw(BFG, src, sink, cost="cost", capacity="capacity"):
 
 
 
-BFG = nx.DiGraph()
-BFG.add_nodes_from(range(6))
-BFG.add_edges_from([
-                    (0, 2, {'capacity':4}), 
-                    (0, 4, {'capacity':5}), 
-                    (4, 3, {'cost':10}), 
-                    (2, 3, {'cost':5}), 
-                    (4, 5, {'cost':6}), 
-                    (3, 1, {'capacity':5}), 
-                    (5, 1, {'capacity':4})
-                   ])
-
-
-
-
-max_cost_flaw(BFG, 0, 1)
-
-for v1, v2 in BFG.edges():
-    print v1, v2, BFG[v1][v2]['flaw']
+# BFG = nx.DiGraph()
+# BFG.add_nodes_from(range(6))
+# BFG.add_edges_from([
+#                     (0, 2, {'capacity':4}),
+#                     (0, 4, {'capacity':5}),
+#                     (4, 3, {'cost':10}),
+#                     (2, 3, {'cost':5}),
+#                     (4, 5, {'cost':6}),
+#                     (3, 1, {'capacity':5}),
+#                     (5, 1, {'capacity':4})
+#                    ])
+#
+# max_cost_flaw(BFG, 0, 1)
+#
+# for v1, v2 in BFG.edges():
+#     print v1, v2, BFG[v1][v2]['flaw']
