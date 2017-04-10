@@ -12,7 +12,6 @@ from    math            import log, lgamma
 import  pylab as pl
 import  matplotlib.pyplot as plt
 import  numpy           as np
-from    graph_compute   import max_cost_flaw
 
 file_path = '/Users/matteo/Documents/MassTodon/Results/Ubiquitin_ETD_10_ms_1071.matteo'
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
@@ -24,7 +23,6 @@ with open(file_path, 'rb') as f:
 ############################################################
 
 unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
-L   = len(fasta)
 BFG = nx.Graph()
 minimal_estimated_intensity = 100.
 
@@ -51,26 +49,7 @@ for mols, error, status in MassTodonResults:
                     BFG.node[frag]['intensity'] += int(mol['estimate'])
 
 reactions_on_precursors = ETnoDs_on_precursors + PTRs_on_precursors
-# reactions_on_precursors, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
 
-for C, qC, gC in BFG: # adding edges between c and z fragments
-    if C[0]=='c':
-        for Z, qZ, gZ in BFG:
-            if Z[0]=='z':
-                bpC = int(C[1:])
-                bpZ = L - int(Z[1:])
-                if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
-                    BFG.add_edge( (C,qC,gC), (Z,qZ,gZ))
-
-def etnod_ptr_on_missing_cofragment(nQ, nG, LogProbEtnod, LogProbPtr, Q):
-    '''Get the number of ETnoD and PTR reactions on an edges with minimal cost.'''
-    if LogProbEtnod > LogProbPtr:
-        Netnod  = Q - 1 - nQ
-        Nptr    = 0
-    else:
-        Netnod  = nG
-        Nptr    = Q - 1 - nQ - nG
-    return Netnod, Nptr
 
 def etnod_ptr_on_c_z_pairing( q0, g0, q1, g1, Q ):
     '''Get the number of ETnoD and PTR reactions on a regular edge.'''
@@ -78,128 +57,155 @@ def etnod_ptr_on_c_z_pairing( q0, g0, q1, g1, Q ):
     Nptr    = Q - 1 - g0 - g1 - q0 - q1
     return Netnod, Nptr
 
-def get_break_point( nType ):
+
+def get_break_point( nType, fasta ):
     '''Get the amino acid number that was cleft.'''
     if nType[0] == 'c':
         bP = int(nType[1:])
     else:
-        bP = L - int(nType[1:])
+        bP = len(fasta) - int(nType[1:])
     return bP
+
+
+for Ctype, qC, gC in BFG: # adding edges between c and z fragments
+    if Ctype[0]=='c':
+        for Ztype, qZ, gZ in BFG:
+            if Ztype[0]=='z':
+                bpC = get_break_point(Ctype, fasta)
+                bpZ = get_break_point(Ztype, fasta)
+                if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
+                    ETnoD_cnt, PTR_cnt = etnod_ptr_on_c_z_pairing( qC, gC, qZ, gZ, Q )
+                    BFG.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
 
 fragmentations = set()
 for (nT, nQ, nG) in BFG:
-    fragmentations.add(get_break_point(nT))
+    fragmentations.add(get_break_point(nT, fasta))
 
 for (nT, nQ, nG), (mT, mQ, mG) in BFG.edges_iter():
-    fragmentations.add(get_break_point(nT))
+    fragmentations.add(get_break_point(nT, fasta))
 
-
-LogProb = dict([ ( i, -log(len(fasta.replace('P',''))) ) for i,f in enumerate(fasta) if f != 'P'])
-LogProb['PTR']    = log(.5)
-LogProb['ETnoD']  = log(.5)
+fastaLenNoProlines = len(fasta.replace('P',''))
+LogProb = dict([ ( i, -log(fastaLenNoProlines) ) for i,f in enumerate(fasta) if f != 'P'])
+LogProb['PTR']    = log(.9)
+LogProb['ETnoD']  = log(.1)
 
 ccs = list(nx.connected_component_subgraphs(BFG))
 # Counter(map( lambda G: ( len(G),len(G.edges()) ), ccs ))
 
-G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==8][0]
+G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==1][2]
 # nx.draw_circular(G, with_labels=True, node_size=50 )
 # plt.show()
+
 
 def logBinomial(m,n):
     return lgamma(m+n+1.0)-lgamma(m+1.0)-lgamma(n+1.0)
 
 
-def get_weight(C, Z, LogProb, Q):
-    '''Weight for the weighted max flow optimization problem.'''
-    (cT, cQ, cG), (zT, zQ, zG) = C, Z
-    Netnod, Nptr= etnod_ptr_on_c_z_pairing( cQ, cG, zQ, zG, Q )
-    w_e = logBinomial(Netnod, Nptr)
-
-    logPptr     = LogProb['PTR']
-    logPetnod   = LogProb['ETnoD']
-
-    bP = get_break_point(cT)
-    Cetnod, Cptr = etnod_ptr_on_missing_cofragment(cQ, cG, logPetnod, logPptr, Q)
-    Zetnod, Zptr = etnod_ptr_on_missing_cofragment(zQ, zG, logPetnod, logPptr, Q)
-
+def etnod_ptr_on_missing_cofragment(nQ, nG, logPetnod, logPptr, Q):
+    '''Get the number of ETnoD and PTR reactions on an edges with minimal cost.'''
     if logPetnod > logPptr:
-        W_edge  = (logPptr-logPetnod) * Nptr - (Q-1)*logPetnod + w_e - LogProb[bP]
+        Netnod  = Q - 1 - nQ
+        Nptr    = 0
     else:
-        w_cc    = logBinomial(Cetnod, Cptr)
-        w_zz    = logBinomial(Zetnod, Zptr)
-        W_edge  = -logPptr*(Q-1) + w_e - w_cc - w_zz - LogProb[bP]
-    return W_edge
+        Netnod  = nG
+        Nptr    = Q - 1 - nQ - nG
+    return Netnod, Nptr
 
 
-def initialize_flow_graph(G, Q, LogProb):
-    '''Construct the flow graph corresponding to one pairing problem.'''
-
-    totalIntensity = sum(G.node[N]['intensity'] for N in G )
-    FG = nx.DiGraph()
-    FG.add_node('S', demand= -totalIntensity) # start
-    FG.add_node('T', demand=  totalIntensity) # terminus/sink
-    for C in G:
-        if C[0][0]=='c':
-            FG.add_node(C)
-            FG.add_edge( 'S', C, capacity=G.node[C]['intensity'] )
-            for Z in G[C]:
-                FG.add_node(Z)
-                FG.add_edge( Z, 'T', capacity = G.node[Z]['intensity'] )
-                FG.add_edge( C,  Z,   weight  = get_weight(C, Z, LogProb, Q) )
-    max_cost_flaw(FG, 'S', 'T', cost="weight", capacity="capacity")
-    return FG
-
-# G.nodes(data=True)
-# G.edges(data=True)
-
-def initialize_flow_graph_nx(G, Q, LogProb):
-    '''Construct the flow graph corresponding to one pairing problem.'''
-
-    totalIntensity = sum(G.node[N]['intensity'] for N in G )
-    FG = nx.DiGraph()
-    FG.add_node('S', demand= -totalIntensity) # start
-    FG.add_node('T', demand=  totalIntensity) # terminus/sink
-    FG.add_edge('S','T')
-    for C in G:
-        if C[0][0]=='c':
-            FG.add_node(C)
-            FG.add_edge( 'S', C, capacity=G.node[C]['intensity'] )
-            for Z in G[C]:
-                FG.add_node(Z)
-                FG.add_edge(Z, 'T', capacity = G.node[Z]['intensity'])
-                weight = int(-get_weight(C,Z,LogProb, Q) * 10000)
-                print weight
-                FG.add_edge(C, Z, weight = weight)
-
-    print FG.nodes(data=True)
-    print FG.edges(data=True)
-
-    minFlaw = nx.min_cost_flow(FG)
-    return minFlaw
-
-# nx.draw_circular(G, with_labels=True, node_size=50 )
-# plt.show()
-
-from scipy.optimize import linprog
-
-def max_weight_flow_simplex(G, Q, LogProb, verbose=False):
-    '''Solve one pairing problem.'''
-    L = np.array(nx.incidence_matrix(G).todense())
-    J = np.array([G.node[N]['intensity'] for N in G ])
-    c = []
+def get_costs(G, Q, LogProb, bP, const=100):
+    '''Get the costs.'''
+    c  = []
     for C, Z in G.edges_iter():
         if C[0][0]=='z':
             C, Z = Z, C
-        c.append( int(-get_weight(C,Z,LogProb, Q) * 10000) )
+        (cT, cQ, cG), (zT, zQ, zG) = C, Z
+        Netnod      = G.edge[C][Z]['ETnoD']
+        Nptr        = G.edge[C][Z]['PTR']
+        w_e         = logBinomial(Netnod, Nptr)
+        logPptr     = LogProb['PTR']
+        logPetnod   = LogProb['ETnoD']
+        Cetnod, Cptr = etnod_ptr_on_missing_cofragment(cQ, cG, logPetnod, logPptr, Q)
+        Zetnod, Zptr = etnod_ptr_on_missing_cofragment(zQ, zG, logPetnod, logPptr, Q)
+        G.node[C]['ETnoD']  = Cetnod
+        G.node[C]['PTR']    = Cptr
+        G.node[Z]['ETnoD']  = Zetnod
+        G.node[Z]['PTR']    = Zptr
+        if logPetnod > logPptr:
+            W_edge  = (logPptr-logPetnod) * Nptr - (Q-1)*logPetnod + w_e - LogProb[bP]
+        else:
+            w_cc    = logBinomial(Cetnod, Cptr)
+            w_zz    = logBinomial(Zetnod, Zptr)
+            W_edge  = -logPptr*(Q-1) + w_e - w_cc - w_zz - LogProb[bP]
+        c.append(int(-W_edge * const))
     c = np.array(c)
-    simplex_sol = linprog(c=c, A_ub=L, b_ub=J )
-    for (N0,N1), flaw in zip(G.edges(), simplex_sol['x']):
-        G.edge[N0][N1]['flaw'] = flaw
-    if verbose:
-        return G, simplex_sol
-    else:
-        return G
+    return c
 
+def unpaired_cnt(R, G, J):
+    return sum( G.node[N][R]*j for N, j in zip(G, J) )
+
+def paired_cnt(R, G, I):
+    return sum( (G.edge[N0][N1][R]-G.node[N0][R]-G.node[N1][R])*i for (N0,N1),i in zip(G.edges(),I) )
+
+from scipy.optimize import linprog
+
+def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
+    '''Solve one pairing problem.'''
+    if len(G) > 1:
+        L  = np.array(nx.incidence_matrix(G).todense())
+        J  = np.array([G.node[N]['intensity'] for N in G ])
+        bP = get_break_point( next(G.nodes_iter())[0], fasta )
+        c  = get_costs(G,Q,LogProb,bP)
+        I  = linprog(c=c, A_ub=L, b_ub=J )
+        TotalFlow = I['x'].sum()
+        if LogProb['ETnoD'] < LogProb['PTR']:
+            TotalPTR   = unpaired_cnt('PTR', G, J) - (Q-1)*TotalFlow
+            TotalETnoD = unpaired_cnt('ETnoD', G, J)
+        else:
+            pairedPTR  = paired_cnt('PTR', G, I['x'])
+            TotalPTR   = unpaired_cnt('PTR', G, J) + pairedPTR
+            TotalETnoD = unpaired_cnt('ETnoD', G, J) - (Q-1)*TotalFlow - pairedPTR
+        TotalFrags = J.sum() - np.matmul( L, I['x'] ).sum()
+    else:
+        (nType, nQ, nG), Data =  G.nodes(data=True)[0]
+        I   = Data['intensity']
+        bP  = get_break_point( nType, fasta )
+        ETnoD_cnt, PTR_cnt = etnod_ptr_on_missing_cofragment(nQ, nG, LogProb['ETnoD'], LogProb['PTR'], Q)
+        TotalFrags = I
+        TotalETnoD = I*ETnoD_cnt
+        TotalPTR   = I*PTR_cnt
+    return Counter({'ETD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags})
+
+
+
+
+
+
+
+%%time
+X = [ max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000) for G in nx.connected_component_subgraphs(BFG) if len(G)>1]
+
+
+S = Counter()
+for x in X:
+    S += x
+
+S
+
+
+
+## Updating Probs
+# LogProb['ETnoD'] = log(TotalETnoD) - log(TotalETnoD+TotalPTR)
+# LogProb['PTR']   = log(TotalPTR) - log(TotalETnoD+TotalPTR)
+
+# TotalFrags
+
+
+
+# if verbose:
+#     return G, simplex_sol
+# else:
+#     return G
+#
 
 
 %%time

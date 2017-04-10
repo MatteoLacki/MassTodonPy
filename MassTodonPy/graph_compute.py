@@ -93,6 +93,23 @@ def max_cost_flaw(BFG, src, sink, cost="cost", capacity="capacity"):
 
 
 
+def get_weight(cQ, cG, zQ, zG, Netnod, Nptr, Q):
+    '''Weight for the weighted max flow.'''
+    Netnod, Nptr = etnod_ptr_on_c_z_pairing( cQ, cG, zQ, zG, Q )
+    w_e = logBinomial(Netnod, Nptr)
+    logPptr     = LogProb['PTR']
+    logPetnod   = LogProb['ETnoD']
+    Cetnod, Cptr = etnod_ptr_on_missing_cofragment(cQ, cG, logPetnod, logPptr, Q)
+    Zetnod, Zptr = etnod_ptr_on_missing_cofragment(zQ, zG, logPetnod, logPptr, Q)
+
+    if logPetnod > logPptr:
+        W_edge  = (logPptr-logPetnod) * Nptr - (Q-1)*logPetnod + w_e - LogProb[bP]
+    else:
+        w_cc    = logBinomial(Cetnod, Cptr)
+        w_zz    = logBinomial(Zetnod, Zptr)
+        W_edge  = -logPptr*(Q-1) + w_e - w_cc - w_zz - LogProb[bP]
+    return W_edge
+
 
 
 # BFG = nx.DiGraph()
