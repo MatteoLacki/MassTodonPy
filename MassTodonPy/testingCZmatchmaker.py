@@ -62,9 +62,9 @@ for C, qC, gC in BFG: # adding edges between c and z fragments
                 if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
                     BFG.add_edge( (C,qC,gC), (Z,qZ,gZ))
 
-def etnod_ptr_on_missing_cofragment(nQ, nG, Petnod, Pptr, Q):
+def etnod_ptr_on_missing_cofragment(nQ, nG, LogProbEtnod, LogProbPtr, Q):
     '''Get the number of ETnoD and PTR reactions on an edges with minimal cost.'''
-    if Petnod > Pptr:
+    if LogProbEtnod > LogProbPtr:
         Netnod  = Q - 1 - nQ
         Nptr    = 0
     else:
@@ -88,33 +88,20 @@ def get_break_point( nType ):
 
 fragmentations = set()
 for (nT, nQ, nG) in BFG:
-    # bP = get_break_point(nT)
-    # Netnod1, Nptr1 = etnod_ptr_on_missing_cofragment(nQ, nG, 1, 0, Q)
-    # Netnod2, Nptr2 = etnod_ptr_on_missing_cofragment(nQ, nG, 0, 1, Q)
-    # fragmentations.add( (bP, Netnod1, Nptr1) )
-    # fragmentations.add( (bP, Netnod2, Nptr2) )
     fragmentations.add(get_break_point(nT))
 
 for (nT, nQ, nG), (mT, mQ, mG) in BFG.edges_iter():
-    # Netnod, Nptr    = etnod_ptr_on_c_z_pairing( nQ, nG, mQ, mG, Q )
-    # breakPoint      = get_break_point(nT)
-    # fragmentations.add( (breakPoint, Netnod, Nptr) )
     fragmentations.add(get_break_point(nT))
 
-X = Counter(get_break_point(e[0][0]) for e in BFG.edges()) + Counter(get_break_point(n[0]) for n in BFG)
-[ i in X for i,f in enumerate(fasta) if f == 'P']
 
-
-
-Prob = dict([ ( i, 1.0/len(fasta.replace('P','')) ) for i,f in enumerate(fasta) if f != 'P'])
-# Prob = dict( (f, 1.0/len(fragmentations)) for f in fragmentations)
-Prob['PTR']    = .5
-Prob['ETnoD']  = .5
+LogProb = dict([ ( i, -log(len(fasta.replace('P',''))) ) for i,f in enumerate(fasta) if f != 'P'])
+LogProb['PTR']    = log(.5)
+LogProb['ETnoD']  = log(.5)
 
 ccs = list(nx.connected_component_subgraphs(BFG))
 # Counter(map( lambda G: ( len(G),len(G.edges()) ), ccs ))
 
-G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==4][0]
+G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==8][0]
 # nx.draw_circular(G, with_labels=True, node_size=50 )
 # plt.show()
 
@@ -122,40 +109,35 @@ def logBinomial(m,n):
     return lgamma(m+n+1.0)-lgamma(m+1.0)-lgamma(n+1.0)
 
 
-def get_weight(C, Z, Prob, Q):
+def get_weight(C, Z, LogProb, Q):
     '''Weight for the weighted max flow optimization problem.'''
     (cT, cQ, cG), (zT, zQ, zG) = C, Z
     Netnod, Nptr= etnod_ptr_on_c_z_pairing( cQ, cG, zQ, zG, Q )
-    w_e         = logBinomial(Netnod, Nptr)
+    w_e = logBinomial(Netnod, Nptr)
 
-    logPptr     = log(Prob['PTR'])
-    logPetnod   = log(Prob['ETnoD'])
+    logPptr     = LogProb['PTR']
+    logPetnod   = LogProb['ETnoD']
 
     bP = get_break_point(cT)
     Cetnod, Cptr = etnod_ptr_on_missing_cofragment(cQ, cG, logPetnod, logPptr, Q)
     Zetnod, Zptr = etnod_ptr_on_missing_cofragment(zQ, zG, logPetnod, logPptr, Q)
 
-    # fragLogProbs = Prob[(bP, Netnod, Nptr)] - Prob[(bP, Cetnod, Cptr)] - Prob[(bP, Zetnod, Zptr)]
-    fragLogProbs = -Prob[bP]
-
     if logPetnod > logPptr:
-        W_edge  = (logPptr-logPetnod) * Nptr - (Q-1)*logPetnod + fragLogProbs
+        W_edge  = (logPptr-logPetnod) * Nptr - (Q-1)*logPetnod + w_e - LogProb[bP]
     else:
         w_cc    = logBinomial(Cetnod, Cptr)
         w_zz    = logBinomial(Zetnod, Zptr)
-        W_edge  = -logPptr*(Q-1) + w_e - w_cc - w_zz + fragLogProbs
+        W_edge  = -logPptr*(Q-1) + w_e - w_cc - w_zz - LogProb[bP]
     return W_edge
 
 
-def initialize_flow_graph(G, Q, Prob):
+def initialize_flow_graph(G, Q, LogProb):
     '''Construct the flow graph corresponding to one pairing problem.'''
 
     totalIntensity = sum(G.node[N]['intensity'] for N in G )
     FG = nx.DiGraph()
     FG.add_node('S', demand= -totalIntensity) # start
     FG.add_node('T', demand=  totalIntensity) # terminus/sink
-    # FG.add_edge('S','T')
-
     for C in G:
         if C[0][0]=='c':
             FG.add_node(C)
@@ -163,16 +145,89 @@ def initialize_flow_graph(G, Q, Prob):
             for Z in G[C]:
                 FG.add_node(Z)
                 FG.add_edge( Z, 'T', capacity = G.node[Z]['intensity'] )
-                FG.add_edge( C,  Z,   weight  = get_weight(C,Z,Prob, Q) )
-                # FG.add_edge( C, Z,   weight   = -get_weight(C,Z,Prob, Q) )
+                FG.add_edge( C,  Z,   weight  = get_weight(C, Z, LogProb, Q) )
     max_cost_flaw(FG, 'S', 'T', cost="weight", capacity="capacity")
-
     return FG
 
-FGs = [ initialize_flow_graph(G, Q, Prob) for G in nx.connected_component_subgraphs(BFG)]
+# G.nodes(data=True)
+# G.edges(data=True)
+
+def initialize_flow_graph_nx(G, Q, LogProb):
+    '''Construct the flow graph corresponding to one pairing problem.'''
+
+    totalIntensity = sum(G.node[N]['intensity'] for N in G )
+    FG = nx.DiGraph()
+    FG.add_node('S', demand= -totalIntensity) # start
+    FG.add_node('T', demand=  totalIntensity) # terminus/sink
+    FG.add_edge('S','T')
+    for C in G:
+        if C[0][0]=='c':
+            FG.add_node(C)
+            FG.add_edge( 'S', C, capacity=G.node[C]['intensity'] )
+            for Z in G[C]:
+                FG.add_node(Z)
+                FG.add_edge(Z, 'T', capacity = G.node[Z]['intensity'])
+                weight = int(-get_weight(C,Z,LogProb, Q) * 10000)
+                print weight
+                FG.add_edge(C, Z, weight = weight)
+
+    print FG.nodes(data=True)
+    print FG.edges(data=True)
+
+    minFlaw = nx.min_cost_flow(FG)
+    return minFlaw
+
+# nx.draw_circular(G, with_labels=True, node_size=50 )
+# plt.show()
+
+from scipy.optimize import linprog
+
+def max_weight_flow_simplex(G, Q, LogProb, verbose=False):
+    '''Solve one pairing problem.'''
+    L = np.array(nx.incidence_matrix(G).todense())
+    J = np.array([G.node[N]['intensity'] for N in G ])
+    c = []
+    for C, Z in G.edges_iter():
+        if C[0][0]=='z':
+            C, Z = Z, C
+        c.append( int(-get_weight(C,Z,LogProb, Q) * 10000) )
+    c = np.array(c)
+    simplex_sol = linprog(c=c, A_ub=L, b_ub=J )
+    for (N0,N1), flaw in zip(G.edges(), simplex_sol['x']):
+        G.edge[N0][N1]['flaw'] = flaw
+    if verbose:
+        return G, simplex_sol
+    else:
+        return G
 
 
-Prob
+
+%%time
+H = initialize_flow_graph(G.copy(), Q, LogProb)
+
+
+for C,Z in G.edges_iter():
+    if C[0][0]=='z':
+        C, Z = Z, C
+    print H.edge[C][Z]['flaw']
+
+
+%%time
+H = max_weight_flow_simplex(G, Q, LogProb, verbose=True)
+
+%%time
+FGs = [ initialize_flow_graph(G, Q, LogProb) for G in nx.connected_component_subgraphs(BFG)]
+
+
+
+
+
+%%time
+sols = [ max_weight_flow_simplex(G, Q, LogProb, verbose=True) for G in nx.connected_component_subgraphs(BFG)]
+Counter( sol['status'] for _,sol in sols)
+
+
+LogProb
 
 
 # with open('dupnyGraf.matteo', 'w') as f:
@@ -204,32 +259,6 @@ def coordinate_ascent_MLE(FGS, Probs, maxIter=1000):
 
 
 
-#### Preparing the minimization task.
-from scipy.optimize import linprog
-
-L = nx.incidence_matrix(G).todense()
-G.edges(data=True)
-G.nodes(data=True)
-
-J = np.matrix(list( G.node[N]['intensity'] for N in G ))
-J
-R = lambda x: -np.log(x)
-
-Pptr, Petnod, Pf = .2, .8, .2
-Rptr, Retnod, Rf = map(R, (Pptr, Petnod, Pf))
-
-from math import lgamma
-
-c = []
-for C,Z in G.edges_iter():
-    if C[0][0]=='z':
-        C,Z = Z,C
-    C, qC, gC = C
-    Z, qZ, gZ = Z
-    Nptr = Q-1-qC-qZ-gC-gZ
-    Netnod = gC+gZ
-    print Nptr, Netnod
-    c.append( Nptr*Rptr - lgamma(Nptr+Netnod+1.0) + lgamma(Nptr+1.0) + lgamma(Netnod+1.0) - Rf )
 
 #
 #
