@@ -84,15 +84,17 @@ for (nT, nQ, nG) in BFG:
 for (nT, nQ, nG), (mT, mQ, mG) in BFG.edges_iter():
     fragmentations.add(get_break_point(nT, fasta))
 
+eps = + 0.001
+
 fastaLenNoProlines = len(fasta.replace('P',''))
 LogProb = dict([ ( i, -log(fastaLenNoProlines) ) for i,f in enumerate(fasta) if f != 'P'])
-LogProb['PTR']    = log(.9)
-LogProb['ETnoD']  = log(.1)
+LogProb['PTR']    = log(.5+eps)
+LogProb['ETnoD']  = log(.5-eps)
 
-ccs = list(nx.connected_component_subgraphs(BFG))
-# Counter(map( lambda G: ( len(G),len(G.edges()) ), ccs ))
+Graphs = list(nx.connected_component_subgraphs(BFG))
 
-G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==1][2]
+# Counter(map( lambda G: ( len(G),len(G.edges()) ), Graphs ))
+# G = [ cc for cc in Graphs if len(cc)==1][2].copy()
 # nx.draw_circular(G, with_labels=True, node_size=50 )
 # plt.show()
 
@@ -165,6 +167,7 @@ def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
             TotalPTR   = unpaired_cnt('PTR', G, J) + pairedPTR
             TotalETnoD = unpaired_cnt('ETnoD', G, J) - (Q-1)*TotalFlow - pairedPTR
         TotalFrags = J.sum() - np.matmul( L, I['x'] ).sum()
+        status = I['status']
     else:
         (nType, nQ, nG), Data =  G.nodes(data=True)[0]
         I   = Data['intensity']
@@ -173,87 +176,34 @@ def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
         TotalFrags = I
         TotalETnoD = I*ETnoD_cnt
         TotalPTR   = I*PTR_cnt
-    return Counter({'ETD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags})
-
-
-
-
-
-
+        status = -1
+    return Counter({'ETnoD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags}), status
 
 %%time
-X = [ max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000) for G in nx.connected_component_subgraphs(BFG) if len(G)>1]
-
-
 S = Counter()
-for x in X:
-    S += x
+stati = Counter()
+for G in Graphs:
+    s, status = max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000)
+    S += s
+    stati[status] += 1
 
-S
+S['ETnoD'] += ETnoDs_on_precursors
+S['PTR'] += PTRs_on_precursors
 
+stati
 
+# Updating Probs
+####TODO ADDD THE BLOODY PRECURSORS!!!
+LogProb['ETnoD'] = log(S['ETnoD']) - log(S['ETnoD'] + S['PTR'])
+LogProb['PTR']   = log(S['PTR'])   - log(S['ETnoD'] + S['PTR'])
 
-## Updating Probs
-# LogProb['ETnoD'] = log(TotalETnoD) - log(TotalETnoD+TotalPTR)
-# LogProb['PTR']   = log(TotalPTR) - log(TotalETnoD+TotalPTR)
+TotLogFrag = log(sum( S[s] for s in S if s != 'ETnoD' and s != 'PTR' ))
 
-# TotalFrags
-
-
-
-# if verbose:
-#     return G, simplex_sol
-# else:
-#     return G
-#
-
-
-%%time
-H = initialize_flow_graph(G.copy(), Q, LogProb)
-
-
-for C,Z in G.edges_iter():
-    if C[0][0]=='z':
-        C, Z = Z, C
-    print H.edge[C][Z]['flaw']
-
-
-%%time
-H = max_weight_flow_simplex(G, Q, LogProb, verbose=True)
-
-%%time
-FGs = [ initialize_flow_graph(G, Q, LogProb) for G in nx.connected_component_subgraphs(BFG)]
-
-
-
-
-
-%%time
-sols = [ max_weight_flow_simplex(G, Q, LogProb, verbose=True) for G in nx.connected_component_subgraphs(BFG)]
-Counter( sol['status'] for _,sol in sols)
-
+for s in LogProb:
+    if s != 'ETnoD' and s != 'PTR':
+        LogProb[s] = log(S[s]) - TotLogFrag
 
 LogProb
-
-
-# with open('dupnyGraf.matteo', 'w') as f:
-#     pickle.dump(FG, f)
-# flowDict = nx.min_cost_flow(FG)
-
-
-def solve_simplex_step(FGs, Prob, Q):
-    '''Finds the maximum a posteriori given probabilities.
-
-    Uses the weighted max flow algorithm in all but trivial cases.
-    '''
-
-    max_cost_flaw(FG, 'S', 'T', cost="weight", capacity="capacity")
-
-
-
-
-
-FG.edges(data=True)
 
 
 def coordinate_ascent_MLE(FGS, Probs, maxIter=1000):
