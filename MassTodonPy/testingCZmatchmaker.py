@@ -62,7 +62,6 @@ for C, qC, gC in BFG: # adding edges between c and z fragments
                 if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
                     BFG.add_edge( (C,qC,gC), (Z,qZ,gZ))
 
-
 def etnod_ptr_on_missing_cofragment(nQ, nG, Petnod, Pptr, Q):
     '''Get the number of ETnoD and PTR reactions on an edges with minimal cost.'''
     if Petnod > Pptr:
@@ -89,18 +88,26 @@ def get_break_point( nType ):
 
 fragmentations = set()
 for (nT, nQ, nG) in BFG:
-    bP = get_break_point(nT)
-    Netnod1, Nptr1 = etnod_ptr_on_missing_cofragment(nQ, nG, 1, 0, Q)
-    Netnod2, Nptr2 = etnod_ptr_on_missing_cofragment(nQ, nG, 0, 1, Q)
-    fragmentations.add( (bP, Netnod1, Nptr1) )
-    fragmentations.add( (bP, Netnod2, Nptr2) )
+    # bP = get_break_point(nT)
+    # Netnod1, Nptr1 = etnod_ptr_on_missing_cofragment(nQ, nG, 1, 0, Q)
+    # Netnod2, Nptr2 = etnod_ptr_on_missing_cofragment(nQ, nG, 0, 1, Q)
+    # fragmentations.add( (bP, Netnod1, Nptr1) )
+    # fragmentations.add( (bP, Netnod2, Nptr2) )
+    fragmentations.add(get_break_point(nT))
 
 for (nT, nQ, nG), (mT, mQ, mG) in BFG.edges_iter():
-    Netnod, Nptr    = etnod_ptr_on_c_z_pairing( nQ, nG, mQ, mG, Q )
-    breakPoint      = get_break_point(nT)
-    fragmentations.add( (breakPoint, Netnod, Nptr) )
+    # Netnod, Nptr    = etnod_ptr_on_c_z_pairing( nQ, nG, mQ, mG, Q )
+    # breakPoint      = get_break_point(nT)
+    # fragmentations.add( (breakPoint, Netnod, Nptr) )
+    fragmentations.add(get_break_point(nT))
 
-Prob = dict( (f, 1.0/len(fragmentations)) for f in fragmentations)
+X = Counter(get_break_point(e[0][0]) for e in BFG.edges()) + Counter(get_break_point(n[0]) for n in BFG)
+[ i in X for i,f in enumerate(fasta) if f == 'P']
+
+
+
+Prob = dict([ ( i, 1.0/len(fasta.replace('P','')) ) for i,f in enumerate(fasta) if f != 'P'])
+# Prob = dict( (f, 1.0/len(fragmentations)) for f in fragmentations)
 Prob['PTR']    = .5
 Prob['ETnoD']  = .5
 
@@ -108,8 +115,6 @@ ccs = list(nx.connected_component_subgraphs(BFG))
 # Counter(map( lambda G: ( len(G),len(G.edges()) ), ccs ))
 
 G = [ cc for cc in nx.connected_component_subgraphs(BFG) if len(cc)==4][0]
-G.nodes(data=True)
-G.edges(data=True)
 # nx.draw_circular(G, with_labels=True, node_size=50 )
 # plt.show()
 
@@ -130,7 +135,8 @@ def get_weight(C, Z, Prob, Q):
     Cetnod, Cptr = etnod_ptr_on_missing_cofragment(cQ, cG, logPetnod, logPptr, Q)
     Zetnod, Zptr = etnod_ptr_on_missing_cofragment(zQ, zG, logPetnod, logPptr, Q)
 
-    fragLogProbs = Prob[(bP, Netnod, Nptr)] - Prob[(bP, Cetnod, Cptr)] - Prob[(bP, Zetnod, Zptr)]
+    # fragLogProbs = Prob[(bP, Netnod, Nptr)] - Prob[(bP, Cetnod, Cptr)] - Prob[(bP, Zetnod, Zptr)]
+    fragLogProbs = -Prob[bP]
 
     if logPetnod > logPptr:
         W_edge  = (logPptr-logPetnod) * Nptr - (Q-1)*logPetnod + fragLogProbs
