@@ -8,10 +8,11 @@ import  networkx        as      nx
 from    collections     import defaultdict, Counter
 from    matplotlib      import collections  as mc
 from    cvxopt          import matrix, spmatrix, sparse, spdiag, solvers
-from    math            import log, lgamma
-import  pylab as pl
-import  matplotlib.pyplot as plt
+from    math            import log, lgamma, log10
+from    scipy.optimize  import linprog
+import  pylab           as pl
 import  numpy           as np
+import  matplotlib.pyplot as plt
 
 file_path = '/Users/matteo/Documents/MassTodon/Results/Ubiquitin_ETD_10_ms_1071.matteo'
 fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
@@ -20,36 +21,14 @@ Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 with open(file_path, 'rb') as f:
     MassTodonResults = pickle.load(f)
 
+# totIntensity = 0.0
+# for mols, error, status in MassTodonResults:
+#     if status=='optimal': #TODO what to do otherwise?
+#         for mol in mols:
+#             totIntensity += mol['estimate']
+## It would be good to investigate the spectrum.
+# log10(totIntensity)
 ############################################################
-
-unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
-BFG = nx.Graph()
-minimal_estimated_intensity = 100.
-
-for mols, error, status in MassTodonResults:
-    if status=='optimal': #TODO what to do otherwise?
-        for mol in mols:
-            if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
-                if mol['molType']=='precursor':
-                    if mol['q']==Q and mol['g']==0:
-                        unreacted_precursors = mol['estimate']
-                    else:
-                        ETnoDs_on_precursors+= mol['g'] * mol['estimate']
-                        PTRs_on_precursors  += (Q-mol['q']-mol['g']) * mol['estimate']
-                else:
-                    molG = mol['g']
-                    molQ = mol['q']
-                    if molG == - 1:     # HTR product
-                        molG += 1
-                    if molG + molQ == Q:# HTR product
-                        molG -= 1
-                    frag = (mol['molType'], mol['q'], molG)
-                    if not frag in BFG:
-                        BFG.add_node( frag, intensity=0 )
-                    BFG.node[frag]['intensity'] += int(mol['estimate'])
-
-reactions_on_precursors = ETnoDs_on_precursors + PTRs_on_precursors
-
 
 def etnod_ptr_on_c_z_pairing( q0, g0, q1, g1, Q ):
     '''Get the number of ETnoD and PTR reactions on a regular edge.'''
@@ -67,39 +46,58 @@ def get_break_point( nType, fasta ):
     return bP
 
 
-for Ctype, qC, gC in BFG: # adding edges between c and z fragments
-    if Ctype[0]=='c':
-        for Ztype, qZ, gZ in BFG:
-            if Ztype[0]=='z':
-                bpC = get_break_point(Ctype, fasta)
-                bpZ = get_break_point(Ztype, fasta)
-                if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
-                    ETnoD_cnt, PTR_cnt = etnod_ptr_on_c_z_pairing( qC, gC, qZ, gZ, Q )
-                    BFG.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
-
-fragmentations = set()
-for (nT, nQ, nG) in BFG:
-    fragmentations.add(get_break_point(nT, fasta))
-
-for (nT, nQ, nG), (mT, mQ, mG) in BFG.edges_iter():
-    fragmentations.add(get_break_point(nT, fasta))
-
-eps = + 0.001
-
-fastaLenNoProlines = len(fasta.replace('P',''))
-LogProb = dict([ ( i, -log(fastaLenNoProlines) ) for i,f in enumerate(fasta) if f != 'P'])
-LogProb['PTR']    = log(.5+eps)
-LogProb['ETnoD']  = log(.5-eps)
-
-Graphs = list(nx.connected_component_subgraphs(BFG))
-
-# Counter(map( lambda G: ( len(G),len(G.edges()) ), Graphs ))
-# G = [ cc for cc in Graphs if len(cc)==1][2].copy()
-# nx.draw_circular(G, with_labels=True, node_size=50 )
-# plt.show()
+def get_graphs_analyze_precursors_get_LogProb(MassTodonResults, Q, fasta, eps = 0.0):
+    '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors, get the initial logprobabilities of fragments and ETnoD and PTR reactions.'''
+    unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
+    BFG = nx.Graph()
+    minimal_estimated_intensity = 100.
+    for mols, error, status in MassTodonResults:
+        if status=='optimal': #TODO what to do otherwise?
+            for mol in mols:
+                if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
+                    if mol['molType']=='precursor':
+                        if mol['q']==Q and mol['g']==0:
+                            unreacted_precursors = mol['estimate']
+                        else:
+                            ETnoDs_on_precursors+= mol['g'] * mol['estimate']
+                            PTRs_on_precursors  += (Q-mol['q']-mol['g']) * mol['estimate']
+                    else:
+                        molG = mol['g']
+                        molQ = mol['q']
+                        if molG == - 1:     # HTR product
+                            molG += 1
+                        if molG + molQ == Q:# HTR product
+                            molG -= 1
+                        frag = (mol['molType'], mol['q'], molG)
+                        if not frag in BFG:
+                            BFG.add_node( frag, intensity=0 )
+                        BFG.node[frag]['intensity'] += int(mol['estimate'])
+    ETnoDs_on_precursors    = int(ETnoDs_on_precursors)
+    PTRs_on_precursors      = int(PTRs_on_precursors)
+    for Ctype, qC, gC in BFG: # adding edges between c and z fragments
+        if Ctype[0]=='c':
+            for Ztype, qZ, gZ in BFG:
+                if Ztype[0]=='z':
+                    bpC = get_break_point(Ctype, fasta)
+                    bpZ = get_break_point(Ztype, fasta)
+                    if bpC==bpZ and qC + qZ + gC + gZ <= Q-1:
+                        ETnoD_cnt, PTR_cnt = etnod_ptr_on_c_z_pairing( qC, gC, qZ, gZ, Q )
+                        BFG.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
+    Graphs = list(nx.connected_component_subgraphs(BFG))
+    fragmentations = set()
+    for (nT, nQ, nG) in BFG:
+        fragmentations.add(get_break_point(nT, fasta))
+    for (nT, nQ, nG), (mT, mQ, mG) in BFG.edges_iter():
+        fragmentations.add(get_break_point(nT, fasta))
+    fastaLenNoProlines = len(fasta.replace('P',''))
+    LogProb = dict([ ( i, -log(fastaLenNoProlines) ) for i,f in enumerate(fasta) if f != 'P'])
+    LogProb['PTR']    = log(.5+eps)
+    LogProb['ETnoD']  = log(.5-eps)
+    return Graphs, ETnoDs_on_precursors, PTRs_on_precursors, LogProb
 
 
 def logBinomial(m,n):
+    '''The logarithm of the binomial coefficient Bin(m+n, m).'''
     return lgamma(m+n+1.0)-lgamma(m+1.0)-lgamma(n+1.0)
 
 
@@ -115,7 +113,7 @@ def etnod_ptr_on_missing_cofragment(nQ, nG, logPetnod, logPptr, Q):
 
 
 def get_costs(G, Q, LogProb, bP, const=100):
-    '''Get the costs.'''
+    '''Get the costs for the min cost problem.'''
     c  = []
     for C, Z in G.edges_iter():
         if C[0][0]=='z':
@@ -142,13 +140,15 @@ def get_costs(G, Q, LogProb, bP, const=100):
     c = np.array(c)
     return c
 
+
 def unpaired_cnt(R, G, J):
+    '''Calculate the dot product of estimated MassTodon results and reaction counts for unpaired fragments.'''
     return sum( G.node[N][R]*j for N, j in zip(G, J) )
 
 def paired_cnt(R, G, I):
+    '''Calculate the dot product of optimal flow and reaction counts.'''
     return sum( (G.edge[N0][N1][R]-G.node[N0][R]-G.node[N1][R])*i for (N0,N1),i in zip(G.edges(),I) )
 
-from scipy.optimize import linprog
 
 def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
     '''Solve one pairing problem.'''
@@ -179,72 +179,48 @@ def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
         status = -1
     return Counter({'ETnoD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags}), status
 
+
+def solve_simplex_tasks(Graphs, Q, LogProb, fasta, const=1000):
+    '''Solve the linear optimization problems under fixed log probabilities of reactions.'''
+    ReactionCount = Counter()
+    stati = Counter()
+    for G in Graphs:
+        s, status = max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=const)
+        ReactionCount += s
+        stati[status] += 1
+    return ReactionCount, stati
+
+
+def update_LogProb(LogProb, ReactionCount):
+    '''Update the logprobabilities of different reactions.'''
+    S = ReactionCount
+    LogProb['ETnoD']= log(S['ETnoD']) - log(S['ETnoD'] + S['PTR'])
+    LogProb['PTR']  = log(S['PTR'])   - log(S['ETnoD'] + S['PTR'])
+    TotLogFrag      = log(sum( S[s] for s in S if s != 'ETnoD' and s != 'PTR' ))
+    for s in LogProb:
+        if s != 'ETnoD' and s != 'PTR':
+            LogProb[s] = log(S[s]) - TotLogFrag
+    return LogProb
+
+#TODO add the bloody likelihood diffs criterion.
+def coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=10, const=1000, eps = 0.0, verbose=False):
+    '''Maximize the loglikelihood using coordinate ascent.'''
+    Graphs, ETnoDs_on_precursors, PTRs_on_precursors, LogProb = \
+        get_graphs_analyze_precursors_get_LogProb(MassTodonResults, Q, fasta, eps)
+
+    #TODO add the bloody likelihood diffs criterion.
+    for i in xrange(maxIter):
+        ReactionCount, stati    = solve_simplex_tasks(Graphs, Q, LogProb, fasta, const)
+        if verbose:
+            print stati
+        ReactionCount['ETnoD'] += ETnoDs_on_precursors
+        ReactionCount['PTR']   += PTRs_on_precursors
+        LogProb = update_LogProb(LogProb, ReactionCount)
+
+    return LogProb
+
 %%time
-S = Counter()
-stati = Counter()
-for G in Graphs:
-    s, status = max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000)
-    S += s
-    stati[status] += 1
+LogProb = coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=100, const=1000, eps = 0.0, verbose=True)
 
-S['ETnoD'] += ETnoDs_on_precursors
-S['PTR'] += PTRs_on_precursors
-
-stati
-
-# Updating Probs
-####TODO ADDD THE BLOODY PRECURSORS!!!
-LogProb['ETnoD'] = log(S['ETnoD']) - log(S['ETnoD'] + S['PTR'])
-LogProb['PTR']   = log(S['PTR'])   - log(S['ETnoD'] + S['PTR'])
-
-TotLogFrag = log(sum( S[s] for s in S if s != 'ETnoD' and s != 'PTR' ))
-
-for s in LogProb:
-    if s != 'ETnoD' and s != 'PTR':
-        LogProb[s] = log(S[s]) - TotLogFrag
 
 LogProb
-
-
-def coordinate_ascent_MLE(FGS, Probs, maxIter=1000):
-    for i in xrange(maxIter):
-        FGs  = solve_simplex_step(FGs, Prob, Q)
-        Prob = solve_analytic_step(FGs, Prob)
-    return FGs, Prob
-
-
-
-
-
-#
-#
-# fragmentations_no_aas = Counter()
-# reactions_on_frags_other_than_fragmentation = 0
-# for reactionNo, flow in res:
-#     for N in flow:
-#         for M in flow[N]:
-#             if M=='T':
-#                 if N[0][0] == 'c':
-#                     breakPoint = int(N[0][1:])
-#                 if N[0][0] == 'z':
-#                     breakPoint = L-int(N[0][1:])
-#                 fragmentations_no_aas[ breakPoint ] += flow[N][M]
-#     reactions_on_frags_other_than_fragmentation += reactionNo
-#
-# ## Testing if all prolines have zero estimates
-# # [ fragmentations_no_aas[i] for i,f in enumerate(fasta) if f=='P']
-# ## They do.
-#
-# fragmentations_no_total = sum(fragmentations_no_aas.values())
-# fragmentations_no_total
-# fragmentations_no_aas
-#
-# prob_no_reaction = float(no_reactions)/ (no_reactions+reactions_on_precursors+reactions_on_frags_other_than_fragmentation+fragmentations_no_total)
-# prob_reaction = 1.0 - prob_no_reaction
-#
-# prob_fragmentation = float(fragmentations_no_total)/( fragmentations_no_total+reactions_on_frags_other_than_fragmentation+reactions_on_precursors )
-#
-# prob_no_fragmentation = 1.0 - prob_fragmentation
-#
-# probs_fragmentation_on_aas = [ float(fragmentations_no_aas[i])/fragmentations_no_total for i in xrange(len(fasta)+1)]
-# probs_fragmentation_on_aas
