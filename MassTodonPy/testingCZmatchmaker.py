@@ -8,7 +8,7 @@ import  networkx        as      nx
 from    collections     import defaultdict, Counter
 from    matplotlib      import collections  as mc
 from    cvxopt          import matrix, spmatrix, sparse, spdiag, solvers
-from    math            import log, lgamma, log10
+from    math            import log, lgamma, log10, exp, sqrt
 from    scipy.optimize  import linprog
 import  pylab           as pl
 import  numpy           as np
@@ -93,7 +93,7 @@ def get_graphs_analyze_precursors_get_LogProb(MassTodonResults, Q, fasta, eps = 
     LogProb = dict([ ( i, -log(fastaLenNoProlines) ) for i,f in enumerate(fasta) if f != 'P'])
     LogProb['PTR']    = log(.5+eps)
     LogProb['ETnoD']  = log(.5-eps)
-    return Graphs, ETnoDs_on_precursors, PTRs_on_precursors, LogProb
+    return Graphs, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors, LogProb
 
 
 def logBinomial(m,n):
@@ -145,28 +145,41 @@ def unpaired_cnt(R, G, J):
     '''Calculate the dot product of estimated MassTodon results and reaction counts for unpaired fragments.'''
     return sum( G.node[N][R]*j for N, j in zip(G, J) )
 
+
 def paired_cnt(R, G, I):
     '''Calculate the dot product of optimal flow and reaction counts.'''
     return sum( (G.edge[N0][N1][R]-G.node[N0][R]-G.node[N1][R])*i for (N0,N1),i in zip(G.edges(),I) )
 
+
+def cross_prod_log_binomials_and_J(G, J):
+    '''Calculate the sum of logarithms of binomial coefficients for unpaired fragments.'''
+    return sum( logBinomial( G.node[N]['ETnoD'], G.node[N]['PTR'] )*j for N, j in zip(G, J) )
+
+# G = [G for G in Graphs if len(G)==1][0]
+# G.nodes(data=True)
 
 def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
     '''Solve one pairing problem.'''
     if len(G) > 1:
         L  = np.array(nx.incidence_matrix(G).todense())
         J  = np.array([G.node[N]['intensity'] for N in G ])
+        Jsum = J.sum()
         bP = get_break_point( next(G.nodes_iter())[0], fasta )
         c  = get_costs(G,Q,LogProb,bP)
         I  = linprog(c=c, A_ub=L, b_ub=J )
         TotalFlow = I['x'].sum()
+        unpairedPTR   = unpaired_cnt('PTR', G, J)
+        unpairedETnoD = unpaired_cnt('ETnoD', G, J)
+        LogLik = I['fun'] + LogProb[bP]*Jsum + LogProb['ETnoD']*unpairedETnoD
         if LogProb['ETnoD'] < LogProb['PTR']:
-            TotalPTR   = unpaired_cnt('PTR', G, J) - (Q-1)*TotalFlow
-            TotalETnoD = unpaired_cnt('ETnoD', G, J)
+            LogLik    += LogProb['PTR']*unpairedPTR + cross_prod_log_binomials_and_J(G, J)
+            TotalPTR   = unpairedPTR - (Q-1)*TotalFlow
+            TotalETnoD = unpairedETnoD
         else:
             pairedPTR  = paired_cnt('PTR', G, I['x'])
-            TotalPTR   = unpaired_cnt('PTR', G, J) + pairedPTR
-            TotalETnoD = unpaired_cnt('ETnoD', G, J) - (Q-1)*TotalFlow - pairedPTR
-        TotalFrags = J.sum() - np.matmul( L, I['x'] ).sum()
+            TotalPTR   = unpairedPTR + pairedPTR
+            TotalETnoD = unpairedETnoD - (Q-1)*TotalFlow - pairedPTR
+        TotalFrags = Jsum - np.matmul( L, I['x'] ).sum()
         status = I['status']
     else:
         (nType, nQ, nG), Data =  G.nodes(data=True)[0]
@@ -177,18 +190,21 @@ def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
         TotalETnoD = I*ETnoD_cnt
         TotalPTR   = I*PTR_cnt
         status = -1
-    return Counter({'ETnoD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags}), status
+        LogLik = I * ( LogProb['ETnoD']*ETnoD_cnt + LogProb['PTR']*PTR_cnt + LogProb[bP] )
+    return LogLik, Counter({'ETnoD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags}), status
 
 
 def solve_simplex_tasks(Graphs, Q, LogProb, fasta, const=1000):
     '''Solve the linear optimization problems under fixed log probabilities of reactions.'''
     ReactionCount = Counter()
     stati = Counter()
+    LogLik= 0.0
     for G in Graphs:
-        s, status = max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=const)
+        LogLik_G, s, status = max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=const)
+        LogLik += LogLik_G
         ReactionCount += s
         stati[status] += 1
-    return ReactionCount, stati
+    return LogLik, ReactionCount, stati
 
 
 def update_LogProb(LogProb, ReactionCount):
@@ -202,25 +218,71 @@ def update_LogProb(LogProb, ReactionCount):
             LogProb[s] = log(S[s]) - TotLogFrag
     return LogProb
 
-#TODO add the bloody likelihood diffs criterion.
-def coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=10, const=1000, eps = 0.0, verbose=False):
-    '''Maximize the loglikelihood using coordinate ascent.'''
-    Graphs, ETnoDs_on_precursors, PTRs_on_precursors, LogProb = \
-        get_graphs_analyze_precursors_get_LogProb(MassTodonResults, Q, fasta, eps)
 
-    #TODO add the bloody likelihood diffs criterion.
-    for i in xrange(maxIter):
-        ReactionCount, stati    = solve_simplex_tasks(Graphs, Q, LogProb, fasta, const)
-        if verbose:
-            print stati
+maxIter=10
+const=1000
+eps = 0.0
+verbose=False
+
+def L2_distance(PrevLogProb, LogProb):
+    return sqrt(sum((LogProb[k]-PrevLogProb[k])**2 for k in LogProb ))
+
+
+def coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=100, const=1000, eps = 0.0, crit='logLikDiff', verbose=False, tol=0.01):
+    '''Maximize the loglikelihood using coordinate ascent.'''
+    Graphs, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors, LogProb = \
+        get_graphs_analyze_precursors_get_LogProb(MassTodonResults, Q, fasta, eps)
+    i = 0
+    if verbose:
+        print float(ETnoDs_on_precursors)/(ETnoDs_on_precursors + PTRs_on_precursors)
+        print float(PTRs_on_precursors)/(ETnoDs_on_precursors + PTRs_on_precursors)
+    LogLikPrev = 0.0
+    while True:
+        LogLik, ReactionCount, stati = solve_simplex_tasks(Graphs, Q, LogProb, fasta, const)
         ReactionCount['ETnoD'] += ETnoDs_on_precursors
         ReactionCount['PTR']   += PTRs_on_precursors
-        LogProb = update_LogProb(LogProb, ReactionCount)
+        PrevLogProb= LogProb
+        LogProb    = update_LogProb(LogProb, ReactionCount)
+        LogLikDiff = LogLik - LogLikPrev
+        LogLikPrev = LogLik
+        i += 1
+        if verbose:
+            print LogLik, stati
+            print
+        if crit=='logLikDiff':
+            stopCond = abs(LogLikDiff)<tol
+        if crit=='L2':
+            stopCond = L2_distance(PrevLogProb, LogProb)<tol
+        if stopCond or i >= maxIter:
+            break
 
+    TotalFragmentations = sum(ReactionCount[r] for r in ReactionCount if not r in ('ETnoD', 'PTR') )
+    LogProb['no reaction'] = log(unreacted_precursors)-log(unreacted_precursors + TotalFragmentations + ETnoDs_on_precursors + PTRs_on_precursors + ReactionCount['ETnoD'] + ReactionCount['PTR'])
+    LogProb['fragmentation'] = log(TotalFragmentations)-log(TotalFragmentations+ReactionCount['ETnoD'] + ReactionCount['PTR'])
     return LogProb
 
-%%time
-LogProb = coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=100, const=1000, eps = 0.0, verbose=True)
+# %%time
+LogProb = coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=10, const=1000, eps = 0.0, verbose=True)
+
+for r in LogProb:
+    print r, exp(LogProb[r])
 
 
-LogProb
+## This procedure does not seem to depend on the initial P(ETnoD) and P(PTR).
+# Graphs, ETnoDs_on_precursors, PTRs_on_precursors, LogProb = \
+#     get_graphs_analyze_precursors_get_LogProb(MassTodonResults, Q, fasta, eps)
+#
+# import cPickle as pickle
+# with open('graphs.matteo', 'w') as f:
+#     pickle.dump(Graphs, f, pickle.HIGHEST_PROTOCOL)
+#
+#
+# x = 0.49
+# Res = []
+# for eps in np.linspace(-x, x, 20):
+#     Res.append( coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=10, const=1000, eps = eps, verbose=True) )
+#     print
+#
+# Res = dict([ (R,[r[R] for r in Res]) for R in Res[0] ])
+#
+# dict((r,np.array(Res[r]).std()) for r in Res)
