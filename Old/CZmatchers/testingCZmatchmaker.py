@@ -5,9 +5,8 @@ from    MassTodon       import  MassTodon
 from    Formulator      import  makeFormulas
 import  cPickle         as      pickle
 import  networkx        as      nx
-from    collections     import defaultdict, Counter
+from    collections     import Counter
 from    matplotlib      import collections  as mc
-from    cvxopt          import matrix, spmatrix, sparse, spdiag, solvers
 from    math            import log, lgamma, log10, exp, sqrt
 from    scipy.optimize  import linprog
 import  pylab           as pl
@@ -157,7 +156,6 @@ def cross_prod_log_binomials_and_J(G, J):
 
 # G = [G for G in Graphs if len(G)==1][0]
 # G.nodes(data=True)
-
 def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
     '''Solve one pairing problem.'''
     if len(G) > 1:
@@ -255,13 +253,12 @@ def coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=100, const=1000, e
             stopCond = L2_distance(PrevLogProb, LogProb)<tol
         if stopCond or i >= maxIter:
             break
-
     TotalFragmentations = sum(ReactionCount[r] for r in ReactionCount if not r in ('ETnoD', 'PTR') )
     LogProb['no reaction'] = log(unreacted_precursors)-log(unreacted_precursors + TotalFragmentations + ETnoDs_on_precursors + PTRs_on_precursors + ReactionCount['ETnoD'] + ReactionCount['PTR'])
     LogProb['fragmentation'] = log(TotalFragmentations)-log(TotalFragmentations+ReactionCount['ETnoD'] + ReactionCount['PTR'])
     return LogProb
 
-# %%time
+%%time
 LogProb = coordinate_ascent_MLE(MassTodonResults, Q, fasta, maxIter=10, const=1000, eps = 0.0, verbose=True)
 
 for r in LogProb:

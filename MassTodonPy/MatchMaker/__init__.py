@@ -16,7 +16,5 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from czMatchmaker import reaction_analist_basic
-
-
-# Trzmiel Albert mowi: "chuju".
+from czMatchmaker_basic import reaction_analist_basic
+from czMatchmaker_advanced import reaction_analist_advanced
