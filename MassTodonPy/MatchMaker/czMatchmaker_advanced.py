@@ -245,4 +245,5 @@ def reaction_analist_advanced(MassTodonResults, Q, fasta, maxIter=100, const=100
     TotalFragmentations = sum(ReactionCount[r] for r in ReactionCount if not r in ('ETnoD', 'PTR') )
     LogProb['no reaction']   = log(unreacted_precursors)-log(unreacted_precursors + TotalFragmentations + ETnoDs_on_precursors + PTRs_on_precursors + ReactionCount['ETnoD'] + ReactionCount['PTR'])
     LogProb['fragmentation'] = log(TotalFragmentations)-log(TotalFragmentations+ReactionCount['ETnoD'] + ReactionCount['PTR'])
-    return LogProb
+    Prob = Counter(dict([ (s, exp(LogProb[s])) for s in LogProb ]))
+    return Prob

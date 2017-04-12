@@ -62,7 +62,7 @@ def minimal_cost(G, Q):
     return min_cost, G
 
 
-def reaction_analist_basic(MassTodonResults, fasta, Q):
+def reaction_analist_basic(MassTodonResults, Q, fasta):
     '''Estimate probabilities of reactions out of the MassTodon results.
 
     Divide the molecules using a c-z molecules that can be obtained by minimizing the total number of reactions needed to express the MassTodon output.'''
@@ -123,14 +123,14 @@ def reaction_analist_basic(MassTodonResults, fasta, Q):
     prob_fragmentation = float(fragmentations_no_total)/( fragmentations_no_total+reactions_on_frags_other_than_fragmentation+reactions_on_precursors )
     prob_no_fragmentation = 1.0 - prob_fragmentation
 
-    probs_fragmentation_on_aas = [ float(fragmentations_no_aas[i])/fragmentations_no_total for i in xrange(len(fasta)+1)]
+    results = Counter({ 'PTR'          :   prob_PTR,
+                'ETnoD'        :   prob_ETnoD,
+                'no reaction'  :   prob_no_reaction,
+                'reaction'     :   prob_reaction,
+                'fragmentation':   prob_fragmentation,
+                'no fragmentation': prob_no_fragmentation})
 
-    results = { 'prob_PTR'          :   prob_PTR,
-                'prob_ETnoD'        :   prob_ETnoD,
-                'prob_no_reaction'  :   prob_no_reaction,
-                'prob_reaction'     :   prob_reaction,
-                'prob_fragmentation':   prob_fragmentation,
-                'prob_no_fragmentation': prob_no_fragmentation,
-                'probs_fragmentation_on_aas':   probs_fragmentation_on_aas }
+    for k in fragmentations_no_aas:
+        results[k] = float(fragmentations_no_aas[k])/fragmentations_no_total
 
     return results

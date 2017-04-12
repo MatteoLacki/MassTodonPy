@@ -18,3 +18,4 @@
 
 from czMatchmaker_basic import reaction_analist_basic
 from czMatchmaker_advanced import reaction_analist_advanced
+from czMatchmaker_intermediate import reaction_analist_intermediate
