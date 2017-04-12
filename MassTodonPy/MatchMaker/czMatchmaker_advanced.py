@@ -104,7 +104,7 @@ def etnod_ptr_on_missing_cofragment(nQ, nG, logPetnod, logPptr, Q):
     return Netnod, Nptr
 
 
-def get_costs(G, Q, LogProb, bP, const=100):
+def get_costs(G, Q, LogProb, bP, const=10000):
     '''Get the costs for the min cost problem.'''
     c  = []
     for C, Z in G.edges_iter():
@@ -157,12 +157,12 @@ def max_weight_flow_simplex(G, Q, LogProb, fasta, verbose=False, const=10000):
         J  = np.array([G.node[N]['intensity'] for N in G ])
         Jsum = J.sum()
         bP = get_break_point( next(G.nodes_iter())[0], fasta )
-        c  = get_costs(G,Q,LogProb,bP)
+        c  = get_costs(G,Q,LogProb,bP,const)
         I  = linprog(c=c, A_ub=L, b_ub=J )
         TotalFlow = I['x'].sum()
         unpairedPTR   = unpaired_cnt('PTR', G, J)
         unpairedETnoD = unpaired_cnt('ETnoD', G, J)
-        LogLik = I['fun'] + LogProb[bP]*Jsum + LogProb['ETnoD']*unpairedETnoD
+        LogLik = I['fun']/float(const) + LogProb[bP]*Jsum + LogProb['ETnoD']*unpairedETnoD
         if LogProb['ETnoD'] < LogProb['PTR']:
             LogLik    += LogProb['PTR']*unpairedPTR + cross_prod_log_binomials_and_J(G, J)
             TotalPTR   = unpairedPTR - (Q-1)*TotalFlow
@@ -243,6 +243,6 @@ def reaction_analist_advanced(MassTodonResults, Q, fasta, maxIter=100, const=100
         if stopCond or i >= maxIter:
             break
     TotalFragmentations = sum(ReactionCount[r] for r in ReactionCount if not r in ('ETnoD', 'PTR') )
-    LogProb['no reaction'] = log(unreacted_precursors)-log(unreacted_precursors + TotalFragmentations + ETnoDs_on_precursors + PTRs_on_precursors + ReactionCount['ETnoD'] + ReactionCount['PTR'])
+    LogProb['no reaction']   = log(unreacted_precursors)-log(unreacted_precursors + TotalFragmentations + ETnoDs_on_precursors + PTRs_on_precursors + ReactionCount['ETnoD'] + ReactionCount['PTR'])
     LogProb['fragmentation'] = log(TotalFragmentations)-log(TotalFragmentations+ReactionCount['ETnoD'] + ReactionCount['PTR'])
     return LogProb
