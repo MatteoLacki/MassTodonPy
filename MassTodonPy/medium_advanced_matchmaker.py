@@ -13,14 +13,15 @@ Q=8; jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 with open(file_path, 'rb') as f:
     MassTodonResults = pickle.load(f)
 
-%%time
-Intermediate = reaction_analist_intermediate(MassTodonResults, Q, fasta)
+Basic        = reaction_analist_basic(MassTodonResults, Q, fasta)
+Intermediate = reaction_analist_intermediate(MassTodonResults, Q, fasta, True)
+# Advanced     = reaction_analist_advanced(MassTodonResults, Q, fasta, maxIter=100, const=1000, eps = 0.0, crit='logLikDiff', verbose=False, tol=0.01)
 
-%%time
-Basic = reaction_analist_basic(MassTodonResults, Q, fasta)
+Intermediate, Counts = Intermediate
+float(Counts['ETnoD'])/(Counts['ETnoD']+Counts['PTR'])
+float(Counts['ETnoD_precursor'])/(Counts['ETnoD_precursor']+Counts['PTR_precursor'])
 
-%%time
-Advanced = reaction_analist_advanced(MassTodonResults, Q, fasta, maxIter=100, const=1000, eps = 0.0, crit='logLikDiff', verbose=False, tol=0.01)
 
-Basic
-Advanced
+Basic['ETnoD']
+Intermediate['ETnoD']
+# Advanced['ETnoD']

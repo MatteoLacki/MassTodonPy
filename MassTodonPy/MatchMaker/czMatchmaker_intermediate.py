@@ -15,7 +15,7 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-import  networkx        as      nx
+import  networkx        as     nx
 from    collections     import Counter
 
 def etnod_ptr_on_c_z_pairing( q0, g0, q1, g1, Q ):
@@ -110,7 +110,7 @@ def max_flow(G, fasta):
     return Counter({'ETnoD':TotalETnoD, 'PTR':TotalPTR, bP: TotalFrags})
 
 
-def reaction_analist_intermediate(MassTodonResults, Q, fasta):
+def reaction_analist_intermediate(MassTodonResults, Q, fasta, verbose=False):
     '''Pair molecules minimizing the number of reactions and calculate the resulting probabilities.'''
     Counts = Counter()
     BFG, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors = get_graph_analyze_precursors(MassTodonResults, Q, fasta)
@@ -134,4 +134,7 @@ def reaction_analist_intermediate(MassTodonResults, Q, fasta):
     Prob['PTR']   = 1.0 - Prob['ETnoD']
     Prob['ETnoD_prec'] = float(ETnoDs_on_precursors)/(ETnoDs_on_precursors+PTRs_on_precursors)
     Prob['PTR_prec']   = 1.0 - Prob['ETnoD_prec']
+    if verbose:
+        print 'ETnoD on frags',  Counts['ETnoD'], 'ETnoD on prec', Counts['ETnoD_precursor']
+        print 'PTR on frags',    Counts['PTR'], 'PTR on prec', Counts['PTR_precursor']
     return Prob
