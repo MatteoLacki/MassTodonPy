@@ -1,8 +1,8 @@
 from    MassTodon       import MassTodon
 from    collections     import Counter
 from    math            import sqrt
-import numpy as np
-import scipy.stats as ss
+import  numpy as np
+import  scipy.stats as ss
 
 def analyze_res(res, mols):
     x0 = sum(mols[k] for k in mols)
