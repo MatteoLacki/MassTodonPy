@@ -25,8 +25,8 @@ setup(
     description   = 'A module that investigates the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance.',
     author        = 'Mateusz Lacki',
     author_email  = 'matteo.lacki@gmail.com',
-    url           = 'https://github.com/MatteoLacki/linearCounter',
-    download_url  = 'https://github.com/MatteoLacki/linearCounter.git',
+    url           = 'https://MatteoLacki@bitbucket.org/MatteoLacki/masstodonpy',
+    download_url  = 'https://MatteoLacki@bitbucket.org/MatteoLacki/masstodonpy.git',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [],
 )
