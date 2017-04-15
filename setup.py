@@ -20,7 +20,8 @@ from distutils.core import setup
 
 setup(
     name          = 'MassTodonPy',
-    packages      = ['MassTodonPy'], # this must be the same as the name above
+    # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
+    packages      = find_packages(),
     version       = '1.0',
     description   = 'A module that investigates the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance.',
     author        = 'Mateusz Lacki',
