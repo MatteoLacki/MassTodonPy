@@ -23,13 +23,13 @@ from setuptools import setup, find_packages
 setup(
     name          = 'MassTodonPy',
     # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
-    packages      = find_packages(),
-    version       = '0.2',
+    packages      = ['misc'].extend(find_packages()),
+    version       = '0.21',
     description   = 'A module that investigates the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance.',
     author        = 'Mateusz Lacki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.tar.gz',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.21.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [],
 )
