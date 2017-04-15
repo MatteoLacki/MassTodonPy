@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+Old/
+temp_data
+
 # Distribution / packaging
 .Python
 env/
@@ -14,7 +17,6 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-Old/
 .eggs/
 lib/
 lib64/
