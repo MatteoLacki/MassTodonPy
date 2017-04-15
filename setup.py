@@ -18,6 +18,7 @@
 
 from distutils.core import setup
 
+# I have no idea what I am doing...
 setup(
     name          = 'MassTodonPy',
     # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
