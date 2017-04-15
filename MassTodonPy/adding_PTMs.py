@@ -11,10 +11,10 @@ from Formulator import makeFormulas
 from linearCounter import linearCounter as lcnt
 
 # modifications = {0: {'Calpha': {'H':100}}}
-modifications = {   ('N',2) :       {'H': 1, 'O': +2, 'N': +3},
-                    ('Calpha',2) :  {'H': 1, 'O': +2, 'N': +3},
-                    ('Calpha',5) :  {'H': 2, 'S': +2, 'N': +2},
-                    ('C',6) :       {'H': 2, 'S': +2, 'N': +200} }
+# modifications = {   ('N',2) :       {'H': 1, 'O': +2, 'N': +3},
+#                     ('Calpha',2) :  {'H': 1, 'O': +2, 'N': +3},
+#                     ('Calpha',5) :  {'H': 2, 'S': +2, 'N': +2},
+#                     ('C',6) :       {'H': 2, 'S': +2, 'N': +200} }
 
 Forms = makeFormulas(fasta=fasta, Q=Q, fragType='cz', modifications=modifications)
 list(Forms.makeMolecules())
