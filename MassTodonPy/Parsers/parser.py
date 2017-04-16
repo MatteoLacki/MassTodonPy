@@ -16,9 +16,9 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from pyteomics          import mzxml # >= 3.41
-from IsotopeCalculator  import aggregate, merge_runs
-from collections        import defaultdict
+from pyteomics   import mzxml # >= 3.41
+from collections import defaultdict
+from MassTodonPy.IsotopeCalculator import aggregate, merge_runs
 import numpy as np
 import os
 

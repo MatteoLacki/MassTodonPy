@@ -63,7 +63,7 @@ def merge_runs(spec1, spec2):
 
 class isotopeCalculator:
     '''A class for isotope calculations.'''
-    
+
     def __init__(   self,
                     jP = .999,
                     precDigits= 2,
@@ -186,106 +186,3 @@ class isotopeCalculator:
         else:
             spectrum = (mz_average, counts)
         return spectrum
-
-    # def randomFragmentationExperiment(self, fasta, Q, ionsNo, fragmentator, aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
-    #     '''Get random spectrum of a fragmentation experiment.'''
-    #
-    #     averageSpectrum     = Counter()
-    #     chargesSquaredSum   = 0.0
-    #
-    #     for molType, atomCnt_str, sideChainsNo, q, g in fragmentator.makeMolecules(aaPerOneCharge):
-    #         chargesSquaredSum += q**2
-    #         masses, probs = self.isoEnvelope( atomCnt_str, jointProb, q, g )
-    #         for mass, prob in zip(masses,probs):
-    #             averageSpectrum[mass] += prob * q**2
-    #
-    #     masses = averageSpectrum.keys()
-    #     probs  = np.empty(len(masses))
-    #     for i, m in enumerate(masses):
-    #         probs[i] = averageSpectrum[m]
-    #     probs = probs/chargesSquaredSum
-    #     ionsPerMass = multinomial(ionsNo, probs)
-    #     spectrum    = np.empty(ionsNo)
-    #     i = 0
-    #     for mass, ionCnt in zip(masses, ionsPerMass):
-    #         if ionCnt > 0:
-    #             for mz in np.random.normal( loc=mass, scale=.01, size=ionCnt ):
-    #                 spectrum[i] = mz
-    #                 i += 1
-    #
-    #     spectrum = np.around(spectrum, self.precDigits)
-    #     spectrum = Counter(spectrum)
-    #     masses   = np.array(spectrum.keys())
-    #     intensities = np.empty(len(masses))
-    #     for i, m in enumerate(masses):
-    #         intensities[i] = spectrum[m]
-    #     return masses, intensities
-    #
-    # def randomPrecursors(self, fasta, Q, ionsNo, fragmentator, aaPerOneCharge=5, jointProb=.999, scale =.01, modifications={} ):
-    #     '''Get random spectrum of a fragmentation experiment.'''
-    #
-    #     averageSpectrum     = Counter()
-    #     chargesSquaredSum   = 0.0
-    #
-    #     for molType, atomCnt_str, sideChainsNo, q, g in fragmentator.makeMolecules(aaPerOneCharge):
-    #         if molType == 'precursor':
-    #             chargesSquaredSum += q**2
-    #             masses, probs = self.isoEnvelope( atomCnt_str, jointProb, q, g )
-    #             for mass, prob in zip(masses,probs):
-    #                 averageSpectrum[mass] += prob * q**2
-    #
-    #     masses = averageSpectrum.keys()
-    #     probs  = np.empty(len(masses))
-    #     for i, m in enumerate(masses):
-    #         probs[i] = averageSpectrum[m]
-    #     probs = probs/chargesSquaredSum
-    #     ionsPerMass = multinomial(ionsNo, probs)
-    #     spectrum    = np.empty(ionsNo)
-    #     i = 0
-    #     for mass, ionCnt in zip(masses, ionsPerMass):
-    #         if ionCnt > 0:
-    #             for mz in np.random.normal( loc=mass, scale=.01, size=ionCnt ):
-    #                 spectrum[i] = mz
-    #                 i += 1
-    #
-    #     spectrum = np.around(spectrum,self.precDigits)
-    #     spectrum = Counter(spectrum)
-    #     masses   = np.array(spectrum.keys())
-    #     intensities = np.empty(len(masses))
-    #     for i, m in enumerate(masses):
-    #         intensities[i] = spectrum[m]
-    #     return masses, intensities
-    #
-    # def addNoise(self, masses, intensities, percentPeaks = .2):
-    #     '''Produce noise peaks using a strategy that is totally atheoretic.'''
-    #     M       = max(masses)
-    #     Imean   = intensities.mean()
-    #     size    = int(floor(len(masses)*percentPeaks))
-    #     noise_masses = ss.uniform.rvs(
-    #         loc     = .0,
-    #         scale   = 1.1*M,
-    #         size    = size  )
-    #     noise_intensities = ss.poisson.rvs(mu=Imean, size=size )
-    #     return noise_masses, noise_intensities
-    #
-    # def random_spectrum_mol(self, atomCnt_str, ionsNo, digits=2, jointProb=.9999, Q=0, sigma=None):
-    #     '''Generate a random spectrum.'''
-    #     #TODO this should be all in all replaced by Michał's software that uses online data generation.
-    #     #TODO NOT but why oh why
-    #     # atomCnt_str     = atomCnt2string(atomCnt)
-    #     masses, probs = self.getEnvelope(atomCnt_str, jointProb, digits)
-    #     counts  = multinomial(ionsNo, probs)
-    #     masses  = masses[ counts > 0 ]
-    #     counts  = counts[ counts > 0 ]
-    #     if Q > 0:
-    #         masses  = (masses + Q)/Q
-    #     noise_masses = np.empty(ionsNo)
-    #     if not sigma==None:
-    #         sigma   = .01
-    #         cnt     = 0
-    #         for mass, c in zip(masses, counts):
-    #             noise_masses[cnt:(cnt+c)] = np.random.normal(mass, sigma, c)
-    #             cnt += c
-    #         noise_masses = noise_masses.round(digits)
-    #         masses, counts = np.unique(noise_masses, return_counts=True)
-    #     return masses, counts

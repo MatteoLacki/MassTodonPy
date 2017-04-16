@@ -20,7 +20,29 @@ from linearCounter import linearCounter as lCnt
 from itertools import chain
 from protonations import protonate
 from bricks import makeBricks
-from misc import standardize, countIsNegative, atomCnt2string
+
+
+def countIsNegative(atomCnt):
+    '''Check if any element of a dictionary is a negative number.'''
+    return any( atomCnt[elem]<0 for elem in atomCnt )
+
+
+def atomCnt2string(atomCnt):
+    '''Translate a dictionary of atom counts into a uniquely defined string.'''
+    keys = atomCnt.keys()
+    keys.sort()
+    return "".join( el+str(atomCnt[el]) for el in keys )
+
+
+
+def standardize(modifications):
+    '''Standardize modifications so that they meet the internal nomenclature scheme.'''
+    backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
+    R = defaultdict(lambda:defaultdict(lCnt))
+    for tag, atomCnt in modifications.items():
+        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = lCnt(atomCnt)
+    return R
+
 
 def prolineBlockedFragments(fasta):
     '''Checks which c-z fragments cannot occur.'''
@@ -135,32 +157,3 @@ def makeFormulas(
         'cz_qg_competition':CZformulator_qg_competition
     }[fragType](fasta, Q, modifications )
     return formClass
-
-# def genMolecules(fasta, Q, fragmentationScheme='cz', modifications={}, aaPerOneCharge= 5):
-#     '''Generate protonated molecules following a given fragmentation scheme.
-#     '''
-#     IC = isotopeCalculations()
-#     precursor, cFrags, zFrags = makeFragments(fasta, fragmentationScheme, modifications)
-#     for mol in chain(precursor(),cFrags(),zFrags()):
-#         for q,g in protonate( Q, mol['type'] ):
-#             if q * aaPerOneCharge < mol['sideChainsNo']:
-#                 atomCnt = dict(mol['atomCnt'])
-#                 atomCnt['H'] += q + g
-#                 monoisotopicMass= IC.getMonoisotopicMass(atomCnt)/float(q)
-#                 massMean = IC.getMassMean(atomCnt)/float(q)
-#                 massVar  = IC.getMassVar(atomCnt)/float(q**2)
-#                 yield ( mol['moleculeType'], q, g, atomCnt, monoisotopicMass, massMean, massVar )
-
-# import pandas as pd
-# def pandizeSubstances(precursor, cFrags, zFrags):
-#     '''Turns results into a pandas data frame.'''
-#     def combineMolecules():
-#         for x in chain(precursor(), cFrags(), zFrags()):
-#             x['atomCnt']['moleculeType'] = x['moleculeType']
-#             yield x['atomCnt']
-#     result = pd.DataFrame(combineMolecules()).fillna(0)
-#     result[list('CHNOS')] = result[list('CHNOS')].astype(int)
-#     idx = ['moleculeType']
-#     idx.extend(list('CHNOS'))
-#     result = result[idx]
-#     return result

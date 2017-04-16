@@ -19,11 +19,10 @@
 # from distutils.core import setup
 from setuptools import setup, find_packages
 
-# I have no idea what I am doing...
 setup(
     name          = 'MassTodonPy',
     # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
-    packages      = ['misc'].extend(find_packages()),
+    packages      = find_packages(),
     version       = '0.21',
     description   = 'A module that investigates the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance.',
     author        = 'Mateusz Lacki',
