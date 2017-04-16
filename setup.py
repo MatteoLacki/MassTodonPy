@@ -39,12 +39,11 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     install_requires=[
-        'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib'
+        'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree'
     ],
     include_package_data = True,
     package_data={
         "MassTodonPy": [
-            "data/AA.txt",
             "data/isotopes.txt"
         ],
     }

@@ -73,21 +73,16 @@ class isotopeCalculator:
 
         if isoMasses==None or isoProbs==None:
             path = pkg_resources.resource_filename('MassTodonPy', 'data/')
-            print path
             isoMasses, isoProbs = pickle.load(open(path+'isotopes.txt', 'rb'))
-            print isoMasses, isoProbs
         self.isoMasses = isoMasses
         self.isoProbs  = isoProbs
         self.jP = jP
         self.elementsMassMean = dict(
             (el, sum( pr*m for pr, m in zip(self.isoProbs[el], self.isoMasses[el]) ) )
             for el in self.isoMasses.keys() )
-
-
         self.elementsMassVar  = dict(
             (el, sum( pr*m**2 for pr, m in zip(self.isoProbs[el], self.isoMasses[el])) - self.elementsMassMean[el]**2 )
             for el in self.isoMasses.keys() )
-
         self.isotopicEnvelopes = {}
         self.precDigits = precDigits
         self.formParser = formulaParser()
