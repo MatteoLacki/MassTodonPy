@@ -27,7 +27,7 @@ except:
 from numpy.random   import multinomial, normal
 import scipy.stats  as ss
 import numpy        as np
-
+import pkg_resources
 
 def cdata2numpyarray(x):
     '''Turn c-data into a numpy array.'''
@@ -72,7 +72,10 @@ class isotopeCalculator:
         '''Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations.'''
 
         if isoMasses==None or isoProbs==None:
-            isoMasses, isoProbs = pickle.load(open('data/isotopes.txt', 'rb'))
+            path = pkg_resources.resource_filename('MassTodonPy', 'data/')
+            print path
+            isoMasses, isoProbs = pickle.load(open(path+'isotopes.txt', 'rb'))
+            print isoMasses, isoProbs
         self.isoMasses = isoMasses
         self.isoProbs  = isoProbs
         self.jP = jP

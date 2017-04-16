@@ -4,6 +4,11 @@ node_modules
 yarn.lock
 
 
+# My own junk and notes
+Old/
+temp_data
+Notes/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -12,8 +17,6 @@ __pycache__/
 # C extensions
 *.so
 
-Old/
-temp_data
 
 # Distribution / packaging
 .Python

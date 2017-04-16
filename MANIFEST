@@ -3,4 +3,5 @@ setup.cfg
 setup.py
 MassTodonPy/MassTodon.py
 MassTodonPy/__init__.py
-MassTodonPy/misc.py
+include MassTodonPy/data/AA.txt
+include MassTodonPy/data/isotopes.txt

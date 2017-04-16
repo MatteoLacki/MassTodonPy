@@ -20,7 +20,7 @@ from linearCounter import linearCounter as lCnt
 from itertools import chain
 from protonations import protonate
 from bricks import makeBricks
-
+from collections import defaultdict
 
 def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
@@ -32,7 +32,6 @@ def atomCnt2string(atomCnt):
     keys = atomCnt.keys()
     keys.sort()
     return "".join( el+str(atomCnt[el]) for el in keys )
-
 
 
 def standardize(modifications):
