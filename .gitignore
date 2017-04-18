@@ -7,6 +7,9 @@ yarn.lock
 # Spectra
 *.mzXML
 
+# Tests
+Tests/
+
 # My own junk and notes
 Old/
 temp_data

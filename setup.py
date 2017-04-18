@@ -23,12 +23,12 @@ setup(
     name          = 'MassTodonPy',
     # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
     packages      = find_packages(),
-    version       = '0.2.3',
+    version       = '0.2.3.1',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.3.tar.gz',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.3.1.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [
         'Development Status :: 5 - Production/Stable',
