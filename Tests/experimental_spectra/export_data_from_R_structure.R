@@ -33,6 +33,6 @@ for(d_cnt in 1:length(data4plots)){
     }
 }
 
-storagePath = '/Users/matteo/Documents/MassTodon/Data/Storage/'
+storagePath = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/spectra.json'
 # pryr::object_size(toJSON(DATA,digits=10))
-write_json(DATA, path='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/spectra.json', digits=10)
+write_json(DATA, path=storagePath, digits=10)

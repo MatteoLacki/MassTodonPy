@@ -22,6 +22,9 @@ __pycache__/
 *.so
 
 
+#R
+.Rhistory
+
 # Distribution / packaging
 .Python
 env/

@@ -24,11 +24,10 @@ M = MassTodon(  fasta           = fasta,
 # path  = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/data/'
 # path += 'Ubiquitin_ETD_10 ms_1071.mzXML'
 
-path  = '/Users/matteo/Documents/MassTodon/Tests/'
-path += 'FRL_220715_ubi_952_ETD_40ms_04.mzXML'
-
+file_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/FRL_220715_ubi_952_ETD_40ms_04.mzXML'
 cutOff = 100; topPercent = .999
-M.readSpectrum(path=path, cutOff=cutOff, digits=precDigits, topPercent=topPercent)
+
+M.readSpectrum(path=file_path, cutOff=cutOff, digits=precDigits, topPercent=topPercent)
 M.prepare_problems(M_minProb)
 mu=1e-5; lam=0.0; nu=0.001
 
