@@ -39,7 +39,7 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     install_requires=[
-        'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree'
+        'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree', 'json'
     ],
     include_package_data = True,
     package_data={

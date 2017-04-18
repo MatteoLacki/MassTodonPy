@@ -68,6 +68,7 @@ from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import readSpectrum
+import json
 
 class MassTodon():
     def __init__(   self,
@@ -133,4 +134,30 @@ class MassTodon():
             solver = solver,
             method = method,
             args = args)
+        self.res = res
         return res
+
+
+    def flatten_results(self):
+        '''Return one list of results, one list of difficult cases, and the error.'''
+        optimal     = []
+        nonoptimal  = []
+        totalError  = 0.0
+        for mols, error, status in self.res:
+            if status=='optimal':
+                totalError += error
+                for mol in mols:
+                    mol_res = {}
+                    for key in ['estimate', 'molType', 'q', 'g', 'formula']:
+                        mol_res[key] = mol[key]
+                    optimal.append(mol_res)
+            else:
+                print status
+                nonoptimal.append(mols)
+        return optimal, nonoptimal, totalError
+
+
+    def save_results_to_json(self, result_path):
+        optimal, nonoptimal, totalError = self.flatten_results(self.res)
+        with open(result_path, 'w') as fp:
+            json.dump({'optimal':optimal, 'nonoptimal':nonoptimal, 'error':totalError }, fp)

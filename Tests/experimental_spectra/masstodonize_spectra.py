@@ -105,14 +105,12 @@ experiments = [ parse_experiment(exp) for exp in data ]
 %%time
 results = [ getResults(*exp) for exp in experiments ]
 
-Counter( r[0] for r in results )
+# Counter( r[0] for r in results )
+# problems = [r for r in results if not r[0] ]
+# _, e, params = problems[0]
+# fasta, Q, WH, WV, L, modifications = params[0:6]
+# spectrum = params[6]
+# MassTodonResults = Results
 
-problems = [r for r in results if not r[0] ]
 
-_, e, params = problems[0]
-
-
-fasta, Q, WH, WV, L, modifications = params[0:6]
-spectrum = params[6]
-
-MassTodonResults = Results
+results
