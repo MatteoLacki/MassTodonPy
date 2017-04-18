@@ -97,7 +97,7 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
 
         optimal, nonoptimal, totalError = M.flatten_results()
 
-        res = (True, Results, T_deconv, Basic, T_basic, Intermediate, T_inter, UpperIntermediate, T_up_inter, params, optimal, nonoptimal, totalError)
+        res = (True, Results, T_deconv, Basic, T_basic, Intermediate, T_inter, UpperIntermediate, T_up_inter, params, optimal, nonoptimal, totalError, WH, WV)
 
     except Exception as e:
         res = (False, e, params)
@@ -115,5 +115,14 @@ results = [ getResults(*exp) for exp in experiments ]
 # spectrum = params[6]
 # MassTodonResults = Results
 
+optimals = []
+for _, Results, T_deconv, Basic, T_basic, Intermediate, T_inter, UpperIntermediate, T_up_inter, params, optimal, nonoptimal, totalError, WH, WV in results:
+    optimals.append({'WH':WH,'WV':WV,'res':optimal})
 
-results[0]
+result_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/substanceP_results.json'
+
+with open(result_path, 'w') as fp:
+    json.dump(optimals, fp)
+
+with open(result_path, 'w') as fp:
+    json.load(optimals, fp)
