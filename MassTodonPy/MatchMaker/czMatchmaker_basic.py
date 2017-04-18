@@ -89,8 +89,13 @@ def reaction_analist_basic(MassTodonResults, Q, fasta):
                         BFG.node[frag]['intensity'] += int(mol['estimate']) # convert the intensities to ints
 
     reactions_on_precursors = ETnoD_cnt + PTR_cnt
-    prob_PTR   = float(PTR_cnt)/reactions_on_precursors
-    prob_ETnoD = 1.0 - prob_PTR
+
+    if reactions_on_precursors > 0.0:
+        prob_PTR   = float(PTR_cnt)/reactions_on_precursors
+        prob_ETnoD = 1.0 - prob_PTR
+    else:
+        prob_PTR    = None
+        prob_ETnoD  = None
 
     for C, qC in BFG: # adding edges between c and z fragments
         if C[0]=='c':

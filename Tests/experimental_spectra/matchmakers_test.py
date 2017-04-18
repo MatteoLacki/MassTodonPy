@@ -28,14 +28,17 @@ file_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/FRL_220715_ubi_
 cutOff = 100; topPercent = .999
 
 M.readSpectrum(path=file_path, cutOff=cutOff, digits=precDigits, topPercent=topPercent)
+
 M.prepare_problems(M_minProb)
 mu=1e-5; lam=0.0; nu=0.001
 
-%%time
-MassTodonResults = M.run(solver='sequential', method='MSE', mu=mu, lam=lam, nu=0.001)
-
-# with open(file_path, 'rb') as f:
-#     MassTodonResults = pickle.load(f)
+# %%time
+# MassTodonResults = M.run(solver='sequential', method='MSE', mu=mu, lam=lam, nu=0.001)
+#
+results_file = "/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/FRL_220715_ubi_952_ETD_40ms_04.matteo"
+# pickle.dump( MassTodonResults, open(results_file, "wb" ) )
+with open(results_file, 'rb') as f:
+    MassTodonResults = pickle.load(f)
 
 
 %%time

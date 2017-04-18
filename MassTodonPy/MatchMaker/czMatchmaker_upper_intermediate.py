@@ -146,20 +146,31 @@ def reaction_analist_upper_intermediate(MassTodonResults, Q, fasta, mu=0.0, lam=
         Counts += res
     Prob = Counter()
     TotalReactions = sum(Counts[s] for s in Counts)
-    Prob['no reaction'] = float(unreacted_precursors)/(unreacted_precursors + TotalReactions)
-    Prob['reaction'] = 1.0 - Prob['no reaction']
+
+    if unreacted_precursors + TotalReactions > 0.0:
+        Prob['no reaction'] = float(unreacted_precursors)/(unreacted_precursors + TotalReactions)
+        Prob['reaction'] = 1.0 - Prob['no reaction']
+
     TotalFrags = sum(Counts[s] for s in Counts if isinstance(s, (int,long)) )
-    for s in Counts:
-        if isinstance(s, (int,long)):
-            Prob[s] = float(Counts[s])/TotalFrags
-    Prob['fragmentation'] = float(TotalFrags)/TotalReactions
-    Prob['no fragmentation'] = 1.0 - Prob['fragmentation']
+    if TotalFrags > 0.0:
+        for s in Counts:
+            if isinstance(s, (int,long)):
+                Prob[s] = float(Counts[s])/TotalFrags
+
+    if TotalReactions > 0.0:
+        Prob['fragmentation'] = float(TotalFrags)/TotalReactions
+        Prob['no fragmentation'] = 1.0 - Prob['fragmentation']
+
     TotalETnoD  = Counts['ETnoD']+Counts['ETnoD_precursor']
     TotalPTR    = Counts['PTR']+Counts['PTR_precursor']
-    Prob['ETnoD'] = float(TotalETnoD)/(TotalPTR+TotalETnoD)
-    Prob['PTR']   = 1.0 - Prob['ETnoD']
-    Prob['ETnoD_prec'] = float(ETnoDs_on_precursors)/(ETnoDs_on_precursors+PTRs_on_precursors)
-    Prob['PTR_prec']   = 1.0 - Prob['ETnoD_prec']
+    if TotalPTR+TotalETnoD > 0.0:
+        Prob['ETnoD'] = float(TotalETnoD)/(TotalPTR+TotalETnoD)
+        Prob['PTR']   = 1.0 - Prob['ETnoD']
+
+    if ETnoDs_on_precursors+PTRs_on_precursors > 0.0:
+        Prob['ETnoD_prec'] = float(ETnoDs_on_precursors)/(ETnoDs_on_precursors+PTRs_on_precursors)
+        Prob['PTR_prec']   = 1.0 - Prob['ETnoD_prec']
+        
     if verbose:
         print 'ETnoD on frags',  Counts['ETnoD'], 'ETnoD on prec', Counts['ETnoD_precursor']
         print 'PTR on frags',    Counts['PTR'],   'PTR on prec', Counts['PTR_precursor']
