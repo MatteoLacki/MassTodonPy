@@ -33,10 +33,9 @@ saveTerminalCnt <- function(terminus, path, i, type){
 }
 
 # get other data and prepare a MetaInfo file with rows corresponding to i of a given spectrum.
-i = 0
 storagePath = '/Users/matteo/Documents/MassTodon/Data/Storage/'
 
-
+DATA <- list()
 
 for(d_cnt in 1:length(data4plots)){
   X <- data4plots[[d_cnt]]$MassTodons
@@ -44,9 +43,5 @@ for(d_cnt in 1:length(data4plots)){
     Y <- X[[exp_cnt]]
     mass_spectrum <- getSpectrum( Y$spectrum )
     write_csv( mass_spectrum, path=paste0(storagePath,i,'.txt'), col_names=FALSE )
-    saveTerminalCnt(Y$cTerminus, storagePath, i, 'c')
-    saveTerminalCnt(Y$nTerminus, storagePath, i, 'n')
-
-    i = i+1
   }
 }
