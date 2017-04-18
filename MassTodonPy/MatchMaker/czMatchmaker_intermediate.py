@@ -34,11 +34,10 @@ def get_break_point( nType, fasta ):
     return bP
 
 
-def get_graph_analyze_precursors(MassTodonResults, Q, fasta):
+def get_graph_analyze_precursors(MassTodonResults, Q, fasta, minimal_estimated_intensity = 100.):
     '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.'''
     unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
     BFG = nx.Graph()
-    minimal_estimated_intensity = 100.
     for mols, error, status in MassTodonResults:
         if status=='optimal': #TODO what to do otherwise?
             for mol in mols:

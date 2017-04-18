@@ -138,7 +138,7 @@ class MassTodon():
         return res
 
 
-    def flatten_results(self):
+    def flatten_results(self, minimal_estimated_intensity=100.0):
         '''Return one list of results, one list of difficult cases, and the error.'''
         optimal     = []
         nonoptimal  = []
@@ -147,12 +147,12 @@ class MassTodon():
             if status=='optimal':
                 totalError += error
                 for mol in mols:
-                    mol_res = {}
-                    for key in ['estimate', 'molType', 'q', 'g', 'formula']:
-                        mol_res[key] = mol[key]
-                    optimal.append(mol_res)
+                    if mol['estimate'] > minimal_estimated_intensity:
+                        mol_res = {}
+                        for key in ['estimate', 'molType', 'q', 'g', 'formula']:
+                            mol_res[key] = mol[key]
+                        optimal.append(mol_res)
             else:
-                print status
                 nonoptimal.append(mols)
         return optimal, nonoptimal, totalError
 

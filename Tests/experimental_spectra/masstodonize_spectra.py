@@ -95,7 +95,10 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
         T1_up_inter = time()
         T_up_inter = T1_up_inter-T0_up_inter
 
-        res = (True, Results, T_deconv, Basic, T_basic, Intermediate, T_inter, UpperIntermediate, T_up_inter, params)
+        optimal, nonoptimal, totalError = M.flatten_results()
+
+        res = (True, Results, T_deconv, Basic, T_basic, Intermediate, T_inter, UpperIntermediate, T_up_inter, params, optimal, nonoptimal, totalError)
+
     except Exception as e:
         res = (False, e, params)
     return res
@@ -113,4 +116,4 @@ results = [ getResults(*exp) for exp in experiments ]
 # MassTodonResults = Results
 
 
-results
+results[0]

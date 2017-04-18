@@ -37,11 +37,10 @@ def etnod_ptr_on_c_z_pairing( q0, g0, q1, g1, Q ):
     return Netnod, Nptr
 
 
-def get_graph_analyze_precursors(MassTodonResults, Q, fasta):
+def get_graph_analyze_precursors(MassTodonResults, Q, fasta, minimal_estimated_intensity = 100.):
     '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.'''
     unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
     BFG = nx.Graph()
-    minimal_estimated_intensity = 100.
     for mols, error, status in MassTodonResults:
         if status=='optimal': #TODO what to do otherwise?
             for mol in mols:
@@ -170,7 +169,7 @@ def reaction_analist_upper_intermediate(MassTodonResults, Q, fasta, mu=0.0, lam=
     if ETnoDs_on_precursors+PTRs_on_precursors > 0.0:
         Prob['ETnoD_prec'] = float(ETnoDs_on_precursors)/(ETnoDs_on_precursors+PTRs_on_precursors)
         Prob['PTR_prec']   = 1.0 - Prob['ETnoD_prec']
-        
+
     if verbose:
         print 'ETnoD on frags',  Counts['ETnoD'], 'ETnoD on prec', Counts['ETnoD_precursor']
         print 'PTR on frags',    Counts['PTR'],   'PTR on prec', Counts['PTR_precursor']

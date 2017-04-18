@@ -62,7 +62,7 @@ def minimal_cost(G, Q):
     return min_cost, G
 
 
-def reaction_analist_basic(MassTodonResults, Q, fasta):
+def reaction_analist_basic(MassTodonResults, Q, fasta, minimal_estimated_intensity=100.0):
     '''Estimate probabilities of reactions out of the MassTodon results.
 
     Divide the molecules using a c-z molecules that can be obtained by minimizing the total number of reactions needed to express the MassTodon output.'''
@@ -70,7 +70,6 @@ def reaction_analist_basic(MassTodonResults, Q, fasta):
     no_reactions = ETnoD_cnt = PTR_cnt = 0.0
     L   = len(fasta)
     BFG = nx.Graph()
-    minimal_estimated_intensity = 100.
 
     for mols, error, status in MassTodonResults:
         if status=='optimal': #TODO what to do otherwise?
