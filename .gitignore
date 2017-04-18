@@ -6,6 +6,7 @@ yarn.lock
 
 # Spectra
 *.mzXML
+*.json
 
 # My own junk and notes
 Old/
