@@ -4,6 +4,9 @@ node_modules
 yarn.lock
 
 
+# Spectra
+*.mzXML
+
 # My own junk and notes
 Old/
 temp_data
