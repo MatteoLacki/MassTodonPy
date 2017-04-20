@@ -52,37 +52,3 @@ UpperIntermediate = reaction_analist_upper_intermediate(MassTodonResults, Q, fas
 
 
 print '\tETnoD\nBasic:', Basic['ETnoD'], '\nInter:',Intermediate['ETnoD'], ' \nUpper:',UpperIntermediate['ETnoD']
-
-
-MassTodonResults
-
-
-
-def flatten_results(MassTodonResults):
-    '''Return one list of results, one list of difficult cases, and the error.'''
-    optimal     = []
-    nonoptimal  = []
-    totalError  = 0.0
-    for mols, error, status in MassTodonResults:
-        if status=='optimal':
-            totalError += error
-            for mol in mols:
-                mol_res = {}
-                for key in ['estimate', 'molType', 'q', 'g', 'formula']:
-                    mol_res[key] = mol[key]
-                optimal.append(mol_res)
-        else:
-            print status
-            nonoptimal.append(mols)
-    return optimal, nonoptimal, totalError
-
-
-def save_results_to_json(MassTodonResults, result_path):
-    optimal, nonoptimal, totalError = flatten_results(MassTodonResults)
-    with open(result_path, 'w') as fp:
-        json.dump({'optimal':optimal, 'nonoptimal':nonoptimal, 'error':totalError }, fp)
-
-
-
-
-result_path = "/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/FRL_220715_ubi_952_ETD_40ms_04.matteo_res"
