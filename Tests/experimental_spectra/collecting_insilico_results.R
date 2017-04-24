@@ -60,6 +60,15 @@ plot_correl + scale_y_continuous(labels = scales::percent) +
     geom_smooth(se=FALSE, color='red')+
     ylab('Correlation')
 
+for(i in 1:3) print(i)
+
+ER15 = function(p,q){
+    b = numeric(length(p))
+    for(i in 1:length(p)){
+        p[i]
+    }
+}
+
 
 ER2 = function(p,q) sqrt(crossprod(p-q))
 makePlotWrap(getDF(R,ER2))

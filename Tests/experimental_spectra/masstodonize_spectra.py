@@ -12,6 +12,7 @@ storagePath = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_
 with open(storagePath) as data_file:
     data = json.load(data_file)
 
+
 def extract_WH_WV(s):
     s = str(s)
     if ' ' in s:
@@ -52,6 +53,8 @@ def parse_experiment(exp):
     info    = (fasta, Q, WH, WV, L, modifications, spectrum)
 
     return info
+
+
 
 
 # fasta, Q, WH, WV, L, modifications, spectrum = exp
@@ -105,6 +108,7 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
 
 experiments = [ parse_experiment(exp) for exp in data ]
 
+
 %%time
 results = [ getResults(*exp) for exp in experiments ]
 
@@ -126,3 +130,8 @@ with open(result_path, 'w') as fp:
 
 with open(result_path, 'w') as fp:
     json.load(optimals, fp)
+
+result_path_specific = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/parsed_sub_P.matteo'
+with open(result_path_specific,'w') as fp:
+    pickle.dump(experiments,fp)
+# fasta, Q, WH, WV, L, modifications, spectrum =

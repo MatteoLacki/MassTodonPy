@@ -134,7 +134,7 @@ class Deconvolutor(object):
         return error
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def run(self, mu=1e-5, lam=0.0, nu=0.0, spectral_norm=False):
+    def run(self, mu=1e-5, lam=0.0, nu=0.0, spectral_norm=False, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
         P, q = get_P_q(self.SFG, self.M_No, self.var_No, mu, lam, nu)
@@ -155,7 +155,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
         error = self.get_mean_square_error()
-        return alphas, error, self.sol['status']
+        if verbose:
+            params = P, q, G, h, A, b
+            return alphas, error, self.sol, params, self.SFG
+        else:
+            return alphas, error, self.sol['status']
 
 class Deconvolutor_Max_Flow(Deconvolutor):
     def set_names(self, cnts):
@@ -165,7 +169,7 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         self.I_No   = cnts['I']
         self.G_No   = cnts['G']
 
-    def run(self, lam=10.0, mu=0.0, eps=0.0, s0_val=0.001):
+    def run(self, lam=10.0, mu=0.0, eps=0.0, s0_val=0.001, verbose=False):
         G_tmp, h_tmp = get_G_h(self.var_No)
         h_eps = matrix(0.0, (self.G_No,1))
         G_x=[]; G_i=[]; G_j=[]
@@ -217,8 +221,11 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         # fit error: evaluation of the cost function at the minimizer
         error = self.get_mean_square_error()
 
-        return alphas, error, self.sol['status']
-
+        if verbose:
+            params = c, G, h, A, b
+            return alphas, error, self.sol, params, self.SFG
+        else:
+            return alphas, error, self.sol['status']
 
 def deconvolve(SFG, args, method):
     deconvolutor = {
