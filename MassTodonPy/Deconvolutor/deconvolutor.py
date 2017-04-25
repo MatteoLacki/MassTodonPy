@@ -232,5 +232,8 @@ def deconvolve(SFG, args, method):
         'MSE':      Deconvolutor_Min_Sum_Squares,
         'MaxFlow':  Deconvolutor_Max_Flow
     }[method](SFG)
-    alphas, error, status = deconvolutor.run(**args)
-    return alphas, error, status
+    if args['verbose']:
+        return deconvolutor.run(**args)
+    else:
+        alphas, error, status = deconvolutor.run(**args)
+        return alphas, error, status

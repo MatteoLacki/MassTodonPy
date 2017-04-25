@@ -26,9 +26,8 @@ class Solver(object):
 
 class SequentialSolver(Solver):
     def run(self, args, method='MSE'):
-        return [ deconvolve(
-            SFG = SFG, args = args,
-            method=method) for SFG in self.prob_gen ]
+        return [    deconvolve( SFG = SFG, args = args, method=method)
+                    for SFG in self.prob_gen ]
 
 #TODO: add multiprocessing
 class MultiprocessingSolver(Solver):
