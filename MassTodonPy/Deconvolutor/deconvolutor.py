@@ -18,10 +18,11 @@
 
 from    math        import sqrt
 from    collections import Counter
-from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
+from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers, setseed
+from    random      import randint
 
 solvers.options['show_progress'] = False
-
+solvers.options['maxiters'] = 1000
 
 def diag(val, dim):
     return spdiag([spmatrix(val,[0],[0]) for i in xrange(dim)])
@@ -137,6 +138,7 @@ class Deconvolutor(object):
         error = sqrt(error)
         return error
 
+
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
     def run(self, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
@@ -145,6 +147,8 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
+
+        setseed(randint(0,1000000)) # this is to test from different points
         self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
         Xopt = self.sol['x']
         #################### reporting results
@@ -161,9 +165,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         error = self.get_mean_square_error()
         res = {'alphas':alphas, 'error':error, 'status':self.sol['status']}
         if verbose:
-            res['param'] = {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
-            res['SFG'] = self.SFG
+            res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
+            res['SFG']  = self.SFG
+            res['sol']  = self.sol
         return res
+
 
 class Deconvolutor_Max_Flow(Deconvolutor):
     def set_names(self, cnts):
@@ -206,6 +212,7 @@ class Deconvolutor_Max_Flow(Deconvolutor):
                 matrix( mu,         size=(self.M_No,1)  ),
                 matrix( (1.0+lam),  size=(self.G_No,1)  )   ])
 
+        setseed(randint(0,1000000)) # this is to test from different points
         self.sol = solvers.conelp(c=c,G=G,h=h,A=A,b=b,primalstart=x0)
         Xopt = self.sol['x']
 
@@ -226,8 +233,9 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         error = self.get_mean_square_error()
         res = {'alphas':alphas, 'error':error, 'status':sol['status']}
         if verbose:
-            res['param'] = {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}
-            res['SFG'] = self.SFG
+            res['param']= {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}
+            res['SFG']  = self.SFG
+            res['sol']  = self.sol
         return res
 
 

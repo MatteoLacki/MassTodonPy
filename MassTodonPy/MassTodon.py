@@ -128,13 +128,13 @@ class MassTodon():
 
         #TODO: add multiprocessing
         #TODO: make a more sensible use of sequentlity
-    def run(self, solver='sequential', method='MSE', **args):
+    def run(self, solver='sequential', method='MSE', max_times_solve=5, **args):
         '''Perform the deconvolution of problems.'''
-        res = solve(
-            problemsGenerator = self.problems,
-            solver = solver,
-            method = method,
-            args   = args)
+        res = solve(problemsGenerator = self.problems,
+                    args   = args,
+                    solver = solver,
+                    method = method,
+                    max_times_solve = max_times_solve )
         self.res = res
         return res
 
