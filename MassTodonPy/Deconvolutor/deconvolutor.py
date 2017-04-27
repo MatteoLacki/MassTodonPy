@@ -19,6 +19,7 @@
 from    math        import sqrt
 from    collections import Counter
 from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers
+
 solvers.options['show_progress'] = False
 
 
@@ -30,7 +31,7 @@ def normalize_rows(M):
     '''Divide rows of a matrix by their sums.'''
     for i in xrange(M.size[0]):
         row_hopefully = M[i,:]
-        M[i,:] = row_hopefully/sum(row_hopefully)
+        M[i,:] = row_hopefully/sum(abs(row_hopefully))
 
 
 def number_graph(SFG):
@@ -47,21 +48,24 @@ def number_graph(SFG):
     return cnts
 
 
-def get_P_q( SFG, M_No, var_No, mu=0.0, lam=0.0, nu=0.0 ):
-    '''Prepare cost function 0.5 <x|P|x> + <q|x> + mu * sum|alpha_m| + lam * sum |x_i|.'''
+def get_P_q( SFG, M_No, var_No, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0 ):
+    '''
+    Prepare cost function
+    0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
+    '''
     q_list = []
     P_list = []
     for G_name in SFG:
         if SFG.node[G_name]['type']=='G':
             G_intensity = SFG.node[G_name]['intensity']
             G_degree    = len(SFG[G_name])
-            q_list.append( matrix( -G_intensity, size=(G_degree,1)) )
+            q_list.append( matrix( -G_intensity + L1_x, size=(G_degree,1)) ) # L1 penalty for x
             ones = matrix(1.0, (G_degree,1))
-            P_g  = ones * ones.T + diag(lam,G_degree)
+            P_g  = ones * ones.T + diag(L2_x,G_degree) # L2 penalty for x
             P_list.append(P_g)
-    q_list.append(matrix(nu, (M_No,1))) # L1 penalty for alphas
+    q_list.append(matrix(L1_alpha, (M_No,1))) # L1 penalty for alphas
     q_vec = matrix(q_list)
-    P_list.append(diag(mu, M_No))
+    P_list.append(diag(L2_alpha, M_No))       # L2 penalty for alphas
     P_mat = spdiag(P_list)
     return P_mat, q_vec
 
@@ -134,10 +138,10 @@ class Deconvolutor(object):
         return error
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def run(self, mu=1e-5, lam=0.0, nu=0.0, spectral_norm=False, verbose=False):
+    def run(self, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
-        P, q = get_P_q(self.SFG, self.M_No, self.var_No, mu, lam, nu)
+        P, q = get_P_q(self.SFG, self.M_No, self.var_No, L1_x, L2_x, L1_alpha, L2_alpha)
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)

@@ -11,8 +11,10 @@ result_path_specific = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/expe
 with open(result_path_specific,'r') as fp:
     experiments = pickle.load(fp)
 
-def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05, precDigits=2, M_minProb=.7, cutOff = 100, topPercent = .999, mu=1e-5, lam=0.0, nu=0.001):
-    params = (fasta, Q, WH, WV, L, modifications, spectrum, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, mu, lam, nu)
+def getResults(fasta, Q, WH, WV, L, modifications, spectrum,
+               jP=.99, mzPrec=.05, precDigits=2, M_minProb=.7, cutOff = 0, topPercent = .999,
+               L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0 ):
+    params = (fasta, Q, WH, WV, L, modifications, spectrum, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, L1_x, L2_x, L1_alpha, L2_alpha)
     M = MassTodon(  fasta           = fasta,
                     precursorCharge = Q,
                     precDigits      = precDigits,
@@ -23,22 +25,64 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
                     digits          = precDigits,
                     topPercent      = topPercent  )
     M.prepare_problems(M_minProb)
-    Results = M.run(solver  = 'sequential',
+    res = M.run(solver  = 'sequential',
                     method  = 'MSE',
-                    mu=mu, lam=lam, nu=0.001,
+                    L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
                     verbose = True )
-    res = (True, Results)
     return res
 
-%time
-results = [ getResults(*exp) for exp in experiments ]
 
-Counter(r[0] for r in results)
-res2 = [ (alphas, error, sol, params, SFG) for r in results if r[0] for alphas, error, sol, params, SFG in r[1] if sol['status'] != 'optimal']
+results = [ getResults(*exp) for exp in experiments ]
+res2    = [ (alphas, error, sol, params, SFG) for r in results for alphas, error, sol, params, SFG in r if sol['status'] != 'optimal']
+
+# which spectrum has the most?
+all_sols=[]
+for r in results:
+    sols = Counter()
+    for alphas, error, sol, params, SFG in r:
+        sols[sol['status']]+=1
+    all_sols.append(sols)
+
+[ n for n, sol in enumerate(all_sols) if sol['unknown']==3 ]
+# spectra 5, 25, 28
+
+
+
+fasta, Q, WH, WV, L, modifications, spectrum = experiments[25]
+L1_x=0.0; L2_x=0.0; L1_alpha=0.0; L2_alpha=0.0
+
+res = getResults(   fasta, Q, WH, WV, L, modifications, spectrum,
+    L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha )
+
+alphas, error, sol, params, SFG = res[0]
+P, q, G, h, A, b = params
+
+
+
+
+print A
+print A[4,1]
+
+
+
+
+SFG.nodes(data=True)
+
+
+Counter(sol['status'] for r in res)
+
+alphas, error, sol, params, SFG =  res[1][0]
+
 
 sum([len(r[1]) for r in results])
 len(res2)
 
-res2
-Stati = Counter( sol['status'] for alphas, error, sol, params, SFG in res2)
-Stati
+res2[0]
+
+# res2[0]
+# alphas, error, sol, params, SFG = res2[0]
+#
+# P, q, G, h, A, b = params
+# print P
+# print q
+# print q
