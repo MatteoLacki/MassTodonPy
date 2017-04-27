@@ -160,7 +160,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                     NI['estimate'] = Xopt[NI['cnt']]
         error = self.get_mean_square_error()
         if verbose:
-            params = P, q, G, h, A, b
+            params = P, q, G, h, A, b, x0
             return alphas, error, self.sol, params, self.SFG
         else:
             return alphas, error, self.sol['status']

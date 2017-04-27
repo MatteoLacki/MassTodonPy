@@ -55,9 +55,21 @@ res = getResults(   fasta, Q, WH, WV, L, modifications, spectrum,
     L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha )
 
 alphas, error, sol, params, SFG = res[0]
-P, q, G, h, A, b = params
+P, q, G, h, A, b, x0 = params
+from cvxopt import matrix, spmatrix, sparse, spdiag, solvers
 
+def kkt(W):
+    print W
 
+solvers.qp(P, q, G, h, A, b, initvals=x0)
+
+solvers.qp(P, q, G, h, A, b, initvals=x0, kktsolver = kkt)
+
+%%time
+solvers.qp(P, q, G, h, A, b, initvals=x0, kktsolver = 'ldl2')
+
+%%time
+solvers.qp(P, q, G, h, A, b, initvals=x0, kktsolver = 'chol')
 
 
 print A
