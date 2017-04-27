@@ -71,9 +71,9 @@ def reaction_analist_basic(MassTodonResults, Q, fasta, minimal_estimated_intensi
     L   = len(fasta)
     BFG = nx.Graph()
 
-    for mols, error, status in MassTodonResults:
-        if status=='optimal': #TODO what to do otherwise?
-            for mol in mols:
+    for res in MassTodonResults:
+        if res['status']=='optimal': #TODO what to do otherwise?
+            for mol in res['alphas']:
                 if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
                     if mol['molType']=='precursor':
                         if mol['q']==Q and mol['g']==0:

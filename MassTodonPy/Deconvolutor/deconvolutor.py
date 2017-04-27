@@ -145,7 +145,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
-        self.sol  = solvers.qp(P, q, G, h, A, b, initvals=x0)
+        self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
         Xopt = self.sol['x']
         #################### reporting results
         alphas = []
@@ -159,11 +159,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
         error = self.get_mean_square_error()
+        res = {'alphas':alphas, 'error':error, 'status':self.sol['status']}
         if verbose:
-            params = P, q, G, h, A, b, x0
-            return alphas, error, self.sol, params, self.SFG
-        else:
-            return alphas, error, self.sol['status']
+            res['param'] = {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
+            res['SFG'] = self.SFG
+        return res
 
 class Deconvolutor_Max_Flow(Deconvolutor):
     def set_names(self, cnts):
@@ -224,20 +224,16 @@ class Deconvolutor_Max_Flow(Deconvolutor):
 
         # fit error: evaluation of the cost function at the minimizer
         error = self.get_mean_square_error()
-
+        res = {'alphas':alphas, 'error':error, 'status':sol['status']}
         if verbose:
-            params = c, G, h, A, b
-            return alphas, error, self.sol, params, self.SFG
-        else:
-            return alphas, error, self.sol['status']
+            res['param'] = {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}
+            res['SFG'] = self.SFG
+        return res
+
 
 def deconvolve(SFG, args, method):
     deconvolutor = {
         'MSE':      Deconvolutor_Min_Sum_Squares,
         'MaxFlow':  Deconvolutor_Max_Flow
     }[method](SFG)
-    if args['verbose']:
-        return deconvolutor.run(**args)
-    else:
-        alphas, error, status = deconvolutor.run(**args)
-        return alphas, error, status
+    return deconvolutor.run(**args)

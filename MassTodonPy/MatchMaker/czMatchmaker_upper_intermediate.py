@@ -41,9 +41,9 @@ def get_graph_analyze_precursors(MassTodonResults, Q, fasta, minimal_estimated_i
     '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.'''
     unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
     BFG = nx.Graph()
-    for mols, error, status in MassTodonResults:
-        if status=='optimal': #TODO what to do otherwise?
-            for mol in mols:
+    for res in MassTodonResults:
+        if res['status']=='optimal': #TODO what to do otherwise?
+            for mol in res['alphas']:
                 if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
                     if mol['molType']=='precursor':
                         if mol['q']==Q and mol['g']==0:
@@ -92,16 +92,16 @@ def incidence_matrix(G, Jdim, Idim):
     return L
 
 
-def regularized_max_flow(G, fasta, mu=0.0, lam=0.01, verbose=False):
+def regularized_max_flow(G, fasta, L1=0.0, L2=0.01, verbose=False):
     '''Find regularized max flow.'''
     if len(G) > 1:
         bP= get_break_point( next(G.nodes_iter())[0], fasta )
         J = matrix([ float(G.node[N]['intensity']) for N in G ])
         Jdim = J.size[0]
         R = matrix([ D['ETnoD_PTR_cnt'] for N0, N1, D in G.edges(data=True) ])
-        R = R + mu*1.0
+        R = R + L1*1.0
         Idim = R.size[0]
-        P = diag(lam*2, Idim)
+        P = diag(L2*2, Idim)
         L = incidence_matrix(G, Jdim, Idim)
         Gmat = diag(-1.0, Idim)
         h = matrix(0.0, size=(Idim, 1))
@@ -129,7 +129,7 @@ def regularized_max_flow(G, fasta, mu=0.0, lam=0.01, verbose=False):
         return res
 
 
-def reaction_analist_upper_intermediate(MassTodonResults, Q, fasta, mu=0.0, lam=0.01, verbose=False):
+def reaction_analist_upper_intermediate(MassTodonResults, Q, fasta, L1=0.0, L2=0.01, verbose=False):
     '''Pair molecules minimizing the number of reactions and calculate the resulting probabilities.'''
     Counts = Counter()
     BFG, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors = get_graph_analyze_precursors(MassTodonResults, Q, fasta)
@@ -138,10 +138,10 @@ def reaction_analist_upper_intermediate(MassTodonResults, Q, fasta, mu=0.0, lam=
     stati = []
     for G in nx.connected_component_subgraphs(BFG):
         if verbose:
-            res, S = regularized_max_flow(G, fasta, mu, lam, verbose)
+            res, S = regularized_max_flow(G, fasta, L1, L2, verbose)
             stati.append(S)
         else:
-            res = regularized_max_flow(G, fasta, mu, lam, verbose)
+            res = regularized_max_flow(G, fasta, L1, L2, verbose)
         Counts += res
     Prob = Counter()
     TotalReactions = sum(Counts[s] for s in Counts)
@@ -173,6 +173,6 @@ def reaction_analist_upper_intermediate(MassTodonResults, Q, fasta, mu=0.0, lam=
     if verbose:
         print 'ETnoD on frags',  Counts['ETnoD'], 'ETnoD on prec', Counts['ETnoD_precursor']
         print 'PTR on frags',    Counts['PTR'],   'PTR on prec', Counts['PTR_precursor']
-        return Prob, stati
+        return Prob, Counts, stati
     else:
-        return Prob
+        return Prob, Counts

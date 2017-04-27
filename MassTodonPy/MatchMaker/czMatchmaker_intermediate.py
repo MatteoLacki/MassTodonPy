@@ -38,9 +38,9 @@ def get_graph_analyze_precursors(MassTodonResults, Q, fasta, minimal_estimated_i
     '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.'''
     unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
     BFG = nx.Graph()
-    for mols, error, status in MassTodonResults:
-        if status=='optimal': #TODO what to do otherwise?
-            for mol in mols:
+    for res in MassTodonResults:
+        if res['status']=='optimal': #TODO what to do otherwise?
+            for mol in res['alphas']:
                 if mol['estimate'] > minimal_estimated_intensity: # a work-around the stupidity of the optimization methods
                     if mol['molType']=='precursor':
                         if mol['q']==Q and mol['g']==0:
@@ -149,4 +149,4 @@ def reaction_analist_intermediate(MassTodonResults, Q, fasta, verbose=False):
     if verbose:
         print 'ETnoD on frags',  Counts['ETnoD'], 'ETnoD on prec', Counts['ETnoD_precursor']
         print 'PTR on frags',    Counts['PTR'], 'PTR on prec', Counts['PTR_precursor']
-    return Prob
+    return Prob, Counts
