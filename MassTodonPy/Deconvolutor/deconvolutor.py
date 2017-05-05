@@ -49,7 +49,7 @@ def number_graph(SFG):
     return cnts
 
 
-def get_P_q( SFG, M_No, var_No, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0 ):
+def get_P_q( SFG, M_No, var_No, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001 ):
     '''
     Prepare cost function
     0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
