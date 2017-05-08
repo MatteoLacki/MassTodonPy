@@ -44,10 +44,12 @@ Z = 0.001
 %%time
 results = [ getResults(*exp,L1_x=Z, L2_x=Z, L1_alpha=Z, L2_alpha=Z) for exp in experiments ]
 
+
+"_".join(map(str,(fasta, Q, WH, WV)))
+
 analyzers = (RA_base, RA_inter, RA_advinter)
-analyzed_results = dict( ((fasta, Q, WH, WV), map(lambda f:f(res, Q, fasta), analyzers )) for
+analyzed_results = dict( ("_".join(map(str,(fasta, Q, WH, WV))), map(lambda f:f(res, Q, fasta), analyzers )) for
     (fasta, Q, WH, WV), res in results)
 
 with open(analysis_results_path, 'w') as f:
-    json.dumps(analyzed_results, f)
- 
+    json.dump(analyzed_results, f)
