@@ -13,8 +13,7 @@ def change_key(seq, q, p, name):
     return name, q, p
 
 
-# sigma=.01; jP=.99; mzPrec=.05; precDigits=2; minProb=.7; cutOff=0.0; topPercent=1.0; max_times_solve = 10; L1_x=0.001; L2_x=0.001; L1_alpha=0.001; L2_alpha=0.001; verbose=False
-
+# sigma=.0; jP=.99; mzPrec=.05; precDigits=2; minProb=.7; cutOff=0.0; topPercent=1.0; max_times_solve = 10; L1_x=0.001; L2_x=0.001; L1_alpha=0.001; L2_alpha=0.001; verbose=False
 def getResults( simulation_res, sigma=.01, jP=.99, mzPrec=.05, precDigits=2, minProb=.7, cutOff=0.0, topPercent=1.0, max_times_solve = 10, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001, verbose=False ):
     '''I dunwanna write no docs!'''
     (Q, fasta, eps, molsNo, probs), D = simulation_res
@@ -66,14 +65,13 @@ def getResults( simulation_res, sigma=.01, jP=.99, mzPrec=.05, precDigits=2, min
 
     return R, FE, RFE, ra_res, res, simulation_res, spectrum
 
-
 fp_in  = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico/results_Ciach/'
 fp_out = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico/results_Matteo/'
 
+# molsNo=100000
 def run(molsNo, fp_in, fp_out):
     with open(fp_in+'results_molsNo-'+str(molsNo), "rb") as f:
         res = pickle.load(f)
-    print len(res)
     RES = []
     for i, r in enumerate(res):
         print i, 'out of', len(res)
@@ -90,3 +88,6 @@ def run(molsNo, fp_in, fp_out):
 run(100000, fp_in, fp_out)
 run(10000, fp_in, fp_out)
 # run(1000, fp_in, fp_out)
+res[0]
+
+simulation_res = res[0]
