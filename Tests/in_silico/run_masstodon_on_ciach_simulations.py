@@ -62,18 +62,31 @@ def getResults( simulation_res, sigma=.01, jP=.99, mzPrec=.05, precDigits=2, min
     try:
         ra_res['base']  = reaction_analist_basic(res, Q, fasta)
     except:
-        print 'Failed basic'    
+        print 'Failed basic'
+
     return R, FE, RFE, ra_res, res, simulation_res, spectrum
 
 
 fp_in  = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico/results_Ciach/'
 fp_out = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico/results_Matteo/'
 
-for molsNo in (100000, 10000, 1000):
+def run(molsNo, fp_in, fp_out):
     with open(fp_in+'results_molsNo-'+str(molsNo), "rb") as f:
         res = pickle.load(f)
+    print len(res)
+    RES = []
+    for i, r in enumerate(res):
+        print i, 'out of', len(res)
+        try:
+            e = getResults(r)
+            RES.append( (r,e) )
+        except:
+            RES.append( (r,None) )
 
-    MassTodonRes = [ getResults(r) for r in res ]
+    with open(fp_out+'results_molsNo-'+str(molsNo), 'wb') as handle:
+        pickle.dump(RES, handle)
+    print 'Finished with', molsNo
 
-    with open(fp_out+'results_molsNo-'+str(molsNo), "w") as f:
-        res = pickle.load(f)
+run(100000, fp_in, fp_out)
+run(10000, fp_in, fp_out)
+# run(1000, fp_in, fp_out)

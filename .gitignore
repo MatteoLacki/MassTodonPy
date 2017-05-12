@@ -109,3 +109,4 @@ ENV/
 
 # MacOS strange files
 .DS_Store
+.Rproj.user
