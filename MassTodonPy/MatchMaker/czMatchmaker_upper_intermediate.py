@@ -100,6 +100,7 @@ class czMatchMakerUpperIntermediate(czMatchMakerIntermediate):
             TotalETnoD = 0
             TotalFrags = I
             S = {'status':'trivial', 'x':I}
+            
         res = Counter({'ETnoD_frag':TotalETnoD, 'PTR_frag':TotalPTR, bP: TotalFrags})
         if self.verbose:
             return res, S

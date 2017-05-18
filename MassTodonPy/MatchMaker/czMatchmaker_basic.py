@@ -74,6 +74,8 @@ class czMatchMakerBasic(czMatchMaker):
             G.nodes(data=True)
             N = G.nodes()[0]
             G.add_edge( N, N, flow=G.node[N]['intensity'] )
+            flow_val= flows = None
+
         for N in G:
             for M in G[N]:
                 if M[0][0]=='z':
@@ -81,13 +83,11 @@ class czMatchMakerBasic(czMatchMaker):
                 else:
                     fragmented_AA = int(M[0][1:])
                 Counts[ fragmented_AA ] += G[N][M]['flow']
+
         if self.verbose:
             return Counts, (flow_val, flows)
         else:
             return Counts
-
-    def analyze_counts(self, Counts):
-        raise NotImplementedError
 
 
 # def reaction_analist_basic(MassTodonResults, Q, fasta, minimal_estimated_intensity=100.0):

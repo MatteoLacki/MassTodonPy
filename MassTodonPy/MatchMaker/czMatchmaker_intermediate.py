@@ -89,54 +89,58 @@ class czMatchMakerIntermediate(czMatchMaker):
             TotalPTR   = 0
             TotalETnoD = 0
             TotalFrags = I
+            flow_val = flows = None
+
         Counts = Counter({'ETnoD_frag':TotalETnoD, 'PTR_frag':TotalPTR, bP: TotalFrags})
         if self.verbose:
             return Counts, (flow_val, flows)
         else:
             return Counts
 
-
-    def analyze_counts(self, Counts):
-        raise NotImplementedError
+    def get_etnod_ptr_probs(self, Counts, Probs):
+        Probs = self.get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
+        Probs = self.get_probs(Counts,Probs,'ETnoD','PTR')
+        Probs = self.get_probs(Counts,Probs,'ETnoD_frag','PTR_frag')
+        return Probs
 
 # def reaction_analist_intermediate(MassTodonResults, Q, fasta, verbose=False):
 #     '''Pair molecules minimizing the number of reactions and calculate the resulting probabilities.'''
-#     Counts = Counter()
-#     BFG, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors = get_graph_analyze_precursors(MassTodonResults, Q, fasta)
-#
-#     Counts['ETnoD_precursor']   = ETnoDs_on_precursors
-#     Counts['PTR_precursor']     = PTRs_on_precursors
-#     for G in nx.connected_component_subgraphs(BFG):
-#         Counts += max_flow(G, fasta)
-#     Prob = Counter()
-#     TotalReactions = sum(Counts[s] for s in Counts)
-#
-#     if unreacted_precursors + TotalReactions > 0.0:
-#         Prob['no reaction'] = float(unreacted_precursors)/(unreacted_precursors + TotalReactions)
-#         Prob['reaction'] = 1.0 - Prob['no reaction']
-#
-#     TotalFrags = sum(Counts[s] for s in Counts if isinstance(s, (int,long)) )
-#
-#     if TotalFrags > 0.0:
-#         for s in Counts:
-#             if isinstance(s, (int,long)):
-#                 Prob[s] = float(Counts[s])/TotalFrags
-#
-#     if TotalReactions > 0.0:
-#         Prob['fragmentation'] = float(TotalFrags)/TotalReactions
-#         Prob['no fragmentation'] = 1.0 - Prob['fragmentation']
-#
-#     TotalETnoD  = Counts['ETnoD']+Counts['ETnoD_precursor']
-#     TotalPTR    = Counts['PTR']+Counts['PTR_precursor']
-#
-#     if TotalPTR+TotalETnoD > 0.0:
-#         Prob['ETnoD'] = float(TotalETnoD)/(TotalPTR+TotalETnoD)
-#         Prob['PTR']   = 1.0 - Prob['ETnoD']
-#
-#     if ETnoDs_on_precursors+PTRs_on_precursors > 0.0:
-#         Prob['ETnoD_prec'] = float(ETnoDs_on_precursors)/(ETnoDs_on_precursors+PTRs_on_precursors)
-#         Prob['PTR_prec']   = 1.0 - Prob['ETnoD_prec']
-#
+    # Counts = Counter()
+    # BFG, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors = get_graph_analyze_precursors(MassTodonResults, Q, fasta)
+    #
+    # Counts['ETnoD_precursor']   = ETnoDs_on_precursors
+    # Counts['PTR_precursor']     = PTRs_on_precursors
+    # for G in nx.connected_component_subgraphs(BFG):
+    #     Counts += max_flow(G, fasta)
+    # Prob = Counter()
+    # TotalReactions = sum(Counts[s] for s in Counts)
+    #
+    # if unreacted_precursors + TotalReactions > 0.0:
+    #     Prob['no reaction'] = float(unreacted_precursors)/(unreacted_precursors + TotalReactions)
+    #     Prob['reaction'] = 1.0 - Prob['no reaction']
+    #
+    # TotalFrags = sum(Counts[s] for s in Counts if isinstance(s, (int,long)) )
+    #
+    # if TotalFrags > 0.0:
+    #     for s in Counts:
+    #         if isinstance(s, (int,long)):
+    #             Prob[s] = float(Counts[s])/TotalFrags
+    #
+    # if TotalReactions > 0.0:
+    #     Prob['fragmentation'] = float(TotalFrags)/TotalReactions
+    #     Prob['no fragmentation'] = 1.0 - Prob['fragmentation']
+    #
+    # TotalETnoD  = Counts['ETnoD']+Counts['ETnoD_precursor']
+    # TotalPTR    = Counts['PTR']+Counts['PTR_precursor']
+    #
+    # if TotalPTR+TotalETnoD > 0.0:
+    #     Prob['ETnoD'] = float(TotalETnoD)/(TotalPTR+TotalETnoD)
+    #     Prob['PTR']   = 1.0 - Prob['ETnoD']
+    #
+    # if ETnoDs_on_precursors+PTRs_on_precursors > 0.0:
+    #     Prob['ETnoD_prec'] = float(ETnoDs_on_precursors)/(ETnoDs_on_precursors+PTRs_on_precursors)
+    #     Prob['PTR_prec']   = 1.0 - Prob['ETnoD_prec']
+
 #     if verbose:
 #         print 'ETnoD on frags',  Counts['ETnoD'], 'ETnoD on prec', Counts['ETnoD_precursor']
 #         print 'PTR on frags',    Counts['PTR'], 'PTR on prec', Counts['PTR_precursor']
