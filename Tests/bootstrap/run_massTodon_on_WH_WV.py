@@ -53,7 +53,7 @@ def parse_experiment(exp):
 # jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 # L1_x = L2_x = L1_alpha = L2_alpha = .001
 # verbose = True
-def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05, precDigits=2, M_minProb=.7, cutOff = 100, topPercent = .999, max_times_solve=30, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001, verbose=False):
+def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05, precDigits=2, M_minProb=.7, cutOff = 100., cutOff2=0.0, topPercent = .999, max_times_solve=30, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001, verbose=False):
     params = (fasta, Q, WH, WV, L, modifications, spectrum, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, max_times_solve, L1_x, L2_x, L1_alpha, L2_alpha)
     try:
         M = MassTodon(  fasta           = fasta,
@@ -79,15 +79,15 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
         RA = {}
 
         try:
-            RA['base'] = reaction_analist_basic(Results, Q, fasta, 0.0)
+            RA['base'] = reaction_analist_basic(Results, Q, fasta, cutOff2)
         except:
             print 'Base missing'
         try:
-            RA['inter'] = reaction_analist_intermediate(Results, Q, fasta, 0.0)
+            RA['inter'] = reaction_analist_intermediate(Results, Q, fasta, cutOff2)
         except:
             print 'Intermediate missing'
         try:
-            RA['up_inter']  = reaction_analist_upper_intermediate(Results, Q, fasta, 0.0)
+            RA['up_inter']  = reaction_analist_upper_intermediate(Results, Q, fasta, cutOff2)
         except:
             print 'Upper Intermediate missing'
 
