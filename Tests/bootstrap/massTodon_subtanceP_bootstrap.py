@@ -7,6 +7,7 @@ import cPickle as pickle
 experiments = [ parse_experiment(exp) for exp in data ]
 results     = [ getResults(*exp) for exp in experiments ]
 
+
 def MassTodon_bootstrap(experiment, ionsNo, repetsNo, verbose=False):
     '''Perform bootstrap analysis of MassTodon results.'''
     fasta, Q, WH, WV, L, modifications, (Ms, Is_real) = experiment
