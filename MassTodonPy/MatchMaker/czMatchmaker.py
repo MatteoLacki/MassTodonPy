@@ -102,7 +102,7 @@ class czMatchMaker(object):
         return Probs, Counts
 
 
-    def pair(self, verbose=False):
+    def pair(self):
         '''Pair molecules minimizing the number of reactions and calculate the resulting probabilities.'''
         Counts = Counter()
 

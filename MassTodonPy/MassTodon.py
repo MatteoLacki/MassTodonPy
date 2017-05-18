@@ -68,6 +68,8 @@ from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import readSpectrum
+from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
+
 import json
 
 class MassTodon():
@@ -162,3 +164,17 @@ class MassTodon():
         optimal, nonoptimal, totalError = self.flatten_results(self.res)
         with open(result_path, 'w') as fp:
             json.dump({'optimal':optimal, 'nonoptimal':nonoptimal, 'error':totalError }, fp)
+
+
+    def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, min_acceptEstimIntensity = 100., verbose=False, **advanced_args):
+        '''Estimate reaction constants and quantities of fragments.'''
+
+        chosen_analyzer = {
+            'basic': analyzer_basic,
+            'inter': analyzer_inter,
+            'up_inter': analyzer_up_inter
+        }[analyzer](self.res, self.Q, self.fasta,
+                    accept_nonOptimalDeconv,
+                    min_acceptEstimIntensity, verbose )
+
+        return chosen_analyzer.pair()
