@@ -11,7 +11,9 @@ X = defaultdict(list)
 for i, (_,_,WH,WV,_,modifications,_) in enumerate(substancesP):
     X[(WH,WV)].append((i,modifications))
 
+
 specNo = X[(150,700)][0][0]
+specNo = X[(125,300)][0][0]
 fasta, Q, WH, WV, L, modifications, spectrum = substancesP[specNo]
 
 M = MassTodon(  fasta           = fasta,

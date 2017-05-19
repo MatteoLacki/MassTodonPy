@@ -1,15 +1,19 @@
 library(tidyverse)
 
-R = read.csv('real_data.csv') %>% tbl_df()
-S = read.csv('simulations.csv') %>% tbl_df()
+S = read.csv('simulations_2.csv') %>% tbl_df()
+R = read.csv('real_data_2.csv') %>% tbl_df()
 
 D = bind_rows(R,S) 
 WV_300_D = D %>% select(WH, WV, algo, ETnoD, PTR, real_or_sim, ID) %>% filter(WV==300)
 WV_300_D %>% filter(real_or_sim=='real', WH==150, WV==300)
 
 
+S %>% select(WH, WV, algo, ETnoD, PTR, ID) %>% filter(WV==300)%>% data.frame
 
-WV_300_plot = S %>% select(WH, WV, algo, ETnoD, PTR, ID) %>% filter(WV==300) %>%
+WV_300_plot = 
+  
+  
+  S %>% select(WH, WV, algo, ETnoD, PTR, ID) %>% filter(WV==300) %>%
   mutate(WH = factor(WH)) %>%
   ggplot(aes(x=WH, y=ETnoD, color=algo)) +
   geom_boxplot() +
