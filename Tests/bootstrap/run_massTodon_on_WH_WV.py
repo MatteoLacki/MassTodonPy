@@ -60,7 +60,8 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
                         precursorCharge = Q,
                         precDigits      = precDigits,
                         jointProbability= jP,
-                        mzPrec          = mzPrec  )
+                        mzPrec          = mzPrec,
+                        modifications   = modifications  )
 
         M.readSpectrum( spectrum        = spectrum,
                         cutOff          = cutOff,

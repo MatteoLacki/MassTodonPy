@@ -1,6 +1,7 @@
 from    MassTodonPy  import MassTodon
 from    collections  import Counter
 from    time         import time
+import  cPickle      as pickle
 
 jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 cutOff = 100.; cutOff2=0.0; topPercent = .999; max_times_solve=30
@@ -31,6 +32,10 @@ Results = M.run(solver  = 'sequential',
                 verbose = verbose )
 T1_deconv = time()
 T_deconv  = T1_deconv - T0_deconv
+
+
+with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/FRL_220715_ubi_952_ETD_40ms_04.')
+pickle.§
 
 
 M.analyze_reactions(analyzer='basic')
