@@ -8,10 +8,7 @@ L1_x=0.001; L2_x=0.001; L1_alpha=0.001; L2_alpha=0.001; verbose=False
 
 
 specNo = 0
-fasta, Q, WH, WV, L, modifications, spectrum =
-experiments[specNo]
-
-
+fasta, Q, WH, WV, L, modifications, spectrum = experiments[specNo]
 
 M = MassTodon(  fasta           = fasta,
                 precursorCharge = Q,
@@ -24,13 +21,14 @@ M.readSpectrum( spectrum        = spectrum,
                 digits          = precDigits,
                 topPercent      = topPercent    )
 
-
 M.prepare_problems(M_minProb)
-T0_deconv = time()
+
 Results = M.run(solver  = 'sequential',
                 method  = 'MSE',
                 max_times_solve = max_times_solve,
                 L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
                 verbose = verbose )
-T1_deconv = time()
-T_deconv  = T1_deconv - T0_deconv
+
+M.analyze_reactions(analyzer='basic')
+M.analyze_reactions(analyzer='inter')
+M.analyze_reactions(analyzer='up_inter')
