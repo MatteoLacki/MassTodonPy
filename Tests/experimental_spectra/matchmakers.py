@@ -16,7 +16,7 @@ M = MassTodon(  fasta           = fasta,
                 jointProbability= jP,
                 mzPrec          = mzPrec )
 
-# modifications = {   ('N',2) :       {'H': 1, 'O': +2, 'N': +3},
+# modifications = {   'N2':       {'H': 1, 'O': +2, 'N': +3},
 #                     ('Calpha',2) :  {'H': 1, 'O': +2, 'N': +3},
 #                     ('Calpha',5) :  {'H': 2, 'S': +2, 'N': +2},
 #                     ('C',6) :       {'H': 2, 'S': +2, 'N': +200} }

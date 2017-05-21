@@ -21,6 +21,7 @@ from itertools import chain
 from protonations import protonate
 from bricks import makeBricks
 from collections import defaultdict
+import re
 
 def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
@@ -39,7 +40,11 @@ def standardize(modifications):
     backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
     R = defaultdict(lambda:defaultdict(lCnt))
     for tag, atomCnt in modifications.items():
-        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = lCnt(atomCnt)
+        match = re.match(r"([a-z]+)([0-9]+)", tag, re.I)
+        if match:
+            aa, aa_idx = match.groups()
+            aa_idx = int(aa_idx) - 1
+        R[aa_idx][ backboneAtom2aaNomen[aa] ] = lCnt(atomCnt)
     return R
 
 

@@ -36,3 +36,6 @@ for(d_cnt in 1:length(data4plots)){
 storagePath = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/spectra.json'
 # pryr::object_size(toJSON(DATA,digits=10))
 write_json(DATA, path=storagePath, digits=10)
+
+P(DATA)
+DATA[[1]]$mass_spectrum %>% write_csv('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt')
