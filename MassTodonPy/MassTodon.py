@@ -115,7 +115,7 @@ class MassTodon():
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
         if path:
-            self.spectrum = readSpectrum( path,
+            self.file_path, self.file_name, self.spectrum = readSpectrum( path,
             cutOff, digits, topPercent)
         else:
             if spectrum:

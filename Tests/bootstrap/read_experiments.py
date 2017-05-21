@@ -34,14 +34,7 @@ def parse_experiment(exp):
     Q       = exp['maxProtonsNo'][0]
     WH, WV  = extract_WH_WV(exp['instrumental_setting'][0])
     L = len(fasta)
-    # modifications = {} #
-    modifications = { ('C',11):{'H':1,'O':-1,'N':1} }
-    # for terminus in set(exp.keys()) & set(['cTerminus', 'nTerminus']):
-    #     if terminus[0] == 'c':
-    #         key = ('N',1)
-    #     else:
-    #         key = ('C',L)
-    #         modifications[key] = parseTerminus(exp[terminus])
+    modifications = { 'C11': {'H':1,'O':-1,'N':1} }
     spectrum= parseSpectrum(exp)
     info    = (fasta, Q, WH, WV, L, modifications, spectrum)
     return info
