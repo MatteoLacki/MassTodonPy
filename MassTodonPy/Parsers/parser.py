@@ -16,9 +16,9 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from pyteomics          import mzxml # >= 3.41
-from IsotopeCalculator  import aggregate, merge_runs
-from collections        import defaultdict
+from pyteomics   import mzxml # >= 3.41
+from collections import defaultdict
+from MassTodonPy.IsotopeCalculator import aggregate, merge_runs
 import numpy as np
 import os
 
@@ -82,13 +82,16 @@ def read_txt(path, cutOff=100, digits=2):
 
 #TODO: add support for mzml files.
 def readSpectrum(path, cutOff=100, digits=2, P=1.0):
-    file_path, ext = os.path.splitext(path)
-    ext = ext.lower()
+    file_path, file_ext  = os.path.splitext(path)
+    file_name = file_path.split('/')[-1]
+    file_path = "/".join(file_path.split('/')[:-1])
+
+    file_ext = file_ext.lower()
     reader = {  '':         read_txt,
                 '.txt':     read_txt,
                 '.mzxml':   read_mzxml
-    }[ext]
+    }[file_ext]
     mz, intensity = reader(path, cutOff, digits)
     if P < 1.0:
         mz, intensity = percent_trim(mz, intensity, P)
-    return mz, intensity
+    return file_path, file_name, (mz, intensity)

@@ -68,6 +68,9 @@ from IsotopeCalculator  import isotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import readSpectrum
+from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
+
+import json
 
 class MassTodon():
     def __init__(   self,
@@ -112,7 +115,7 @@ class MassTodon():
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
         if path:
-            self.spectrum = readSpectrum( path,
+            self.file_path, self.file_name, self.spectrum = readSpectrum( path,
             cutOff, digits, topPercent)
         else:
             if spectrum:
@@ -126,11 +129,52 @@ class MassTodon():
         self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
 
         #TODO: add multiprocessing
-    def run(self, solver='sequential', method='MSE', **args):
+        #TODO: make a more sensible use of sequentlity
+    def run(self, solver='sequential', method='MSE', max_times_solve=5, **args):
         '''Perform the deconvolution of problems.'''
-        res = solve(
-            problemsGenerator = self.problems,
-            solver = solver,
-            method = method,
-            args = args)
+        res = solve(problemsGenerator = self.problems,
+                    args   = args,
+                    solver = solver,
+                    method = method,
+                    max_times_solve = max_times_solve )
+        self.res = res
         return res
+
+
+    def flatten_results(self, minimal_estimated_intensity=100.0):
+        '''Return one list of results, one list of difficult cases, and the error.'''
+        optimal     = []
+        nonoptimal  = []
+        totalError  = 0.0
+        for mols, error, status in self.res:
+            if status=='optimal':
+                totalError += error
+                for mol in mols:
+                    if mol['estimate'] > minimal_estimated_intensity:
+                        mol_res = {}
+                        for key in ['estimate', 'molType', 'q', 'g', 'formula']:
+                            mol_res[key] = mol[key]
+                        optimal.append(mol_res)
+            else:
+                nonoptimal.append(mols)
+        return optimal, nonoptimal, totalError
+
+
+    def save_results_to_json(self, result_path):
+        optimal, nonoptimal, totalError = self.flatten_results(self.res)
+        with open(result_path, 'w') as fp:
+            json.dump({'optimal':optimal, 'nonoptimal':nonoptimal, 'error':totalError }, fp)
+
+
+    def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, min_acceptEstimIntensity = 100., verbose=False, **advanced_args):
+        '''Estimate reaction constants and quantities of fragments.'''
+
+        chosen_analyzer = {
+            'basic': analyzer_basic,
+            'inter': analyzer_inter,
+            'up_inter': analyzer_up_inter
+        }[analyzer](self.res, self.Q, self.fasta,
+                    accept_nonOptimalDeconv,
+                    min_acceptEstimIntensity, verbose )
+
+        return chosen_analyzer.pair()

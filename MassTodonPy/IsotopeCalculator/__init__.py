@@ -17,4 +17,3 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from isotopeCalculator import isotopeCalculator, aggregate, merge_runs
-from formulaParser     import formulaParser # to remove

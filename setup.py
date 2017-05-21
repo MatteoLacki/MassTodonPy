@@ -16,19 +16,41 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from distutils.core import setup
+# from distutils.core import setup
+from setuptools import setup, find_packages
 
-# I have no idea what I am doing...
 setup(
     name          = 'MassTodonPy',
     # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
     packages      = find_packages(),
-    version       = '1.0',
-    description   = 'A module that investigates the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance.',
-    author        = 'Mateusz Lacki',
+    version       = '0.2.3',
+    description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
+    author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
-    url           = 'https://MatteoLacki@bitbucket.org/MatteoLacki/masstodonpy',
-    download_url  = 'https://MatteoLacki@bitbucket.org/MatteoLacki/masstodonpy.git',
+    url           = 'https://github.com/MatteoLacki/MassTodonPy',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.3.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
-    classifiers   = [],
+    classifiers   = [
+        'Development Status :: 5 - Production/Stable',
+        'License :: OSI Approved :: GNU Affero General Public License v3',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Chemistry',
+        'Programming Language :: Python :: 2.7'
+    ],
+    install_requires=[ 'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1',
+        'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree',
+        'pandas'
+    ],
+    # scripts = 
+    # entry_points = {
+    #     'console_scripts': [
+    #          'vfclust = MassTodonPy.CSI.masstodon_term',
+    #     ],
+    # },
+    include_package_data = True,
+    package_data={
+        "data": [
+            "data/isotopes.txt"
+        ],
+    }
 )
