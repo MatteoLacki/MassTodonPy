@@ -23,7 +23,7 @@ setup(
     name          = 'MassTodonPy',
     # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
     packages      = find_packages(),
-    version       = '0.2.3',
+    version       = '0.2.4',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
@@ -41,12 +41,7 @@ setup(
         'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree',
         'pandas'
     ],
-    # scripts =
-    # entry_points = {
-    #     'console_scripts': [
-    #          'vfclust = MassTodonPy.CSI.masstodon_term',
-    #     ],
-    # },
+    scripts=['bin/masstodon'],
     include_package_data = True,
     package_data={
         "data": [
