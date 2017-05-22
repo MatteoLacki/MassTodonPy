@@ -92,16 +92,48 @@ make_plot = function(D, x_arm="WV", min_prob, max_prob ){
   error_plot = make_error_plot(D, xlab_label, x_choice, x, min_prob, max_prob)
   
   list( 
-    PTR_ETnoD = PTR_ETnoD, 
+    # PTR_ETnoD = PTR_ETnoD, 
     error     = error_plot, 
     prob_react= prob_react 
   )
 }
 
-
 min_prob = .025 
 max_prob = .975
 
-plot_grid(plotlist=make_plot(D, "WV", min_prob, max_prob), nrow=3)
-plot_grid(plotlist=make_plot(D, "WH", min_prob, max_prob), nrow=3)
+plot_grid(plotlist=make_plot(D, "WV", min_prob, max_prob), nrow=2)
+plot_grid(plotlist=make_plot(D, "WH", min_prob, max_prob), nrow=2)
+
+
+
+fasta = 'RPKPQQFFGLM'
+ 
+
+PD = D %>% filter_(x_choice, "count_or_prob=='prob'", "real_or_sim=='sim'", "algo=='base'") %>%
+      select( -PTR, -PTR_precursor, -anion_approached_cation, -ETnoD_precursor, -ETnoD, -algo,
+              -anion_did_not_approach_cation, -fragmentation, -no.fragmentation, -reactions, 
+              -real_or_sim, -total_frags, - total_reactions, -unreacted_precursors) %>%
+      gather('frag_place', 'frag_prob', 1:9) %>%
+      filter( WH < 80 )%>%
+      filter_(x_choice) 
+
+PD_dummy = data.frame(ID=NA, WH=0, WV=300, count_or_prob=NA, frag_place=paste0('X',0:10, sep=''), frag_prob=NA )  
+PD = bind_rows(PD, PD_dummy)
+PD = PD %>% mutate( WH = factor(WH), 
+                    WV = factor(WV),
+                    frag_place = ordered(frag_place, levels=paste0('X',0:10, sep='') ) ) 
+
+plot_AA <- Vectorize(function(x) strsplit(fasta,'')[[1]][as.integer(x)+1])
+
+look_up_table = plot_AA(0:10)
+names(look_up_table) = paste0('X',0:10)
+
+PD %>%
+  ggplot(aes(x=WH,y=frag_prob, fill=WH)) +
+  geom_boxplot() + 
+  facet_grid( .~frag_place, drop = FALSE, labeller=as_labeller(look_up_table) ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        legend.position = 'top' ) + 
+  scale_y_continuous(labels=scales::percent) + 
+  ylab('Probability of Fragmentation')
 
