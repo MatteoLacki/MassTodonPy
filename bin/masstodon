@@ -47,8 +47,8 @@ perform_calculations(   spectrum_path   = args.spectrum_path,
                         file_name       = file_name,
                         config          = config            )
 
-print 'Thank you!'
-print 'Please, be kind to MassTodons.'
+print('Thank you!')
+print('Please, be kind to MassTodons.')
 print
 
 
