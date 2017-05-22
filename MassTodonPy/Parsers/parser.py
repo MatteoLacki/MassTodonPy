@@ -80,12 +80,18 @@ def read_txt(path, cutOff=100, digits=2):
     mz, intensity = round_spec(mz, intensity, digits=2)
     return mz, intensity
 
-#TODO: add support for mzml files.
-def readSpectrum(path, cutOff=100, digits=2, P=1.0):
+
+def parse_path(path):
+    '''Parsers path to the file.'''
     file_path, file_ext  = os.path.splitext(path)
     file_name = file_path.split('/')[-1]
-    file_path = "/".join(file_path.split('/')[:-1])
+    file_path = "/".join(file_path.split('/')[:-1]) + '/'
+    return file_path, file_name, file_ext
 
+
+#TODO: add support for mzml files.
+def readSpectrum(path, cutOff=100, digits=2, P=1.0):
+    file_path, file_name, file_ext = parse_path(path)
     file_ext = file_ext.lower()
     reader = {  '':         read_txt,
                 '.txt':     read_txt,
@@ -94,4 +100,4 @@ def readSpectrum(path, cutOff=100, digits=2, P=1.0):
     mz, intensity = reader(path, cutOff, digits)
     if P < 1.0:
         mz, intensity = percent_trim(mz, intensity, P)
-    return file_path, file_name, (mz, intensity)
+    return mz, intensity

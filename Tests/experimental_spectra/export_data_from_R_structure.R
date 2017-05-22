@@ -39,3 +39,5 @@ write_json(DATA, path=storagePath, digits=10)
 
 P(DATA)
 DATA[[1]]$mass_spectrum %>% write_csv('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt')
+DATA[[1]]$mass_spectrum %>% write_delim('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt', delim='\t')
+opn

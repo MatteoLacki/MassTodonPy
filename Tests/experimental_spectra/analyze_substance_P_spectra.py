@@ -3,9 +3,7 @@ import  numpy as np
 from    time import time
 from    MassTodonPy  import MassTodon
 import  cPickle as pickle
-from    MassTodonPy.MatchMaker import reaction_analist_basic as RA_base, reaction_analist_intermediate as RA_inter, reaction_analist_upper_intermediate as RA_advinter
 from    collections import Counter
-
 
 
 result_path_specific = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/parsed_sub_P.matteo'
@@ -44,8 +42,6 @@ Z = 0.001
 %%time
 results = [ getResults(*exp,L1_x=Z, L2_x=Z, L1_alpha=Z, L2_alpha=Z) for exp in experiments ]
 
-
-"_".join(map(str,(fasta, Q, WH, WV)))
 
 analyzers = (RA_base, RA_inter, RA_advinter)
 analyzed_results = dict( ("_".join(map(str,(fasta, Q, WH, WV))), map(lambda f:f(res, Q, fasta), analyzers )) for

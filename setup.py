@@ -41,7 +41,7 @@ setup(
         'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree',
         'pandas'
     ],
-    # scripts = 
+    # scripts =
     # entry_points = {
     #     'console_scripts': [
     #          'vfclust = MassTodonPy.CSI.masstodon_term',

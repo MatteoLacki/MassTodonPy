@@ -23,7 +23,11 @@ def run_masstodon(  spectrum_path,
                     L1_alpha    = 0.001,
                     L2_alpha    = 0.001,
                     verbose     = False ):
+
+    '''Run MassTodon and analyze its results by basic, intermediate and upper intermediate analyzers.'''
+
     params = (fasta, Q, modifications, spectrum_path, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, solver_max_T, L1_x, L2_x, L1_alpha, L2_alpha)
+
     try:
         M = MassTodon(  fasta           = fasta,
                         precursorCharge = Q,
@@ -51,11 +55,11 @@ def run_masstodon(  spectrum_path,
 
         results_analyzed = {}
         try:
-            results_analyzed['base']    = M.analyze_reactions(analyzer='basic')
+            results_analyzed['base'] = M.analyze_reactions(analyzer='basic')
         except:
             print 'Basis missing'
         try:
-            results_analyzed['inter']   = M.analyze_reactions(analyzer='inter')
+            results_analyzed['inter'] = M.analyze_reactions(analyzer='inter')
         except:
             print 'Intermediate missing'
         try:
@@ -63,12 +67,10 @@ def run_masstodon(  spectrum_path,
         except:
             print 'Upper-Intermediate missing'
 
-        file_path, file_name = M.file_path, M.file_name
-
         if verbose:
-            res = file_path, file_name, deconvolution_results, results_analyzed, params, T1_deconv
+            res = deconvolution_results, results_analyzed, params, T1_deconv
         else:
-            res = file_path, file_name, deconvolution_results, results_analyzed
+            res = deconvolution_results, results_analyzed
     except Exception as e:
         res = e, params
     return res
@@ -93,20 +95,21 @@ def gen_data(deconvolution_results, fasta, Q):
                 f = {'seq':get_subsequence(fasta, name), 'Q':x['q'],'G':x['g'],'fragName':name, 'intensity':x['estimate'] }
                 yield f
 
-def save_results(spectrum_path, config):
-    file_path, file_name, deconvolution_results, results_analyzed = run_masstodon(
-        spectrum_path = spectrum_path, **config)
+def perform_calculations(spectrum_path, output_path, file_name, config):
+    '''Run MassTodonPy on a given spectrum into a given output folder.'''
 
-    with open(file_path+'/outputs/'+'probs.json', 'w') as f:
+    deconvolution_results, results_analyzed = \
+        run_masstodon(spectrum_path = spectrum_path, **config)
+
+    with open(output_path+'probs.json', 'w') as f:
         json.dump(results_analyzed,f)
 
     ParsedOutput = pd.DataFrame(gen_data(deconvolution_results, config['fasta'], config['Q']))[[2,1,0,3,4]]
 
     ParsedOutput.to_csv(
-        path_or_buf = file_path + "/outputs/"+ file_name + ".csv",
+        path_or_buf = output_path + file_name + ".csv",
         index   = False,
-        sep     = '\t'      )
-
+        sep     = '\t' )
 
 
 
