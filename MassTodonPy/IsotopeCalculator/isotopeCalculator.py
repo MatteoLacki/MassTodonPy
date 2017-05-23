@@ -24,10 +24,10 @@ try:
   import cPickle as pickle
 except:
   import pickle
-from numpy.random   import multinomial, normal
-import scipy.stats  as ss
-import numpy        as np
-import pkg_resources
+from    numpy.random   import multinomial, normal
+import  scipy.stats  as ss
+import  numpy        as np
+import  pkg_resources
 
 def cdata2numpyarray(x):
     '''Turn c-data into a numpy array.'''
