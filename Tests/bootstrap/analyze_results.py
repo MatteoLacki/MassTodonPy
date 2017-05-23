@@ -20,6 +20,7 @@ for file_name in os.listdir(results_path):
     else:
         real_data = R
 
+
 def prepare_row(RA, WH, WV, algo, real_or_sim, count_or_prob, ID):
     row = {}
     row['algo'] = algo
@@ -53,5 +54,25 @@ def get_sim(bootstrap):
 D = pd.DataFrame(get_real(real_data))
 S = pd.DataFrame(get_sim(bootstrap))
 
-D.to_csv( path_or_buf = analysis_path+'real_data_3.csv', index = False)
-S.to_csv( path_or_buf = analysis_path+'simulations_3.csv', index = False)
+D.to_csv(path_or_buf = analysis_path+'real_data_3.csv', index = False)
+S.to_csv(path_or_buf = analysis_path+'simulations_3.csv', index = False)
+
+
+
+# params, Results, WH, WV, RA = real_data[0]
+# fasta, Q, WH, WV, L, modifications, spectrum, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, max_times_solve, L1_x, L2_x, L1_alpha, L2_alpha = params
+#
+# masses, intensities = spectrum
+#
+# intensities.sum()
+# total_MSE = sum(r['error'] for r in Results)
+#
+#
+#
+# def get_real_errors(real_data):
+#     ID = 0
+#     for params, Results, WH, WV, RA in real_data:
+#         for algo in RA:
+#             yield prepare_row(RA, WH, WV, algo, 'real', 'prob', ID)
+#             yield prepare_row(RA, WH, WV, algo, 'real', 'count', ID)
+#         ID += 1

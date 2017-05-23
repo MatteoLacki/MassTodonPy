@@ -49,7 +49,7 @@ def number_graph(SFG):
     return cnts
 
 
-def get_P_q( SFG, M_No, var_No, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001 ):
+def get_P_q(SFG, M_No, var_No, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001):
     '''
     Prepare cost function
     0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
@@ -136,6 +136,18 @@ class Deconvolutor(object):
                     outflow += self.sol['x'][GI['cnt']]
                 error += (I_intensity - outflow)**2
         error = sqrt(error)
+        return error
+
+    def get_absolute_error(self):
+        error = 0.0
+        for G_name in self.SFG:
+            if self.SFG.node[G_name]['type'] == 'G':
+                I_intensity = self.SFG.node[G_name]['intensity']
+                outflow = 0.0
+                for I_name in self.SFG[G_name]:
+                    GI = self.SFG.edge[G_name][I_name]
+                    outflow += self.sol['x'][GI['cnt']]
+                error += abs(I_intensity - outflow)
         return error
 
 

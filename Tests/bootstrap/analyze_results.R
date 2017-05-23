@@ -1,5 +1,6 @@
 library(tidyverse)
 library(cowplot)
+library(ggthemes)
 
 S = read.csv('simulations_3.csv') %>% tbl_df()
 R = read.csv('real_data_3.csv') %>% tbl_df()
@@ -106,34 +107,50 @@ plot_grid(plotlist=make_plot(D, "WH", min_prob, max_prob), nrow=2)
 
 
 
-fasta = 'RPKPQQFFGLM'
+make_plot_frag = function(D, x_arm="WV", fasta='RPKPQQFFGLM' ){
+  if( x_arm=="WV" ){ 
+    xlab_label = 'Wave Height (Wave Velocity set to 300)'
+    x_choice = "WV==300"
+    x = 'WH'
+  } else {xlab_label = 'Wave Velocity (Wave Height set to 150)'
+  x_choice = "WH==150"
+  x = 'WV' }
+
+  PD = D %>% filter_(x_choice, "count_or_prob=='prob'", "real_or_sim=='sim'", "algo=='base'") %>%
+        select( -PTR, -PTR_precursor, -anion_approached_cation, -ETnoD_precursor, -ETnoD, -algo,
+                -anion_did_not_approach_cation, -fragmentation, -no.fragmentation, -reactions, 
+                -real_or_sim, -total_frags, - total_reactions, -unreacted_precursors) %>%
+        gather('frag_place', 'frag_prob', 1:9) %>%
+        filter_(x_choice) 
+
+  PD_dummy = data.frame(ID=NA, WH=NA, WV=NA, count_or_prob=NA, frag_place=paste0('X',0:10, sep=''), frag_prob=NA )  
+  PD = bind_rows(PD, PD_dummy)
+  PD = PD %>% mutate( WH = factor(WH), 
+                      WV = factor(WV),
+                      frag_place = ordered(frag_place, levels=paste0('X',0:10, sep='') ) 
+              ) %>%
+              mutate_(X=x) 
+  
+  
+  plot_AA <- Vectorize(function(x) strsplit(fasta,'')[[1]][as.integer(x)+1])
  
+  look_up_table = plot_AA(0:10)
+  names(look_up_table) = paste0('X',0:10)
+  
+  PD %>%
+    filter(!is.na(X)) %>%
+    ggplot(aes(x=X,y=frag_prob)) +
+    geom_boxplot() + 
+    facet_grid( .~frag_place, drop = FALSE, labeller=as_labeller(look_up_table) ) +
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = 'top' ) + 
+    scale_y_continuous(labels=scales::percent) + 
+    ylab('Probability of Fragmentation')+
+    xlab(xlab_label)
+}
 
-PD = D %>% filter_(x_choice, "count_or_prob=='prob'", "real_or_sim=='sim'", "algo=='base'") %>%
-      select( -PTR, -PTR_precursor, -anion_approached_cation, -ETnoD_precursor, -ETnoD, -algo,
-              -anion_did_not_approach_cation, -fragmentation, -no.fragmentation, -reactions, 
-              -real_or_sim, -total_frags, - total_reactions, -unreacted_precursors) %>%
-      gather('frag_place', 'frag_prob', 1:9) %>%
-      filter( WH < 80 )%>%
-      filter_(x_choice) 
+make_plot_frag(D, x_arm="WV", fasta='RPKPQQFFGLM' )
+make_plot_frag(D, x_arm="WH", fasta='RPKPQQFFGLM' )
 
-PD_dummy = data.frame(ID=NA, WH=0, WV=300, count_or_prob=NA, frag_place=paste0('X',0:10, sep=''), frag_prob=NA )  
-PD = bind_rows(PD, PD_dummy)
-PD = PD %>% mutate( WH = factor(WH), 
-                    WV = factor(WV),
-                    frag_place = ordered(frag_place, levels=paste0('X',0:10, sep='') ) ) 
-
-plot_AA <- Vectorize(function(x) strsplit(fasta,'')[[1]][as.integer(x)+1])
-
-look_up_table = plot_AA(0:10)
-names(look_up_table) = paste0('X',0:10)
-
-PD %>%
-  ggplot(aes(x=WH,y=frag_prob, fill=WH)) +
-  geom_boxplot() + 
-  facet_grid( .~frag_place, drop = FALSE, labeller=as_labeller(look_up_table) ) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1),
-        legend.position = 'top' ) + 
-  scale_y_continuous(labels=scales::percent) + 
-  ylab('Probability of Fragmentation')
 

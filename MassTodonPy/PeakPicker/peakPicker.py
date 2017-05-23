@@ -90,6 +90,7 @@ class PeakPicker(object):
         self.IsoCalc= IsoCalc
         self.mzPrec = mzPrec
 
+
     def represent_as_BFG(self, massSpectrum):
         '''Prepare the Big Graph based on mass spectrum and the formulas.'''
         ePeaks  = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum))
@@ -111,11 +112,12 @@ class PeakPicker(object):
                 iso_cnt += 1
         return BFG
 
+
     def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
         '''Enumerate deconvolution problems.'''
         BFG = self.represent_as_BFG(massSpectrum)
         for cc in nx.connected_component_subgraphs(BFG):
-            # considesr only good connected components
+            # considers only good connected components
             if contains_experimental_peaks(cc):
                 trim_unlikely_molecules(cc, minimal_prob_per_molecule)
                 for SFG in nx.connected_component_subgraphs(cc):
