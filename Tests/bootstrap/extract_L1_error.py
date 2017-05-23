@@ -1,5 +1,5 @@
 from run_massTodon_on_WH_WV import getResults
-from collections import Counter
+from collections import Counter, defaultdict
 import numpy as np
 import numpy.random as npr
 import cPickle as pickle
@@ -14,36 +14,29 @@ verbose = True
 params, Results, WH, WV, RA = getResults(fasta, Q, WH, WV, L, modifications, spectrum, verbose=verbose)
 fasta, Q, WH, WV, L, modifications, spectrum, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, max_times_solve, L1_x, L2_x, L1_alpha, L2_alpha = params
 
-len(Results)
+
 SFG = Results[0]['SFG']
 
+from interval import interval as P, inf
 
-SFG.nodes(data=True)
+for G in SFG:
+    M_G = Counter()
+    mz_interval = P[0.0, inf]
+    if SFG.node[G]['type']=='G':
+        for I in SFG[G]:
+            I_mz = SFG.node[I]['mz']
+            mz_interval = mz_interval & P[I_mz-mzPrec, I_mz+mzPrec]
+            for M in SFG[I]:
+                if SFG.node[M]['type']=='M':
+                    M_G[ tuple(SFG.node[M][k] for k in ('molType','formula','q','g')) ] += SFG.edge[G][I]['estimate']
+        print G, mz_interval
 
 
 
-def MassTodon_bootstrap(experiment, ionsNo, repetsNo, verbose=False):
-    '''Perform bootstrap analysis of MassTodon results.'''
-    fasta, Q, WH, WV, L, modifications, (Ms, Is_real) = experiment
-    print modifications
-    analisi = []
-    for i, Is_sim in enumerate(npr.multinomial(ionsNo, Is_real/Is_real.sum(), repetsNo)):
-        spectrum = (Ms, Is_sim)
-        res = getResults(fasta, Q, WH, WV, L, modifications, spectrum, verbose=verbose)
-        if len(res)==5:
-            analisi.append(res[4])
-        if divmod(i, 10)[1] == 0:
-            print 'Finished',i+1,'out of',repetsNo,'.'
-    return (fasta, Q, WH, WV, ionsNo, repetsNo), analisi
 
-results_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS/'
-ionsNo, repetsNo = 100000, 250
 
-for i,exp in enumerate(substancesP):
-    fasta, Q, WH, WV, L, modifications, (Ms, Is_real) = exp
-    R = MassTodon_bootstrap(exp, ionsNo, repetsNo)
-    with open( results_path+'WH-'+str(WH)+'_WV-'+str(WV)+'_ID-'+str(i)+'.sadoMasto', 'w' ) as handle:
-        pickle.dump(R, handle)
-    print
-    print 'Dumped',i,'out of',len(substancesP),'.'
-    print
+path_iter = GIM_paths(SFG)
+G, I, M = next(path_iter)
+
+SFG.node[G]
+SFG.edge[G][I]['estimate']
