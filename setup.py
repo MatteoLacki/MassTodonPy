@@ -35,17 +35,15 @@ setup(
         'License :: OSI Approved :: GNU Affero General Public License v3',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Chemistry',
-        'Programming Language :: Python :: 2.7'
-    ],
+        'Programming Language :: Python :: 2.7'],
     install_requires=[ 'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1',
         'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree',
-        'pandas'
-    ],
+        'pandas'],
     scripts=['bin/masstodon'],
     include_package_data = True,
     package_data={
-        "Data": [
-            "Data/isotopes.txt"
-        ],
+        "Data": [   "Data/isotopes.txt",
+                    "Data/substancesP.example",
+                    "Data/ubiquitin.example"        ],
     }
 )
