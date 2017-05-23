@@ -3,11 +3,9 @@ import  numpy as np
 from    time import time
 from    MassTodonPy  import MassTodon
 import  cPickle      as     pickle
-from    MassTodonPy.MatchMaker   import reaction_analist_basic, reaction_analist_intermediate, reaction_analist_upper_intermediate
 from    collections import Counter, defaultdict
 
-
-storagePath = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/spectra.json'
+storagePath = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/experimental_spectra/substanceP_spectra.json'
 
 with open(storagePath) as data_file:
     data = json.load(data_file)
@@ -46,8 +44,27 @@ def parse_experiment(exp):
             key = ('C',L)
             modifications[key] = parseTerminus(exp[terminus])
     spectrum= parseSpectrum(exp)
-    info    = (fasta, Q, WH, WV, L, modifications, spectrum)
+    info    = fasta, Q, WH, WV, L, modifications, spectrum
     return info
+
+
+experiments = [ parse_experiment(exp) for exp in data ]
+
+
+# fasta, Q, WH, WV, L, modifications, spectrum = experiments[0]
+# modifications = { 'C11': {'H':1,'O':-1,'N':1} }
+
+
+substanceP = {  'name'      : 'substanceP',
+                'fasta'     : fasta,
+                'Q'         : Q,
+                'WH'        : WH,
+                'WV'        : WV,
+                'modifications': modifications,
+                'spectrum'  : spectrum  }
+
+with open('',w) as f:
+    pickle.dump(substanceP, f)
 
 
 # fasta, Q, WH, WV, L, modifications, spectrum = exp
@@ -100,8 +117,6 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
     except Exception as e:
         res = (False, params, e)
     return res
-
-experiments = [ parse_experiment(exp) for exp in data ]
 
 
 %%time

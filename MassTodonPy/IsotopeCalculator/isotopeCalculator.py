@@ -72,7 +72,7 @@ class isotopeCalculator:
         '''Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations.'''
 
         if isoMasses==None or isoProbs==None:
-            path = pkg_resources.resource_filename('MassTodonPy', 'data/')
+            path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
             isoMasses, isoProbs = pickle.load(open(path+'isotopes.txt', 'rb'))
         self.isoMasses = isoMasses
         self.isoProbs  = isoProbs

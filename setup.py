@@ -44,8 +44,8 @@ setup(
     scripts=['bin/masstodon'],
     include_package_data = True,
     package_data={
-        "data": [
-            "data/isotopes.txt"
+        "Data": [
+            "Data/isotopes.txt"
         ],
     }
 )

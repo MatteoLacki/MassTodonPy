@@ -35,7 +35,7 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
             for I in cc[M]:
                 if len(cc[I]) > 1:
                     total_prob += cc.node[I]['intensity']
-            if total_prob < minimal_prob:  # gonna remove some stupid nodes.
+            if total_prob < minimal_prob:  # g\onna remove some stupid nodes.
                 for I in cc[M]:
                     nodes_to_remove.append(I)
                 nodes_to_remove.append(M)
