@@ -17,14 +17,24 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from    intervaltree    import Interval as II, IntervalTree as Itree
-from    interval        import interval as III
 import  networkx        as     nx
 from    math            import sqrt
 import  numpy           as     np
 from    collections     import Counter, defaultdict
-from    Misc            import MultiCounter
+
 
 inf = float('inf')
+
+class MultiCounter(Counter):
+    '''Callable Counter for special field operations.
+
+    Offers stroke to any functional purist.
+    '''
+    def __call__(self, key):
+        val = self[key]
+        self[key] += 1
+        return str(key) + str(val)
+
 
 def contains_experimental_peaks(cc):
     '''Check if a given problem contains any experimental peaks.'''
@@ -47,7 +57,6 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
 
 class PeakPicker(object):
     '''Class for peak picking.'''
-
     def __init__(   self,
                     Forms,
                     IsoCalc,
@@ -91,30 +100,28 @@ class PeakPicker(object):
         return Graph
 
 
-    def add_zero_intensity_G_nodes(self, small_graph):
-        '''Pair unpaired isotopologue peaks I with zero-intensity experimental groups G.
-        '''
-        newGnodes = []
-        newGIedges= []
-        for I in small_graph:
-            if small_graph.node[I]['type'] == 'I':
-                if len(small_graph[I]) == 1:
-                    G = self.cnts('G')
-                    newGnodes.append( (G,{'intensity':0.0, 'type':'G' }) )
-                    newGIedges.append( (G,I) )
-        small_graph.add_nodes_from(newGnodes)
-        small_graph.add_edges_from(newGIedges)
+    def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
+        '''Enumerate deconvolution problems.'''
+        Graph = self.represent_as_Graph(massSpectrum)
+        for cc in nx.connected_component_subgraphs(Graph):
+            if contains_experimental_peaks(cc):
+                trim_unlikely_molecules(cc, minimal_prob_per_molecule)
+                for small_graph in nx.connected_component_subgraphs(cc):
+                    if len(small_graph) > 1:
+                        self.add_G_nodes(small_graph)
+                        yield small_graph
 
 
-    def create_G_nodes(self, small_graph):
+    def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.
 
-        This is done without any loss in resolution.'''
+        This is done without any loss in resolution, but surely in a stupid way.'''
         iso_vals = Itree()    # m/z intervals around isotopologues
         E_to_remove = []
         Gs_intensity = Counter()
         Gs_min_mz = defaultdict(lambda:inf)
         Gs_max_mz = Counter()
+
         for E in small_graph:
             if small_graph.node[E]['type'] == 'E':
                 I_of_G = frozenset(small_graph[E])
@@ -127,6 +134,7 @@ class PeakPicker(object):
                     L, R = I_mz-self.mzPrec, I_mz+self.mzPrec
                     iso_vals.addi(L, R)
         small_graph.remove_nodes_from(E_to_remove)
+
         iso_vals.split_overlaps()
         for Gcnt, I_of_G in enumerate(Gs_intensity):
             min_mz, max_mz = Gs_min_mz[I_of_G], Gs_max_mz[I_of_G]
@@ -136,20 +144,21 @@ class PeakPicker(object):
                 mz = iso_vals[II(min_mz,max_mz)]
             assert len(mz) == 1, "There should be only one interval containing the interval [min_mz,max_mz] among the 'tesselation' of the m/z axis."
             mz = mz.pop()
-            G = 'G' + str(Gcnt)
+            G = self.cnts('G')
             small_graph.add_node(G, intensity=Gs_intensity[I_of_G], type='G', mz=mz)
             for I in I_of_G:
                 small_graph.add_edge(I, G)
-        add_zero_intensity_G_nodes(small_graph)
 
-
-    def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
-        '''Enumerate deconvolution problems.'''
-        Graph = self.represent_as_Graph(massSpectrum)
-        for cc in nx.connected_component_subgraphs(Graph):
-            if contains_experimental_peaks(cc):
-                trim_unlikely_molecules(cc, minimal_prob_per_molecule)
-                for small_graph in nx.connected_component_subgraphs(cc):
-                    if len(small_graph) > 1:
-                        self.create_G_nodes(small_graph)
-                        yield small_graph
+        # zero intensity G nodes
+        newGnodes = []
+        newGIedges= []
+        for I in small_graph:
+            if small_graph.node[I]['type'] == 'I':
+                if len(small_graph[I]) == 1:
+                    I_mz = small_graph.node[I]['mz']
+                    mz = II(I_mz, I_mz)
+                    G = self.cnts('G')
+                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'mz':mz }) )
+                    newGIedges.append( (G,I) )
+        small_graph.add_nodes_from(newGnodes)
+        small_graph.add_edges_from(newGIedges)

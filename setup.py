@@ -37,7 +37,7 @@ setup(
         'Topic :: Scientific/Engineering :: Chemistry',
         'Programming Language :: Python :: 2.7'],
     install_requires=[ 'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1',
-        'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree',
+        'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree', 'pyinterval',
         'pandas'],
     scripts=['bin/masstodon'],
     include_package_data = True,
