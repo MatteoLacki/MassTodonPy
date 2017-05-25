@@ -103,6 +103,7 @@ class MassTodon():
             IsoCalc = self.IsoCalc,
             mzPrec  = mzPrec )
 
+        self.modifications = modifications
 
     def readSpectrum(   self,
                         spectrum=None,
@@ -139,7 +140,7 @@ class MassTodon():
         self.res = res
         return res
 
-    #TODO: is this used anywhere?
+
     def flatten_results(self, minimal_estimated_intensity=100.0):
         '''Return one list of results, one list of difficult cases, and the error.'''
         optimal     = []
@@ -158,11 +159,37 @@ class MassTodon():
                 nonoptimal.append(mols)
         return optimal, nonoptimal, totalError
 
-    #TODO: is this used anywhere?
-    def save_results_to_json(self, result_path):
-        optimal, nonoptimal, totalError = self.flatten_results(self.res)
-        with open(result_path, 'w') as fp:
-            json.dump({'optimal':optimal, 'nonoptimal':nonoptimal, 'error':totalError }, fp)
+
+    def get_subsequence(self, name):
+        if self.modifications == {'C11': {'H': 1, 'N': 1, 'O': -1}}:
+            suffix = '*'
+        else:
+            suffix = ''
+        if name[0]=='p':
+            return '*'+self.fasta+suffix
+        if name[0]=='z':
+            return self.fasta[ len(self.fasta)-int(name[1:]): ] + suffix
+        else:
+            return '*' + self.fasta[ 0:int(name[1:]) ]
+
+
+    def i_flatten_results_for_ETDetective(self):
+        for subproblem in self.res:
+            for r in subproblem['alphas']:
+                seq = self.get_subsequence( r['molType'] )
+                yield (seq, r['q'], r['g'], r['molType']), r['estimate']
+
+
+    def gen_ETDetective_inputs(self):
+        '''Get inputs for ETDetective.'''
+        data = {}
+        for r in self.i_flatten_results_for_ETDetective():
+            (seq, q, g, molType), estimate = r
+            if q == self.Q and g == 0 and molType=='precursor':
+                precursor = seq, q, g, molType
+            else:
+                data[(seq, q, g, molType)] = estimate
+        return precursor, data
 
 
     def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, min_acceptEstimIntensity = 100., verbose=False, **advanced_args):
