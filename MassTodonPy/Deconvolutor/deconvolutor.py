@@ -125,30 +125,17 @@ class Deconvolutor(object):
         '''Perform deconvolution.'''
         raise NotImplementedError
 
-    def get_mean_square_error(self):
-        error = 0.0
-        for G_name in self.SFG:
-            if self.SFG.node[G_name]['type'] == 'G':
-                I_intensity = self.SFG.node[G_name]['intensity']
-                outflow = 0.0
-                for I_name in self.SFG[G_name]:
-                    GI = self.SFG.edge[G_name][I_name]
-                    outflow += self.sol['x'][GI['cnt']]
-                error += (I_intensity - outflow)**2
-        error = sqrt(error)
-        return error
 
-    def get_absolute_error(self):
-        error = 0.0
-        for G_name in self.SFG:
-            if self.SFG.node[G_name]['type'] == 'G':
-                I_intensity = self.SFG.node[G_name]['intensity']
-                outflow = 0.0
-                for I_name in self.SFG[G_name]:
-                    GI = self.SFG.edge[G_name][I_name]
-                    outflow += self.sol['x'][GI['cnt']]
-                error += abs(I_intensity - outflow)
-        return error
+    def get_L1_error(self):
+        L1_error = sum( abs(G_D['estimate']-G_D['intensity'])
+            for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G')
+        return L1_error
+
+
+    def get_L2_error(self):
+        L2_error = sqrt(sum((G_D['estimate']-G_D['intensity'])**2
+            for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G'))
+        return L2_error
 
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
@@ -161,8 +148,8 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
 
         setseed(randint(0,1000000))
-            # this is to test from different points
-            # apparently this is used by the
+        # this is to test from different points
+        # apparently this is used by the asynchroneous BLAS library
         self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
         Xopt = self.sol['x']
         #################### reporting results
@@ -178,8 +165,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
                     N['estimate'] += Xopt[NI['cnt']]
-        error = self.get_mean_square_error()
-        res = {'alphas':alphas, 'error':error, 'status':self.sol['status']}
+        L2_error = self.get_L2_error()
+        res = { 'alphas':   alphas,
+                'L1_error': self.get_L1_error(),
+                'L2_error': self.get_L2_error(),
+                'status':   self.sol['status']   }
         if verbose:
             res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
             res['SFG']  = self.SFG
@@ -223,10 +213,9 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         x0 = get_initvals(self.var_No)
         x0['s'] = matrix(s0_val, size=h.size)
 
-        c = matrix([
-                matrix( -1.0,       size=(self.GI_No,1) ),
-                matrix( mu,         size=(self.M_No,1)  ),
-                matrix( (1.0+lam),  size=(self.G_No,1)  )   ])
+        c = matrix([matrix( -1.0,       size=(self.GI_No,1) ),
+                    matrix( mu,         size=(self.M_No,1)  ),
+                    matrix( (1.0+lam),  size=(self.G_No,1)  )   ])
 
         setseed(randint(0,1000000)) # this is to test from different points
         self.sol = solvers.conelp(c=c,G=G,h=h,A=A,b=b,primalstart=x0)
@@ -239,15 +228,17 @@ class Deconvolutor_Max_Flow(Deconvolutor):
                 N['estimate'] = Xopt[self.GI_No + N['cnt']]
                 alphas.append(N.copy())
             if N['type'] == 'G':
+                N['estimate'] = 0.0
                 for I_name in self.SFG[N_name]:
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
                     g_cnt = self.GI_No + self.M_No + N['cnt']
                     N['relaxation'] = Xopt[g_cnt]
-
-        # fit error: evaluation of the cost function at the minimizer
-        error = self.get_mean_square_error()
-        res = {'alphas':alphas, 'error':error, 'status':sol['status']}
+                    N['estimate'] += Xopt[NI['cnt']]
+        res = { 'alphas':   alphas,
+                'L1_error': self.get_L1_error(),
+                'L2_error': self.get_L2_error(),
+                'status':sol['status'] }
         if verbose:
             res['param']= {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}
             res['SFG']  = self.SFG

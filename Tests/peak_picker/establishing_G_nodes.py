@@ -35,11 +35,4 @@ Results = M.run(solver  = 'sequential',
 SFG = Results[0]['SFG']
 GS = [G for G in SFG.nodes(data=True) if G[1]['type']=='G']
 
-
-x = {'a':1}
-y = x['a']
-SFG.edges(data=True)
-
-A = GS[0][1]['mz']
-A.begin
-A.end
+Results[0]
