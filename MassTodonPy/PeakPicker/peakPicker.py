@@ -69,7 +69,7 @@ class PeakPicker(object):
 
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
-        #TODO: move this line to data manipulation.
+        
         Exps = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum) )
 
         Graph = nx.Graph()

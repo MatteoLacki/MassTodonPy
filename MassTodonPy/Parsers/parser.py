@@ -90,14 +90,23 @@ def parse_path(path):
 
 
 #TODO: add support for mzml files.
-def readSpectrum(path, cutOff=100, digits=2, P=1.0):
-    file_path, file_name, file_ext = parse_path(path)
-    file_ext = file_ext.lower()
-    reader = {  '':         read_txt,
-                '.txt':     read_txt,
-                '.mzxml':   read_mzxml
-    }[file_ext]
-    mz, intensity = reader(path, cutOff, digits)
+def readSpectrum(   path    = None,
+                    spectrum= None,
+                    cutOff  = 100,
+                    digits  = 2,
+                    P       = 1.0  ):
+    if path:
+        file_path, file_name, file_ext = parse_path(path)
+        file_ext = file_ext.lower()
+        reader = {  '':         read_txt,
+                    '.txt':     read_txt,
+                    '.mzxml':   read_mzxml
+        }[file_ext]
+        mz, intensity = reader(path, cutOff, digits)
+    else:
+        assert spectrum != None, "what kind of non-existing spectrum is it?"
+        mz, intensity = spectrum
+    total_intensity = sum(intensity)
     if P < 1.0:
-        mz, intensity = percent_trim(mz, intensity, P)
-    return mz, intensity
+        spectrum = percent_trim(mz, intensity, P)
+    return spectrum, total_intensity

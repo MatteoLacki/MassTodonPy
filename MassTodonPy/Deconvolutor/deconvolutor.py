@@ -125,18 +125,20 @@ class Deconvolutor(object):
         '''Perform deconvolution.'''
         raise NotImplementedError
 
-
     def get_L1_error(self):
         L1_error = sum( abs(G_D['estimate']-G_D['intensity'])
             for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G')
-        return L1_error
-
+        return float(L1_error)
 
     def get_L2_error(self):
         L2_error = sqrt(sum((G_D['estimate']-G_D['intensity'])**2
             for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G'))
-        return L2_error
+        return float(L2_error)
 
+    def get_L1_signed_error(self, sign=1.0):
+        L1_sign = sum( max(sign*(G_D['intensity']-G_D['estimate']), 0)
+            for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G')
+        return float(L1_sign)
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
     def run(self, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0, verbose=False):
@@ -169,6 +171,8 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         res = { 'alphas':   alphas,
                 'L1_error': self.get_L1_error(),
                 'L2_error': self.get_L2_error(),
+                'underestimates': self.get_L1_signed_error(sign=1.0),
+                'overestimates':  self.get_L1_signed_error(sign=-1.0),
                 'status':   self.sol['status']   }
         if verbose:
             res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
@@ -238,6 +242,8 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         res = { 'alphas':   alphas,
                 'L1_error': self.get_L1_error(),
                 'L2_error': self.get_L2_error(),
+                'underestimates': self.get_L1_signed_error(sign=1.0),
+                'overestimates':  self.get_L1_signed_error(sign=-1.0),
                 'status':sol['status'] }
         if verbose:
             res['param']= {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}

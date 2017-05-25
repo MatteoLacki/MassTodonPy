@@ -69,8 +69,7 @@ from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import readSpectrum
 from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
-
-import json
+from collections        import Counter
 
 class MassTodon():
     def __init__(   self,
@@ -85,25 +84,22 @@ class MassTodon():
                     modifications   = {} ):
         self.fasta  = fasta
         self.Q      = precursorCharge
-
         self.Forms  = makeFormulas(
             fasta   = fasta,
             Q       = self.Q,
             fragType= fragType,
             modifications = modifications )
-
         self.IsoCalc = isotopeCalculator(
             jP          = jointProbability,
             precDigits  = precDigits,
             isoMasses   = isoMasses,
             isoProbs    = isoProbs )
-
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
             mzPrec  = mzPrec )
-
         self.modifications = modifications
+
 
     def readSpectrum(   self,
                         spectrum=None,
@@ -115,14 +111,8 @@ class MassTodon():
 
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
-        if path:
-            self.spectrum = readSpectrum(path, cutOff, digits, topPercent)
-        else:
-            if spectrum:
-                self.spectrum = spectrum # a tupple of two numpy arrays
-            else:
-                print 'Wrong path or you did not provide a spectrum.'
-                raise KeyError
+        self.spectrum, self.total_spectrum_intensity = readSpectrum(path, spectrum, cutOff, digits, topPercent)
+
 
     def prepare_problems(self, M_minProb=.75):
         '''Prepare a generator of deconvolution problems.'''
@@ -132,13 +122,24 @@ class MassTodon():
         #TODO: make a more sensible use of sequentiality
     def run(self, solver='sequential', method='MSE', max_times_solve=5, **args):
         '''Perform the deconvolution of problems.'''
-        res = solve(problemsGenerator = self.problems,
+        self.res = solve(problemsGenerator = self.problems,
                     args   = args,
                     solver = solver,
                     method = method,
                     max_times_solve = max_times_solve )
-        self.res = res
-        return res
+
+
+    def summarize_results(self):
+        summary = Counter()
+        for r in self.res:
+            summary['L1_error'] += r['L1_error']
+            summary['L2_error'] += r['L2_error']
+            summary['underestimates']+= r['underestimates']
+            summary['overestimates'] += r['overestimates']
+        summary['relative_L1_error'] = summary['L1_error']/self.total_spectrum_intensity
+        summary['relative_L2_error'] = summary['L2_error']/self.total_spectrum_intensity
+        summary['%% percent of explained spectrum'] = 1.0 - summary['underestimates']/self.total_spectrum_intensity
+        return summary
 
 
     def flatten_results(self, minimal_estimated_intensity=100.0):
@@ -160,7 +161,9 @@ class MassTodon():
         return optimal, nonoptimal, totalError
 
 
+    #TODO: push Ciach to write a general structure.
     def get_subsequence(self, name):
+        '''For purpose of ETDetective, to bridge gaps in definitions.'''
         if self.modifications == {'C11': {'H': 1, 'N': 1, 'O': -1}}:
             suffix = '*'
         else:
@@ -174,6 +177,7 @@ class MassTodon():
 
 
     def i_flatten_results_for_ETDetective(self):
+        '''Generate pairs substance-estimate.'''
         for subproblem in self.res:
             for r in subproblem['alphas']:
                 seq = self.get_subsequence( r['molType'] )
@@ -201,5 +205,4 @@ class MassTodon():
         }[analyzer](self.res, self.Q, self.fasta,
                     accept_nonOptimalDeconv,
                     min_acceptEstimIntensity, verbose )
-
         return chosen_analyzer.pair()
