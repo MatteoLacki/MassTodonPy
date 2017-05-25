@@ -127,8 +127,8 @@ class MassTodon():
         '''Prepare a generator of deconvolution problems.'''
         self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
 
-        #TODO: add multiprocessing
-        #TODO: make a more sensible use of sequentlity
+        #TODO: add multiprocessing: turn of BLAS asynchronic calculations
+        #TODO: make a more sensible use of sequentiality
     def run(self, solver='sequential', method='MSE', max_times_solve=5, **args):
         '''Perform the deconvolution of problems.'''
         res = solve(problemsGenerator = self.problems,
@@ -139,7 +139,7 @@ class MassTodon():
         self.res = res
         return res
 
-
+    #TODO: is this used anywhere?
     def flatten_results(self, minimal_estimated_intensity=100.0):
         '''Return one list of results, one list of difficult cases, and the error.'''
         optimal     = []
@@ -158,7 +158,7 @@ class MassTodon():
                 nonoptimal.append(mols)
         return optimal, nonoptimal, totalError
 
-
+    #TODO: is this used anywhere?
     def save_results_to_json(self, result_path):
         optimal, nonoptimal, totalError = self.flatten_results(self.res)
         with open(result_path, 'w') as fp:
@@ -167,7 +167,6 @@ class MassTodon():
 
     def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, min_acceptEstimIntensity = 100., verbose=False, **advanced_args):
         '''Estimate reaction constants and quantities of fragments.'''
-
         chosen_analyzer = {
             'basic': analyzer_basic,
             'inter': analyzer_inter,
