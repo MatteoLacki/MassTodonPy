@@ -1,15 +1,18 @@
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
-import networkx as nx
-import matplotlib.pyplot as plt
-from collections import Counter
 
 mol = substanceP.copy()
-cutOff = 100; topPercent = .999; max_times_solve=30
-jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
+jP  = .999
+cutOff = 100
+mzPrec = .05
+topPercent = .999
+precDigits = 2
+M_minProb  = .7
+max_times_solve = 30
 L1_x = L2_x = L1_alpha = L2_alpha = .001
-solver = 'sequential'; method  = 'MSE'
-verbose = True
+solver  = 'sequential'
+method  = 'MSE'
+verbose = False
 
 M = MassTodon(  fasta           = mol['fasta'],
                 precursorCharge = mol['Q'],
@@ -28,19 +31,9 @@ M.run(  solver  = 'sequential',
         max_times_solve = max_times_solve,
         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
         verbose = verbose )
-M.summarize_results()
-M.gen_ETDetective_inputs()
-M.analyze_reactions('basic')
-M.analyze_reactions('inter')
-M.analyze_reactions('up_inter')
 
-M.res[0]
-
-SFG = M.res[0]['SFG']
-GS = [G for G in SFG.nodes(data=True) if G[1]['type']=='G']
-
-
-
-mol['modifications']
-==
-x = {'C11': {'H': 1, 'N': 1, 'O': -1}} == {'C11': {'H': 1, 'O': -1, 'N': 1}}
+print M.summarize_results()
+print M.gen_ETDetective_inputs()
+print M.analyze_reactions('basic')
+print M.analyze_reactions('inter')
+print M.analyze_reactions('up_inter')
