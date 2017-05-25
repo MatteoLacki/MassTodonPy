@@ -160,7 +160,9 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         G, h = get_G_h(self.var_No)
         A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
 
-        setseed(randint(0,1000000)) # this is to test from different points
+        setseed(randint(0,1000000))
+            # this is to test from different points
+            # apparently this is used by the
         self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
         Xopt = self.sol['x']
         #################### reporting results
@@ -171,9 +173,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 N['estimate'] = Xopt[self.GI_No + N['cnt']]
                 alphas.append(N.copy())
             if N['type'] == 'G':
+                N['estimate'] = 0.0
                 for I_name in self.SFG[N_name]:
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
+                    N['estimate'] += Xopt[NI['cnt']]
         error = self.get_mean_square_error()
         res = {'alphas':alphas, 'error':error, 'status':self.sol['status']}
         if verbose:
