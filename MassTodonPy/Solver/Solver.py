@@ -57,5 +57,5 @@ def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_
     }[solver](problemsGenerator)
     res = solver.run(args   = args,
                      method = method,
-                     max_times_solve=max_times_solve )
+                     max_times_solve = max_times_solve )
     return res

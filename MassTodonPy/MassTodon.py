@@ -99,7 +99,7 @@ class MassTodon():
             IsoCalc = self.IsoCalc,
             mzPrec  = mzPrec )
         self.modifications = modifications
-
+        self.mzPrec = mzPrec
 
     def readSpectrum(   self,
                         spectrum=None,
@@ -111,12 +111,23 @@ class MassTodon():
 
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
-        self.spectrum, self.total_spectrum_intensity = readSpectrum(path, spectrum, cutOff, digits, topPercent)
+        self.spectrum, (self.total_I, self.total_I_after_cut_off), self.spectrum_trimmed = readSpectrum(
+            path,
+            spectrum,
+            cutOff,
+            digits,
+            topPercent )
 
+    def i_get_original_spectrum(self):
+        for mz, intensity in zip(*self.spectrum):
+            yield {'mz':mz, 'intensity':intensity}
+        for mz, intensity in zip(*self.spectrum_trimmed):
+            yield {'mz':mz, 'intensity':intensity}
 
     def prepare_problems(self, M_minProb=.75):
         '''Prepare a generator of deconvolution problems.'''
         self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
+
 
         #TODO: add multiprocessing: turn of BLAS asynchronic calculations
         #TODO: make a more sensible use of sequentiality
@@ -129,6 +140,16 @@ class MassTodon():
                     max_times_solve = max_times_solve )
 
 
+    def spectra_iter(self):
+        for r in self.res:
+            for N, info in r["small_graph"].nodes(data=True):
+                if info["type"] == "G":
+                    mz, intensity, estimate = info['mz'], info['intensity'], info['estimate']
+                    L, R = mz.begin, mz.end
+                    yield {'L':L, 'R':R, 'I':intensity, 'E':estimate }
+        for mz, intensity in zip(*self.spectrum_trimmed):
+            yield {'L':mz-self.mzPrec,'R':mz+self.mzPrec,'I':intensity,'E':0.0 }
+
     def summarize_results(self):
         summary = Counter()
         for r in self.res:
@@ -136,10 +157,12 @@ class MassTodon():
             summary['L2_error'] += r['L2_error']
             summary['underestimates']+= r['underestimates']
             summary['overestimates'] += r['overestimates']
-        summary['relative_L1_error'] = summary['L1_error']/self.total_spectrum_intensity
-        summary['relative_L2_error'] = summary['L2_error']/self.total_spectrum_intensity
-        summary['%% percent of explained spectrum'] = 1.0 - summary['underestimates']/self.total_spectrum_intensity
+        #TODO: this will need additional specification.
+        # summary['relative_L1_error'] = summary['L1_error']/self.spectrum_intensity_trimmed
+        # summary['relative_L2_error'] = summary['L2_error']/self.spectrum_intensity_trimmed
+        # summary['%% percent of explained spectrum'] = 1.0 - summary['underestimates']/self.total_spectrum_intensity
         return summary
+
 
 
     def flatten_results(self, minimal_estimated_intensity=100.0):

@@ -66,13 +66,21 @@ class PeakPicker(object):
         self.IsoCalc= IsoCalc
         self.mzPrec = mzPrec
         self.cnts   = MultiCounter() # TODO finish it.
+        self.Used_Exps = set()
+        self.Exp_Intervals_No = 0
 
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
-        
+
         Exps = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum) )
 
+        # A,B = massSpectrum
+        # print A[ A>1370 ], B[ A>1370 ]
+        print Exps[1372.738]
+
         Graph = nx.Graph()
+
+
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
             I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
             M = self.cnts('M')
@@ -89,13 +97,20 @@ class PeakPicker(object):
                                intensity = I_intensity,
                                type = 'I' )
                 Graph.add_edge(M, I)
+
+                self.Exp_Intervals_No += len(Exps[I_mz])
+                # print Exps[I_mz]
                 for E_interval in Exps[I_mz]:
+
                     # experimental peaks are stored by their m/z
                     # they must have been aggregated and so each m/z corresponds to one peak
                     E_mz, E_intensity = E_interval.data
+                    self.Used_Exps.add(E_interval.data)
+
                     if not E_mz in Graph:
                         Graph.add_node(E_mz,
-                                       intensity = E_intensity, type = 'E' )
+                                       intensity = E_intensity,
+                                       type = 'E' )
                     Graph.add_edge(I, E_mz)
         return Graph
 

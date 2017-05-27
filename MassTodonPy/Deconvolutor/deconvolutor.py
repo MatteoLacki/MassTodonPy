@@ -167,16 +167,17 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                     NI = self.SFG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
                     N['estimate'] += Xopt[NI['cnt']]
-        L2_error = self.get_L2_error()
+
         res = { 'alphas':   alphas,
                 'L1_error': self.get_L1_error(),
                 'L2_error': self.get_L2_error(),
                 'underestimates': self.get_L1_signed_error(sign=1.0),
                 'overestimates':  self.get_L1_signed_error(sign=-1.0),
-                'status':   self.sol['status']   }
+                'status':   self.sol['status'],
+                'small_graph': self.SFG
+        }
         if verbose:
             res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
-            res['SFG']  = self.SFG
             res['sol']  = self.sol
         return res
 
@@ -244,10 +245,10 @@ class Deconvolutor_Max_Flow(Deconvolutor):
                 'L2_error': self.get_L2_error(),
                 'underestimates': self.get_L1_signed_error(sign=1.0),
                 'overestimates':  self.get_L1_signed_error(sign=-1.0),
-                'status':sol['status'] }
+                'status':sol['status'],
+                'SFG': self.SFG     }
         if verbose:
             res['param']= {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}
-            res['SFG']  = self.SFG
             res['sol']  = self.sol
         return res
 
