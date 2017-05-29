@@ -1,15 +1,14 @@
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
-import networkx as nx
-import matplotlib.pyplot as plt
 from collections import Counter
 import pandas as pd
 import numpy as np
-from    intervaltree    import Interval as II, IntervalTree as Itree
 
 
 mol = substanceP.copy()
-cutOff = 10.0; topPercent = 1.0; max_times_solve=30
+cut_off = 10.0; opt_P = 1.0
+
+max_times_solve=30
 jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
 L1_x = L2_x = L1_alpha = L2_alpha = .001
 solver = 'sequential'; method  = 'MSE'
@@ -22,10 +21,7 @@ M = MassTodon(  fasta           = mol['fasta'],
                 mzPrec          = mzPrec,
                 modifications   = mol['modifications']  )
 
-M.readSpectrum( spectrum        = mol['spectrum'],
-                cutOff          = cutOff,
-                digits          = precDigits,
-                topPercent      = topPercent  )
+M.read_spectrum(spectrum = mol['spectrum'])
 
 # mz, intensity = mol['spectrum']
 #

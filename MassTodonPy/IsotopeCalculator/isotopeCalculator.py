@@ -61,7 +61,7 @@ def merge_runs(spec1, spec2):
     return aggregate(mz, I)
 
 
-class isotopeCalculator:
+class IsotopeCalculator:
     '''A class for isotope calculations.'''
 
     def __init__(   self,

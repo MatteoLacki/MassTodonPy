@@ -29,30 +29,30 @@ def round_spec(mz, intensity, digits=2):
     return mz, intensity
 
 
-def trim_spectrum(mz, intensity, cutOff=100):
+def trim_spectrum(mz, intensity, cut_off=100):
     '''Remove peaks below a given cut off.'''
-    mz_trimmed = mz[intensity <= cutOff]
-    mz = mz[intensity > cutOff]
-    intensity_trimmed = intensity[intensity <= cutOff]
-    intensity = intensity[intensity > cutOff]
-    return mz_trimmed, intensity_trimmed
+    return mz[intensity >= cut_off], intensity[intensity >= cut_off]
 
 
-def percent_trim(mz, intensity, cutOff=.999):
-    '''Retrieve P percent of the highest peaks.'''
-    order= np.argsort(intensity)[::-1]
-    spec = np.column_stack((mz,intensity))[order,]
-    totalIntensity = sum(intensity)
-    spec_trimmed = spec[ np.cumsum(spec[:,1])/totalIntensity > cutOff, ]
-    spec = spec[ np.cumsum(spec[:,1])/totalIntensity <= cutOff, ]
-    spec.sort(0)
-    spec_trimmed.sort(0)
-    mz, intensity = spec[:,0], spec[:,1]
-    mz_trimmed, intensity_trimmed = spec_trimmed[:,0], spec_trimmed[:,1]
-    return (mz, intensity), (mz_trimmed, intensity_trimmed)
+def quantile_trim(mz, intensities, perc = .95):
+    mz_res, intensities_res = tuple( np.array(x) for x in zip(*sorted(zip(mz, intensities), key=itemgetter(1))) )
+    i = 0
+    S = 0.0
+    total = intensities_res.sum()
+    while True:
+        S += intensities_res[i]/total
+        if S < 1.0-perc:
+            i += 1
+        else:
+            break
+
+    mz_res = mz_res[ intensities_res >= intensities_res[i] ]
+    intensities_res = intensities_res[ intensities_res >= intensities_res[i] ]
+
+    return tuple( np.array(x) for x in zip(*sorted(zip(mz_res, intensities_res), key=itemgetter(0))) )
 
 
-def get_mzxml(path, cutOff=100, digits=2):
+def get_mzxml(path, digits=2):
     '''Generate a sequence of rounded and trimmed spectra from individual runs of the instrument.'''
     with mzxml.read(path) as reader:
         for spectrum in reader:
@@ -62,13 +62,13 @@ def get_mzxml(path, cutOff=100, digits=2):
             yield mz, intensity
 
 
-def read_mzxml(path, cutOff=100, digits=2):
+def read_mzxml(path, digits=2):
     '''Read and merge runs of the instrument.'''
-    mz, intensity = reduce(merge_runs, get_mzxml(path, cutOff, digits))
+    mz, intensity = reduce( merge_runs, get_mzxml(path, digits) )
     return mz, intensity
 
 
-def read_txt(path, cutOff=100, digits=2):
+def read_txt(path, digits=2):
     mz = []
     intensity = []
     total_intensity = 0.0
@@ -81,7 +81,7 @@ def read_txt(path, cutOff=100, digits=2):
             intensity.append(I)
     mz = np.array(mz)
     intensity = np.array(intensity)
-    mz, intensity = round_spec(mz, intensity, digits=2)
+    mz, intensity = round_spec(mz, intensity, digits=digits)
     return mz, intensity
 
 
@@ -93,12 +93,17 @@ def parse_path(path):
     return file_path, file_name, file_ext
 
 
-#TODO: add support for mzml files.
-def readSpectrum(   path    = None,
+def read_spectrum(  path    = None,
                     spectrum= None,
-                    cutOff  = 100,
-                    digits  = 2,
-                    P       = 1.0  ):
+                    cut_off = None,
+                    opt_P   = None,
+                    digits  = 2   ):
+    '''Reads the spectrum from path or directly from  '''
+
+    assert path or spectrum, "No path to mass spectrum or no mass spectrum."
+
+    assert not (path and spectrum), "Please decide if you pass the spectrum as the argument (provide spectrum argument for method read_spectrum) or you want MassTodon to read the spectrum from file following the provided path."
+
     if path:
         file_path, file_name, file_ext = parse_path(path)
         file_ext = file_ext.lower()
@@ -106,26 +111,29 @@ def readSpectrum(   path    = None,
                     '.txt':     read_txt,
                     '.mzxml':   read_mzxml
         }[file_ext]
-        spectrum = reader(path, cutOff, digits)
-    else: # spectrum provided directly
-        assert spectrum != None, "what kind of non-existing spectrum is it?"
-
-    mz, intensity = spectrum
-
-    # print intensity.max()
-
-    total_I = sum(intensity)
-    mz_trimmed, intensity_trimmed = trim_spectrum(mz, intensity, cutOff)
-    total_I_after_cut_off = sum(intensity)
-
-    # print intensity.max()
-
-    # if P < 1.0:
-    #     (mz, intensity), (mz_perc_trimmed, intensity_perc_trimmed) = percent_trim(mz, intensity, P)
-    #     mz_trimmed = np.append(mz_trimmed,mz_perc_trimmed)
-    #     intensity_trimmed = np.append(intensity_trimmed, intensity_perc_trimmed)
+        spectrum = reader(path, digits)
 
 
-    # print intensity.max()
+def preprocess_spectrum(path    = None,
+                        spectrum= None,
+                        cut_off = None,
+                        opt_P   = None,
+                        digits  = 2   ):
 
-    return (mz, intensity), (total_I, total_I_after_cut_off), (mz_trimmed, intensity_trimmed)
+    assert not (cut_off and opt_P), "Please decide if you want to apply an intensity based cut-off or to choose the optimal P-set of experimental peaks, e.g. a representative of the class of the smallest sets of peaks with a probability at least P."
+
+    if not cut_off or opt_P:
+        print '\nAttention! \nYou did not provide a cut-off value for noise intensities, nor did you provide how probable should optimal P-set be. Thus, we will use a default value of opt_P = .99. \n\n It means that we trim the spectrum so that the remaining peaks amount for at least 99 per cent of all intensity and so that these peaks are the heighest in the spectrum.'
+        opt_P = .99
+
+    result = {}
+    result['original spectrum'] = spectrum
+    result['original total intensity'] = sum(spectrum[1])
+
+    if cut_off:
+        result['trimmed spectrum'] = trim_spectrum( *spectrum, cut_off=cut_off)
+    else:
+        result['trimmed spectrum'] = quantile_trim( *spectrum, perc = opt_P)
+
+    result['total intensity of trimmed spectrum'] = result['trimmed spectrum'][1].sum()
+    return result

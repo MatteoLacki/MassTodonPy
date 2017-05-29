@@ -147,7 +147,7 @@ class CZformulator_qg_competition(CZformulator):
                     yield molType, atomCnt_str, sideChainsNo, q, g
 
 
-def makeFormulas(
+def make_formulas(
         fasta,
         Q,
         fragType     ='cz',

@@ -63,11 +63,11 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
-from Formulator         import makeFormulas
-from IsotopeCalculator  import isotopeCalculator
+from Formulator         import make_formulas
+from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
-from Parsers            import readSpectrum
+from Parsers            import read_spectrum
 from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
 from collections        import Counter
 
@@ -83,40 +83,49 @@ class MassTodon():
                     isoProbs        = None,
                     modifications   = {} ):
         self.fasta  = fasta
+
         self.Q      = precursorCharge
-        self.Forms  = makeFormulas(
+
+        self.Forms  = make_formulas(
             fasta   = fasta,
             Q       = self.Q,
             fragType= fragType,
             modifications = modifications )
-        self.IsoCalc = isotopeCalculator(
+
+        self.IsoCalc = IsotopeCalculator(
             jP          = jointProbability,
             precDigits  = precDigits,
             isoMasses   = isoMasses,
             isoProbs    = isoProbs )
+
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
             mzPrec  = mzPrec )
+
         self.modifications = modifications
+
         self.mzPrec = mzPrec
 
-    def readSpectrum(   self,
-                        spectrum=None,
-                        path=None,
-                        cutOff=100.,
-                        digits=2,
-                        topPercent=1.0 ):
+        self.precDigits = precDigits
+
+    def read_spectrum(  self,
+                        spectrum= None,
+                        path    = None,
+                        cut_off = None,
+                        opt_P   = None ):
         '''Read in a mass spectrum.
 
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
-        self.spectrum, (self.total_I, self.total_I_after_cut_off), self.spectrum_trimmed = readSpectrum(
-            path,
-            spectrum,
-            cutOff,
-            digits,
-            topPercent )
+        self.spectra = read_spectrum(path   = path,
+                                    spectrum= spectrum,
+                                    cut_off = cut_off,
+                                    opt_P   = opt_P,
+                                    digits  = self.precDigits )
+
+    def preprocess_spectrum():
+        
 
     def i_get_original_spectrum(self):
         for mz, intensity in zip(*self.spectrum):
