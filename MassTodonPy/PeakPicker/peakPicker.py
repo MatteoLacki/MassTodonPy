@@ -60,11 +60,11 @@ class PeakPicker(object):
     def __init__(   self,
                     Forms,
                     IsoCalc,
-                    mzPrec = 0.05 ):
+                    mz_prec = 0.05 ):
 
         self.Forms  = Forms
         self.IsoCalc= IsoCalc
-        self.mzPrec = mzPrec
+        self.mz_prec = mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.Used_Exps = set()
         self.Exp_Intervals_No = 0
@@ -72,7 +72,7 @@ class PeakPicker(object):
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
 
-        Exps = Itree( II( mz-self.mzPrec, mz+self.mzPrec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum) )
+        Exps = Itree( II( mz-self.mz_prec, mz+self.mz_prec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum) )
 
         # A,B = massSpectrum
         # print A[ A>1370 ], B[ A>1370 ]
@@ -146,7 +146,7 @@ class PeakPicker(object):
                 E_to_remove.append(E)
                 for I in I_of_G:
                     I_mz = small_graph.node[I]['mz']
-                    L, R = I_mz-self.mzPrec, I_mz+self.mzPrec
+                    L, R = I_mz-self.mz_prec, I_mz+self.mz_prec
                     iso_vals.addi(L, R)
         small_graph.remove_nodes_from(E_to_remove)
 

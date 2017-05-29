@@ -89,18 +89,18 @@ def make_cz_fragments(fasta, modifications):
         for i in range(N-1):
             cFrag += superAtoms[i]
             cFrag_tmp = lCnt(cFrag)
-            fragType = 'c'+str(i)
-            if not fragType in blockedFragments and not i == 0:
-                yield (fragType, atomCnt2string(cFrag_tmp), i)
+            frag_type = 'c'+str(i)
+            if not frag_type in blockedFragments and not i == 0:
+                yield (frag_type, atomCnt2string(cFrag_tmp), i)
     #
     def getZfrags():
         zFrag = lCnt()
         for i in range(1,N):
             zFrag += superAtoms[N-i]
             zFrag_tmp = lCnt(zFrag)
-            fragType = 'z'+str(i)
-            if not fragType in blockedFragments:
-                yield (fragType, atomCnt2string(zFrag_tmp), i)
+            frag_type = 'z'+str(i)
+            if not frag_type in blockedFragments:
+                yield (frag_type, atomCnt2string(zFrag_tmp), i)
 
     return getPrecursor, getCfrags, getZfrags
 #TODO It seems very strange to return these functions. Inspect it later on.
@@ -150,7 +150,7 @@ class CZformulator_qg_competition(CZformulator):
 def make_formulas(
         fasta,
         Q,
-        fragType     ='cz',
+        frag_type ='cz',
         modifications={}
     ):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
@@ -159,5 +159,5 @@ def make_formulas(
     formClass       = {
         'cz':CZformulator,
         'cz_qg_competition':CZformulator_qg_competition
-    }[fragType](fasta, Q, modifications )
+    }[frag_type](fasta, Q, modifications )
     return formClass

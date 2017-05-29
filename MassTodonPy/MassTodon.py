@@ -67,75 +67,71 @@ from Formulator         import make_formulas
 from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
-from Parsers            import read_spectrum
+from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
 from collections        import Counter
+from itertools          import izip
 
 class MassTodon():
     def __init__(   self,
                     fasta,
-                    precursorCharge,
-                    fragType        = 'cz',
-                    precDigits      = 2,
-                    mzPrec          = .05,
-                    jointProbability= 0.999,
-                    isoMasses       = None,
-                    isoProbs        = None,
+                    precursor_charge,
+                    frag_type       = 'cz',
+                    prec_digits     = 2,
+                    mz_prec         = .05,
+                    joint_probability_of_envelope = 0.999,
+                    iso_masses      = None,
+                    iso_probs       = None,
                     modifications   = {} ):
+        '''Make MassTodon somewhat less extinct.'''
+
         self.fasta  = fasta
-
-        self.Q      = precursorCharge
-
+        self.Q      = precursor_charge
         self.Forms  = make_formulas(
             fasta   = fasta,
             Q       = self.Q,
-            fragType= fragType,
+            frag_type     = frag_type,
             modifications = modifications )
-
         self.IsoCalc = IsotopeCalculator(
-            jP          = jointProbability,
-            precDigits  = precDigits,
-            isoMasses   = isoMasses,
-            isoProbs    = isoProbs )
-
+            jP          = joint_probability_of_envelope,
+            prec_digits = prec_digits,
+            iso_masses  = iso_masses,
+            iso_probs   = iso_probs )
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
-            mzPrec  = mzPrec )
-
+            mz_prec = mz_prec )
         self.modifications = modifications
+        self.mz_prec = mz_prec
+        self.prec_digits = prec_digits
+        self.spectra = {}
 
-        self.mzPrec = mzPrec
-
-        self.precDigits = precDigits
-
-    def read_spectrum(  self,
-                        spectrum= None,
+    def read_n_preprocess_spectrum(  self,
                         path    = None,
+                        spectrum= None,
                         cut_off = None,
-                        opt_P   = None ):
-        '''Read in a mass spectrum.
+                        opt_P   = None
+                        ):
+        '''Read in a mass spectrum and round the masses to prec_digits digits after 0.
 
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
-        self.spectra = read_spectrum(path   = path,
-                                    spectrum= spectrum,
-                                    cut_off = cut_off,
-                                    opt_P   = opt_P,
-                                    digits  = self.precDigits )
+        self.spectra= read_n_preprocess_spectrum(
+            path    = path,
+            spectrum= spectrum,
+            prec_digits = self.prec_digits,
+            cut_off = cut_off,
+            opt_P   = opt_P      )
 
-    def preprocess_spectrum():
-        
+    def spectrum_iter(self, spectrum_type):
+        assert spectrum_type in ['original spectrum', 'trimmed spectrum'], "No such kind of spectrum: %s." % spectrum_type
+        for mz, intensity in izip(*self.spectra[spectrum_type]):
+            yield {'mz':mz, 'intensity':intensity}
 
-    def i_get_original_spectrum(self):
-        for mz, intensity in zip(*self.spectrum):
-            yield {'mz':mz, 'intensity':intensity}
-        for mz, intensity in zip(*self.spectrum_trimmed):
-            yield {'mz':mz, 'intensity':intensity}
 
     def prepare_problems(self, M_minProb=.75):
         '''Prepare a generator of deconvolution problems.'''
-        self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
+        self.problems = self.peakPicker.get_problems(self.spectra['trimmed'], M_minProb)
 
 
         #TODO: add multiprocessing: turn of BLAS asynchronic calculations
@@ -149,39 +145,48 @@ class MassTodon():
                     max_times_solve = max_times_solve )
 
 
-    def spectra_iter(self):
+    def results_iter(self):
+        '''Iterate over results.
+
+        Mainly useful for ETDetective.'''
         for r in self.res:
             for N, info in r["small_graph"].nodes(data=True):
                 if info["type"] == "G":
                     mz, intensity, estimate = info['mz'], info['intensity'], info['estimate']
                     L, R = mz.begin, mz.end
-                    yield {'L':L, 'R':R, 'I':intensity, 'E':estimate }
-        for mz, intensity in zip(*self.spectrum_trimmed):
-            yield {'L':mz-self.mzPrec,'R':mz+self.mzPrec,'I':intensity,'E':0.0 }
+                    yield {'L':L,'R':R,'I':intensity,'E':estimate }
+        for mz, intensity in zip(*self.spectra['trimmed']):
+            prec = self.mz_prec
+            yield {'L':mz-prec,'R':mz+prec,'I':intensity,'E':.0 }
+
 
     def summarize_results(self):
+        '''Summarize the results of MassTodon.'''
         summary = Counter()
         for r in self.res:
             summary['L1_error'] += r['L1_error']
             summary['L2_error'] += r['L2_error']
             summary['underestimates']+= r['underestimates']
             summary['overestimates'] += r['overestimates']
-        #TODO: this will need additional specification.
-        # summary['relative_L1_error'] = summary['L1_error']/self.spectrum_intensity_trimmed
-        # summary['relative_L2_error'] = summary['L2_error']/self.spectrum_intensity_trimmed
-        # summary['%% percent of explained spectrum'] = 1.0 - summary['underestimates']/self.total_spectrum_intensity
-        return summary
 
+        summary['L1_error/original_total_intensity'] = summary['L1_error']/self.spectra['original total intensity']
+
+        summary['L2_error/original_total_intensity'] = summary['L2_error']/self.spectra['original total intensity']
+
+        summary['L1_error/trimmed_total_intensity'] = summary['L1_error']/self.spectra['trimmed total intensity']
+
+        summary['L2_error/trimmed_total_intensity'] = summary['L2_error']/self.spectra['trimmed total intensity']
+        return summary
 
 
     def flatten_results(self, minimal_estimated_intensity=100.0):
         '''Return one list of results, one list of difficult cases, and the error.'''
         optimal     = []
         nonoptimal  = []
-        totalError  = 0.0
+        total_error  = 0.0
         for mols, error, status in self.res:
             if status=='optimal':
-                totalError += error
+                total_error += error
                 for mol in mols:
                     if mol['estimate'] > minimal_estimated_intensity:
                         mol_res = {}
@@ -190,7 +195,7 @@ class MassTodon():
                         optimal.append(mol_res)
             else:
                 nonoptimal.append(mols)
-        return optimal, nonoptimal, totalError
+        return optimal, nonoptimal, total_error
 
 
     #TODO: push Ciach to write a general structure.
@@ -238,3 +243,47 @@ class MassTodon():
                     accept_nonOptimalDeconv,
                     min_acceptEstimIntensity, verbose )
         return chosen_analyzer.pair()
+
+
+def MassTodonize(
+        fasta,
+        precursor_charge,
+        mz_prec,
+        cut_off         = None,
+        opt_P           = None,
+        spectrum        = None,
+        spectrum_path   = None,
+        modifications   = {},
+        frag_type       = 'cz',
+        prec_digits     = 2,
+        joint_probability_of_envelope   = .999,
+        min_prob_of_envelope_in_picking = .7,
+        iso_masses       = None,
+        iso_probs        = None,
+        L1_x = .001,
+        L2_x = .001,
+        L1_alpha= .001,
+        L2_alpha= .001,
+        solver  = 'sequential',
+        method  = 'MSE',
+        max_times_solve = 10,
+        verbose = False
+    ):
+    '''Run a full session of MassTodon on your problem.'''
+
+    M = MassTodon(  fasta           = fasta,
+                    precursor_charge= precursor_charge,
+                    frag_type       = 'cz',
+                    prec_digits     = prec_digits,
+                    mz_prec         = mz_prec,
+                    joint_probability_of_envelope = joint_probability_of_envelope,
+                    iso_masses       = iso_masses,
+                    iso_probs        = iso_probs,
+                    modifications   = modifications )
+
+    M.read_n_preprocess_spectrum(   path    = spectrum_path,
+                                    spectrum= spectrum,
+                                    cut_off = cut_off,
+                                    opt_P   = opt_P         )
+
+    M.prepare_problems(min_prob_of_envelope_in_picking)

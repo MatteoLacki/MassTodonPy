@@ -9,51 +9,26 @@ mol = substanceP.copy()
 cut_off = 10.0; opt_P = 1.0
 
 max_times_solve=30
-jP=.999; mzPrec=.05; precDigits=2; M_minProb=.7
+joint_probability_of_envelope =.999
+mz_prec=.05; prec_digits = 2
+min_prob_of_envelope_in_picking = .7
 L1_x = L2_x = L1_alpha = L2_alpha = .001
 solver = 'sequential'; method  = 'MSE'
 verbose = False
 
 M = MassTodon(  fasta           = mol['fasta'],
-                precursorCharge = mol['Q'],
-                precDigits      = precDigits,
-                jointProbability= jP,
-                mzPrec          = mzPrec,
+                precursor_charge= mol['Q'],
+                prec_digits     = prec_digits,
+                joint_probability_of_envelope = joint_probability_of_envelope,
+                mz_prec         = mz_prec,
                 modifications   = mol['modifications']  )
 
-M.read_spectrum(spectrum = mol['spectrum'])
-
-# mz, intensity = mol['spectrum']
-#
-#
-#
-# def trim_spectrum(mz, intensity, cutOff=cutOff):
-#     '''Remove peaks below a given cut off.'''
-#     mz_trimmed = mz[intensity <= cutOff]
-#     mz = mz[intensity > cutOff]
-#     intensity_trimmed = intensity[intensity <= cutOff]
-#     intensity = intensity[intensity > cutOff]
-#     return (mz, intensity) , (mz_trimmed, intensity_trimmed)
-#
-# trim_spectrum(mz, intensity, cutOff=100)
-
-#
-# Exps = Itree( II( mz-mzPrec, mz+mzPrec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum) )
-
-# list(M.Forms.makeMolecules())
-# mol['spectrum'][1].max()
-# print M.total_I
-# print M.total_I_after_cut_off
-# print M.total_I_after_percent_trim
+M.read_n_preprocess_spectrum(   spectrum    = mol['spectrum'],
+                                opt_P       = opt_P     )
 
 
-M.prepare_problems(M_minProb)
+M.prepare_problems(min_prob_of_envelope_in_picking)
 
-# M.run(  solver  = 'sequential',
-#         method  = 'MSE',
-#         max_times_solve = max_times_solve,
-#         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
-#         verbose = verbose )
 
 M.run(  solver  = 'sequential',
         method  = 'MSE',
