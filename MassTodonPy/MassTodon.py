@@ -174,15 +174,19 @@ class MassTodon():
             summary['L2_error'] += r['L2_error']
             summary['underestimates']+= r['underestimates']
             summary['overestimates'] += r['overestimates']
-
         summary['L1_error/original_total_intensity']= summary['L1_error']/self.spectra['original total intensity']
-
         summary['L2_error/original_total_intensity']= summary['L2_error']/self.spectra['original total intensity']
-
         summary['L1_error/trimmed_total_intensity'] = summary['L1_error']/self.spectra['trimmed total intensity']
-
         summary['L2_error/trimmed_total_intensity'] = summary['L2_error']/self.spectra['trimmed total intensity']
+        summary['underestimates/trimmed_total_intensity'] = summary['underestimates']/self.spectra['trimmed total intensity']
+        summary['overestimates/trimmed_total_intensity'] = summary['overestimates']/self.spectra['trimmed total intensity']
         return summary
+
+
+    def export_information_for_spectrum_plotting(self, full_info=False):
+        '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
+        self.ResPlotter.add_mz_ranges_to_results(self.res)
+        return self.ResPlotter.G_info_iter(full_info)
 
 
     def flatten_results(self, minimal_estimated_intensity=100.0):
@@ -251,6 +255,9 @@ class MassTodon():
         return chosen_analyzer.pair()
 
 
+def get_args(arg_names, all_args):
+    init_args = dict((x, all_args[x]) for x in all_args if x in arg_names )
+
 def MassTodonize(
         fasta,
         precursor_charge,
@@ -261,7 +268,6 @@ def MassTodonize(
         spectrum_path   = None,
         modifications   = {},
         frag_type       = 'cz',
-        prec_digits     = 2,
         joint_probability_of_envelope   = .999,
         min_prob_of_envelope_in_picking = .7,
         iso_masses       = None,
@@ -277,19 +283,37 @@ def MassTodonize(
     ):
     '''Run a full session of MassTodon on your problem.'''
 
-    M = MassTodon(  fasta           = fasta,
-                    precursor_charge= precursor_charge,
-                    frag_type       = 'cz',
-                    prec_digits     = prec_digits,
-                    mz_prec         = mz_prec,
-                    joint_probability_of_envelope = joint_probability_of_envelope,
-                    iso_masses       = iso_masses,
-                    iso_probs        = iso_probs,
-                    modifications   = modifications )
+    M = MassTodon(  fasta,
+                    precursor_charge,
+                    frag_type,
+                    mz_prec,
+                    joint_probability_of_envelope,
+                    iso_masses,
+                    iso_probs,
+                    modifications)
 
-    M.read_n_preprocess_spectrum(   path    = spectrum_path,
-                                    spectrum= spectrum,
-                                    cut_off = cut_off,
-                                    opt_P   = opt_P         )
+    M.read_n_preprocess_spectrum(   spectrum_path,
+                                    spectrum,
+                                    cut_off,
+                                    opt_P   )
 
     M.prepare_problems(min_prob_of_envelope_in_picking)
+
+    M.run(  solver  = solver,
+            method  = method,
+            max_times_solve = max_times_solve,
+            L1_x = L1_x,
+            L2_x = L2_x,
+            L1_alpha = L1_alpha,
+            L2_alpha = L2_alpha,
+            verbose = verbose)
+
+    Results = {}
+    Results['summary'] = M.summarize_results()
+    Results['basic analysis'] = M.analyze_reactions('basic')
+    Results['intermediate analysis'] = M.analyze_reactions('inter')
+    Results['upper intermediate analysis'] = M.analyze_reactions('up_inter')
+    Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
+    Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
+
+    return Results
