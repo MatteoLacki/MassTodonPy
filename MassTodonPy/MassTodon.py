@@ -129,7 +129,7 @@ class MassTodon():
             opt_P   = opt_P      )
 
     def spectrum_iter(self, spectrum_type):
-        assert spectrum_type in ['original spectrum', 'trimmed spectrum'], "No such kind of spectrum: %s." % spectrum_type
+        assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
         for mz, intensity in izip(*self.spectra[spectrum_type]):
             yield {'mz':mz, 'intensity':intensity}
 
@@ -143,12 +143,13 @@ class MassTodon():
         #TODO: make a more sensible use of sequentiality
     def run(self, solver='sequential', method='MSE', max_times_solve=5, **args):
         '''Perform the deconvolution of problems.'''
-        self.res = solve(problemsGenerator = self.problems,
-                    args   = args,
-                    solver = solver,
-                    method = method,
-                    max_times_solve = max_times_solve )
+        self.res = solve(   problemsGenerator = self.problems,
+                            args   = args,
+                            solver = solver,
+                            method = method,
+                            max_times_solve = max_times_solve )
 
+        self.ResPlotter.add_mz_ranges_to_results(self.res)
 
     def results_iter(self):
         '''Iterate over results.
@@ -163,7 +164,6 @@ class MassTodon():
         for mz, intensity in izip(*self.spectra['trimmed']):
             prec = self.mz_prec
             yield {'L':mz-prec,'R':mz+prec,'I':intensity,'E':.0 }
-
 
 
     def summarize_results(self):
@@ -185,7 +185,6 @@ class MassTodon():
 
     def export_information_for_spectrum_plotting(self, full_info=False):
         '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
-        self.ResPlotter.add_mz_ranges_to_results(self.res)
         return self.ResPlotter.G_info_iter(full_info)
 
 
@@ -315,5 +314,6 @@ def MassTodonize(
     Results['upper intermediate analysis'] = M.analyze_reactions('up_inter')
     Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
     Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
+    Results['original spectrum']    = M.spectrum_iter('original')
 
     return Results

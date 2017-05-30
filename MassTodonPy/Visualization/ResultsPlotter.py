@@ -54,11 +54,13 @@ class ResultsPlotter(object):
                 # set digits to mz_prec/10
                 iso_intervals = I_tree[min_mz]
             else:
-                iso_intervals = I_tree[II(min_mz, max_mz)]
+                iso_intervals = I_tree[interval(min_mz, max_mz)]
             if len(iso_intervals) == 1:
                 mz = iso_intervals.pop()
                 G_D['mz_L'] = mz.begin
                 G_D['mz_R'] = mz.end
+            else:
+                G_D['mz_L'] = G_D['mz_R'] = None
 
 
     def G_info_iter(self, full_info=False):
@@ -68,7 +70,7 @@ class ResultsPlotter(object):
             for G in SG:
                 if SG.node[G]['type'] == 'G':
                     G_D = SG.node[G]
-                    if not full_info:
+                    if not full_info and G_D['mz_L'] and G_D['mz_R']:
                         yield { 'mz_L': G_D['mz_L'],
                                 'mz_R': G_D['mz_R'],
                                 'tot_estimate': G_D['estimate'],

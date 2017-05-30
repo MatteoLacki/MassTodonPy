@@ -5,6 +5,12 @@ import numpy.random as npr
 import cPickle as pickle
 from  read_experiments import experiments as substancesP
 
+
+spectra_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/substanceP_spectra_parsed.cPickle'
+with open(spectra_path, 'r') as f:
+    pickle.load(f)
+
+
 def MassTodon_bootstrap(experiment, ionsNo, repetsNo, verbose=False):
     '''Perform bootstrap analysis of MassTodon results.'''
     fasta, Q, WH, WV, L, modifications, (Ms, Is_real) = experiment

@@ -68,29 +68,3 @@ sum(X[1][k] for k in X[1])
 print M.analyze_reactions('basic')
 print M.analyze_reactions('inter')
 print M.analyze_reactions('up_inter')
-
-
-M.res
-
-
-
-# from MassTodonPy.PeakPicker import PeakPicker
-#
-# PP = PeakPicker(M.Forms, M.IsoCalc)
-# Graph_gen = PP.get_problems(M.spectrum)
-# Graphs = list(Graph_gen)
-#
-# Graphs[0].nodes(data=True)
-#
-# from MassTodonPy.Deconvolutor import Deconvolutor_Min_Sum_Squares
-#
-#
-# mol['spectrum'][1].sum()
-# M.spectrum_intensity_trimmed
-# M.spectrum_intensity
-#
-# for m in mol['spectrum'][1]:
-#     print m
-#
-# DMSE = Deconvolutor_Min_Sum_Squares(Graphs[0])
-# DMSE.run()
