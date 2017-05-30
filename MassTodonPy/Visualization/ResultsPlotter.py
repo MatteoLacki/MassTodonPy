@@ -74,7 +74,9 @@ class ResultsPlotter(object):
                         yield { 'mz_L': G_D['mz_L'],
                                 'mz_R': G_D['mz_R'],
                                 'tot_estimate': G_D['estimate'],
-                                'tot_intensity':G_D['intensity'] }
+                                'tot_intensity':G_D['intensity'],
+                                'where': 'theoretically_achievable'
+                                }
                     else:
                         for I in SG[G]:
                             for M in SG[I]:
@@ -88,4 +90,5 @@ class ResultsPlotter(object):
                                             'mz_R':     G_D['mz_R'],
                                             'estimate': SG.edge[G][I]['estimate'],
                                             'tot_estimate': G_D['estimate'],
-                                            'tot_intensity':G_D['intensity']    }
+                                            'tot_intensity':G_D['intensity'],
+                                            'where': 'theoretically_achievable' }

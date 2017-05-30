@@ -48,10 +48,11 @@ def quantile_trim(mz, intensities, perc = .95):
         else:
             break
 
-    mz_res = mz_res[ intensities_res >= intensities_res[i] ]
-    intensities_res = intensities_res[ intensities_res >= intensities_res[i] ]
+    effective_cut_off = intensities_res[i]
+    mz_res = mz_res[ intensities_res >= effective_cut_off ]
+    intensities_res = intensities_res[ intensities_res >= effective_cut_off ]
 
-    return tuple( np.array(x) for x in izip(*sorted(izip(mz_res, intensities_res), key=itemgetter(0))) )
+    return tuple( np.array(x) for x in izip(*sorted(izip(mz_res, intensities_res), key=itemgetter(0))) ), effective_cut_off
 
 
 def get_mzxml(path, prec_digits=2):
@@ -131,6 +132,8 @@ def read_n_preprocess_spectrum( path    = None,
     if cut_off:
         spectra['trimmed'] = trim_spectrum( *spectrum, cut_off=cut_off)
     else:
-        spectra['trimmed'] = quantile_trim( *spectrum, perc = opt_P)
+        spectra['trimmed'], cut_off = quantile_trim( *spectrum, perc = opt_P)
+
     spectra['trimmed total intensity'] = spectra['trimmed'][1].sum()
+    spectra['cut_off'] = cut_off
     return spectra

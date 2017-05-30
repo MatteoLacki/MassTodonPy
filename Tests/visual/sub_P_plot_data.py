@@ -18,7 +18,7 @@ for i, exp in enumerate(experiments):
         mz_prec         = .05,
         modifications   = exp['modifications'],
         spectrum        = exp['spectrum'],
-        opt_P           = 1.00,
+        opt_P           = .99,
         min_prob_of_envelope_in_picking = .7,
         solver          = 'sequential',
         method          = 'MSE',
@@ -33,10 +33,6 @@ for i, exp in enumerate(experiments):
     WV = exp['experimental_setting']['WV']
 
     experimental_settings.append((WH,WV))
-
-    pd.DataFrame(Results['original spectrum']).to_csv(
-        path_or_buf = path+str(i)+'_substanceP.csv',
-        index       = False)
 
     pd.DataFrame(Results['short data to plot']).to_csv(
         path_or_buf = path+str(i)+'_shortData.csv',

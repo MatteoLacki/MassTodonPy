@@ -185,7 +185,17 @@ class MassTodon():
 
     def export_information_for_spectrum_plotting(self, full_info=False):
         '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
-        return self.ResPlotter.G_info_iter(full_info)
+        prec = self.mz_prec
+        for res in self.ResPlotter.G_info_iter(full_info):
+            yield res
+        for mz_int in zip(*self.spectra['original']):
+            if not mz_int in self.peakPicker.Used_Exps:
+                mz, intensity = mz_int
+                yield { 'mz_L': mz - prec,
+                        'mz_R': mz + prec,
+                        'tot_estimate': 0.0,
+                        'tot_intensity':intensity,
+                        'where': 'not_explainable' }
 
 
     def flatten_results(self, minimal_estimated_intensity=100.0):

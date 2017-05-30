@@ -4,11 +4,10 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 
-#TODO: make simple substance P spectra comparison (fitting test)
-#TODO: add info on the amounts of stuff making up the total G intensity
 #TODO: run bootstrap
 #TODO: run in sillico
 #TODO: get threshold intensity
+#TODO: add info on the amounts of stuff making up the total G intensity
 
 
 mol = substanceP.copy()
@@ -46,6 +45,8 @@ M.run(  solver  = 'sequential',
 
 
 M.summarize_results()
+d = Counter([ (mz_int in M.peakPicker.Used_Exps) for mz_int in zip(*M.spectra['original'])])
+d
 
 M.res[0]['SG'].nodes(data=True)
 
