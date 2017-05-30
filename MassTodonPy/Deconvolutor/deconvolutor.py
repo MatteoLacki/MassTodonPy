@@ -35,31 +35,31 @@ def normalize_rows(M):
         M[i,:] = row_hopefully/sum(abs(row_hopefully))
 
 
-def number_graph(SFG):
+def number_graph(SG):
     '''Add numbers to graph nodes and GI edges and return the counts thereof.'''
     cnts = Counter()
-    for N in SFG: # ordering some of the SFG graph nodes and edges
-        Ntype = SFG.node[N]['type']
-        SFG.node[N]['cnt'] = cnts[Ntype]
+    for N in SG: # ordering some of the SG graph nodes and edges
+        Ntype = SG.node[N]['type']
+        SG.node[N]['cnt'] = cnts[Ntype]
         cnts[Ntype] += 1
         if Ntype == 'G':
-            for I in SFG.edge[N]:
-                SFG.edge[N][I]['cnt'] = cnts['GI']
+            for I in SG.edge[N]:
+                SG.edge[N][I]['cnt'] = cnts['GI']
                 cnts['GI'] += 1
     return cnts
 
 
-def get_P_q(SFG, M_No, var_No, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001):
+def get_P_q(SG, M_No, var_No, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001):
     '''
     Prepare cost function
     0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
     '''
     q_list = []
     P_list = []
-    for G_name in SFG:
-        if SFG.node[G_name]['type']=='G':
-            G_intensity = SFG.node[G_name]['intensity']
-            G_degree    = len(SFG[G_name])
+    for G_name in SG:
+        if SG.node[G_name]['type']=='G':
+            G_intensity = SG.node[G_name]['intensity']
+            G_degree    = len(SG[G_name])
             q_list.append( matrix( -G_intensity + L1_x, size=(G_degree,1)) ) # L1 penalty for x
             ones = matrix(1.0, (G_degree,1))
             P_g  = ones * ones.T + diag(L2_x,G_degree) # L2 penalty for x
@@ -85,22 +85,22 @@ def get_G_h(var_No):
     return G_mat, h_vec
 
 
-def get_A_b(SFG, M_No, I_No, GI_No):
+def get_A_b(SG, M_No, I_No, GI_No):
     '''Prepare for conditions Ax = b'''
     A_x=[]; A_i=[]; A_j=[]
-    for M in SFG:
-        if SFG.node[M]['type']=='M':
-            M_cnt = SFG.node[M]['cnt']
-            for I in SFG[M]:
-                i_cnt = SFG.node[I]['cnt']
-                A_x.append(-SFG.node[I]['intensity'])# probability
+    for M in SG:
+        if SG.node[M]['type']=='M':
+            M_cnt = SG.node[M]['cnt']
+            for I in SG[M]:
+                i_cnt = SG.node[I]['cnt']
+                A_x.append(-SG.node[I]['intensity'])# probability
                 A_i.append( i_cnt )
                 A_j.append( M_cnt + GI_No )
-                for G in SFG[I]:
+                for G in SG[I]:
                     if not G == M:
                         A_x.append( 1.0 )
                         A_i.append( i_cnt )
-                        A_j.append( SFG.edge[G][I]['cnt'] )
+                        A_j.append( SG.edge[G][I]['cnt'] )
     A_mat = spmatrix( A_x, A_i, A_j, size=(I_No, M_No+GI_No ) )
     normalize_rows(A_mat)
     b_vec = matrix( 0.0, (I_No, 1)  )
@@ -109,10 +109,22 @@ def get_A_b(SFG, M_No, I_No, GI_No):
 
 class Deconvolutor(object):
     '''Class for deconvolving individual Small Graphs.'''
-    def __init__(self, SFG):
-        self.SFG = SFG
-        cnts = number_graph(self.SFG)
+    def __init__(self, SG):
+        self.SG = SG
+        cnts = number_graph(self.SG)
         self.set_names(cnts)
+
+    def iSG(self, node_type):
+        '''Iterate over all nodes of a given type in the small graph **SG**.
+
+        node_type - either
+        '''
+        assert node_type in ('G','I','M'), "specified wrong type of node. Was %s. Should be G, I, M" % node_type
+
+        for N in self.SG:
+            N = self.SG.node[N]
+            if N['type'] == node_type:
+                yield N
 
     def set_names(self, cnts):
         self.var_No = cnts['GI'] + cnts['M']
@@ -126,28 +138,26 @@ class Deconvolutor(object):
         raise NotImplementedError
 
     def get_L1_error(self):
-        L1_error = sum( abs(G_D['estimate']-G_D['intensity'])
-            for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G')
+        L1_error = sum(abs(G['estimate']-G['intensity']) for G in self.iSG('G'))
         return float(L1_error)
 
     def get_L2_error(self):
-        L2_error = sqrt(sum((G_D['estimate']-G_D['intensity'])**2
-            for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G'))
+        L2_error = sqrt(sum((G['estimate']-G['intensity'])**2 for G in self.iSG('G')))
         return float(L2_error)
 
     def get_L1_signed_error(self, sign=1.0):
-        L1_sign = sum( max(sign*(G_D['intensity']-G_D['estimate']), 0)
-            for G, G_D in self.SFG.nodes(data=True) if G_D['type']=='G')
+        L1_sign = sum( max(sign*(G['intensity']-G['estimate']), 0)
+            for G in self.iSG('G'))
         return float(L1_sign)
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
     def run(self, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
-        P, q = get_P_q(self.SFG, self.M_No, self.var_No, L1_x, L2_x, L1_alpha, L2_alpha)
+        P, q = get_P_q(self.SG, self.M_No, self.var_No, L1_x, L2_x, L1_alpha, L2_alpha)
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
-        A, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
+        A, b = get_A_b(self.SG, self.M_No, self.I_No, self.GI_No)
 
         setseed(randint(0,1000000))
         # this is to test from different points
@@ -156,15 +166,15 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         Xopt = self.sol['x']
         #################### reporting results
         alphas = []
-        for N_name in self.SFG:
-            N = self.SFG.node[N_name]
+        for N_name in self.SG:
+            N = self.SG.node[N_name]
             if N['type'] == 'M':
                 N['estimate'] = Xopt[self.GI_No + N['cnt']]
                 alphas.append(N.copy())
             if N['type'] == 'G':
                 N['estimate'] = 0.0
-                for I_name in self.SFG[N_name]:
-                    NI = self.SFG.edge[N_name][I_name]
+                for I_name in self.SG[N_name]:
+                    NI = self.SG.edge[N_name][I_name]
                     NI['estimate'] = Xopt[NI['cnt']]
                     N['estimate'] += Xopt[NI['cnt']]
 
@@ -174,7 +184,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 'underestimates': self.get_L1_signed_error(sign=1.0),
                 'overestimates':  self.get_L1_signed_error(sign=-1.0),
                 'status':   self.sol['status'],
-                'small_graph': self.SFG
+                'SG':       self.SG
         }
         if verbose:
             res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
@@ -184,7 +194,8 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
 
 class Deconvolutor_Max_Flow(Deconvolutor):
     def set_names(self, cnts):
-        self.var_No = cnts['GI'] + cnts['M'] + + cnts['G']
+        # self.var_No = cnts['GI'] + cnts['M'] + cnts['G'] #TODO: why cnts['G'] appeared?
+        self.var_No = cnts['GI'] + cnts['M']
         self.M_No   = cnts['M']
         self.GI_No  = cnts['GI']
         self.I_No   = cnts['I']
@@ -194,13 +205,13 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         G_tmp, h_tmp = get_G_h(self.var_No)
         h_eps = matrix(0.0, (self.G_No,1))
         G_x=[]; G_i=[]; G_j=[]
-        for G_name in self.SFG:
-            G = self.SFG.node[G_name]
+        for G_name in self.SG:
+            G = self.SG.node[G_name]
             if G['type'] == 'G':
                 g_cnt = G['cnt']
                 h_eps[g_cnt] = G['intensity'] + eps
-                for I_name in self.SFG[G_name]:
-                    i_cnt = self.SFG.node[I_name]['cnt']
+                for I_name in self.SG[G_name]:
+                    i_cnt = self.SG.node[I_name]['cnt']
                     G_x.append(1.0)
                     G_i.append(g_cnt)
                     G_j.append(i_cnt)
@@ -211,7 +222,7 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         G = sparse([G_tmp, G_tmp2])
         h = matrix([h_tmp, h_eps])
 
-        A_tmp, b = get_A_b(self.SFG, self.M_No, self.I_No, self.GI_No)
+        A_tmp, b = get_A_b(self.SG, self.M_No, self.I_No, self.GI_No)
         A_eps = spmatrix([],[],[], (self.I_No, self.G_No))
         A = sparse([[A_tmp],[A_eps]])
 
@@ -227,15 +238,17 @@ class Deconvolutor_Max_Flow(Deconvolutor):
         Xopt = self.sol['x']
 
         alphas = [] # reporting results
-        for N_name in self.SFG:
-            N = self.SFG.node[N_name]
+        for N_name in self.SG:
+            N = self.SG.node[N_name]
             if N['type'] == 'M':
                 N['estimate'] = Xopt[self.GI_No + N['cnt']]
                 alphas.append(N.copy())
             if N['type'] == 'G':
                 N['estimate'] = 0.0
-                for I_name in self.SFG[N_name]:
-                    NI = self.SFG.edge[N_name][I_name]
+                for I_name in self.SG[N_name]:
+                    NI = self.SG.edge[N_name][I_name]
+                    assert Xopt[NI['cnt']] > -0.01, "Optimization need to be checked: seriously negative result obtained."
+                    estimate = max(Xopt[NI['cnt']], 0.0)
                     NI['estimate'] = Xopt[NI['cnt']]
                     g_cnt = self.GI_No + self.M_No + N['cnt']
                     N['relaxation'] = Xopt[g_cnt]
@@ -246,16 +259,16 @@ class Deconvolutor_Max_Flow(Deconvolutor):
                 'underestimates': self.get_L1_signed_error(sign=1.0),
                 'overestimates':  self.get_L1_signed_error(sign=-1.0),
                 'status':sol['status'],
-                'SFG': self.SFG     }
+                'SG': self.SG     }
         if verbose:
             res['param']= {'c':c,'G':G,'h':h,'A':A,'b':b,'x0':x0}
             res['sol']  = self.sol
         return res
 
 
-def deconvolve(SFG, args, method):
+def deconvolve(SG, args, method):
     deconvolutor = {
         'MSE':      Deconvolutor_Min_Sum_Squares,
         'MaxFlow':  Deconvolutor_Max_Flow
-    }[method](SFG)
+    }[method](SG)
     return deconvolutor.run(**args)

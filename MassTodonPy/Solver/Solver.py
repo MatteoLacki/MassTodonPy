@@ -27,11 +27,11 @@ class Solver(object):
 class SequentialSolver(Solver):
     def run(self, args, method='MSE', max_times_solve=5):
         results = []
-        for SFG in self.prob_gen:
+        for SG in self.prob_gen:
             i = 0
             stop = False
             while not stop:
-                res = deconvolve(   SFG     = SFG,
+                res = deconvolve(   SG      = SG,
                                     args    = args,
                                     method  = method)
                 i += 1

@@ -69,15 +69,18 @@ from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
+from Visualization      import ResultsPlotter
+
 from collections        import Counter
 from itertools          import izip
+from math               import ceil, log10
+from intervaltree       import Interval as interval, IntervalTree
 
 class MassTodon():
     def __init__(   self,
                     fasta,
                     precursor_charge,
                     frag_type       = 'cz',
-                    prec_digits     = 2,
                     mz_prec         = .05,
                     joint_probability_of_envelope = 0.999,
                     iso_masses      = None,
@@ -85,6 +88,9 @@ class MassTodon():
                     modifications   = {} ):
         '''Make MassTodon somewhat less extinct.'''
 
+        self.mz_prec = mz_prec
+        # precision one digit lower than the input precision of spectra.
+        self.prec_digits = int(ceil(-log10(mz_prec)))+1
         self.fasta  = fasta
         self.Q      = precursor_charge
         self.Forms  = make_formulas(
@@ -94,24 +100,23 @@ class MassTodon():
             modifications = modifications )
         self.IsoCalc = IsotopeCalculator(
             jP          = joint_probability_of_envelope,
-            prec_digits = prec_digits,
+            prec_digits = self.prec_digits,
             iso_masses  = iso_masses,
             iso_probs   = iso_probs )
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
             mz_prec = mz_prec )
+        self.ResPlotter = ResultsPlotter(mz_prec)
         self.modifications = modifications
-        self.mz_prec = mz_prec
-        self.prec_digits = prec_digits
         self.spectra = {}
 
-    def read_n_preprocess_spectrum(  self,
-                        path    = None,
-                        spectrum= None,
-                        cut_off = None,
-                        opt_P   = None
-                        ):
+    def read_n_preprocess_spectrum(self,
+            path    = None,
+            spectrum= None,
+            cut_off = None,
+            opt_P   = None
+        ):
         '''Read in a mass spectrum and round the masses to prec_digits digits after 0.
 
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
@@ -155,9 +160,10 @@ class MassTodon():
                     mz, intensity, estimate = info['mz'], info['intensity'], info['estimate']
                     L, R = mz.begin, mz.end
                     yield {'L':L,'R':R,'I':intensity,'E':estimate }
-        for mz, intensity in zip(*self.spectra['trimmed']):
+        for mz, intensity in izip(*self.spectra['trimmed']):
             prec = self.mz_prec
             yield {'L':mz-prec,'R':mz+prec,'I':intensity,'E':.0 }
+
 
 
     def summarize_results(self):
@@ -169,9 +175,9 @@ class MassTodon():
             summary['underestimates']+= r['underestimates']
             summary['overestimates'] += r['overestimates']
 
-        summary['L1_error/original_total_intensity'] = summary['L1_error']/self.spectra['original total intensity']
+        summary['L1_error/original_total_intensity']= summary['L1_error']/self.spectra['original total intensity']
 
-        summary['L2_error/original_total_intensity'] = summary['L2_error']/self.spectra['original total intensity']
+        summary['L2_error/original_total_intensity']= summary['L2_error']/self.spectra['original total intensity']
 
         summary['L1_error/trimmed_total_intensity'] = summary['L1_error']/self.spectra['trimmed total intensity']
 

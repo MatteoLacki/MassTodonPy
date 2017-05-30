@@ -16,12 +16,12 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from    intervaltree    import Interval as II, IntervalTree as Itree
+from    intervaltree    import Interval as II, IntervalTree
 import  networkx        as     nx
 from    math            import sqrt
 import  numpy           as     np
 from    collections     import Counter, defaultdict
-
+from    itertools       import izip
 
 inf = float('inf')
 
@@ -61,10 +61,9 @@ class PeakPicker(object):
                     Forms,
                     IsoCalc,
                     mz_prec = 0.05 ):
-
         self.Forms  = Forms
         self.IsoCalc= IsoCalc
-        self.mz_prec = mz_prec
+        self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.Used_Exps = set()
         self.Exp_Intervals_No = 0
@@ -72,45 +71,31 @@ class PeakPicker(object):
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
 
-        Exps = Itree( II( mz-self.mz_prec, mz+self.mz_prec, (mz, intensity) ) for mz, intensity in zip(*massSpectrum) )
-
-        # A,B = massSpectrum
-        # print A[ A>1370 ], B[ A>1370 ]
-        print Exps[1372.738]
-
-        Graph = nx.Graph()
-
-
+        prec = self.mz_prec
+        Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*massSpectrum) )
+        Graph= nx.Graph()
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
             I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
             M = self.cnts('M')
-            Graph.add_node(M,
-                           formula = M_formula,
-                           type = 'M',
-                           q = M_q,
-                           g = M_g,
-                           molType = M_type )
-            for I_mz, I_intensity in zip(I_mzs, I_intensities):
+            Graph.add_node(M,  formula  = M_formula,
+                               type     ='M',
+                               q        = M_q,
+                               g        = M_g,
+                               molType  = M_type    )
+            for I_mz, I_intensity in izip(I_mzs, I_intensities):
                 I = self.cnts('I')
-                Graph.add_node(I,
-                               mz = I_mz,
-                               intensity = I_intensity,
-                               type = 'I' )
+                Graph.add_node(I,  mz   = I_mz,
+                                   intensity = I_intensity,
+                                   type = 'I'   )
                 Graph.add_edge(M, I)
-
                 self.Exp_Intervals_No += len(Exps[I_mz])
-                # print Exps[I_mz]
                 for E_interval in Exps[I_mz]:
-
-                    # experimental peaks are stored by their m/z
-                    # they must have been aggregated and so each m/z corresponds to one peak
                     E_mz, E_intensity = E_interval.data
-                    self.Used_Exps.add(E_interval.data)
-
+                    self.Used_Exps.add( E_interval.data )
                     if not E_mz in Graph:
-                        Graph.add_node(E_mz,
-                                       intensity = E_intensity,
-                                       type = 'E' )
+                        Graph.add_node( E_mz,
+                                        intensity   = E_intensity,
+                                        type        = 'E'  )
                     Graph.add_edge(I, E_mz)
         return Graph
 
@@ -130,50 +115,37 @@ class PeakPicker(object):
     def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.
 
-        This is done without any loss in resolution, but surely in a stupid way.'''
-        iso_vals = Itree()    # m/z intervals around isotopologues
+        This is done without any loss in resolution, but surely in a silly way.'''
         E_to_remove = []
-        Gs_intensity = Counter()
-        Gs_min_mz = defaultdict(lambda:inf)
-        Gs_max_mz = Counter()
-
+        Gs_intensity= Counter()
+        Gs_min_mz = defaultdict(lambda: inf)
+        Gs_max_mz = defaultdict(lambda: 0.0)
+        prec = self.mz_prec
         for E in small_graph:
             if small_graph.node[E]['type'] == 'E':
                 I_of_G = frozenset(small_graph[E])
                 Gs_intensity[I_of_G] += small_graph.node[E]['intensity']
-                Gs_min_mz[I_of_G] = min(Gs_min_mz[I_of_G], E)
-                Gs_max_mz[I_of_G] = max(Gs_max_mz[I_of_G], E)
+                Gs_min_mz[I_of_G] = min( Gs_min_mz[I_of_G], E )
+                Gs_max_mz[I_of_G] = max( Gs_max_mz[I_of_G], E )
                 E_to_remove.append(E)
-                for I in I_of_G:
-                    I_mz = small_graph.node[I]['mz']
-                    L, R = I_mz-self.mz_prec, I_mz+self.mz_prec
-                    iso_vals.addi(L, R)
         small_graph.remove_nodes_from(E_to_remove)
-
-        iso_vals.split_overlaps()
-        for Gcnt, I_of_G in enumerate(Gs_intensity):
-            min_mz, max_mz = Gs_min_mz[I_of_G], Gs_max_mz[I_of_G]
-            if min_mz == max_mz:
-                mz = iso_vals[min_mz]
-            else:
-                mz = iso_vals[II(min_mz,max_mz)]
-            assert len(mz) == 1, "There should be only one interval containing the interval [min_mz,max_mz] among the 'tesselation' of the m/z axis."
-            mz = mz.pop()
+        for I_of_G in Gs_intensity:
             G = self.cnts('G')
-            small_graph.add_node(G, intensity=Gs_intensity[I_of_G], type='G', mz=mz)
+            small_graph.add_node(G, intensity   = Gs_intensity[I_of_G],
+                                    type        = 'G',
+                                    min_mz      = Gs_min_mz[I_of_G],
+                                    max_mz      = Gs_max_mz[I_of_G]     )
             for I in I_of_G:
                 small_graph.add_edge(I, G)
-
         # zero intensity G nodes
         newGnodes = []
         newGIedges= []
         for I in small_graph:
             if small_graph.node[I]['type'] == 'I':
-                if len(small_graph[I]) == 1:
-                    I_mz = small_graph.node[I]['mz']
-                    mz = II(I_mz, I_mz)
+                if len(small_graph[I]) == 1: # only one condition
                     G = self.cnts('G')
-                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'mz':mz }) )
+                    mz = small_graph.node[I]['mz']
+                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz, 'max_mz':mz }) )
                     newGIedges.append( (G,I) )
         small_graph.add_nodes_from(newGnodes)
         small_graph.add_edges_from(newGIedges)

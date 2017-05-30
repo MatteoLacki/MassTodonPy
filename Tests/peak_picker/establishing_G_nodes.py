@@ -23,9 +23,11 @@ M = MassTodon(  fasta           = mol['fasta'],
                 mz_prec         = mz_prec,
                 modifications   = mol['modifications']  )
 
-M.read_n_preprocess_spectrum(   spectrum    = mol['spectrum'],
-                                opt_P       = opt_P     )
+# M.read_n_preprocess_spectrum(   spectrum    = mol['spectrum'],
+#                                 cut_off     = 100.0 )
 
+M.read_n_preprocess_spectrum(   spectrum    = mol['spectrum'],
+                                opt_P       = 1.00     )
 
 M.prepare_problems(min_prob_of_envelope_in_picking)
 
@@ -35,6 +37,12 @@ M.run(  solver  = 'sequential',
         max_times_solve = max_times_solve,
         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
         verbose = verbose )
+
+SFG = M.res[0]['small_graph']
+SFG.nodes(data=True)
+
+SFG.edges(data=True)
+
 
 vis_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/'
 

@@ -17,3 +17,4 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from plot import plot_spectrum, plot_deconvolution_graph
+from ResultsPlotter import ResultsPlotter
