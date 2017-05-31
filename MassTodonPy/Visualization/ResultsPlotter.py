@@ -65,7 +65,7 @@ class ResultsPlotter(object):
 
     def G_info_iter(self, full_info=False):
         '''Iterate over all information on experimental groupings G.'''
-        for r in self.BG:
+        for cluster_id, r in enumerate(self.BG):
             SG = r['SG']
             for G in SG:
                 if SG.node[G]['type'] == 'G':
@@ -75,8 +75,8 @@ class ResultsPlotter(object):
                                 'mz_R': G_D['mz_R'],
                                 'tot_estimate': G_D['estimate'],
                                 'tot_intensity':G_D['intensity'],
-                                'where': 'theoretically_achievable'
-                                }
+                                'where': 'theoretically_achievable',
+                                'cluster_id': cluster_id }
                     else:
                         for I in SG[G]:
                             for M in SG[I]:
@@ -91,4 +91,5 @@ class ResultsPlotter(object):
                                             'estimate': SG.edge[G][I]['estimate'],
                                             'tot_estimate': G_D['estimate'],
                                             'tot_intensity':G_D['intensity'],
-                                            'where': 'theoretically_achievable' }
+                                            'where': 'theoretically_achievable',
+                                            'cluster_id': cluster_id }
