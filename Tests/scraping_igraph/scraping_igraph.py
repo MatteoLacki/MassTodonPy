@@ -1,6 +1,5 @@
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
-
 from MassTodonPy.Formulator.bricks import makeBricks
 
 
@@ -26,4 +25,10 @@ M.read_n_preprocess_spectrum(
     spectrum = mol['spectrum'],
     cut_off  = cutOff  )
 
-makeBricks()
+import cPickle as pickle
+
+bricks = makeBricks()
+bricks_file = '/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/amino_acids.txt'
+
+with open(bricks_file, 'w') as f:
+    pickle.dump(bricks, f)

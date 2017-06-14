@@ -19,9 +19,17 @@
 from linearCounter import linearCounter as lCnt
 from itertools import chain
 from protonations import protonate
-from bricks import makeBricks
+import  pkg_resources
 from collections import defaultdict
 import re
+try:
+   import cPickle as pickle
+except:
+   import pickle
+
+
+data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+bricks  = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
 
 def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
@@ -59,8 +67,6 @@ def prolineBlockedFragments(fasta):
 
 def make_cz_fragments(fasta, modifications):
     '''Prepares the precursor and the c and z fragments atom counts.'''
-    bricks = makeBricks()
-
     def getBrick(aaPart, aa):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
         if countIsNegative(brick):
