@@ -1,6 +1,9 @@
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 
+from MassTodonPy.Formulator.bricks import makeBricks
+
+
 mol = substanceP.copy()
 jP  = .999
 cutOff = 100
@@ -23,16 +26,4 @@ M.read_n_preprocess_spectrum(
     spectrum = mol['spectrum'],
     cut_off  = cutOff  )
 
-M.prepare_problems(M_minProb)
-M.run(  solver  = 'sequential',
-        method  = 'MSE',
-        max_times_solve = max_times_solve,
-        L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
-        verbose = verbose )
-
-print M.summarize_results()
-
-print M.gen_ETDetective_inputs()
-print M.analyze_reactions('basic')
-print M.analyze_reactions('inter')
-print M.analyze_reactions('up_inter')
+makeBricks()

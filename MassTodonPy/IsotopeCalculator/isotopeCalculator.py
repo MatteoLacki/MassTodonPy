@@ -61,6 +61,7 @@ def merge_runs(spec1, spec2):
     return aggregate(mz, I)
 
 
+# To do: change how the IsoSpec is called to make it faster.
 class IsotopeCalculator:
     '''A class for isotope calculations.'''
 

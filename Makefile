@@ -1,20 +1,24 @@
-PATH = /Users/matteo/Documents/MassTodon/MassTodonPy/
+PATH_TO_PROJECT = /Users/matteo/Documents/MassTodon/MassTodonPy/
 PATH_VISUAL = /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/
 PATH_BOOTSTRAP = /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/
 
+
 install:
-	pip install -e $(PATH)
+	pip install -e $(PATH_TO_PROJECT)
 
 reinstall:
 	pip uninstall -y MassTodonPy
-	pip install -e $(PATH)
+	pip install -e $(PATH_TO_PROJECT)
 
 example_call:
-	python2 $(PATH)/Tests/calls/example_call.py
+	python2 $(PATH_TO_PROJECT)/Tests/calls/example_call.py
 
 compare_spectra_plots:
 	python2	$(PATH_VISUAL)sub_P_plot_data.py
 	Rscript $(PATH_VISUAL)spectrum_fitting.R
 
-run_bootstrap:
-	python2 $(PATH_BOOTSTRAP)/bootstrap_subP.py
+run_bootstrap_substance_P:
+	python2 $(PATH_BOOTSTRAP)bootstrap_subP.py
+
+run_real_substance_P:
+	python2 $(PATH_BOOTSTRAP)real_subP.py
