@@ -66,9 +66,11 @@ class czMatchMaker(object):
         return graph, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
 
     def optimize(self):
+        '''Perform the optimal pairing of c and z fragments.'''
         raise NotImplementedError
 
     def get_probs(self, Counts, Probs, tag1, tag2, name1=None, name2=None):
+        '''Make two probabilities out of counts and name them properly.'''
         if not name1:
             name1 = tag1
         if not name2:

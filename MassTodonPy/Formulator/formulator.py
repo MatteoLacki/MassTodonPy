@@ -98,7 +98,7 @@ def make_cz_fragments(fasta, modifications):
             frag_type = 'c'+str(i)
             if not frag_type in blockedFragments and not i == 0:
                 yield (frag_type, atomCnt2string(cFrag_tmp), i)
-    #
+
     def getZfrags():
         zFrag = lCnt()
         for i in range(1,N):

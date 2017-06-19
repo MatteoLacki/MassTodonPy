@@ -252,8 +252,14 @@ class MassTodon():
         return precursor, data
 
 
-    def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, min_acceptEstimIntensity = 100., verbose=False, **advanced_args):
+    def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, verbose=False, **advanced_args):
         '''Estimate reaction constants and quantities of fragments.'''
+
+        min_acceptEstimIntensity = 0.0
+            # might change it to self.spectra['cut_off']
+            # However, it might be that we actually want to have estimates below the threshold.
+            # We can neglect them later on.
+
         chosen_analyzer = {
             'basic': analyzer_basic,
             'inter': analyzer_inter,
@@ -266,6 +272,7 @@ class MassTodon():
 
 def get_args(arg_names, all_args):
     init_args = dict((x, all_args[x]) for x in all_args if x in arg_names )
+
 
 def MassTodonize(
         fasta,
@@ -325,5 +332,6 @@ def MassTodonize(
     Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
     Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
     Results['original spectrum']    = M.spectrum_iter('original')
+    Results['raw estimates']        = M.res
 
     return Results

@@ -233,7 +233,13 @@ class Deconvolutor_Max_Flow(Deconvolutor):
                     matrix( mu,         size=(self.M_No,1)  ),
                     matrix( (1.0+lam),  size=(self.G_No,1)  )   ])
 
-        setseed(randint(0,1000000)) # this is to test from different points
+        setseed(randint(0,1000000))
+            # the BLAS library performs calculations in parallel
+            # and their order depends upon the seed.
+            # It's possible to run the solver with the same input and
+            # have different outputs.
+            # Some of them have the optimal flag.
+            # So, it is a poor man's solution to numeric instability problem.
         self.sol = solvers.conelp(c=c,G=G,h=h,A=A,b=b,primalstart=x0)
         Xopt = self.sol['x']
 

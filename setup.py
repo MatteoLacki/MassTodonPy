@@ -21,7 +21,6 @@ from setuptools import setup, find_packages
 
 setup(
     name          = 'MassTodonPy',
-    # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
     packages      = find_packages(),
     version       = '0.2.4',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
