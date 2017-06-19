@@ -1,11 +1,9 @@
 import cPickle as pickle
 from MassTodonPy import MassTodon
-from MassTodonPy.Formulator import makeFormulas as makeF
-from MassTodonPy.MatchMaker import reaction_analist_basic, reaction_analist_intermediate,  reaction_analist_upper_intermediate
+from MassTodonPy.Formulator import make_formulas as makeF
 from collections import Counter
 from math import log, exp
 import numpy as np
-
 
 def change_key(seq, q, p, name):
     if name[0]=='c':
@@ -13,9 +11,12 @@ def change_key(seq, q, p, name):
     return name, q, p
 
 
-# sigma=.0; jP=.99; mzPrec=.05; precDigits=2; minProb=.7; cutOff=0.0; topPercent=1.0; max_times_solve = 10; L1_x=0.001; L2_x=0.001; L1_alpha=0.001; L2_alpha=0.001; verbose=False
+sigma=.0; jP=.99; mzPrec=.05; precDigits=2; minProb=.7; cutOff=0.0; topPercent=1.0; max_times_solve = 10; L1_x=0.001; L2_x=0.001; L1_alpha=0.001; L2_alpha=0.001; verbose=False
+
+simulation_res
+
 def getResults( simulation_res, sigma=.01, jP=.99, mzPrec=.05, precDigits=2, minProb=.7, cutOff=0.0, topPercent=1.0, max_times_solve = 10, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001, verbose=False ):
-    '''I dunwanna write no docs!'''
+
     (Q, fasta, eps, molsNo, probs), D = simulation_res
     F = dict( ( (mT, q, p), (f,bp) ) for mT,f,bp,q,p in makeF(fasta, Q, 'cz').makeMolecules(1) )
     mols    = []

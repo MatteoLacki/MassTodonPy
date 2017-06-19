@@ -5,7 +5,6 @@ PATH_BOOTSTRAP 	= $(PROJ_PATH)/Tests/bootstrap/
 
 ### Installing
 install:
-	git checkout tests
 	virtualenv ../MassTodonVE
 	$(VE_PATH)pip install -e $(PROJ_PATH)
 
