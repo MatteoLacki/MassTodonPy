@@ -1,27 +1,36 @@
-PATH_TO_PROJECT = /Users/matteo/Documents/MassTodon/MassTodonPy/
-PATH_VISUAL 	= /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/
-PATH_BOOTSTRAP 	= /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/
+PROJ_PATH = ./
+VE_PATH   = ../MassTodonVE/bin/
+PATH_VISUAL 	= $(PROJ_PATH)/Tests/visual/
+PATH_BOOTSTRAP 	= $(PROJ_PATH)/Tests/bootstrap/
 
-
+### Installing
 install:
-	pip install -e $(PATH_TO_PROJECT)
+	virtualenv ../MassTodonVE
+	$(VE_PATH)pip install -e $(PROJ_PATH)
 
 reinstall:
-	pip uninstall -y MassTodonPy
-	pip install -e $(PATH_TO_PROJECT)
+	$(VE_PATH)pip uninstall -y MassTodonPy
+	$(VE_PATH)pip install -e $(PROJ_PATH)
 
+
+### Running
 example_call:
-	python2 $(PATH_TO_PROJECT)Tests/calls/example_call.py
+	$(VE_PATH)python2 $(PROJ_PATH)Tests/calls/example_call.py
 
-compare_spectra_plots:
-	python2	$(PATH_VISUAL)sub_P_plot_data.py
+compare_spectra_plots: # Relies on Rscript
+	$(VE_PATH)python2 $(PATH_VISUAL)sub_P_plot_data.py
 	Rscript $(PATH_VISUAL)spectrum_fitting.R
 
 run_bootstrap_substance_P:
-	python2 $(PATH_BOOTSTRAP)bootstrap_subP.py
+	$(VE_PATH)python2 $(PATH_BOOTSTRAP)bootstrap_subP.py
 
 analyze_bootstrap_substance_P:
-	Rscript $(PATH_BOOTSTRAP)merge_ETnoD_PTR_plots.R
+	$(VE_PATH)Rscript $(PATH_BOOTSTRAP)merge_ETnoD_PTR_plots.R
 
 run_real_substance_P:
-	python2 $(PATH_BOOTSTRAP)real_subP.py
+	$(VE_PATH)python2 $(PATH_BOOTSTRAP)real_subP.py
+
+
+### Cleaning
+clean_ve:
+	rm -rf ../MassTodonVE

@@ -70,7 +70,6 @@ from Solver             import solve
 from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
 from Visualization      import ResultsPlotter
-
 from collections        import Counter
 from itertools          import izip
 from math               import ceil, log10
