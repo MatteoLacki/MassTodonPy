@@ -4,7 +4,11 @@ PATH_VISUAL 	= $(PROJ_PATH)/Tests/visual/
 PATH_BOOTSTRAP 	= $(PROJ_PATH)/Tests/bootstrap/
 
 ### Installing
-install:
+install_linux:
+	virtualenv -p /usr/bin/python2.7 ../MassTodonVE
+	$(VE_PATH)pip install -e $(PROJ_PATH)
+
+install_mac:
 	virtualenv ../MassTodonVE
 	$(VE_PATH)pip install -e $(PROJ_PATH)
 
