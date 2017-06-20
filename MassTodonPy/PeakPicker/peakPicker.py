@@ -22,6 +22,7 @@ from    math            import sqrt
 import  numpy           as     np
 from    collections     import Counter, defaultdict
 from    itertools       import izip
+from    time            import time
 
 inf = float('inf')
 
@@ -60,13 +61,15 @@ class PeakPicker(object):
     def __init__(   self,
                     Forms,
                     IsoCalc,
-                    mz_prec = 0.05 ):
+                    mz_prec = 0.05,
+                    verbose = False ):
         self.Forms  = Forms
         self.IsoCalc= IsoCalc
         self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.Used_Exps = set()
         self.Exp_Intervals_No = 0
+        self.verbose = verbose
 
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
@@ -74,6 +77,12 @@ class PeakPicker(object):
         prec = self.mz_prec
         Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*massSpectrum) )
         Graph= nx.Graph()
+
+        if self.verbose:
+            print
+            print 'Representing problem as a graph.'
+
+        T0 = time()
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
             I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
             M = self.cnts('M')
@@ -97,12 +106,22 @@ class PeakPicker(object):
                                         intensity   = E_intensity,
                                         type        = 'E'  )
                     Graph.add_edge(I, E_mz)
+
+        T1 = time()
+        if self.verbose:
+            print 'Finished graph representation in', T1-T0
+
         return Graph
 
 
     def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
         '''Enumerate deconvolution problems.'''
         Graph = self.represent_as_Graph(massSpectrum)
+        if self.verbose:
+            print
+            print 'Calculating subcomponents of the graph.'
+
+        T0 = time()
         for cc in nx.connected_component_subgraphs(Graph):
             if contains_experimental_peaks(cc):
                 trim_unlikely_molecules(cc, minimal_prob_per_molecule)
@@ -110,7 +129,12 @@ class PeakPicker(object):
                     if len(small_graph) > 1:
                         self.add_G_nodes(small_graph)
                         yield small_graph
+                        if self.verbose:
+                            print '\tFinished subcomponent.'
 
+        T1 = time()
+        if self.verbose:
+            print 'Finished subcomponents in', T1-T0
 
     def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.

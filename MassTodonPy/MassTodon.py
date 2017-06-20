@@ -84,14 +84,18 @@ class MassTodon():
                     joint_probability_of_envelope = 0.999,
                     iso_masses      = None,
                     iso_probs       = None,
-                    modifications   = {} ):
+                    modifications   = {},
+                    verbose         = False     ):
         '''Make MassTodon somewhat less extinct.'''
 
         self.mz_prec = mz_prec
-        # precision one digit lower than the input precision of spectra.
+            # precision one digit lower than the input precision of spectra, eg.
+            # mz_prec = .05     -->     prec_digits = 3
+            # mz_prec = .005    -->     prec_digits = 4
         self.prec_digits = int(ceil(-log10(mz_prec)))+1
         self.fasta  = fasta
         self.Q      = precursor_charge
+        self.verbose= verbose
         self.Forms  = make_formulas(
             fasta   = fasta,
             Q       = self.Q,
@@ -105,10 +109,12 @@ class MassTodon():
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
-            mz_prec = mz_prec )
+            mz_prec = mz_prec,
+            verbose = verbose )
         self.ResPlotter = ResultsPlotter(mz_prec)
         self.modifications = modifications
         self.spectra = {}
+
 
     def read_n_preprocess_spectrum(self,
             path    = None,
@@ -126,6 +132,11 @@ class MassTodon():
             prec_digits = self.prec_digits,
             cut_off = cut_off,
             opt_P   = opt_P      )
+
+        if self.verbose:
+            print
+            print 'original total intensity', self.spectra['original total intensity']
+            print 'trimmed total intensity', self.spectra['trimmed total intensity']
 
     def spectrum_iter(self, spectrum_type):
         assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
@@ -146,7 +157,8 @@ class MassTodon():
                             args   = args,
                             solver = solver,
                             method = method,
-                            max_times_solve = max_times_solve )
+                            max_times_solve = max_times_solve,
+                            verbose= self.verbose   )
 
         self.ResPlotter.add_mz_ranges_to_results(self.res)
 

@@ -3,6 +3,7 @@ import  os
 import  pandas as pd
 from    collections import Counter
 import  json
+
 directory = '/Users/matteo/Documents/MassTodon/in_silico_results/masstodon_insilico/'
 
 probs = [   0.99999943,  0.99919849,  0.98831003,  0.95667342,  0.90814916,
@@ -26,6 +27,11 @@ for filename in os.listdir(directory):
 sigmas = list(sigmas)
 sigmas.sort()
 Sigma2Prob = dict((sigma, 1.0 - prob) for sigma, prob in zip(sigmas, probs))
+
+path2 = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico/data/sigmas_probs.json'
+with open(path2, 'w') as fp:
+    json.dump(Sigma2Prob.items(), fp)
+
 
 def iter_res(directory):
     res = []

@@ -15,13 +15,17 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-from MassTodonPy.Deconvolutor import deconvolve
+from    MassTodonPy.Deconvolutor import deconvolve
+from    time  import time
 
 class Solver(object):
-    def __init__(self, problemsGenerator):
+    def __init__(self, problemsGenerator, verbose=False):
         self.prob_gen = problemsGenerator
+        self.verbose  = verbose
+
     def run(self, args, method='MSE', max_times_solve=5):
         raise NotImplementedError
+
 
 
 class SequentialSolver(Solver):
@@ -30,6 +34,8 @@ class SequentialSolver(Solver):
         for SG in self.prob_gen:
             i = 0
             stop = False
+            T0 = time()
+
             while not stop:
                 res = deconvolve(   SG      = SG,
                                     args    = args,
@@ -41,6 +47,11 @@ class SequentialSolver(Solver):
                     stop = True
                     print 'Deconvolution proved non optimal', max_times_solve, 'times'
             results.append(res)
+
+            T1 = time()
+            if self.verbose:
+                print
+                print 'Solved problem no', i, 'out of ? problems in ', T1-T0
         return results
 
 
@@ -50,12 +61,17 @@ class MultiprocessingSolver(Solver):
         raise NotImplementedError
 
 
-def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_solve=5):
+
+def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_solve=5, verbose=False):
+    '''Wrapper over the solver class.
+
+    Runs the solver with a given set of inputs.'''
+
     solver = {
         'sequential':   SequentialSolver,
         'MaxFlow':      MultiprocessingSolver
-    }[solver](problemsGenerator)
+    }[solver](problemsGenerator, verbose)
     res = solver.run(args   = args,
                      method = method,
-                     max_times_solve = max_times_solve )
+                     max_times_solve = max_times_solve)
     return res

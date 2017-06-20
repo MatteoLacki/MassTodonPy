@@ -181,7 +181,7 @@ class IsotopeCalculator:
                     m_over_z = np.round(normal(loc=m_average, scale=sigma, size=cnt), prec_digits)
                     spectrum.update(m_over_z)
 
-            spectrum = np.array(spectrum.keys()), np.array([ spectrum[k] for k in spectrum ])
+            spectrum = np.array(spectrum.keys()), np.array([ float(spectrum[k]) for k in spectrum ])
         else:
             spectrum = (mz_average, counts)
         return spectrum
