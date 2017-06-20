@@ -17,6 +17,8 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from    MassTodonPy.Deconvolutor import deconvolve
 from    time  import time
+from    multiprocessing import Pool
+from    itertools import repeat, izip
 
 class Solver(object):
     def __init__(self, problemsGenerator, verbose=False):
@@ -60,11 +62,33 @@ class SequentialSolver(Solver):
         return results
 
 
-#TODO: add multiprocessing
-class MultiprocessingSolver(Solver):
-    def run(self, args, method='MSE'):
-        raise NotImplementedError
+def helper(helper_args):
+    SG, args, method, verbose = helper_args
+    T0 = time()
+    res = deconvolve(   SG      = SG,
+                        args    = args,
+                        method  = method )
+    if res['status'] != 'optimal':
+        print 'Deconvolution proved non optimal',
+    T1 = time()
+    if verbose:
+        print
+        print 'Solved problem no', i, 'out of ? problems in ', T1-T0
+    return res
 
+
+class MultiprocessingSolver(Solver):
+    def run(self, args, method, max_times_solve=5):
+        P = Pool()
+        results = P.map(
+            helper,
+            izip(self.prob_gen,
+                 repeat(args),
+                 repeat(method),
+                 repeat(self.verbose) ) )
+        P.close()
+        P.join()
+        return results
 
 
 def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_solve=5, verbose=False):
@@ -73,8 +97,8 @@ def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_
     Runs the solver with a given set of inputs.'''
 
     solver = {
-        'sequential':   SequentialSolver,
-        'MaxFlow':      MultiprocessingSolver
+        'sequential':       SequentialSolver,
+        'multiprocessing':  MultiprocessingSolver
     }[solver](problemsGenerator, verbose)
     res = solver.run(args   = args,
                      method = method,

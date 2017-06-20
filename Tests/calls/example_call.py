@@ -17,7 +17,8 @@ topPercent = .999
 M_minProb  = .7
 max_times_solve = 10
 L1_x = L2_x = L1_alpha = L2_alpha = .001
-solver  = 'sequential'
+# solver  = 'sequential'
+solver  = 'multiprocessing'
 method  = 'MSE'
 verbose = True
 
@@ -34,8 +35,8 @@ M.read_n_preprocess_spectrum(
 
 M.prepare_problems(M_minProb)
 
-M.run(  solver  = 'sequential',
-        method  = 'MSE',
+M.run(  solver  = solver,
+        method  = method,
         max_times_solve = max_times_solve,
         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha)
 
