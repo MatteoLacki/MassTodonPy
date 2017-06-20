@@ -73,7 +73,7 @@ def helper(helper_args):
     T1 = time()
     if verbose:
         print
-        print 'Solved problem , T1-T0
+        print 'Solved problem' , T1-T0
     return res
 
 
