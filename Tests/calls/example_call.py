@@ -1,6 +1,12 @@
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 
+
+import os
+
+old = os.environ.get('OMP_NUM_THREADS', None)
+os.environ['OMP_NUM_THREADS'] = "1"
+
 # mol = substanceP.copy()
 mol = ubiquitin.copy()
 
@@ -39,3 +45,8 @@ print M.gen_ETDetective_inputs()
 print M.analyze_reactions('basic')
 print M.analyze_reactions('inter')
 print M.analyze_reactions('up_inter')
+
+if old:
+    os.environ['OMP_NUM_THREADS'] = old
+else:
+    del os.environ['OMP_NUM_THREADS']

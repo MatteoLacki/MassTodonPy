@@ -37,9 +37,14 @@ class SequentialSolver(Solver):
             T0 = time()
 
             while not stop:
+                T00 = time()
                 res = deconvolve(   SG      = SG,
                                     args    = args,
                                     method  = method)
+                T01 = time()
+                if self.verbose:
+                    print 'CVXOPT call lasted', T01-T00
+
                 i += 1
                 if res['status'] == 'optimal':
                     stop = True
