@@ -131,7 +131,6 @@ class PeakPicker(object):
                         yield small_graph
                         if self.verbose:
                             print '\tFinished subcomponent.'
-
         T1 = time()
         if self.verbose:
             print 'Finished subcomponents in', T1-T0

@@ -18,7 +18,7 @@
 from    MassTodonPy.Deconvolutor import deconvolve
 from    time  import time
 from    multiprocessing import Pool
-from    itertools import repeat, izip
+from    itertools import repeat
 
 class Solver(object):
     def __init__(self, problemsGenerator, verbose=False):
@@ -73,19 +73,19 @@ def helper(helper_args):
     T1 = time()
     if verbose:
         print
-        print 'Solved problem no', i, 'out of ? problems in ', T1-T0
+        print 'Solved problem , T1-T0
     return res
 
 
 class MultiprocessingSolver(Solver):
     def run(self, args, method, max_times_solve=5):
+        pool_args = zip(    self.prob_gen,
+                            repeat(args),
+                            repeat(method),
+                            repeat(self.verbose) )
         P = Pool()
-        results = P.map(
-            helper,
-            izip(self.prob_gen,
-                 repeat(args),
-                 repeat(method),
-                 repeat(self.verbose) ) )
+        results = P.map(    helper,
+                            pool_args    )
         P.close()
         P.join()
         return results
