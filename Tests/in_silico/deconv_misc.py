@@ -7,8 +7,7 @@ def change_key(seq, q, p, name):
     return name, q, p
 
 
-
-with open('data/sigmas_probs.json', 'r') as f:
+with open('/data/sigmas_probs.json', 'r') as f:
     s2p = json.load(f)
 
 sigmas2probs = dict(s2p)
