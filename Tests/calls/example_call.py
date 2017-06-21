@@ -11,8 +11,8 @@ from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from    time  import time
 
-mol = substanceP.copy()
-# mol = ubiquitin.copy()
+# mol = substanceP.copy()
+mol = ubiquitin.copy()
 
 jP = .999
 cutOff = 100
