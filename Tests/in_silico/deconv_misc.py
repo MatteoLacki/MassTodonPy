@@ -11,7 +11,7 @@ def change_key(seq, q, p, name):
 # with open(storagePath) as data_file:
 #     data = json.load(data_file)
 
-with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico/data/sigmas_probs.json', 'r') as f:
+with open('data/sigmas_probs.json', 'r') as f:
     s2p = json.load(f)
 
 sigmas2probs = dict(s2p)
