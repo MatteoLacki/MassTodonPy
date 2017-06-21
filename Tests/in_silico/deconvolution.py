@@ -78,7 +78,9 @@ def getResults( simulation_res,
     masstodon_res['probs'] = probs
     return masstodon_res
 
-fp_main= sys.argv[1]
+
+print sys.argv
+fp_main = sys.argv[1]
 multiprocesses_No = int(sys.argv[2])
 
 with open(fp_main+'/data/sigmas_probs.json', 'r') as f:
