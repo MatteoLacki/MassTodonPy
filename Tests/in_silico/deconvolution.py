@@ -11,9 +11,9 @@ fp_in   = fp_main+'/results_Ciach/'
 fp_out  = fp_main+'/results_Matteo/'
 
 molsNo = 100000
-alpha  = 0.0247457627119
-
-
+verbose= True
+solver = 'sequential'
+# solver = 'multiprocessing'
 
 sigma = sigmas[0]
 
@@ -38,12 +38,14 @@ RD = dict( ((mT, f, q, g), I) for (mT, f, bp, q, g), I in zip(mols, quants) )
 
 M = MassTodon(  fasta           = fasta,
                 precursor_charge= Q,
-                mz_prec         = .05   )
-
-
+                mz_prec         = .05 )
 
 
 spectrum = M.IsoCalc.makeRandomSpectrum(mols, quants, sigma, prec_digits=2)
+M.read_n_preprocess_spectrum(
+    spectrum = spectrum,
+    opt_P    = 0.99  )
+M.spectra
 
 M.read_n_preprocess_spectrum(   spectrum  = spectrum,
                                 opt_P     = .99 )
@@ -53,4 +55,9 @@ masstodon_res = MassTodonize(   fasta           = fasta,
                                 precursor_charge= Q,
                                 mz_prec         = .05,
                                 spectrum        = spectrum,
-                                opt_P           = 0.99       )
+                                opt_P           = 0.99,
+                                verbose         = verbose       )
+
+masstodon_res.keys()
+
+masstodon_res['summary']

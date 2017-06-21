@@ -141,8 +141,10 @@ class MassTodon():
 
         if self.verbose:
             print
-            print 'original total intensity', self.spectra['original total intensity']
-            print 'trimmed total intensity', self.spectra['trimmed total intensity']
+            print 'original total intensity',   self.spectra['original total intensity']
+            print 'total intensity after trim', self.spectra['total intensity after trim']
+            print 'trimmed intensity', self.spectra['trimmed intensity']
+            print
 
     def spectrum_iter(self, spectrum_type):
         assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
@@ -186,17 +188,42 @@ class MassTodon():
     def summarize_results(self):
         '''Summarize the results of MassTodon.'''
         summary = Counter()
+
+        used_E_total_intensity = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
+
+        # the intensity of peaks outside any graph
+        unused_E_total_intensity = self.spectra['trimmed intensity']+self.spectra['total intensity after trim'] - used_E_total_intensity
+
+        trimmed_intensity = self.spectra['trimmed intensity']
+
         for r in self.res:
             summary['L1_error'] += r['L1_error']
-            summary['L2_error'] += r['L2_error']
+            # summary['L2_error'] += r['L2_error']
             summary['underestimates']+= r['underestimates']
             summary['overestimates'] += r['overestimates']
-        summary['L1_error/original_total_intensity']= summary['L1_error']/self.spectra['original total intensity']
-        summary['L2_error/original_total_intensity']= summary['L2_error']/self.spectra['original total intensity']
-        summary['L1_error/trimmed_total_intensity'] = summary['L1_error']/self.spectra['trimmed total intensity']
-        summary['L2_error/trimmed_total_intensity'] = summary['L2_error']/self.spectra['trimmed total intensity']
-        summary['underestimates/trimmed_total_intensity'] = summary['underestimates']/self.spectra['trimmed total intensity']
-        summary['overestimates/trimmed_total_intensity'] = summary['overestimates']/self.spectra['trimmed total intensity']
+
+            if r['status'] != 'optimal':
+                summary['L1_error_nonoptimal'] += r['L1_error']
+                # summary['L2_error_nonoptimal'] += r['L2_error']
+                summary['underestimates_nonoptimal']+= r['underestimates']
+                summary['overestimates_nonoptimal'] += r['overestimates']
+
+
+        if self.spectra['original total intensity'] > 0.0:
+            summary['L1_error/original_total_intensity']= (summary['L1_error']+unused_E_total_intensity)/self.spectra['original total intensity']
+            # summary['L2_error/original_total_intensity']= (summary['L2_error']+unused_E_total_intensity)/self.spectra['original total intensity']
+
+        if self.spectra['total intensity after trim'] > 0.0:
+            summary['L1_error/total_intensity_after_trim'] = (summary['L1_error']+trimmed_intensity)/self.spectra['total intensity after trim']
+            # summary['L2_error/total_intensity_after_trim'] = (summary['L2_error']+trimmed_intensity)/self.spectra['total intensity after trim']
+
+        if used_E_total_intensity > 0.0:
+            summary['L1_error_on_scooped_mz/used_E_total_intensity'] = summary['L1_error']/used_E_total_intensity
+
+            summary['underestimates/total_intensity_after_trim'] = summary['underestimates']/used_E_total_intensity
+
+            summary['overestimates/total_intensity_after_trim'] = summary['overestimates']/used_E_total_intensity
+
         return summary
 
 

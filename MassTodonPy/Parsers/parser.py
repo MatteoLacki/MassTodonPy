@@ -134,6 +134,8 @@ def read_n_preprocess_spectrum( path    = None,
     else:
         spectra['trimmed'], cut_off = quantile_trim( *spectrum, perc = opt_P)
 
-    spectra['trimmed total intensity'] = spectra['trimmed'][1].sum()
+    spectra['total intensity after trim'] = spectra['trimmed'][1].sum()
+    spectra['trimmed intensity'] = spectra['original total intensity'] - spectra['total intensity after trim']
     spectra['cut_off'] = cut_off
+
     return spectra

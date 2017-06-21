@@ -112,6 +112,7 @@ class PeakPicker(object):
                                         intensity   = E_intensity,
                                         type        = 'E'  )
                         stats['E No'] += 1
+                        stats['total intensity of experimental peaks paired with isotopologues'] += E_intensity
                     Graph.add_edge(I, E_mz)
                     stats['E-I No'] += 1
             stats['M No'] += 1

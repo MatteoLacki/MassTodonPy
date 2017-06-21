@@ -11,8 +11,8 @@ from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from    time  import time
 
-# mol = substanceP.copy()
-mol = ubiquitin.copy()
+mol = substanceP.copy()
+# mol = ubiquitin.copy()
 
 jP  = .999
 cutOff = 100
@@ -20,8 +20,8 @@ mzPrec = .05
 M_minProb  = .7
 max_times_solve = 10
 L1_x = L2_x = L1_alpha = L2_alpha = .001
-# solver  = 'sequential'
-solver  = 'multiprocessing'
+solver  = 'sequential'
+# solver  = 'multiprocessing'
 method  = 'MSE'
 verbose = True
 
@@ -51,7 +51,7 @@ print
 print 'Total Time', T1-T0
 print
 
-# print M.summarize_results()
+print M.summarize_results()
 # print M.gen_ETDetective_inputs()
 # print M.analyze_reactions('basic')
 # print M.analyze_reactions('inter')

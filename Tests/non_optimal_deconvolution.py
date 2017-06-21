@@ -45,13 +45,3 @@ M.run(  solver  = solver,
         max_times_solve = max_times_solve,
         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha)
 T1 = time()
-
-
-
-len(M.res)
-from collections import Counter
-
-
-
-for r in M.res:
-    print r['status']
