@@ -68,7 +68,7 @@ from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import read_n_preprocess_spectrum
-from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_inter, czMatchMakerUpperIntermediate as analyzer_up_inter
+from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_intermediate, czMatchMakerAdvanced as analyzer_advanced
 from Visualization      import ResultsPlotter
 from collections        import Counter
 from itertools          import izip
@@ -305,9 +305,9 @@ class MassTodon():
             # We can neglect them later on.
 
         chosen_analyzer = {
-            'basic': analyzer_basic,
-            'inter': analyzer_inter,
-            'up_inter': analyzer_up_inter
+            'basic':    analyzer_basic,
+            'intermediate':    analyzer_intermediate,
+            'advanced': analyzer_advanced
         }[analyzer](self.res, self.Q, self.fasta,
                     accept_nonOptimalDeconv,
                     min_acceptEstimIntensity, verbose )
@@ -370,10 +370,11 @@ def MassTodonize(
             verbose = verbose)
 
     Results = {}
+
     Results['summary'] = M.summarize_results()
-    Results['basic analysis'] = M.analyze_reactions('basic')
-    Results['intermediate analysis'] = M.analyze_reactions('inter')
-    Results['upper intermediate analysis'] = M.analyze_reactions('up_inter')
+    Results['basic analysis']       = M.analyze_reactions('basic')
+    Results['intermediate analysis']= M.analyze_reactions('intermediate')
+    Results['advanced analysis']    = M.analyze_reactions('advanced')
     Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
     Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
     Results['original spectrum']    = M.spectrum_iter('original')

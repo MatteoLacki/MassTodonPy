@@ -144,8 +144,8 @@ class PeakPicker(object):
                         yield small_graph
         T1 = time()
         if self.verbose:
-            print 'G nodes added in', self.G_stats
-            print 'This is simply', sum(self.G_stats)
+            print 'G nodes added in totally', sum(self.G_stats)
+            print
 
     def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.

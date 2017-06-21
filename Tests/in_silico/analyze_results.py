@@ -23,9 +23,8 @@ def get_correlation_and_L1_error(R):
     return corr, L1error
 
 def analyze(res):
-    for ((Q, fasta, eps, molsNo, probs), D),(R, FE, RFE, ra_res, res_tmp, simulation_res, spectrum) in res:
+    for ((Q, fasta, eps, molsNo, (PTR, ETnoD, ETD)), D),(R, FE, RFE, ra_res, res_tmp, simulation_res, spectrum) in res:
         corr, L1_error = get_correlation_and_L1_error(R)
-        PTR, ETnoD, ETD= probs
         yield {'Q':Q,'eps':eps,'molsNo':molsNo,'PTR':PTR,'ETnoD':ETnoD,'ETD':ETD,'FE':FE,'RFE':RFE, 'corr':corr, 'L1':L1_error}
 
 analyzed = pd.DataFrame(analyze(res))
@@ -36,12 +35,11 @@ analyzed.to_csv(path_or_buf=fp_out+'analyzed_'+str(molsNo)+'.csv', index=False)
 def re_estimate_probs(res):
     i = 0
     Res = []
-    for ((Q, fasta, eps, molsNo, probs), D),(R, FE, RFE, ra_res, res_tmp, simulation_res, spectrum) in res:
+    for ((Q, fasta, eps, molsNo, (PTR, ETnoD, ETD)), D),(R, FE, RFE, ra_res, res_tmp, simulation_res, spectrum) in res:
         di, mo = divmod(i,20)
         if mo==0:
             print i
         ra_res = {}
-        PTR, ETnoD, ETD= probs
         try:
             ra_res['up_int']= reaction_analist_upper_intermediate(res_tmp, Q, fasta, 0.0) #last arg: minimal_estimated_intensity
         except:
