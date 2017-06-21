@@ -28,6 +28,7 @@ from    numpy.random   import multinomial, normal
 import  scipy.stats  as ss
 import  numpy        as np
 import  pkg_resources
+from    time import time
 
 def cdata2numpyarray(x):
     '''Turn c-data into a numpy array.'''
@@ -69,7 +70,8 @@ class IsotopeCalculator:
                     jP = .999,
                     prec_digits = 2,
                     iso_masses = None,
-                    iso_probs  = None  ):
+                    iso_probs  = None,
+                    verbose    = False     ):
         '''Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations.'''
 
         if iso_masses==None or iso_probs==None:
@@ -87,7 +89,8 @@ class IsotopeCalculator:
         self.isotopicEnvelopes = {}
         self.prec_digits = prec_digits
         self.formParser = formulaParser()
-
+        self.verbose = verbose
+        self.stats = Counter()
 
     def getMonoisotopicMass(self, atomCnt):
         '''Calculate monoisotopic mass of an atom count.'''
@@ -117,6 +120,7 @@ class IsotopeCalculator:
 
 
     def getNewEnvelope(self, atomCnt_str, jP, prec_digits):
+        T0 = time()
         counts          = []
         isotope_masses  = []
         isotope_probs   = []
@@ -130,8 +134,10 @@ class IsotopeCalculator:
         masses  = cdata2numpyarray(masses)
         probs   = np.exp(cdata2numpyarray(logprobs))
         masses, probs = agg_spec_proper(masses, probs, prec_digits)
-        # memoization
+        # memoization#TODO get rid of it when IsoSpec using stats convolution
         self.isotopicEnvelopes[ (atomCnt_str, jP, prec_digits) ] = ( masses, probs )
+        T1 = time()
+        self.stats['Envelopes Generation Total T'] += T1-T0
         return masses.copy(), probs.copy()
 
 

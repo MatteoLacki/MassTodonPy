@@ -46,18 +46,12 @@ M.run(  solver  = solver,
         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha)
 T1 = time()
 
-print 'Envelopes Generation', M.IsoCalc.stats['Envelopes Generation Total T']
-print
-print 'Total Time', T1-T0
-print
 
-# print M.summarize_results()
-# print M.gen_ETDetective_inputs()
-# print M.analyze_reactions('basic')
-# print M.analyze_reactions('inter')
-# print M.analyze_reactions('up_inter')
 
-if old:
-    os.environ['OMP_NUM_THREADS'] = old
-else:
-    del os.environ['OMP_NUM_THREADS']
+len(M.res)
+from collections import Counter
+
+
+
+for r in M.res:
+    print r['status']

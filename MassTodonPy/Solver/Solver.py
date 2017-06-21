@@ -19,15 +19,16 @@ from    MassTodonPy.Deconvolutor import deconvolve
 from    time  import time
 from    multiprocessing import Pool
 from    itertools import repeat
+from    collections import Counter
 
 class Solver(object):
     def __init__(self, problemsGenerator, verbose=False):
         self.prob_gen = problemsGenerator
         self.verbose  = verbose
+        self.stats    = Counter()
 
     def run(self, args, method='MSE', max_times_solve=5):
         raise NotImplementedError
-
 
 
 class SequentialSolver(Solver):
@@ -54,11 +55,13 @@ class SequentialSolver(Solver):
                     stop = True
                     print 'Deconvolution proved non optimal', max_times_solve, 'times'
             results.append(res)
-
             T1 = time()
+
             if self.verbose:
+                print 'Solved problem in', T1-T0, 'It was big as', len(SG)
                 print
-                print 'Solved problem no', i, 'out of ? problems in ', T1-T0
+                self.stats['Deconvolution Total T'] = T1-T0
+
         return results
 
 
@@ -73,13 +76,21 @@ def helper(helper_args):
     T1 = time()
     if verbose:
         print
-        print 'Solved problem' , T1-T0
+        print 'Solved problem in' , T1-T0, 'It was big as', len(SG)
     return res
 
 
 class MultiprocessingSolver(Solver):
     def run(self, args, method, max_times_solve=5):
-        pool_args = zip(    self.prob_gen,
+        T0 = time()
+
+            #TODO make this multiprocessed too.
+        problems = list(self.prob_gen)
+
+            #Start solving bigger, i.e. graphs with more nodes, problems first
+        problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
+
+        pool_args = zip(    problems,
                             repeat(args),
                             repeat(method),
                             repeat(self.verbose) )
@@ -88,6 +99,13 @@ class MultiprocessingSolver(Solver):
                             pool_args    )
         P.close()
         P.join()
+        T1 = time()
+
+        if self.verbose:
+            print 'Solved problem in', T1-T0
+            print
+            self.stats['Deconvolution Total T'] = T1-T0
+
         return results
 
 
@@ -96,11 +114,11 @@ def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_
 
     Runs the solver with a given set of inputs.'''
 
-    solver = {
-        'sequential':       SequentialSolver,
-        'multiprocessing':  MultiprocessingSolver
+    solver = {  'sequential':       SequentialSolver,
+                'multiprocessing':  MultiprocessingSolver
     }[solver](problemsGenerator, verbose)
-    res = solver.run(args   = args,
-                     method = method,
-                     max_times_solve = max_times_solve)
+
+    res = solver.run(   args   = args,
+                        method = method,
+                        max_times_solve = max_times_solve   )
     return res

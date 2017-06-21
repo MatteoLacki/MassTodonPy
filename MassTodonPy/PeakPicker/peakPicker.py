@@ -68,15 +68,20 @@ class PeakPicker(object):
         self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.Used_Exps = set()
-        self.Exp_Intervals_No = 0
-        self.verbose = verbose
+        self.verbose= verbose
+        self.stats  = None
+        self.G_stats= []
 
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
 
         prec = self.mz_prec
         Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*massSpectrum) )
-        Graph= nx.Graph()
+            #TODO eliminate the above using binary search solo
+        Graph = nx.Graph()
+        stats = Counter()
+        no_exp_per_iso = Counter()
+
 
         if self.verbose:
             print
@@ -85,6 +90,7 @@ class PeakPicker(object):
         T0 = time()
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
             I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
+            stats['I No'] += len(I_mzs)
             M = self.cnts('M')
             Graph.add_node(M,  formula  = M_formula,
                                type     ='M',
@@ -97,30 +103,35 @@ class PeakPicker(object):
                                    intensity = I_intensity,
                                    type = 'I'   )
                 Graph.add_edge(M, I)
-                self.Exp_Intervals_No += len(Exps[I_mz])
                 for E_interval in Exps[I_mz]:
+                    no_exp_per_iso[len(Exps[I_mz])] += 1
                     E_mz, E_intensity = E_interval.data
                     self.Used_Exps.add( E_interval.data )
                     if not E_mz in Graph:
                         Graph.add_node( E_mz,
                                         intensity   = E_intensity,
                                         type        = 'E'  )
+                        stats['E No'] += 1
                     Graph.add_edge(I, E_mz)
-
+                    stats['E-I No'] += 1
+            stats['M No'] += 1
         T1 = time()
-        if self.verbose:
-            print 'Finished graph representation in', T1-T0
+        stats['graph construction T'] = T1 - T0
 
+        if self.verbose:
+            print '\tFinished graph representation in',   stats['graph construction T']
+            print '\tIsotopologues number was',            stats['I No']
+            print '\tEnvelopes number was',                stats['M No']
+            print '\tExperimental peaks was',              stats['E No']
+            print '\tEdges between experimental peaks and isotopologues', stats['E-I No']
+            print
+            self.stats = stats
         return Graph
 
 
     def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
         '''Enumerate deconvolution problems.'''
         Graph = self.represent_as_Graph(massSpectrum)
-        if self.verbose:
-            print
-            print 'Calculating subcomponents of the graph.'
-
         T0 = time()
         for cc in nx.connected_component_subgraphs(Graph):
             if contains_experimental_peaks(cc):
@@ -129,16 +140,17 @@ class PeakPicker(object):
                     if len(small_graph) > 1:
                         self.add_G_nodes(small_graph)
                         yield small_graph
-                        if self.verbose:
-                            print '\tFinished subcomponent.'
         T1 = time()
         if self.verbose:
-            print 'Finished subcomponents in', T1-T0
+            print 'G nodes added in', self.G_stats
+            print 'This is simply', sum(self.G_stats)
 
     def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.
 
         This is done without any loss in resolution, but surely in a silly way.'''
+
+        T0 = time()
         E_to_remove = []
         Gs_intensity= Counter()
         Gs_min_mz = defaultdict(lambda: inf)
@@ -172,3 +184,6 @@ class PeakPicker(object):
                     newGIedges.append( (G,I) )
         small_graph.add_nodes_from(newGnodes)
         small_graph.add_edges_from(newGIedges)
+        T1 = time()
+        if self.verbose:
+            self.G_stats.append(T1-T0)

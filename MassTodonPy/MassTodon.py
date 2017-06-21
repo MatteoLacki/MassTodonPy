@@ -92,25 +92,31 @@ class MassTodon():
             # precision one digit lower than the input precision of spectra, eg.
             # mz_prec = .05     -->     prec_digits = 3
             # mz_prec = .005    -->     prec_digits = 4
-        self.prec_digits = int(ceil(-log10(mz_prec)))+1
+        # self.prec_digits = int(ceil(-log10(mz_prec)))+1
+        self.prec_digits = int(ceil(-log10(mz_prec)))
         self.fasta  = fasta
         self.Q      = precursor_charge
         self.verbose= verbose
+
         self.Forms  = make_formulas(
             fasta   = fasta,
             Q       = self.Q,
             frag_type     = frag_type,
             modifications = modifications )
+
         self.IsoCalc = IsotopeCalculator(
             jP          = joint_probability_of_envelope,
             prec_digits = self.prec_digits,
             iso_masses  = iso_masses,
-            iso_probs   = iso_probs )
+            iso_probs   = iso_probs,
+            verbose     = verbose   )
+
         self.peakPicker = PeakPicker(
             Forms   = self.Forms,
             IsoCalc = self.IsoCalc,
             mz_prec = mz_prec,
-            verbose = verbose )
+            verbose = verbose   )
+
         self.ResPlotter = ResultsPlotter(mz_prec)
         self.modifications = modifications
         self.spectra = {}
