@@ -86,7 +86,7 @@ fp_in  = fp_main+'/results_Ciach'
 fp_out = fp_main+'/results_Matteo'
 
 
-with open(fp_main'/data/sigmas_probs.json', 'r') as f:
+with open(fp_main+'/data/sigmas_probs.json', 'r') as f:
     s2p = json.load(f)
 
 sigmas2probs = dict(s2p)
