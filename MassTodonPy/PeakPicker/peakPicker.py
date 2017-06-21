@@ -126,7 +126,8 @@ class PeakPicker(object):
             print '\tExperimental peaks was',              stats['E No']
             print '\tEdges between experimental peaks and isotopologues', stats['E-I No']
             print
-            self.stats = stats
+
+        self.stats = stats
         return Graph
 
 
@@ -186,5 +187,4 @@ class PeakPicker(object):
         small_graph.add_nodes_from(newGnodes)
         small_graph.add_edges_from(newGIedges)
         T1 = time()
-        if self.verbose:
-            self.G_stats.append(T1-T0)
+        self.G_stats.append(T1-T0)

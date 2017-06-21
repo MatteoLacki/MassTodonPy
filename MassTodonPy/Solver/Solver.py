@@ -56,11 +56,12 @@ class SequentialSolver(Solver):
                     print 'Deconvolution proved non optimal', max_times_solve, 'times'
             results.append(res)
             T1 = time()
+            self.stats['Deconvolution Total T'] = T1-T0
 
             if self.verbose:
                 print 'Solved problem in', T1-T0, 'It was big as', len(SG)
                 print
-                self.stats['Deconvolution Total T'] = T1-T0
+
 
         return results
 
@@ -75,8 +76,8 @@ def helper(helper_args):
         print 'Deconvolution proved non optimal',
     T1 = time()
     if verbose:
-        print
         print 'Solved problem in' , T1-T0, 'It was big as', len(SG)
+
     return res
 
 
@@ -100,11 +101,11 @@ class MultiprocessingSolver(Solver):
         P.close()
         P.join()
         T1 = time()
+        self.stats['Deconvolution Total T'] = T1-T0
 
         if self.verbose:
             print 'Solved problem in', T1-T0
             print
-            self.stats['Deconvolution Total T'] = T1-T0
 
         return results
 

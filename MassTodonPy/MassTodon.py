@@ -350,7 +350,8 @@ def MassTodonize(
                     joint_probability_of_envelope,
                     iso_masses,
                     iso_probs,
-                    modifications)
+                    modifications,
+                    verbose )
 
     M.read_n_preprocess_spectrum(   spectrum_path,
                                     spectrum,
