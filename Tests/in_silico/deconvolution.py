@@ -1,28 +1,28 @@
-from deconv_misc import change_key, sigmas2probs, probs2sigmas
-from MassTodonPy import MassTodon, MassTodonize
-from MassTodonPy.Formulator import make_formulas
-import cPickle as pickle
-from collections import Counter
-from math import sqrt
+from    deconv_misc import change_key, sigmas2probs, probs2sigmas
+from    MassTodonPy import MassTodon, MassTodonize
+from    MassTodonPy.Formulator import make_formulas
+import  cPickle as pickle
+from    collections import Counter
+from    math import sqrt
+import  sys
+from    multiprocessing import Pool
+from    itertools import repeat, product
 
-sigmas = [probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629)]
-
-fp_main = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico'
-fp_in   = fp_main+'/results_Ciach/'
-fp_out  = fp_main+'/results_Matteo/'
-
-molsNo = 100000
+# sigmas = [probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629)]
+# fp_main = sys.argv[1]
+# fp_in   = fp_main+'/results_Ciach/'
+# fp_out  = fp_main+'/results_Matteo/'
 # verbose= False
 # solver = 'sequential' # solver = 'multiprocessing'
 # sigma = sigmas[0]
-
-with open(fp_in+'results_molsNo-'+str(molsNo), "rb") as f:
-    ciachator_res = pickle.load(f)
-
+# molsNo = 100000
+# with open(fp_in+'results_molsNo-'+str(molsNo), "rb") as f:
+#     ciachator_res = pickle.load(f)
 # simulation_res = ciachator_res[0]
 # solver='sequential'
 # verbose=True
 def getResults( simulation_res,
+                sigma,
                 solver='sequential',
                 verbose=False             ):
     '''Run MassTodon on Ciachator simulated spectra.'''
@@ -76,3 +76,43 @@ def getResults( simulation_res,
     masstodon_res['deconvolution fit errors']   = fit_errors
     masstodon_res['probs'] = probs
     return masstodon_res
+
+
+sigmas = [probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629)]
+# fp_main= sys.argv[1]
+# multiprocesses_No = int(sys.argv[2])
+multiprocesses_No = 3
+fp_main='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico'
+fp_in  = fp_main+'/results_Ciach/'
+fp_out = fp_main+'/results_Matteo/'
+
+simulated_datasets = []
+for molsNo in (1000, 10000, 100000):
+    with open(fp_in+'results_molsNo-'+str(molsNo), "rb") as f:
+        res = pickle.load(f)
+    for r in res:
+        simulated_datasets.append((r, molsNo))
+
+
+def helper(helper_args):
+    ((simulation_res, molsNo), sigma), fp_out = helper_args
+    OK = True
+    try:
+        res = getResults(   simulation_res = simulation_res,
+                            sigma = sigma,
+                            solver= 'sequential',
+                            verbose= False          )
+
+        with open(fp_out+'results_molsNo-'+str(molsNo), 'wb') as handle:
+            pickle.dump(res, handle)
+        print 'Finished with', molsNo
+    except:
+        OK = False
+    return OK
+
+P = Pool(multiprocesses_No)
+results = P.map(
+    helper,
+    zip( product(simulated_datasets, sigmas), repeat(fp_out) )  )
+P.close()
+P.join()
