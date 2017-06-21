@@ -1,4 +1,4 @@
-from    deconv_misc import change_key, sigmas2probs, probs2sigmas
+from    deconv_misc import change_key
 from    MassTodonPy import MassTodon, MassTodonize
 from    MassTodonPy.Formulator import make_formulas
 import  cPickle as pickle
