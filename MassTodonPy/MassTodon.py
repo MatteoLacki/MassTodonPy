@@ -159,11 +159,17 @@ class MassTodon():
 
         #TODO: add multiprocessing: turn of BLAS asynchronic calculations
         #TODO: make a more sensible use of sequentiality
-    def run(self, solver='sequential', method='MSE', max_times_solve=5, **args):
+    def run(self,
+            solver              = 'sequential',
+            multiprocesses_No   = None,
+            method              ='MSE',
+            max_times_solve     = 5,
+            **args ):
         '''Perform the deconvolution of problems.'''
         self.res = solve(   problemsGenerator = self.problems,
                             args   = args,
                             solver = solver,
+                            multiprocesses_No = multiprocesses_No,
                             method = method,
                             max_times_solve = max_times_solve,
                             verbose= self.verbose   )
@@ -337,6 +343,7 @@ def MassTodonize(
         L1_alpha= .001,
         L2_alpha= .001,
         solver  = 'sequential',
+        multiprocesses_No = None,
         method  = 'MSE',
         max_times_solve = 10,
         verbose = False
@@ -361,6 +368,7 @@ def MassTodonize(
     M.prepare_problems(min_prob_of_envelope_in_picking)
 
     M.run(  solver  = solver,
+            multiprocesses_No = multiprocesses_No,
             method  = method,
             max_times_solve = max_times_solve,
             L1_x = L1_x,

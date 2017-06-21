@@ -82,7 +82,7 @@ def helper(helper_args):
 
 
 class MultiprocessingSolver(Solver):
-    def run(self, args, method, max_times_solve=5):
+    def run(self, args, method, multiprocesses_No = None):
         T0 = time()
 
             #TODO make this multiprocessed too.
@@ -95,9 +95,12 @@ class MultiprocessingSolver(Solver):
                             repeat(args),
                             repeat(method),
                             repeat(self.verbose) )
-        P = Pool()
+
+        P = Pool(multiprocesses_No)
+
         results = P.map(    helper,
                             pool_args    )
+
         P.close()
         P.join()
         T1 = time()
@@ -110,16 +113,27 @@ class MultiprocessingSolver(Solver):
         return results
 
 
-def solve(problemsGenerator, args, solver='sequential', method='MSE', max_times_solve=5, verbose=False):
+def solve(  problemsGenerator,
+            args,
+            solver              = 'sequential',
+            multiprocesses_No   = None,
+            method              = 'MSE',
+            max_times_solve     = 5,
+            verbose             = False    ):
     '''Wrapper over the solver class.
 
     Runs the solver with a given set of inputs.'''
 
-    solver = {  'sequential':       SequentialSolver,
-                'multiprocessing':  MultiprocessingSolver
-    }[solver](problemsGenerator, verbose)
+    if solver == 'sequential':
+        S   = SequentialSolver(problemsGenerator, verbose)
+        res = S.run(args   = args,
+                    method = method,
+                    max_times_solve = max_times_solve   )
 
-    res = solver.run(   args   = args,
-                        method = method,
-                        max_times_solve = max_times_solve   )
+    if solver == 'multiprocessing':
+        S = MultiprocessingSolver(problemsGenerator, verbose)
+        res = S.run(args   = args,
+                    method = method,
+                    multiprocesses_No = multiprocesses_No   )
+
     return res

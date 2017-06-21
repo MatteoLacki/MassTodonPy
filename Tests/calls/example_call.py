@@ -11,17 +11,19 @@ from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from    time  import time
 
-# mol = substanceP.copy()
-mol = ubiquitin.copy()
+mol = substanceP.copy()
+# mol = ubiquitin.copy()
 
-jP  = .999
+jP = .999
 cutOff = 100
 mzPrec = .05
 M_minProb  = .7
 max_times_solve = 10
-L1_x = L2_x = L1_alpha = L2_alpha = .001
-solver  = 'sequential'
-# solver  = 'multiprocessing'
+
+# solver  = 'sequential'
+solver  = 'multiprocessing'
+multiprocesses_No = None
+
 method  = 'MSE'
 verbose = True
 
@@ -41,9 +43,10 @@ M.read_n_preprocess_spectrum(
 M.prepare_problems(M_minProb)
 
 M.run(  solver  = solver,
+        multiprocesses_No = multiprocesses_No,
         method  = method,
-        max_times_solve = max_times_solve,
-        L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha)
+        max_times_solve = max_times_solve )
+
 T1 = time()
 
 print 'Envelopes Generation', M.IsoCalc.stats['Envelopes Generation Total T']
