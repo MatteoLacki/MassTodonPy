@@ -20,8 +20,8 @@ mzPrec = .05
 M_minProb  = .7
 max_times_solve = 10
 L1_x = L2_x = L1_alpha = L2_alpha = .001
-# solver  = 'sequential'
-solver  = 'multiprocessing'
+solver  = 'sequential'
+# solver  = 'multiprocessing'
 method  = 'MSE'
 verbose = True
 
