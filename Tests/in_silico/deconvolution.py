@@ -78,6 +78,11 @@ def getResults( simulation_res,
     masstodon_res['probs'] = probs
     return masstodon_res
 
+with open(fp_main+'/data/sigmas_probs.json', 'r') as f:
+    s2p = json.load(f)
+
+sigmas2probs = dict(s2p)
+probs2sigmas = dict( (b,a) for a,b in s2p )
 sigmas = [ probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629) ]
 fp_main= sys.argv[1]
 multiprocesses_No = int(sys.argv[2])
@@ -86,11 +91,6 @@ fp_in  = fp_main+'/results_Ciach'
 fp_out = fp_main+'/results_Matteo'
 
 
-with open(fp_main+'/data/sigmas_probs.json', 'r') as f:
-    s2p = json.load(f)
-
-sigmas2probs = dict(s2p)
-probs2sigmas = dict( (b,a) for a,b in s2p )
 
 
 simulated_datasets = []
