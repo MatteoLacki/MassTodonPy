@@ -42,8 +42,7 @@ run_in_silico_analysis_mac:
 	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico 5
 
 run_in_silico_analysis_wloczykij:
-	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py
-	/home/matteo/masstodon/deconvolution/MassTodonPy/Tests/in_silico 65
+	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py /home/matteo/masstodon/deconvolution/MassTodonPy/Tests/in_silico 65
 
 run_in_silico_analysis_czczmiel:
 	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py  /home/matteo/masstodon/MassTodonPy/Tests/in_silico 25
