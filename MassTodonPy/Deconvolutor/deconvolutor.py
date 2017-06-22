@@ -16,10 +16,26 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
+import os
+
+# Setting up locally the number of threads used by
+# BLAS to 1.
+old = os.environ.get('OMP_NUM_THREADS', None)
+os.environ['OMP_NUM_THREADS'] = "1"
+
 from    math        import sqrt
 from    collections import Counter
-from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers, setseed
 from    random      import randint
+from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers, setseed
+
+
+if old:
+    os.environ['OMP_NUM_THREADS'] = old
+else:
+    del os.environ['OMP_NUM_THREADS']
+
+
+
 
 solvers.options['show_progress'] = False
 solvers.options['maxiters'] = 1000

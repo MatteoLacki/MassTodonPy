@@ -40,10 +40,9 @@ M.read_n_preprocess_spectrum(
     spectrum = mol['spectrum'],
     cut_off  = cutOff  )
 
-M.prepare_problems(M_minProb)
-
 M.run(  solver  = solver,
         multiprocesses_No = multiprocesses_No,
+        min_prob_per_molecule = M_minProb,
         method  = method,
         max_times_solve = max_times_solve )
 

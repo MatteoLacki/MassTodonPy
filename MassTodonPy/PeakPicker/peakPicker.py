@@ -129,7 +129,7 @@ class PeakPicker(object):
         Graph = self.represent_as_Graph(massSpectrum)
         for cc in nx.connected_component_subgraphs(Graph):
             if contains_experimental_peaks(cc):
-                trim_unlikely_molecules(cc, minimal_prob_per_molecule)
+                trim_unlikely_molecules(cc, min_prob_per_molecule)
                 for small_graph in nx.connected_component_subgraphs(cc):
                     if len(small_graph) > 1:
                         if not bootstrap:
