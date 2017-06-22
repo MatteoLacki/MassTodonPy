@@ -346,6 +346,8 @@ def MassTodonize(
         multiprocesses_No = None,
         method  = 'MSE',
         max_times_solve = 10,
+        forPlot = False,
+        raw_data= False,
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
@@ -379,13 +381,17 @@ def MassTodonize(
 
     Results = {}
 
-    Results['summary'] = M.summarize_results()
+    Results['summary']              = M.summarize_results()
     Results['basic analysis']       = M.analyze_reactions('basic')
     Results['intermediate analysis']= M.analyze_reactions('intermediate')
     Results['advanced analysis']    = M.analyze_reactions('advanced')
-    Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
-    Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
-    Results['original spectrum']    = M.spectrum_iter('original')
-    Results['raw estimates']        = M.res
+
+    if raw_data:
+        Results['raw estimates'] = M.res
+
+    if forPlot:
+        Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
+        Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
+        Results['original spectrum']    = M.spectrum_iter('original')
 
     return Results
