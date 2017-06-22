@@ -79,14 +79,15 @@ class MassTodon():
     def __init__(   self,
                     fasta,
                     precursor_charge,
+                    mz_prec,
+                    modifications   = {},
                     frag_type       = 'cz',
-                    mz_prec         = .05,
                     joint_probability_of_envelope = 0.999,
                     iso_masses      = None,
                     iso_probs       = None,
-                    modifications   = {},
-                    verbose         = False     ):
-        '''Make MassTodon somewhat less extinct.'''
+                    verbose         = False
+        ):
+        '''Make MassTodon somewhat less extinct by creating its instance.'''
 
         self.mz_prec = mz_prec
             # precision one digit lower than the input precision of spectra, eg.
@@ -112,8 +113,8 @@ class MassTodon():
             verbose     = verbose   )
 
         self.peakPicker = PeakPicker(
-            Forms   = self.Forms,
-            IsoCalc = self.IsoCalc,
+            _Forms   = self.Forms,
+            _IsoCalc = self.IsoCalc,
             mz_prec = mz_prec,
             verbose = verbose   )
 
@@ -152,29 +153,34 @@ class MassTodon():
             yield {'mz':mz, 'intensity':intensity}
 
 
-    def prepare_problems(self, M_minProb=.75):
-        '''Prepare a generator of deconvolution problems.'''
-        self.problems = self.peakPicker.get_problems(self.spectra['trimmed'], M_minProb)
-
-
-        #TODO: add multiprocessing: turn of BLAS asynchronic calculations
-        #TODO: make a more sensible use of sequentiality
     def run(self,
             solver              = 'sequential',
             multiprocesses_No   = None,
             method              ='MSE',
             max_times_solve     = 5,
+            M_minProb           = .75,
+            bootstrap           = False,
+            forPlot             = False,
             **args ):
         '''Perform the deconvolution of problems.'''
-        self.res = solve(   problemsGenerator = self.problems,
+        picker_res = self.peakPicker.get_problems(
+            massSpectrum                = self.spectra['trimmed'],
+            minimal_prob_per_molecule   = M_minProb,
+            bootstrap                   = bootstrap )
+
+        if bootstrap:
+            self.problems, self.small_graphs_no_G = picker_res
+        else:
+            self.problems = picker_res
+        self.res = solve(   problems = self.problems,
                             args   = args,
                             solver = solver,
                             multiprocesses_No = multiprocesses_No,
                             method = method,
                             max_times_solve = max_times_solve,
                             verbose= self.verbose   )
-
-        self.ResPlotter.add_mz_ranges_to_results(self.res)
+        if forPlot:
+            self.ResPlotter.add_mz_ranges_to_results(self.res)
 
     def results_iter(self):
         '''Iterate over results.
@@ -333,6 +339,7 @@ def MassTodonize(
         spectrum        = None,
         spectrum_path   = None,
         modifications   = {},
+        boostrap        = False,
         frag_type       = 'cz',
         joint_probability_of_envelope   = .999,
         min_prob_of_envelope_in_picking = .7,
@@ -354,12 +361,12 @@ def MassTodonize(
 
     M = MassTodon(  fasta,
                     precursor_charge,
-                    frag_type,
                     mz_prec,
+                    modifications,
+                    frag_type,
                     joint_probability_of_envelope,
                     iso_masses,
                     iso_probs,
-                    modifications,
                     verbose )
 
     M.read_n_preprocess_spectrum(   spectrum_path,
@@ -373,11 +380,13 @@ def MassTodonize(
             multiprocesses_No = multiprocesses_No,
             method  = method,
             max_times_solve = max_times_solve,
-            L1_x = L1_x,
-            L2_x = L2_x,
-            L1_alpha = L1_alpha,
-            L2_alpha = L2_alpha,
-            verbose = verbose)
+            L1_x        = L1_x,
+            L2_x        = L2_x,
+            L1_alpha    = L1_alpha,
+            L2_alpha    = L2_alpha,
+            verbose     = verbose,
+            boostrap    = boostrap,
+            forPlot     = forPlot     )
 
     Results = {}
 

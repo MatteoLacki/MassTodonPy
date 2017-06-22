@@ -8,12 +8,14 @@ def process_ra(info, ra_type_row, prob_count):
         row_ra[k_tmp] = info[k]
     return row_ra
 
-
+# Results['summary']
+# Results.keys()
+# res = Results
 def get_row(res):
     row = {}
     ra_type_row = { 'basic analysis':               'basic',
                     'intermediate analysis':        'inter',
-                    'upper intermediate analysis':  'up_inter' }
+                    'advanced analysis':            'up_inter' }
     for ra_type in ra_type_row:
         for i, what in enumerate(('prob','count')):
             row.update( process_ra( res[ra_type][i], ra_type_row[ra_type], what ) )
@@ -31,19 +33,12 @@ def MassTodon_bootstrap(exp, ions_no, bootstrap_size, ID, WH, WV):
         Results = MassTodonize(
             fasta           = exp['fasta'],
             precursor_charge= exp['precursorCharge'],
-            joint_probability_of_envelope = .990,
             mz_prec         = .05,
+            opt_P           = .999,
             modifications   = exp['modifications'],
             spectrum        = (mzs, sim_intensities),
-            opt_P           = .99,
-            min_prob_of_envelope_in_picking = .7,
             solver          = 'sequential',
-            method          = 'MSE',
-            max_times_solve = 10,
-            L1_x            = .001,
-            L2_x            = .001,
-            L1_alpha        = .001,
-            L2_alpha        = .001,
+            raw_data        = False,
             verbose         = False )
         row = get_row(Results)
         row['WH'], row['WV'], row['ID'] = WH, WV, ID

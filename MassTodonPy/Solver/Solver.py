@@ -22,8 +22,8 @@ from    itertools import repeat
 from    collections import Counter
 
 class Solver(object):
-    def __init__(self, problemsGenerator, verbose=False):
-        self.prob_gen = problemsGenerator
+    def __init__(self, problems, verbose=False):
+        self.problems = problems
         self.verbose  = verbose
         self.stats    = Counter()
 
@@ -34,7 +34,7 @@ class Solver(object):
 class SequentialSolver(Solver):
     def run(self, args, method='MSE', max_times_solve=5):
         results = []
-        for SG in self.prob_gen:
+        for SG in self.problems:
             i = 0
             stop = False
             T0 = time()
@@ -83,15 +83,10 @@ def helper(helper_args):
 
 class MultiprocessingSolver(Solver):
     def run(self, args, method, multiprocesses_No = None):
-        T0 = time()
-
-            #TODO make this multiprocessed too.
-        problems = list(self.prob_gen)
-
             #Start solving bigger, i.e. graphs with more nodes, problems first
-        problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
-
-        pool_args = zip(    problems,
+        self.problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
+        T0 = time()
+        pool_args = zip(    self.problems,
                             repeat(args),
                             repeat(method),
                             repeat(self.verbose) )
@@ -112,8 +107,7 @@ class MultiprocessingSolver(Solver):
 
         return results
 
-
-def solve(  problemsGenerator,
+def solve(  problems,
             args,
             solver              = 'sequential',
             multiprocesses_No   = None,
@@ -125,13 +119,13 @@ def solve(  problemsGenerator,
     Runs the solver with a given set of inputs.'''
 
     if solver == 'sequential':
-        S   = SequentialSolver(problemsGenerator, verbose)
+        S   = SequentialSolver(problems, verbose)
         res = S.run(args   = args,
                     method = method,
                     max_times_solve = max_times_solve   )
 
     if solver == 'multiprocessing':
-        S = MultiprocessingSolver(problemsGenerator, verbose)
+        S = MultiprocessingSolver(problems, verbose)
         res = S.run(args   = args,
                     method = method,
                     multiprocesses_No = multiprocesses_No   )

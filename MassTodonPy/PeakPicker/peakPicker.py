@@ -59,12 +59,14 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
 class PeakPicker(object):
     '''Class for peak picking.'''
     def __init__(   self,
-                    Forms,
-                    IsoCalc,
-                    mz_prec = 0.05,
-                    verbose = False ):
-        self.Forms  = Forms
-        self.IsoCalc= IsoCalc
+                    _Forms,
+                    _IsoCalc,
+                    mz_prec     = 0.05,
+                    verbose     = False
+        ):
+        '''Initialize peak picker.'''
+        self.Forms  = _Forms
+        self.IsoCalc= _IsoCalc
         self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.Used_Exps = set()
@@ -74,14 +76,12 @@ class PeakPicker(object):
 
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
-
         prec = self.mz_prec
         Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*massSpectrum) )
             #TODO eliminate the above using binary search solo
         Graph = nx.Graph()
         stats = Counter()
         no_exp_per_iso = Counter()
-
 
         if self.verbose:
             print
@@ -130,28 +130,40 @@ class PeakPicker(object):
         self.stats = stats
         return Graph
 
-
-    def get_problems(self, massSpectrum, minimal_prob_per_molecule=.7):
+    def _get_problems(   self,
+                        massSpectrum,
+                        minimal_prob_per_molecule = .7,
+                        bootstrap = False
+        ):
         '''Enumerate deconvolution problems.'''
         Graph = self.represent_as_Graph(massSpectrum)
-        T0 = time()
         for cc in nx.connected_component_subgraphs(Graph):
             if contains_experimental_peaks(cc):
                 trim_unlikely_molecules(cc, minimal_prob_per_molecule)
                 for small_graph in nx.connected_component_subgraphs(cc):
                     if len(small_graph) > 1:
-                        self.add_G_nodes(small_graph)
+                        if not bootstrap:
+                            self.add_G_nodes(small_graph)
                         yield small_graph
-        T1 = time()
-        if self.verbose:
-            print 'G nodes added in totally', sum(self.G_stats)
-            print
+
+
+    def get_problems(   self,
+                        massSpectrum,
+                        minimal_prob_per_molecule = .7,
+                        bootstrap = False
+        ):
+        '''Enumerate deconvolution problems.'''
+        small_graphs = list(self._get_problems(massSpectrum, minimal_prob_per_molecule, bootstrap))
+        if bootstrap:
+            problems = [ self.add_G_nodes(small_graph.copy()) for small_graph in small_graphs_no_G]
+            return problems, small_graphs
+        else:
+            return small_graphs
 
     def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.
 
-        This is done without any loss in resolution, but surely in a silly way.'''
-
+        This is done without any loss in resolution.'''
         T0 = time()
         E_to_remove = []
         Gs_intensity= Counter()
@@ -188,3 +200,4 @@ class PeakPicker(object):
         small_graph.add_edges_from(newGIedges)
         T1 = time()
         self.G_stats.append(T1-T0)
+        return small_graph
