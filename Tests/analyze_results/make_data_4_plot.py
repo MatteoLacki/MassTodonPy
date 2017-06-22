@@ -25,10 +25,9 @@ M.readSpectrum( spectrum        = mol['spectrum'],
                 digits          = precDigits,
                 topPercent      = topPercent  )
 
-M.prepare_problems(M_minProb)
-
 M.run(  solver  = 'sequential',
         method  = 'MSE',
+        min_prob_per_molecule = M_minProb,
         max_times_solve = max_times_solve,
         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
         verbose = verbose )

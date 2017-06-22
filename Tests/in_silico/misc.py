@@ -66,9 +66,9 @@ def getResults( fasta, Q, PTR, ETnoD, ETD, simulator, mol_no=1e5, sigma=.01, jP=
                     mzPrec          = mzPrec )
     spectrum = M.IsoCalc.makeRandomSpectrum(mols, quants, sigma, jP, precDigits)
     M.readSpectrum(spectrum=spectrum, cutOff=cutOff, digits=precDigits, topPercent=topPercent)
-    M.prepare_problems(minProb)
     res = M.run(solver  = 'sequential',
                 method  = 'MSE',
+                min_prob_per_molecule = minProb,
                 max_times_solve = max_times_solve,
                 L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
                 verbose = verbose )

@@ -158,21 +158,21 @@ class MassTodon():
             multiprocesses_No   = None,
             method              ='MSE',
             max_times_solve     = 5,
-            M_minProb           = .75,
+            min_prob_per_molecule = .75,
             bootstrap           = False,
             forPlot             = False,
             **args ):
         '''Perform the deconvolution of problems.'''
         picker_res = self.peakPicker.get_problems(
-            massSpectrum                = self.spectra['trimmed'],
-            minimal_prob_per_molecule   = M_minProb,
-            bootstrap                   = bootstrap )
+            massSpectrum            = self.spectra['trimmed'],
+            min_prob_per_molecule   = min_prob_per_molecule,
+            bootstrap               = bootstrap )
 
         if bootstrap:
             self.problems, self.small_graphs_no_G = picker_res
         else:
             self.problems = picker_res
-            
+
         self.res = solve(   problems = self.problems,
                             args   = args,
                             solver = solver,
@@ -359,7 +359,6 @@ def MassTodonize(
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
-
     M = MassTodon(  fasta,
                     precursor_charge,
                     mz_prec,
@@ -375,33 +374,28 @@ def MassTodonize(
                                     cut_off,
                                     opt_P   )
 
-    M.prepare_problems(min_prob_of_envelope_in_picking)
-
     M.run(  solver  = solver,
             multiprocesses_No = multiprocesses_No,
             method  = method,
             max_times_solve = max_times_solve,
+            min_prob_per_molecule = min_prob_of_envelope_in_picking,
+            boostrap    = boostrap,
+            forPlot     = forPlot,
             L1_x        = L1_x,
             L2_x        = L2_x,
             L1_alpha    = L1_alpha,
             L2_alpha    = L2_alpha,
-            verbose     = verbose,
-            boostrap    = boostrap,
-            forPlot     = forPlot     )
+            verbose     = verbose       )
 
     Results = {}
-
     Results['summary']              = M.summarize_results()
     Results['basic analysis']       = M.analyze_reactions('basic')
     Results['intermediate analysis']= M.analyze_reactions('intermediate')
     Results['advanced analysis']    = M.analyze_reactions('advanced')
-
     if raw_data:
         Results['raw estimates'] = M.res
-
     if forPlot:
         Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
         Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
         Results['original spectrum']    = M.spectrum_iter('original')
-
     return Results

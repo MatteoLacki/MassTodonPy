@@ -68,11 +68,11 @@ def getResults(fasta, Q, WH, WV, L, modifications, spectrum, jP=.999, mzPrec=.05
                         digits          = precDigits,
                         topPercent      = topPercent  )
 
-        M.prepare_problems(M_minProb)
         T0_deconv = time()
         Results = M.run(solver  = 'sequential',
                         method  = 'MSE',
                         max_times_solve = max_times_solve,
+                        min_prob_per_molecule = M_minProb,
                         L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
                         verbose =verbose )
         T1_deconv = time()

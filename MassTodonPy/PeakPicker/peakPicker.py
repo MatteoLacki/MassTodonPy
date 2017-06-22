@@ -122,7 +122,7 @@ class PeakPicker(object):
 
     def _get_problems(   self,
                         massSpectrum,
-                        minimal_prob_per_molecule = .7,
+                        min_prob_per_molecule = .7,
                         bootstrap = False
         ):
         '''Enumerate deconvolution problems.'''
@@ -139,11 +139,11 @@ class PeakPicker(object):
 
     def get_problems(   self,
                         massSpectrum,
-                        minimal_prob_per_molecule = .7,
+                        min_prob_per_molecule = .7,
                         bootstrap = False
         ):
         '''Enumerate deconvolution problems.'''
-        small_graphs = list(self._get_problems(massSpectrum, minimal_prob_per_molecule, bootstrap))
+        small_graphs = list(self._get_problems(massSpectrum, min_prob_per_molecule, bootstrap))
         if bootstrap:
             problems = [ self.add_G_nodes(small_graph.copy()) for small_graph in small_graphs]
             res = problems, small_graphs

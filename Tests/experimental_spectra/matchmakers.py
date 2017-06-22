@@ -22,12 +22,12 @@ M = MassTodon(  fasta           = fasta,
 #                     ('C',6) :       {'H': 2, 'S': +2, 'N': +200} }
 
 M.readSpectrum(path=file_path, cutOff=cutOff, digits=precDigits, topPercent=topPercent)
-M.prepare_problems(M_minProb)
 
 %%time
 res = M.run(solver = 'sequential',
             method = 'MSE',
             max_times_solve = 10,
+            min_prob_per_molecule = M_minProb,
             L1_x   = L1_x, L2_x = L2_x,
             L1_alpha = L1_alpha, L2_alpha = L2_alpha)
 
