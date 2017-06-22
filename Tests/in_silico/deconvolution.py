@@ -90,12 +90,14 @@ sigmas2probs = dict(s2p)
 probs2sigmas = dict( (b,a) for a,b in s2p )
 sigmas = [ probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629) ]
 simulated_datasets = []
-# for molsNo in (1000, 10000, 100000):
-for molsNo in (1000,):
+for molsNo in (1000, 10000, 100000):
     with open(fp_in+'/results_molsNo-'+str(molsNo), "rb") as f:
         res = pickle.load(f)
     for r in res:
         simulated_datasets.append((r, molsNo))
+
+
+
 
 def helper(helper_args):
     ((simulation_res, molsNo), sigma), fp_out, i = helper_args
@@ -115,8 +117,12 @@ def helper(helper_args):
         print 'There is something wrong with', molsNo, sigma, i, e
     return OK
 
+
+meaningful_input = product(simulated_datasets, sigmas)
+all_input = zip( meaningful_input, repeat(fp_out), xrange(len(simulated_datasets)*len(sigmas)))
+
 P = Pool(multiprocesses_No)
-results = P.map( helper, zip( product(simulated_datasets, sigmas), repeat(fp_out), xrange(len(simulated_datasets)) )  )
+results = P.map( helper, all_input )
 P.close()
 P.join()
 
