@@ -71,7 +71,7 @@ class PeakPicker(object):
         self.cnts   = MultiCounter() # TODO finish it.
         self.Used_Exps = set()
         self.verbose= verbose
-        self.stats  = None
+        self.stats  = Counter()
         self.G_stats= []
 
     def represent_as_Graph(self, massSpectrum):
@@ -80,17 +80,14 @@ class PeakPicker(object):
         Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*massSpectrum) )
             #TODO eliminate the above using binary search solo
         Graph = nx.Graph()
-        stats = Counter()
         no_exp_per_iso = Counter()
-
         if self.verbose:
             print
             print 'Representing problem as a graph.'
-
         T0 = time()
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
             I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
-            stats['I No'] += len(I_mzs)
+            self.stats['I No'] += len(I_mzs)
             M = self.cnts('M')
             Graph.add_node(M,  formula  = M_formula,
                                type     ='M',
@@ -111,23 +108,16 @@ class PeakPicker(object):
                         Graph.add_node( E_mz,
                                         intensity   = E_intensity,
                                         type        = 'E'  )
-                        stats['E No'] += 1
-                        stats['total intensity of experimental peaks paired with isotopologues'] += E_intensity
                     Graph.add_edge(I, E_mz)
-                    stats['E-I No'] += 1
-            stats['M No'] += 1
+                    self.stats['E-I No'] += 1
+            self.stats['M No'] += 1
         T1 = time()
-        stats['graph construction T'] = T1 - T0
-
+        self.stats['graph construction T'] = T1 - T0
         if self.verbose:
-            print '\tFinished graph representation in',   stats['graph construction T']
-            print '\tIsotopologues number was',            stats['I No']
-            print '\tEnvelopes number was',                stats['M No']
-            print '\tExperimental peaks was',              stats['E No']
-            print '\tEdges between experimental peaks and isotopologues', stats['E-I No']
+            print '\tFinished graph representation in', self.stats['graph construction T']
+            print '\tIsotopologues number was', self.stats['I No']
+            print '\tEnvelopes number was', self.stats['M No']
             print
-
-        self.stats = stats
         return Graph
 
     def _get_problems(   self,
@@ -155,10 +145,13 @@ class PeakPicker(object):
         '''Enumerate deconvolution problems.'''
         small_graphs = list(self._get_problems(massSpectrum, minimal_prob_per_molecule, bootstrap))
         if bootstrap:
-            problems = [ self.add_G_nodes(small_graph.copy()) for small_graph in small_graphs_no_G]
-            return problems, small_graphs
+            problems = [ self.add_G_nodes(small_graph.copy()) for small_graph in small_graphs]
+            res = problems, small_graphs
         else:
-            return small_graphs
+            res = small_graphs
+        self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[E]['intensity'] for SG in small_graphs for E in SG if SG.node[E]['type'] == 'E')
+        return res
+
 
     def add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.

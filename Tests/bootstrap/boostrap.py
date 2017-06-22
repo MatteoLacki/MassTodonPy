@@ -17,7 +17,8 @@ bootstrap_size  = 1
 ID, mol = 0, substancesP[0]
 mzPrec  = .05
 verbose = True
-opt_P   = .99
+# opt_P   = .99
+cut_off = 100
 min_prob_of_envelope_in_picking = .7
 method  = 'MSE'
 solver  = 'sequential'
@@ -37,8 +38,8 @@ M = MassTodon(  fasta           = mol['fasta'],
                 verbose         = verbose   )
 
 M.read_n_preprocess_spectrum(   spectrum = spectrum,
-                                opt_P    = opt_P     )
-
+                                cut_off  = cut_off     )
+  
 M.run(  solver  = solver,
         multiprocesses_No = multiprocesses_No,
         method  = method,
@@ -49,12 +50,7 @@ M.run(  solver  = solver,
         L2_x = L2_x,
         L1_alpha = L1_alpha,
         L2_alpha = L2_alpha,
-        verbose = verbose)
-
-
-M.small_graphs_no_G[0].nodes()
-M.problems[0].nodes()
-
+        verbose = verbose    )
 
 Results = {}
 Results['summary']              = M.summarize_results()

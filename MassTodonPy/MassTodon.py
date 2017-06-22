@@ -172,6 +172,7 @@ class MassTodon():
             self.problems, self.small_graphs_no_G = picker_res
         else:
             self.problems = picker_res
+            
         self.res = solve(   problems = self.problems,
                             args   = args,
                             solver = solver,
