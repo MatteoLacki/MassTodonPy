@@ -107,7 +107,7 @@ def helper(helper_args):
                             verbose= False          )
         res['molsNo'] = molsNo
         res['sigma']  = sigma
-        with open(fp_out+'/'+str(i), 'wb') as handle:
+        with open(fp_out+'/'+str(i)+'.matteo', 'wb') as handle:
             pickle.dump(res, handle)
         print 'Finished with', molsNo, sigma, i
     except Exception as e:
