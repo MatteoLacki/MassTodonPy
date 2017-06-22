@@ -82,7 +82,7 @@ def getResults( simulation_res,
 
 fp_main = sys.argv[1]
 fp_in  = fp_main+'/results_Ciach'
-fp_out = fp_main+'/results_Matteo2'
+fp_out = fp_main+'/results_Matteo'
 multiprocesses_No = int(sys.argv[2])
 with open(fp_main+'/data/sigmas_probs.json', 'r') as f:
     s2p = json.load(f)
