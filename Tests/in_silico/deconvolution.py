@@ -1,3 +1,8 @@
+# import  os
+# old = os.environ.get('OMP_NUM_THREADS', None)
+# os.environ['OMP_NUM_THREADS'] = "1"
+
+
 from    deconv_misc import change_key
 from    MassTodonPy import MassTodon, MassTodonize
 from    MassTodonPy.Formulator import make_formulas
@@ -9,19 +14,20 @@ from    multiprocessing import Pool
 from    itertools import repeat, product, islice
 import  json
 
-# sigmas = [probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629)]
-# fp_main = sys.argv[1]
+# fp_main = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico'
+# with open(fp_main+'/data/sigmas_probs.json', 'r') as f:
+#     s2p = json.load(f)
+# sigmas2probs = dict(s2p)
+# probs2sigmas = dict( (b,a) for a,b in s2p )
+# sigmas = [ probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629) ]
 # fp_in   = fp_main+'/results_Ciach/'
-# fp_out  = fp_main+'/results_Matteo/'
-# verbose= False
-# solver = 'sequential' # solver = 'multiprocessing'
 # sigma = sigmas[0]
-# molsNo = 100000
-# with open(fp_in+'results_molsNo-'+str(molsNo), "rb") as f:
+# molsNo = 1000
+# with open(fp_in+'/results_molsNo-'+str(molsNo), "rb") as f:
 #     ciachator_res = pickle.load(f)
 # simulation_res = ciachator_res[0]
 # solver='sequential'
-# verbose=True
+# verbose=False
 def getResults( simulation_res,
                 sigma,
                 solver='sequential',
@@ -38,7 +44,6 @@ def getResults( simulation_res,
             formula, bp = formulas[ (mType, q, p) ]
             mols.append( (mType, formula, bp, q, p) )
             quants.append( int(simulated_data[d]) )
-
     simulated_data_dict = dict( ((mT, f, q, g), I) for (mT, f, bp, q, g), I in zip(mols, quants) )
         # Getting spectrum
     M = MassTodon(  fasta           = fasta,
@@ -52,16 +57,15 @@ def getResults( simulation_res,
                                     spectrum        = spectrum,
                                     opt_P           = 0.999,
                                     solver          = solver,
+                                    raw_data        = True,
                                     verbose         = verbose       )
         # Getting envelopes estimates
     estimates = dict(   ((e['molType'], e['formula'], e['q'], e['g']), e['estimate'])
                 for r in masstodon_res['raw estimates'] for e in r['alphas']    )
     total_estimated_intensity = sum(estimates.values())
     simulated_data_cnt, estimates_cnt = map( Counter, (simulated_data_dict, estimates))
-    fit_errors = dict( (k, (simulated_data_cnt[k], estimates_cnt[k]))
-        for k in set(simulated_data_cnt) | set(estimates) )
-        # Establishing some statistics
-    stats = {}
+    fit_errors = dict( (k, (simulated_data_cnt[k], estimates_cnt[k])) for k in set(simulated_data_cnt) | set(estimates) )
+    stats = {}  # Establishing some statistics
     stats['total_fit_error_L1'] = sum( abs(real - estim) for real, estim in fit_errors.values())
     stats['total_fit_error_L2'] = sqrt(sum( (real - estim)**2 for real, estim in fit_errors.values()))
     stats['total_overestimates']= sum( max(estim - real, 0.0) for real, estim in fit_errors.values())
@@ -70,12 +74,12 @@ def getResults( simulation_res,
     stats['relative_L1_error'] = stats['total_fit_error_L1']/(total_simulated_intensity+total_estimated_intensity)
     stats['relative_underestimates']= stats['total_underestimates']/total_simulated_intensity
     stats['relative_overestimates'] = stats['total_underestimates']/total_estimated_intensity
-        # Simulated probs
-    probs = {'PTR':PTR, 'ETnoD':ETnoD, 'ETD':ETD}
+    probs = {'PTR':PTR, 'ETnoD':ETnoD, 'ETD':ETD} # Simulated probs
         # Update results
     masstodon_res['deconvolution stats']        = stats
     masstodon_res['deconvolution fit errors']   = fit_errors
     masstodon_res['probs'] = probs
+    del masstodon_res['raw estimates'] # takes way too much space
     return masstodon_res
 
 
@@ -92,16 +96,15 @@ probs2sigmas = dict( (b,a) for a,b in s2p )
 sigmas = [ probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629) ]
 
 fp_in  = fp_main+'/results_Ciach'
-fp_out = fp_main+'/results_Matteo'
-
+fp_out = fp_main+'/results_Matteo2'
 
 simulated_datasets = []
-for molsNo in (1000, 10000, 100000):
+# for molsNo in (1000, 10000, 100000):
+for molsNo in (1000):
     with open(fp_in+'/results_molsNo-'+str(molsNo), "rb") as f:
         res = pickle.load(f)
     for r in res:
         simulated_datasets.append((r, molsNo))
-
 
 def helper(helper_args):
     ((simulation_res, molsNo), sigma), fp_out, i = helper_args
@@ -115,8 +118,6 @@ def helper(helper_args):
         res['molsNo'] = molsNo
         res['sigma']  = sigma
 
-        print res
-
         with open(fp_out+'/'+str(i), 'wb') as handle:
             pickle.dump(res, handle)
         print 'Finished with', molsNo
@@ -124,10 +125,15 @@ def helper(helper_args):
         OK = False
     return OK
 
-K = len(simulated_datasets)
 P = Pool(multiprocesses_No)
 results = P.map(
     helper,
-    zip( product(simulated_datasets, sigmas), repeat(fp_out), xrange(K) )  )
+    zip( product(simulated_datasets, sigmas), repeat(fp_out), xrange(len(simulated_datasets)) )  )
 P.close()
 P.join()
+
+
+# if old:
+#     os.environ['OMP_NUM_THREADS'] = old
+# else:
+#     del os.environ['OMP_NUM_THREADS']
