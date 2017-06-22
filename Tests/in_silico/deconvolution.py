@@ -110,9 +110,9 @@ def helper(helper_args):
         with open(fp_out+'/'+str(i), 'wb') as handle:
             pickle.dump(res, handle)
         print 'Finished with', molsNo, sigma, i
-    except:
+    except Exception as e:
         OK = False
-        print 'There is something wrong with', molsNo, sigma, i
+        print 'There is something wrong with', molsNo, sigma, i, e
     return OK
 
 P = Pool(multiprocesses_No)
