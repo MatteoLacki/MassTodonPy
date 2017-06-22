@@ -91,7 +91,7 @@ probs2sigmas = dict( (b,a) for a,b in s2p )
 sigmas = [ probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629) ]
 simulated_datasets = []
 # for molsNo in (1000, 10000, 100000):
-for molsNo in (1000):
+for molsNo in (1000,):
     with open(fp_in+'/results_molsNo-'+str(molsNo), "rb") as f:
         res = pickle.load(f)
     for r in res:
