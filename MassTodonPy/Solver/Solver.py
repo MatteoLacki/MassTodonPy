@@ -92,10 +92,8 @@ class MultiprocessingSolver(Solver):
                             repeat(self.verbose) )
 
         P = Pool(multiprocesses_No)
-
         results = P.map(    helper,
                             pool_args    )
-
         P.close()
         P.join()
         T1 = time()

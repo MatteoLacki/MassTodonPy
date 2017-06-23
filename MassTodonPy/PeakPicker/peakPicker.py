@@ -23,6 +23,7 @@ import  numpy           as     np
 from    collections     import Counter, defaultdict
 from    itertools       import izip, ifilter
 from    time            import time
+from    numpy.random    import multinomial
 
 inf = float('inf')
 
@@ -57,7 +58,86 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
     cc.remove_nodes_from(nodes_to_remove)
     return cc
 
-class PeakPicker(object):
+class PeakPickerBase(object):
+    '''Virtual class for peak picking.'''
+    def __init__(self):
+        raise NotImplementedError
+
+    def add_G_nodes(self, small_graph):
+        '''Collect experimental peaks into groups of experimental data G.
+
+        This is done without any loss in resolution.'''
+        T0 = time()
+        E_to_remove = []
+        Gs_intensity= Counter()
+        Gs_min_mz = defaultdict(lambda: inf)
+        Gs_max_mz = defaultdict(lambda: 0.0)
+        prec = self.mz_prec
+        for E in small_graph:
+            if small_graph.node[E]['type'] == 'E':
+                I_of_G = frozenset(small_graph[E])
+                Gs_intensity[I_of_G] += small_graph.node[E]['intensity']
+                Gs_min_mz[I_of_G] = min( Gs_min_mz[I_of_G], E )
+                Gs_max_mz[I_of_G] = max( Gs_max_mz[I_of_G], E )
+                E_to_remove.append(E)
+        small_graph.remove_nodes_from(E_to_remove)
+        for I_of_G in Gs_intensity:
+            G = self.cnts('G')
+            small_graph.add_node(G, intensity   = Gs_intensity[I_of_G],
+                                    type        = 'G',
+                                    min_mz      = Gs_min_mz[I_of_G],
+                                    max_mz      = Gs_max_mz[I_of_G]     )
+            for I in I_of_G:
+                small_graph.add_edge(I, G)
+        # zero intensity G nodes
+        newGnodes = []
+        newGIedges= []
+        for I in small_graph:
+            if small_graph.node[I]['type'] == 'I':
+                if len(small_graph[I]) == 1: # only one condition
+                    G = self.cnts('G')
+                    mz = small_graph.node[I]['mz']
+                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz, 'max_mz':mz }) )
+                    newGIedges.append( (G,I) )
+        small_graph.add_nodes_from(newGnodes)
+        small_graph.add_edges_from(newGIedges)
+        T1 = time()
+        self.G_stats.append(T1-T0)
+        return small_graph
+
+
+class PeakPickerBootstrap(PeakPickerBase):
+    def __init__(   self,
+                    mz_prec = 0.05
+        ):
+        '''Initialize peak picker.'''
+        self.mz_prec= mz_prec
+        self.cnts   = MultiCounter() # TODO finish it.
+        self.G_stats= []
+
+    def turn_clusters_2_problems(   self,
+                                    clusters,
+                                    spectrum,
+                                    ions_no,
+                                    min_prob_per_molecule = 0.75  ):
+        '''Turn clusters into fully fledged problems for optimization given a bootstrap spectrum.'''
+
+        mzs, intensities = spectrum
+        spectrum_boot = dict(izip( mzs, multinomial(ions_no, intensities/intensities.sum()).astype(np.float) * intensities.sum()/float(ions_no) ))
+        for SG in clusters: # updating intensities
+            for E in SG:
+                if SG.node[E]['type'] == 'E':
+                    SG.node[E]['intensity'] = spectrum_boot[E]
+
+        problems = [ self.add_G_nodes(SG) \
+            for cc in clusters \
+                for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
+                    if len(SG) > 1 ]
+
+        return problems
+
+
+class PeakPicker(PeakPickerBase):
     '''Class for peak picking.'''
     def __init__(   self,
                     _Forms,
@@ -74,6 +154,7 @@ class PeakPicker(object):
         self.verbose= verbose
         self.stats  = Counter()
         self.G_stats= []
+
 
     def represent_as_Graph(self, massSpectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.'''
@@ -121,7 +202,6 @@ class PeakPicker(object):
             print
         return Graph
 
-
     def get_problems(   self,
                         massSpectrum,
                         min_prob_per_molecule = .7,
@@ -148,46 +228,3 @@ class PeakPicker(object):
         self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
 
         return res
-
-
-    def add_G_nodes(self, small_graph):
-        '''Collect experimental peaks into groups of experimental data G.
-
-        This is done without any loss in resolution.'''
-        T0 = time()
-        E_to_remove = []
-        Gs_intensity= Counter()
-        Gs_min_mz = defaultdict(lambda: inf)
-        Gs_max_mz = defaultdict(lambda: 0.0)
-        prec = self.mz_prec
-        for E in small_graph:
-            if small_graph.node[E]['type'] == 'E':
-                I_of_G = frozenset(small_graph[E])
-                Gs_intensity[I_of_G] += small_graph.node[E]['intensity']
-                Gs_min_mz[I_of_G] = min( Gs_min_mz[I_of_G], E )
-                Gs_max_mz[I_of_G] = max( Gs_max_mz[I_of_G], E )
-                E_to_remove.append(E)
-        small_graph.remove_nodes_from(E_to_remove)
-        for I_of_G in Gs_intensity:
-            G = self.cnts('G')
-            small_graph.add_node(G, intensity   = Gs_intensity[I_of_G],
-                                    type        = 'G',
-                                    min_mz      = Gs_min_mz[I_of_G],
-                                    max_mz      = Gs_max_mz[I_of_G]     )
-            for I in I_of_G:
-                small_graph.add_edge(I, G)
-        # zero intensity G nodes
-        newGnodes = []
-        newGIedges= []
-        for I in small_graph:
-            if small_graph.node[I]['type'] == 'I':
-                if len(small_graph[I]) == 1: # only one condition
-                    G = self.cnts('G')
-                    mz = small_graph.node[I]['mz']
-                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz, 'max_mz':mz }) )
-                    newGIedges.append( (G,I) )
-        small_graph.add_nodes_from(newGnodes)
-        small_graph.add_edges_from(newGIedges)
-        T1 = time()
-        self.G_stats.append(T1-T0)
-        return small_graph
