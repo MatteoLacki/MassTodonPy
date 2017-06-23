@@ -33,7 +33,7 @@ def round_spec(mz, intensity, prec_digits=2):
 
 def trim_spectrum(mz, intensity, cut_off=100):
     '''Remove peaks below a given cut off.'''
-    return mz[intensity >= cut_off], intensity[intensity >= cut_off]
+    return ( mz[intensity >= cut_off], intensity[intensity >= cut_off] ), ( mz[intensity < cut_off], intensity[intensity < cut_off] )
 
 
 def quantile_trim(mz, intensities, perc = .95):
@@ -47,12 +47,8 @@ def quantile_trim(mz, intensities, perc = .95):
             i += 1
         else:
             break
-
     effective_cut_off = intensities_res[i]
-    mz_res = mz_res[ intensities_res >= effective_cut_off ]
-    intensities_res = intensities_res[ intensities_res >= effective_cut_off ]
-
-    return tuple( np.array(x) for x in izip(*sorted(izip(mz_res, intensities_res), key=itemgetter(0))) ), effective_cut_off
+    return effective_cut_off
 
 
 def get_mzxml(path, prec_digits=2):
@@ -129,11 +125,11 @@ def read_n_preprocess_spectrum( path    = None,
     spectra = {}
     spectra['original'] = spectrum
     spectra['original total intensity'] = sum(spectrum[1])
-    if cut_off:
-        spectra['trimmed'] = trim_spectrum( *spectrum, cut_off=cut_off)
-    else:
-        spectra['trimmed'], cut_off = quantile_trim( *spectrum, perc = opt_P)
 
+    if opt_P: # cut_off == None
+        cut_off = quantile_trim( *spectrum, perc = opt_P)
+
+    spectra['trimmed'], spectra['left out'] = trim_spectrum( *spectrum, cut_off=cut_off)
     spectra['total intensity after trim'] = spectra['trimmed'][1].sum()
     spectra['trimmed intensity'] = spectra['original total intensity'] - spectra['total intensity after trim']
     spectra['cut_off'] = cut_off

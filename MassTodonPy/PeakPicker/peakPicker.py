@@ -21,7 +21,7 @@ import  networkx        as     nx
 from    math            import sqrt
 import  numpy           as     np
 from    collections     import Counter, defaultdict
-from    itertools       import izip
+from    itertools       import izip, ifilter
 from    time            import time
 
 inf = float('inf')
@@ -55,6 +55,7 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
                     nodes_to_remove.append(I)
                 nodes_to_remove.append(M)
     cc.remove_nodes_from(nodes_to_remove)
+    return cc
 
 class PeakPicker(object):
     '''Class for peak picking.'''
@@ -120,22 +121,6 @@ class PeakPicker(object):
             print
         return Graph
 
-    def _get_problems(   self,
-                        massSpectrum,
-                        min_prob_per_molecule = .7,
-                        bootstrap = False
-        ):
-        '''Enumerate deconvolution problems.'''
-        Graph = self.represent_as_Graph(massSpectrum)
-        for cc in nx.connected_component_subgraphs(Graph):
-            if contains_experimental_peaks(cc):
-                trim_unlikely_molecules(cc, min_prob_per_molecule)
-                for small_graph in nx.connected_component_subgraphs(cc):
-                    if len(small_graph) > 1:
-                        if not bootstrap:
-                            self.add_G_nodes(small_graph)
-                        yield small_graph
-
 
     def get_problems(   self,
                         massSpectrum,
@@ -143,13 +128,25 @@ class PeakPicker(object):
                         bootstrap = False
         ):
         '''Enumerate deconvolution problems.'''
-        small_graphs = list(self._get_problems(massSpectrum, min_prob_per_molecule, bootstrap))
+        Graph = self.represent_as_Graph(massSpectrum)
+        problems = ifilter( contains_experimental_peaks, nx.connected_component_subgraphs(Graph) )
+
         if bootstrap:
-            problems = [ self.add_G_nodes(small_graph.copy()) for small_graph in small_graphs]
-            res = problems, small_graphs
+            clusters = list(problems)
+            problems = [cc.copy() for cc in clusters]
+
+        problems = [ self.add_G_nodes(SG) \
+            for cc in problems \
+                for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
+                    if len(SG) > 1 ]
+
+        if bootstrap:
+            res = problems, clusters
         else:
-            res = small_graphs
-        self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[E]['intensity'] for SG in small_graphs for E in SG if SG.node[E]['type'] == 'E')
+            res = problems, None
+
+        self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
+
         return res
 
 

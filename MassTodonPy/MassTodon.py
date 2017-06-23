@@ -121,7 +121,7 @@ class MassTodon():
         self.ResPlotter = ResultsPlotter(mz_prec)
         self.modifications = modifications
         self.spectra = {}
-
+        self.small_graphs_no_G = None
 
     def read_n_preprocess_spectrum(self,
             path    = None,
@@ -165,15 +165,12 @@ class MassTodon():
             **args ):
         '''Perform the deconvolution of problems.'''
 
-
-        picker_res = self.peakPicker.get_problems(
+        self.problems, self.clusters= self.peakPicker.get_problems(
             massSpectrum            = self.spectra['trimmed'],
             min_prob_per_molecule   = min_prob_per_molecule,
             bootstrap               = bootstrap )
-        if bootstrap:
-            self.problems, self.small_graphs_no_G = picker_res
-        else:
-            self.problems = picker_res
+
+        self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
 
         self.res = solve(   problems = self.problems,
                             args   = args,
@@ -184,6 +181,17 @@ class MassTodon():
                             verbose= self.verbose   )
         if forPlot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
+
+
+    def provide_clusters(self):
+        '''Provide a copy of the connected components of the deconvolution graph.
+
+        The experimental peaks E are not yet grouped into groups G.
+        Intended to be used in bootstrap procedures.'''
+        if self.clusters:
+            return [ SG.copy() for SG in self.clusters ]
+        else:
+            return None
 
 
     # TODO is the thing below necessary?
@@ -204,8 +212,7 @@ class MassTodon():
 
     def summarize_results(self):
         '''Summarize the results of MassTodon.'''
-        return summarize_results(   peakPicker_stats    = self.peakPicker.stats,
-                                    spectra             = self.spectra,
+        return summarize_results(   spectra             = self.spectra,
                                     raw_masstodon_res   = self.res              )
 
 
