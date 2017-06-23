@@ -21,6 +21,4 @@
 # from czMatchmaker_intermediate import reaction_analist_intermediate
 # from czMatchmaker_upper_intermediate import reaction_analist_upper_intermediate
 
-from czMatchmaker_basic         import czMatchMakerBasic
-from czMatchmaker_intermediate  import czMatchMakerIntermediate
-from czMatchmaker_advanced      import czMatchMakerAdvanced
+from czMatchmaker import match_cz_ions

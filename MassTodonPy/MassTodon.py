@@ -68,7 +68,7 @@ from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import read_n_preprocess_spectrum
-from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_intermediate, czMatchMakerAdvanced as analyzer_advanced
+from MatchMaker         import match_cz_ions
 from Visualization      import ResultsPlotter
 from Summarator         import summarize_results
 from itertools          import izip
@@ -294,17 +294,14 @@ class MassTodon():
                             **advanced_args ):
         '''Estimate reaction constants and quantities of fragments.'''
 
-        chosen_analyzer = {
-            'basic':    analyzer_basic,
-            'intermediate':    analyzer_intermediate,
-            'advanced': analyzer_advanced
-        }[analyzer](self.res, self.Q, self.fasta,
-                    accept_nonOptimalDeconv,
-                    min_acceptEstimIntensity, verbose )
-
-        return chosen_analyzer.pair()
-
-
+        return match_cz_ions(   results_to_pair = self.res,
+                                Q = self.Q,
+                                fasta = self.fasta,
+                                min_acceptEstimIntensity = min_acceptEstimIntensity,
+                                analyzer = analyzer,
+                                accept_nonOptimalDeconv = accept_nonOptimalDeconv,
+                                verbose = verbose,
+                                advanced_args = advanced_args )
 
 
 def MassTodonize(
