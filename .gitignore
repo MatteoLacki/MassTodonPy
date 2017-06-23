@@ -8,11 +8,24 @@ Tests/bootstrap/RESULTS_CSV/
 Tests/bootstrap/RESULTS_CSV_31_05_2017/
 Tests/bootstrap/RESULTS_REAL/
 Tests/bootstrap/RESULTS_REAL_31_05_2017/
+Tests/data/output/
+Tests/in_silico/visual/
+Tests/visual/data/
+Tests/visual/spectra_plots/
+Tests/bootstrap/substanceP_analyzed.sadoMasto
+Tests/bootstrap/visual/
+Tests/experimental_spectra/results/
+Tests/in_silico/masstodon_in_silico_analysis/data/
+Tests/in_silico/masstodon_in_silico_analysis/visual/
 
+*.zip
 
 # Spectra
 *.mzXML
 *.json
+Tests/data/FRL-010513-SUBP-WH000-WV300.txt
+Tests/data/substanceP_spectra_parsed.cPickle
+Tests/experimental_spectra/parsed_sub_P.matteo
 
 # My own junk and notes
 Old/
@@ -30,7 +43,7 @@ __pycache__/
 
 #R
 .Rhistory
-.Rproj
+*.Rproj
 
 
 # Distribution / packaging
