@@ -70,7 +70,7 @@ from Solver             import solve
 from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import czMatchMakerBasic as analyzer_basic, czMatchMakerIntermediate as analyzer_intermediate, czMatchMakerAdvanced as analyzer_advanced
 from Visualization      import ResultsPlotter
-from collections        import Counter
+from Summarator         import summarize_results
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
@@ -147,6 +147,7 @@ class MassTodon():
             print 'trimmed intensity', self.spectra['trimmed intensity']
             print
 
+    # TODO is the thing below necessary?
     def spectrum_iter(self, spectrum_type):
         assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
         for mz, intensity in izip(*self.spectra[spectrum_type]):
@@ -163,11 +164,12 @@ class MassTodon():
             forPlot             = False,
             **args ):
         '''Perform the deconvolution of problems.'''
+
+
         picker_res = self.peakPicker.get_problems(
             massSpectrum            = self.spectra['trimmed'],
             min_prob_per_molecule   = min_prob_per_molecule,
             bootstrap               = bootstrap )
-
         if bootstrap:
             self.problems, self.small_graphs_no_G = picker_res
         else:
@@ -183,6 +185,8 @@ class MassTodon():
         if forPlot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 
+
+    # TODO is the thing below necessary?
     def results_iter(self):
         '''Iterate over results.
 
@@ -200,44 +204,9 @@ class MassTodon():
 
     def summarize_results(self):
         '''Summarize the results of MassTodon.'''
-        summary = Counter()
-
-        used_E_total_intensity = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
-
-        # the intensity of peaks outside any graph
-        unused_E_total_intensity = self.spectra['trimmed intensity']+self.spectra['total intensity after trim'] - used_E_total_intensity
-
-        trimmed_intensity = self.spectra['trimmed intensity']
-
-        for r in self.res:
-            summary['L1_error'] += r['L1_error']
-            # summary['L2_error'] += r['L2_error']
-            summary['underestimates']+= r['underestimates']
-            summary['overestimates'] += r['overestimates']
-
-            if r['status'] != 'optimal':
-                summary['L1_error_nonoptimal'] += r['L1_error']
-                # summary['L2_error_nonoptimal'] += r['L2_error']
-                summary['underestimates_nonoptimal']+= r['underestimates']
-                summary['overestimates_nonoptimal'] += r['overestimates']
-
-
-        if self.spectra['original total intensity'] > 0.0:
-            summary['L1_error/original_total_intensity']= (summary['L1_error']+unused_E_total_intensity)/self.spectra['original total intensity']
-            # summary['L2_error/original_total_intensity']= (summary['L2_error']+unused_E_total_intensity)/self.spectra['original total intensity']
-
-        if self.spectra['total intensity after trim'] > 0.0:
-            summary['L1_error/total_intensity_after_trim'] = (summary['L1_error']+trimmed_intensity)/self.spectra['total intensity after trim']
-            # summary['L2_error/total_intensity_after_trim'] = (summary['L2_error']+trimmed_intensity)/self.spectra['total intensity after trim']
-
-        if used_E_total_intensity > 0.0:
-            summary['L1_error_on_scooped_mz/used_E_total_intensity'] = summary['L1_error']/used_E_total_intensity
-
-            summary['underestimates/total_intensity_after_trim'] = summary['underestimates']/used_E_total_intensity
-
-            summary['overestimates/total_intensity_after_trim'] = summary['overestimates']/used_E_total_intensity
-
-        return summary
+        return summarize_results(   peakPicker_stats    = self.peakPicker.stats,
+                                    spectra             = self.spectra,
+                                    raw_masstodon_res   = self.res              )
 
 
     def export_information_for_spectrum_plotting(self, full_info=False):
@@ -255,6 +224,7 @@ class MassTodon():
                         'where': 'not_explainable' }
 
 
+    # TODO is the thing below necessary?
     def flatten_results(self, minimal_estimated_intensity=100.0):
         '''Return one list of results, one list of difficult cases, and the error.'''
         optimal     = []
@@ -309,13 +279,13 @@ class MassTodon():
         return precursor, data
 
 
-    def analyze_reactions(self, analyzer='basic', accept_nonOptimalDeconv = False, verbose=False, **advanced_args):
+    def analyze_reactions(  self,
+                            analyzer = 'intermediate',
+                            accept_nonOptimalDeconv = False,
+                            min_acceptEstimIntensity = 0.0, # might change it to self.spectra['cut_off']
+                            verbose=False,
+                            **advanced_args ):
         '''Estimate reaction constants and quantities of fragments.'''
-
-        min_acceptEstimIntensity = 0.0
-            # might change it to self.spectra['cut_off']
-            # However, it might be that we actually want to have estimates below the threshold.
-            # We can neglect them later on.
 
         chosen_analyzer = {
             'basic':    analyzer_basic,
@@ -324,11 +294,10 @@ class MassTodon():
         }[analyzer](self.res, self.Q, self.fasta,
                     accept_nonOptimalDeconv,
                     min_acceptEstimIntensity, verbose )
+
         return chosen_analyzer.pair()
 
 
-def get_args(arg_names, all_args):
-    init_args = dict((x, all_args[x]) for x in all_args if x in arg_names )
 
 
 def MassTodonize(

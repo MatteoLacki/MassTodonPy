@@ -39,12 +39,12 @@ M = MassTodon(  fasta           = mol['fasta'],
 
 M.read_n_preprocess_spectrum(   spectrum = spectrum,
                                 cut_off  = cut_off     )
-  
+
 M.run(  solver  = solver,
         multiprocesses_No = multiprocesses_No,
         method  = method,
         max_times_solve = max_times_solve,
-        M_minProb = .75,
+        min_prob_per_molecule = .75,
         bootstrap = True,
         L1_x = L1_x,
         L2_x = L2_x,
