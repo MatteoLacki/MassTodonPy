@@ -3,6 +3,12 @@
 node_modules
 yarn.lock
 
+# Folders
+Tests/bootstrap/RESULTS_CSV/
+Tests/bootstrap/RESULTS_CSV_31_05_2017/
+Tests/bootstrap/RESULTS_REAL/
+Tests/bootstrap/RESULTS_REAL_31_05_2017/
+
 
 # Spectra
 *.mzXML
@@ -24,6 +30,8 @@ __pycache__/
 
 #R
 .Rhistory
+.Rproj
+
 
 # Distribution / packaging
 .Python
