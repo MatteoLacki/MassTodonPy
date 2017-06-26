@@ -16,7 +16,8 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from    MassTodonPy.Deconvolutor import deconvolve
-from    time  import time
+from    MassTodonPy.Misc import cvxopt_wrapper
+from    time import time
 from    multiprocessing import Pool
 from    itertools import repeat
 from    collections import Counter
@@ -85,6 +86,7 @@ class MultiprocessingSolver(Solver):
     def run(self, args, method, multiprocesses_No = None):
             #Start solving bigger, i.e. graphs with more nodes, problems first
         self.problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
+
         T0 = time()
         pool_args = zip(    self.problems,
                             repeat(args),

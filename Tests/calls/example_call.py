@@ -1,15 +1,15 @@
 # %load_ext autoreload
 # %autoreload
-import os
+# import os
 
-# Setting up locally the number of threads used by
-# BLAS to 1.
-old = os.environ.get('OMP_NUM_THREADS', None)
-os.environ['OMP_NUM_THREADS'] = "1"
+# # Setting up locally the number of threads used by
+# # BLAS to 1.
+# old = os.environ.get('OMP_NUM_THREADS', None)
+# os.environ['OMP_NUM_THREADS'] = "1"
 
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
-from    time  import time
+from time  import time
 
 # mol = substanceP.copy()
 mol = ubiquitin.copy()

@@ -25,7 +25,7 @@ compare_spectra_plots: # Relies on Rscript
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
 run_bootstrap_substance_P:
-	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap_subP.py
+	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py
 
 analyze_bootstrap_substance_P: # Relies on Rscript
 	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R
