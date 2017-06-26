@@ -22,55 +22,6 @@ from    multiprocessing import Pool
 from    itertools import repeat
 from    collections import Counter
 
-# class Solver(object):
-#     def __init__(self, problems, verbose=False):
-#         self.problems = problems
-#         self.verbose  = verbose
-#         self.stats    = Counter()
-#
-#     def run(self, args, method='MSE', max_times_solve=5):
-#         raise NotImplementedError
-#
-#
-# class SequentialSolver(Solver):
-#     def run(self,
-#             args,
-#             method='MSE',
-#             max_times_solve=5
-#         ):
-#
-#         results = []
-#
-#         with cvxopt_wrapper():
-#             for SG in self.problems:
-#                 i = 0
-#                 stop = False
-#                 T0 = time()
-#
-#                 while not stop:
-#                     T00 = time()
-#                     res = deconvolve(   SG      = SG,
-#                                         args    = args,
-#                                         method  = method)
-#                     T01 = time()
-#                     if self.verbose:
-#                         print 'CVXOPT call lasted', T01-T00
-#
-#                     i += 1
-#                     if res['status'] == 'optimal':
-#                         stop = True
-#                     if i == max_times_solve:
-#                         stop = True
-#                         print 'Deconvolution proved non optimal', max_times_solve, 'times'
-#                 results.append(res)
-#                 T1 = time()
-#                 self.stats['Deconvolution Total T'] = T1-T0
-#
-#                 if self.verbose:
-#                     print 'Solved problem in', T1-T0, 'It was big as', len(SG)
-#                     print
-#
-#         return results
 
 def worker(worker_args):
     SG, args, method, max_times_solve, verbose = worker_args
@@ -95,39 +46,7 @@ def worker(worker_args):
         print 'Solved problem in' , T1-T0, 'It was big as', len(SG)
     return res
 
-#
-# class MultiprocessingSolver(Solver):
-#     def run(self,
-#             args,
-#             method,
-#             max_times_solve = 5,
-#             multiprocesses_No = None
-#         ):
-#         '''Run the multiprocesses solver.'''
-#             #Start solving bigger, i.e. graphs with more nodes, problems first
-#         self.problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
-#         pool_args = zip(self.problems,
-#                         repeat(args),
-#                         repeat(method),
-#                         repeat(max_times_solve),
-#                         repeat(self.verbose) )
-#
-#         with cvxopt_wrapper():
-#             T0 = time()
-#             P = Pool(multiprocesses_No)
-#             results = P.map(    worker,
-#                                 pool_args    )
-#             P.close()
-#             P.join()
-#             T1 = time()
-#
-#         self.stats['Deconvolution Total T'] = T1-T0
-#
-#         if self.verbose:
-#             print 'Solved problem in', T1-T0
-#             print
-#
-#         return results
+
 
 def solve(  problems,
             args,
@@ -150,11 +69,11 @@ def solve(  problems,
         elif solver == 'multiprocessing':
             #Start solving bigger, i.e. graphs with more nodes, problems first
             problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
-            pool_args = zip(self.problems,
+            pool_args = zip(problems,
                             repeat(args),
                             repeat(method),
                             repeat(max_times_solve),
-                            repeat(self.verbose) )
+                            repeat(verbose) )
             P = Pool(multiprocesses_No)
             results = P.map( worker, pool_args )
             P.close()
@@ -169,4 +88,4 @@ def solve(  problems,
         print 'Solved problem in', T1-T0
         print
 
-    return res
+    return results
