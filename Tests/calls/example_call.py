@@ -1,12 +1,3 @@
-# %load_ext autoreload
-# %autoreload
-# import os
-
-# # Setting up locally the number of threads used by
-# # BLAS to 1.
-# old = os.environ.get('OMP_NUM_THREADS', None)
-# os.environ['OMP_NUM_THREADS'] = "1"
-
 from MassTodonPy import MassTodon
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from time  import time
@@ -58,8 +49,3 @@ print
 # print M.analyze_reactions('basic')
 # print M.analyze_reactions('intermediate')
 # print M.analyze_reactions('advanced')
-
-if old:
-    os.environ['OMP_NUM_THREADS'] = old
-else:
-    del os.environ['OMP_NUM_THREADS']
