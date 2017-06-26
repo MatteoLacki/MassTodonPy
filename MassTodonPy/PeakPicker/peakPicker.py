@@ -114,16 +114,14 @@ class PeakPickerBootstrap(PeakPickerBase):
         self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.G_stats= []
+        self.stats= Counter()
 
     def turn_clusters_2_problems(   self,
                                     clusters,
-                                    spectrum,
+                                    spectrum_boot,
                                     ions_no,
                                     min_prob_per_molecule = 0.75  ):
         '''Turn clusters into fully fledged problems for optimization given a bootstrap spectrum.'''
-
-        mzs, intensities = spectrum
-        spectrum_boot = dict(izip( mzs, multinomial(ions_no, intensities/intensities.sum()).astype(np.float) * intensities.sum()/float(ions_no) ))
         for SG in clusters: # updating intensities
             for E in SG:
                 if SG.node[E]['type'] == 'E':
@@ -133,6 +131,8 @@ class PeakPickerBootstrap(PeakPickerBase):
             for cc in clusters \
                 for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
                     if len(SG) > 1 ]
+
+        self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
 
         return problems
 

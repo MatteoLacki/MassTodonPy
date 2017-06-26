@@ -183,15 +183,15 @@ class MassTodon():
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 
 
-    def provide_clusters(self):
-        '''Provide a copy of the connected components of the deconvolution graph.
-
-        The experimental peaks E are not yet grouped into groups G.
-        Intended to be used in bootstrap procedures.'''
-        if self.clusters:
-            return [ SG.copy() for SG in self.clusters ]
-        else:
-            return None
+    # def provide_clusters(self):
+    #     '''Provide a copy of the connected components of the deconvolution graph.
+    #
+    #     The experimental peaks E are not yet grouped into groups G.
+    #     Intended to be used in bootstrap procedures.'''
+    #     if self.clusters:
+    #         return [ SG.copy() for SG in self.clusters ]
+    #     else:
+    #         return None
 
 
     # TODO is the thing below necessary?
@@ -287,21 +287,20 @@ class MassTodon():
 
 
     def analyze_reactions(  self,
-                            analyzer = 'intermediate',
+                            analyzer                = 'intermediate',
                             accept_nonOptimalDeconv = False,
-                            min_acceptEstimIntensity = 0.0, # might change it to self.spectra['cut_off']
-                            verbose=False,
-                            **advanced_args ):
+                            min_acceptEstimIntensity= 0.0, # might change it to self.spectra['cut_off']
+                            verbose                 = False,
+                            **advanced_args     ):
         '''Estimate reaction constants and quantities of fragments.'''
-
-        return match_cz_ions(   results_to_pair = self.res,
-                                Q = self.Q,
-                                fasta = self.fasta,
-                                min_acceptEstimIntensity = min_acceptEstimIntensity,
-                                analyzer = analyzer,
+        return match_cz_ions(   results_to_pair         = self.res,
+                                Q                       = self.Q,
+                                fasta                   = self.fasta,
+                                min_acceptEstimIntensity= min_acceptEstimIntensity,
+                                analyzer                = analyzer,
                                 accept_nonOptimalDeconv = accept_nonOptimalDeconv,
-                                verbose = verbose,
-                                advanced_args = advanced_args )
+                                verbose                 = verbose,
+                                advanced_args           = advanced_args   )
 
 
 def MassTodonize(

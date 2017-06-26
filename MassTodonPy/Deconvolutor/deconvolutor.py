@@ -167,7 +167,7 @@ class Deconvolutor(object):
         return float(L1_sign)
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def run(self, L1_x=0.0, L2_x=0.0, L1_alpha=0.0, L2_alpha=0.0, verbose=False):
+    def run(self, L1_x=.001, L2_x=.001, L1_alpha=.001, L2_alpha=.001, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
         P, q = get_P_q(self.SG, self.M_No, self.var_No, L1_x, L2_x, L1_alpha, L2_alpha)

@@ -4,8 +4,8 @@ import  json
 from    bootstrap_misc import MassTodon_bootstrap
 from    MassTodonPy     import MassTodonize, MassTodon
 from    numpy.random    import multinomial
-import  numpy as np
-from    itertools import izip
+import  numpy           as np
+from    itertools       import izip
 from    multiprocessing import Pool
 
 data_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/substanceP_spectra_parsed.cPickle'
@@ -13,7 +13,7 @@ with open(data_path, 'r') as f:
     substancesP = pickle.load(f)
 
 ions_no         = 10**6
-bootstrap_size  = 1
+bootstrap_size  = 1000
 
 ID, mol = 0, substancesP[0]
 mz_prec = .05
@@ -61,36 +61,62 @@ Results['advanced analysis']    = M.analyze_reactions('advanced')
 # Results['summary']
 
 ######### Here we will do bootstrap (actually we could add original tasks to the pool.. the hell with it...)
+mzs, intensities = M.spectra['trimmed']
+
+boot_intensities = multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no)
+clusters = M.clusters
+
 from MassTodonPy.PeakPicker import PeakPickerBootstrap
+from MassTodonPy.Solver     import solve
+from MassTodonPy.Parsers    import trim_spectrum
+from MassTodonPy.Summarator import summarize_results
+from MassTodonPy.MatchMaker import match_cz_ions
 
-clusters = M.provide_clusters()
-spectrum = M.spectra['trimmed']
+simulation_idx = 0
 
-PeakPickBoot = PeakPickerBootstrap(mz_prec)
-problems = PeakPickBoot.turn_clusters_2_problems(clusters, spectrum, ions_no, min_prob_per_molecule)
+def helper(simulation_idx):
+    spectra = {}
+    spectra['cut_off'] = M.spectra['cut_off']
+    spectra['original total intensity'] = M.spectra['original total intensity']
+    intensities = boot_intensities[simulation_idx,]
+    spectra_trimmed, spectra_left_out = trim_spectrum(mzs, intensities, cut_off=spectra['cut_off'])
 
+    spectra['total intensity after trim'] = spectra_trimmed[1].sum()
+    spectra['trimmed intensity'] = spectra['original total intensity'] - spectra['total intensity after trim']
 
+    spectrum_boot = dict(izip(mzs, boot_intensities[simulation_idx,]))
+    PeakPickBoot  = PeakPickerBootstrap(mz_prec)
+    problems = PeakPickBoot.turn_clusters_2_problems(clusters, spectrum_boot, ions_no, min_prob_per_molecule)
+    res = solve(problems= problems,
+                args    = { 'verbose' : verbose },
+                solver  = 'sequential',
+                multiprocesses_No = None,
+                method  = 'MSE',
+                max_times_solve = 5,
+                verbose = verbose   )
 
-from MassTodonPy.Solver import solve
+    spectra['intensity of peaks paired with isotopologues'] = PeakPickBoot.stats['total intensity of experimental peaks paired with isotopologues']
 
+    Results = {}
+    Results['summary'] = summarize_results( spectra = spectra,
+                                            raw_masstodon_res = res  )
+    Results.update(dict(map(lambda analyzer:
+            (   analyzer,
+                match_cz_ions(  results_to_pair         = res,
+                                Q                       = mol['precursorCharge'],
+                                fasta                   = mol['fasta'],
+                                advanced_args           = {},
+                                min_acceptEstimIntensity= min_prob_per_molecule,
+                                analyzer                = analyzer,
+                                accept_nonOptimalDeconv = True,
+                                verbose                 = verbose  )
+            ),['basic', 'intermediate', 'advanced'] )))
 
-solve(  problems = problems,
-        args   = args,
-        solver = solver,
-        multiprocesses_No = multiprocesses_No,
-        method = method,
-        max_times_solve = max_times_solve,
-        verbose= self.verbose   )
+    return Results
 
-
-
-
-
-
-# multiprocesses_No = None
 P = Pool(multiprocesses_No)
-results = P.map(    helper,
-                    pool_args    )
-
+results = P.map( helper, xrange(bootstrap_size) )
 P.close()
 P.join()
+
+print results
