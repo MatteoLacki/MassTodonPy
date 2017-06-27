@@ -303,6 +303,7 @@ class MassTodon():
                                 advanced_args           = advanced_args   )
 
 
+
 def MassTodonize(
         fasta,
         precursor_charge,
@@ -359,15 +360,21 @@ def MassTodonize(
             L2_alpha    = L2_alpha,
             verbose     = verbose       )
 
-    Results = {}
-    Results['summary']              = M.summarize_results()
-    Results['basic analysis']       = M.analyze_reactions('basic')
-    Results['intermediate analysis']= M.analyze_reactions('intermediate')
-    Results['advanced analysis']    = M.analyze_reactions('advanced')
-    if raw_data:
-        Results['raw estimates'] = M.res
-    if forPlot:
-        Results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
-        Results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
-        Results['original spectrum']    = M.spectrum_iter('original')
-    return Results
+    results = {}
+    if bootstrap:
+        pass
+    else:
+        results['summary']              = M.summarize_results()
+        results['basic analysis']       = M.analyze_reactions('basic')
+        results['intermediate analysis']= M.analyze_reactions('intermediate')
+        results['advanced analysis']    = M.analyze_reactions('advanced')
+
+        if raw_data:
+            results['raw estimates'] = M.res
+
+        if forPlot:
+            results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
+            results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
+            results['original spectrum']    = M.spectrum_iter('original')
+
+    return results

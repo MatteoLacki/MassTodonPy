@@ -76,7 +76,7 @@ from MassTodonPy.Misc       import cvxopt_wrapper
 
 simulation_idx = 0
 
-def worker(simulation_idx):
+def bootstrap_worker(simulation_idx):
     '''This worker performs one whole bootstrap task.'''
     spectra = {}
     spectra['cut_off'] = M.spectra['cut_off']
@@ -118,7 +118,7 @@ def worker(simulation_idx):
     return Results
 
 P = Pool(multiprocesses_No)
-results = P.map( worker, xrange(bootstrap_size) )
+results = P.map( bootstrap_worker, xrange(bootstrap_size) )
 P.close()
 P.join()
 
