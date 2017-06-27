@@ -19,7 +19,7 @@ multiprocesses_No = None
 
 method  = 'MSE'
 verbose = True
-bootstrap_repeats = 10
+bootstrap_repeats = 100
 
 T0 = time()
 res = MassTodonize( fasta           = mol['fasta'],
