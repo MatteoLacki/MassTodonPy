@@ -12,6 +12,8 @@ def bootstrap_worker(args):
 
     cut_off, original_total_intensity, mzs, intensities, mz_prec, clusters, ions_no, min_prob_per_molecule, Q, fasta, verbose = args
 
+    if verbose:
+        print 'Bootstrap worker online!'
 
     spectra = {}
     spectra['cut_off'] = cut_off
@@ -48,6 +50,9 @@ def bootstrap_worker(args):
                                 accept_nonOptimalDeconv = True,
                                 verbose                 = verbose  )
             ),['basic', 'intermediate', 'advanced'] )))
+
+    if verbose:
+        print 'Bootstrap worker finished!'
 
     return results
 
