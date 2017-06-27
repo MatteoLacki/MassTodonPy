@@ -21,6 +21,8 @@ def bootstrap_worker(args):
     try:
         cut_off, original_total_intensity, mzs, intensities, mz_prec, clusters, ions_no, min_prob_per_molecule, Q, fasta, verbose = args
 
+        # print clusters[0].nodes(data=True)
+
         if verbose:
             print 'Bootstrap worker online!'
 
@@ -33,6 +35,11 @@ def bootstrap_worker(args):
         spectrum_boot = Counter(izip(*spectra_trimmed))
         PeakPickBoot  = PeakPickerBootstrap(mz_prec)
         problems      = PeakPickBoot.turn_clusters_2_problems(clusters, spectrum_boot, ions_no, min_prob_per_molecule)
+
+        # print
+        # for p in problems:
+        #     print [p.nodes(data=True)]
+        # print
 
         res = solve(problems= problems,
                     args    = { 'verbose' : verbose },
@@ -116,12 +123,12 @@ def run_bootstrap(  bootstrap_repeats,
         print 'Problems ready'
         print
 
-    with cvxopt_wrapper():
-        P = Pool(multiprocesses_No)
-        results = P.imap( bootstrap_worker, iter_of_args )
-        P.close()
-        P.join()
+    # with cvxopt_wrapper():
+    #     P = Pool(multiprocesses_No)
+    #     results = P.map( bootstrap_worker, iter_of_args )
+    #     P.close()
+    #     P.join()
 
-    # results = [bootstrap_worker(arg) for arg in iter_of_args]
+    results = [bootstrap_worker(arg) for arg in iter_of_args]
 
     return results

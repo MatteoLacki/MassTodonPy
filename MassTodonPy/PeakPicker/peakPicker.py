@@ -122,10 +122,15 @@ class PeakPickerBootstrap(PeakPickerBase):
                                     ions_no,
                                     min_prob_per_molecule = 0.75  ):
         '''Turn clusters into fully fledged problems for optimization given a bootstrap spectrum.'''
+
+        E_to_remove = []
         for SG in clusters: # updating intensities
             for E in SG:
                 if SG.node[E]['type'] == 'E':
                     SG.node[E]['intensity'] = spectrum_boot[E]
+                    if spectrum_boot[E] == 0.0:
+                        E_to_remove.append(E)
+            SG.remove_nodes_from(E_to_remove)
 
         problems = [ self.add_G_nodes(SG) \
             for cc in clusters \

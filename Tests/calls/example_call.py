@@ -2,8 +2,8 @@ from MassTodonPy import MassTodon, MassTodonize
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from time  import time
 
-# mol = substanceP.copy()
-mol = ubiquitin.copy()
+mol = substanceP.copy()
+# mol = ubiquitin.copy()
 
 jP = .999
 
@@ -15,13 +15,12 @@ max_times_solve = 10
 
 # solver  = 'sequential'
 solver  = 'multiprocessing'
-multiprocesses_No = 24
+multiprocesses_No = None
 
 method  = 'MSE'
 verbose = True
-bootstrap_repeats = 100
+bootstrap_repeats = 2
 
-T0 = time()
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
                     mz_prec         = mzPrec,
@@ -34,9 +33,11 @@ res = MassTodonize( fasta           = mol['fasta'],
                     max_times_solve = max_times_solve,
                     bootstrap_repeats = bootstrap_repeats,
                     verbose         = verbose )
-T1 = time()
-print 'Total Time', T1-T0
-print
+
+
+for rb in res['bootstrap']:
+    print rb
+    print
 
 # print M.summarize_results()
 # print M.gen_ETDetective_inputs()

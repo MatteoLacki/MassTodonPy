@@ -75,6 +75,7 @@ from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
 from Bootstrap          import run_bootstrap
+from time               import time
 
 class MassTodon():
     def __init__(   self,
@@ -323,6 +324,8 @@ def MassTodonize(
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
+
+    T0 = time()
     M = MassTodon(  fasta,
                     precursor_charge,
                     mz_prec,
@@ -352,6 +355,14 @@ def MassTodonize(
             verbose   = verbose    )
 
     results = {}
+    results['summary']              = M.summarize_results()
+    results['basic analysis']       = M.analyze_reactions('basic')
+    results['intermediate analysis']= M.analyze_reactions('intermediate')
+    results['advanced analysis']    = M.analyze_reactions('advanced')
+
+    if raw_data:
+        results['raw estimates'] = M.res
+
     if bootstrap_repeats:
         results['bootstrap'] = run_bootstrap(
             bootstrap_repeats   = bootstrap_repeats,
@@ -366,17 +377,14 @@ def MassTodonize(
             verbose             = verbose
         )
 
-    results['summary']              = M.summarize_results()
-    results['basic analysis']       = M.analyze_reactions('basic')
-    results['intermediate analysis']= M.analyze_reactions('intermediate')
-    results['advanced analysis']    = M.analyze_reactions('advanced')
-
-    if raw_data:
-        results['raw estimates'] = M.res
-
     if forPlot:
         results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
         results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
         results['original spectrum']    = M.spectrum_iter('original')
+
+    T1 = time()
+    if verbose:
+        print
+        print 'Total analysis took', T1-T0
 
     return results
