@@ -73,7 +73,7 @@ def solve(  problems,
                             repeat(max_times_solve),
                             repeat(verbose) )
             P = Pool(multiprocesses_No)
-            results = P.map( worker, pool_args )
+            results = P.imap( worker, pool_args )
             P.close()
             P.join()
         else:

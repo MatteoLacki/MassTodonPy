@@ -96,7 +96,6 @@ def run_bootstrap(  bootstrap_repeats,
     cut_off = spectra['cut_off']
     original_total_intensity = spectra['original total intensity']
 
-    print clusters
     iter_of_args = izip(
         repeat(cut_off),
         repeat(original_total_intensity),
@@ -119,7 +118,7 @@ def run_bootstrap(  bootstrap_repeats,
 
     with cvxopt_wrapper():
         P = Pool(multiprocesses_No)
-        results = P.map( bootstrap_worker, iter_of_args )
+        results = P.imap( bootstrap_worker, iter_of_args )
         P.close()
         P.join()
 

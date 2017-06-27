@@ -19,7 +19,7 @@ multiprocesses_No = None
 
 method  = 'MSE'
 verbose = True
-bootstrap_repeats = 5
+bootstrap_repeats = 10
 
 T0 = time()
 res = MassTodonize( fasta           = mol['fasta'],
@@ -30,7 +30,7 @@ res = MassTodonize( fasta           = mol['fasta'],
                     spectrum        = mol['spectrum'],
                     opt_P           = opt_P,
                     solver          = solver,
-                    multiprocesses_No = 4,
+                    multiprocesses_No = multiprocesses_No,
                     max_times_solve = max_times_solve,
                     bootstrap_repeats = bootstrap_repeats,
                     verbose         = verbose )
