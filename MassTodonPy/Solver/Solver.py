@@ -22,14 +22,9 @@ from    multiprocessing import Pool
 from    itertools import repeat
 from    collections import Counter
 
-pool_args = None
 
-# def worker(worker_args):
-def worker(idx):
-    global pool_args
-    worker_args = pool_args[idx]
+def worker(worker_args):
     SG, args, method, max_times_solve, verbose = worker_args
-    SG, args, method, max_times_solve, verbose = pool_args[idx]
     i = 0
     stop = False
     T0 = time()
@@ -63,7 +58,6 @@ def solve(  problems,
     '''Wrapper over the solver class.
 
     Runs the solver with a given set of inputs.'''
-    global pool_args
     stats = Counter()
 
     with cvxopt_wrapper():
@@ -78,10 +72,8 @@ def solve(  problems,
                             repeat(method),
                             repeat(max_times_solve),
                             repeat(verbose) )
-            K = len(pool_args)
             P = Pool(multiprocesses_No)
-            # results = P.map( worker, pool_args )
-            results = P.map( worker, xrange(K) )
+            results = P.map( worker, pool_args )
             P.close()
             P.join()
         else:
