@@ -8,8 +8,8 @@ with open(data_path, 'r') as f:
     substancesP = pickle.load(f)
 
 ions_no         = 10**6
-bootstrap_size  = 1
-results_path    = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS_CSV/'
+bootstrap_size  = 10
+results_path    = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS_CSV_27_06_2017/'
 
 ID, exp = 0, substancesP[0]
 

@@ -74,7 +74,6 @@ from Summarator         import summarize_results
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
-from Bootstrap          import run_bootstrap
 from time               import time
 
 class MassTodon():
@@ -162,15 +161,13 @@ class MassTodon():
             method              ='MSE',
             max_times_solve     = 5,
             min_prob_per_molecule = .75,
-            bootstrap           = 0,
             forPlot             = False,
             **args ):
         '''Perform the deconvolution of problems.'''
 
         self.problems, self.clusters= self.peakPicker.get_problems(
             massSpectrum            = self.spectra['trimmed'],
-            min_prob_per_molecule   = min_prob_per_molecule,
-            bootstrap               = bootstrap )
+            min_prob_per_molecule   = min_prob_per_molecule )
 
         self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
 
@@ -304,11 +301,9 @@ def MassTodonize(
         spectrum        = None,
         spectrum_path   = None,
         modifications   = {},
-        bootstrap_repeats = 0,
         frag_type       = 'cz',
         joint_probability_of_envelope   = .999,
         min_prob_of_envelope_in_picking = .7,
-        ions_no_in_bootstrap = 100000,
         iso_masses  = None,
         iso_probs   = None,
         L1_x = .001,
@@ -346,7 +341,6 @@ def MassTodonize(
             method = method,
             max_times_solve = max_times_solve,
             min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            bootstrap = bootstrap_repeats,
             forPlot   = forPlot,
             L1_x      = L1_x,
             L2_x      = L2_x,
@@ -362,20 +356,6 @@ def MassTodonize(
 
     if raw_data:
         results['raw estimates'] = M.res
-
-    if bootstrap_repeats:
-        results['bootstrap'] = run_bootstrap(
-            bootstrap_repeats   = bootstrap_repeats,
-            spectra             = M.spectra,
-            clusters            = M.clusters,
-            mz_prec             = mz_prec,
-            Q                   = precursor_charge,
-            fasta               = fasta,
-            min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            ions_no             = ions_no_in_bootstrap,
-            multiprocesses_No   = multiprocesses_No,
-            verbose             = verbose
-        )
 
     if forPlot:
         results['short data to plot']   = M.export_information_for_spectrum_plotting(False)

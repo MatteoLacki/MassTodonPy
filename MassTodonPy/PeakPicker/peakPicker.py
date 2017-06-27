@@ -106,40 +106,40 @@ class PeakPickerBase(object):
         return small_graph
 
 
-class PeakPickerBootstrap(PeakPickerBase):
-    def __init__(   self,
-                    mz_prec = 0.05
-        ):
-        '''Initialize peak picker.'''
-        self.mz_prec= mz_prec
-        self.cnts   = MultiCounter() # TODO finish it.
-        self.G_stats= []
-        self.stats  = Counter()
-
-    def turn_clusters_2_problems(   self,
-                                    clusters,
-                                    spectrum_boot,
-                                    ions_no,
-                                    min_prob_per_molecule = 0.75  ):
-        '''Turn clusters into fully fledged problems for optimization given a bootstrap spectrum.'''
-
-        E_to_remove = []
-        for SG in clusters: # updating intensities
-            for E in SG:
-                if SG.node[E]['type'] == 'E':
-                    SG.node[E]['intensity'] = spectrum_boot[E]
-                    if spectrum_boot[E] == 0.0:
-                        E_to_remove.append(E)
-            SG.remove_nodes_from(E_to_remove)
-
-        problems = [ self.add_G_nodes(SG) \
-            for cc in clusters \
-                for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
-                    if len(SG) > 1 ]
-
-        self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
-
-        return problems
+# class PeakPickerBootstrap(PeakPickerBase):
+#     def __init__(   self,
+#                     mz_prec = 0.05
+#         ):
+#         '''Initialize peak picker.'''
+#         self.mz_prec= mz_prec
+#         self.cnts   = MultiCounter() # TODO finish it.
+#         self.G_stats= []
+#         self.stats  = Counter()
+#
+#     def turn_clusters_2_problems(   self,
+#                                     clusters,
+#                                     spectrum_boot,
+#                                     ions_no,
+#                                     min_prob_per_molecule = 0.75  ):
+#         '''Turn clusters into fully fledged problems for optimization given a bootstrap spectrum.'''
+#
+#         E_to_remove = []
+#         for SG in clusters: # updating intensities
+#             for E in SG:
+#                 if SG.node[E]['type'] == 'E':
+#                     SG.node[E]['intensity'] = spectrum_boot[E]
+#                     if spectrum_boot[E] == 0.0:
+#                         E_to_remove.append(E)
+#             SG.remove_nodes_from(E_to_remove)
+#
+#         problems = [ self.add_G_nodes(SG) \
+#             for cc in clusters \
+#                 for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
+#                     if len(SG) > 1 ]
+#
+#         self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
+#
+#         return problems
 
 
 class PeakPicker(PeakPickerBase):

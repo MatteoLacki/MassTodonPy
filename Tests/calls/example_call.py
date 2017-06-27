@@ -16,10 +16,8 @@ max_times_solve = 10
 # solver  = 'sequential'
 solver  = 'multiprocessing'
 multiprocesses_No = None
-
 method  = 'MSE'
 verbose = True
-bootstrap_repeats = 2
 
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
@@ -31,16 +29,6 @@ res = MassTodonize( fasta           = mol['fasta'],
                     solver          = solver,
                     multiprocesses_No = multiprocesses_No,
                     max_times_solve = max_times_solve,
-                    bootstrap_repeats = bootstrap_repeats,
                     verbose         = verbose )
 
-
-for rb in res['bootstrap']:
-    print rb
-    print
-
-# print M.summarize_results()
-# print M.gen_ETDetective_inputs()
-# print M.analyze_reactions('basic')
-# print M.analyze_reactions('intermediate')
-# print M.analyze_reactions('advanced')
+print res

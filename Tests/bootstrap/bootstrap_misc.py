@@ -1,5 +1,6 @@
 from    MassTodonPy     import MassTodonize
 from    numpy.random    import multinomial
+import  numpy as np
 
 def process_ra(info, ra_type_row, prob_count):
     row_ra = {}
@@ -27,9 +28,9 @@ def get_row(res):
 def MassTodon_bootstrap(exp, ions_no, bootstrap_size, ID, WH, WV):
     '''Perform bootstrap analysis of MassTodon results.'''
     mzs, intensities = exp['spectrum']
-    # sim_intensities = multinomial(ions_no, intensities/intensities.sum())
+    # sim_intensities = multinomial(ions_no, intensities/intensities.sum()).astype(np.float) * intensities.sum()/float(ions_no)
     i = 0
-    for sim_intensities in multinomial(ions_no, intensities/intensities.sum(), bootstrap_size):
+    for sim_intensities in multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no):
         Results = MassTodonize(
             fasta           = exp['fasta'],
             precursor_charge= exp['precursorCharge'],
@@ -38,6 +39,7 @@ def MassTodon_bootstrap(exp, ions_no, bootstrap_size, ID, WH, WV):
             modifications   = exp['modifications'],
             spectrum        = (mzs, sim_intensities),
             solver          = 'sequential',
+            max_times_solve = max_times_solve,
             raw_data        = False,
             verbose         = False )
         row = get_row(Results)
@@ -46,3 +48,6 @@ def MassTodon_bootstrap(exp, ions_no, bootstrap_size, ID, WH, WV):
         if divmod(i, 10)[1] == 0:
             print 'Finished',i+1,'out of',bootstrap_size,'.'
         i += 1
+
+
+for sim_intensities in multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no):
