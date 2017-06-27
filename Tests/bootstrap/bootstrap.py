@@ -1,7 +1,9 @@
+import  os
+os.environ['OMP_NUM_THREADS'] = "1"
+
 import  cPickle         as pickle
 from    bootstrap_misc  import analyze_experiments
 import  sys
-import  os
 
 _, data_path, results_path = sys.argv
 if not os.path.exists(data_path):
