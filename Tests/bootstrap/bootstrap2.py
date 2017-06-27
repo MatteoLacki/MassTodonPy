@@ -1,15 +1,14 @@
-import  pandas      as pd
 import  cPickle     as pickle
-import  json
 from    itertools       import izip, repeat, islice
 from    multiprocessing import Pool
 from    numpy.random    import multinomial
 import  numpy as np
 from    MassTodonPy import MassTodonize
-
+import  sys
+import  os
 
 def bootstrap_worker(worker_args):
-    WH, WV, ID, fasta, Q, mz_prec, opt_P, modifications, masses, intensities, max_times_solve, verbose = worker_args
+    info, fasta, Q, mz_prec, opt_P, modifications, masses, intensities, max_times_solve, verbose = worker_args
     results = MassTodonize(
         fasta           = fasta,
         precursor_charge= Q,
@@ -21,30 +20,23 @@ def bootstrap_worker(worker_args):
         max_times_solve = max_times_solve,
         raw_data        = False,
         verbose         = verbose )
-    results['WH'] = WH
-    results['WV'] = WV
-    results['ID'] = ID
+    results.update(info)
     return results
 
 
-def bootstrap(  mol,
-                ID,
-                bootstrap_size  = 1000,
-                ions_no         = 10**6,
-                mz_prec         = 0.05,
-                opt_P           = .999,
-                max_times_solve = 10,
-                multiprocesses_No = None,
-                verbose         = False
+def bootstrap_substance_P(  mol,
+                            bootstrap_size  = 1000,
+                            ions_no         = 10**6,
+                            mz_prec         = 0.05,
+                            opt_P           = .999,
+                            max_times_solve = 10,
+                            multiprocesses_No = None,
+                            verbose         = False
     ):
     '''Run a bootstrap.'''
-    WH = mol['experimental_setting']['WH']
-    WV = mol['experimental_setting']['WV']
     mzs, intensities = mol['spectrum']
-    sim_intensities = multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no)
-    pool_args = izip(   repeat(WH),
-                        repeat(WV),
-                        repeat(ID),
+    sim_intensities  = multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no)
+    pool_args = izip(   repeat(mol['info']),
                         repeat(mol['fasta']),
                         repeat(mol['precursorCharge']),
                         repeat(mz_prec),
@@ -61,19 +53,46 @@ def bootstrap(  mol,
     return results
 
 
-data_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/substanceP_spectra_parsed.cPickle'
+def analyze_experiments(substances,
+                        results_path,
+                        K = None,
+                        bootstrap_size  = 1000,
+                        ions_no         = 10**6,
+                        mz_prec         = 0.05,
+                        opt_P           = .999,
+                        max_times_solve = 10,
+                        multiprocesses_No = None,
+                        verbose         = False  ):
+    for ID, mol in enumerate(islice(substances, K)):
+        results = {}
+        WH = mol['experimental_setting']['WH']
+        WV = mol['experimental_setting']['WV']
+        mol['info'] = {'WH':WH, 'WV':WV, 'ID':ID}
 
-results_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS_CSV_27_06_2017/'
+        results['real'] = bootstrap_worker((mol['info'],
+                                            mol['fasta'],
+                                            mol['precursorCharge'],
+                                            mz_prec,
+                                            opt_P,
+                                            mol['modifications'],
+                                            mol['spectrum'][0],
+                                            mol['spectrum'][1],
+                                            max_times_solve,
+                                            verbose))
 
-with open(data_path, 'r') as f:
+        results['bootstrap'] = bootstrap_substance_P(mol, bootstrap_size)
+
+        with open(results_path+str(ID), 'w') as handler:
+            pickle.dump(results, handler)
+        print 'Dumped', ID, 'out of',len(substancesP)
+
+
+_, data_path, results_path = sys.argv
+if not os.path.exists(data_path):
+    os.makedirs(data_path)
+if not os.path.exists(results_path):
+    os.makedirs(results_path)
+with open(data_path+'substanceP_spectra_parsed.cPickle', 'r') as f:
     substancesP = pickle.load(f)
 
-K = 2
-bootstrap_size = 10
-# K = len(substancesP)
-
-for ID, mol in enumerate(islice(substancesP, K)):
-    results = bootstrap(mol, ID, bootstrap_size)
-    with open(results_path+str(ID), 'w') as handler:
-        pickle.dump(results, handler)
-    print 'Dumped', ID, 'out of',len(substancesP),'.'
+analyze_experiments(substancesP, results_path, K=2, bootstrap_size=10)
