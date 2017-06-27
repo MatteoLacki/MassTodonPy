@@ -1,53 +1,85 @@
-from    MassTodonPy     import MassTodonize
+import  cPickle     as pickle
+from    itertools       import izip, repeat, islice
+from    multiprocessing import Pool
 from    numpy.random    import multinomial
 import  numpy as np
-
-def process_ra(info, ra_type_row, prob_count):
-    row_ra = {}
-    for k in info:
-        k_tmp = ra_type_row + "_" + prob_count + "_" + str(k).replace(" ","_")
-        row_ra[k_tmp] = info[k]
-    return row_ra
-
-# Results['summary']
-# Results.keys()
-# res = Results
-def get_row(res):
-    row = {}
-    ra_type_row = { 'basic analysis':               'basic',
-                    'intermediate analysis':        'inter',
-                    'advanced analysis':            'up_inter' }
-    for ra_type in ra_type_row:
-        for i, what in enumerate(('prob','count')):
-            row.update( process_ra( res[ra_type][i], ra_type_row[ra_type], what ) )
-    row.update(res['summary'])
-    return row
+from    MassTodonPy import MassTodonize
 
 
-# exp = experiments[0]
-def MassTodon_bootstrap(exp, ions_no, bootstrap_size, ID, WH, WV):
-    '''Perform bootstrap analysis of MassTodon results.'''
-    mzs, intensities = exp['spectrum']
-    # sim_intensities = multinomial(ions_no, intensities/intensities.sum()).astype(np.float) * intensities.sum()/float(ions_no)
-    i = 0
-    for sim_intensities in multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no):
-        Results = MassTodonize(
-            fasta           = exp['fasta'],
-            precursor_charge= exp['precursorCharge'],
-            mz_prec         = .05,
-            opt_P           = .999,
-            modifications   = exp['modifications'],
-            spectrum        = (mzs, sim_intensities),
-            solver          = 'sequential',
-            max_times_solve = max_times_solve,
-            raw_data        = False,
-            verbose         = False )
-        row = get_row(Results)
-        row['WH'], row['WV'], row['ID'] = WH, WV, ID
-        yield row
-        if divmod(i, 10)[1] == 0:
-            print 'Finished',i+1,'out of',bootstrap_size,'.'
-        i += 1
+def bootstrap_worker(worker_args):
+    info, fasta, Q, mz_prec, opt_P, modifications, masses, intensities, max_times_solve, verbose = worker_args
+    results = MassTodonize(
+        fasta           = fasta,
+        precursor_charge= Q,
+        mz_prec         = mz_prec,
+        opt_P           = opt_P,
+        modifications   = modifications,
+        spectrum        = (masses, intensities),
+        solver          = 'sequential',
+        max_times_solve = max_times_solve,
+        raw_data        = False,
+        verbose         = verbose )
+    results.update(info)
+    return results
 
 
-for sim_intensities in multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no):
+def bootstrap_substance_P(  mol,
+                            bootstrap_size  = 1000,
+                            ions_no         = 10**6,
+                            mz_prec         = 0.05,
+                            opt_P           = .999,
+                            max_times_solve = 10,
+                            multiprocesses_No = None,
+                            verbose         = False
+    ):
+    '''Run a bootstrap.'''
+    mzs, intensities = mol['spectrum']
+    sim_intensities  = multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no)
+    pool_args = izip(   repeat(mol['info']),
+                        repeat(mol['fasta']),
+                        repeat(mol['precursorCharge']),
+                        repeat(mz_prec),
+                        repeat(opt_P),
+                        repeat(mol['modifications']),
+                        repeat(mzs),
+                        sim_intensities,
+                        repeat(max_times_solve),
+                        repeat(verbose)             )
+    P = Pool(multiprocesses_No)
+    results = P.map( bootstrap_worker, pool_args )
+    P.close()
+    P.join()
+    return results
+
+
+def analyze_experiments(substances,
+                        results_path,
+                        K = None,
+                        bootstrap_size  = 1000,
+                        ions_no         = 10**6,
+                        mz_prec         = 0.05,
+                        opt_P           = .999,
+                        max_times_solve = 10,
+                        multiprocesses_No = None,
+                        verbose         = False  ):
+    for ID, mol in enumerate(islice(substances, K)):
+        results = {}
+        WH = mol['experimental_setting']['WH']
+        WV = mol['experimental_setting']['WV']
+        mol['info'] = {'WH':WH, 'WV':WV, 'ID':ID}
+
+        results['real'] = bootstrap_worker((mol['info'],
+                                            mol['fasta'],
+                                            mol['precursorCharge'],
+                                            mz_prec,
+                                            opt_P,
+                                            mol['modifications'],
+                                            mol['spectrum'][0],
+                                            mol['spectrum'][1],
+                                            max_times_solve,
+                                            verbose))
+
+        results['bootstrap'] = bootstrap_substance_P(mol, bootstrap_size)
+        with open(results_path+str(ID), 'w') as handler:
+            pickle.dump(results, handler)
+        print 'Dumped', ID, 'out of', len(substances)
