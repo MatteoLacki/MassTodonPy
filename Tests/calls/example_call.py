@@ -15,7 +15,7 @@ max_times_solve = 10
 
 # solver  = 'sequential'
 solver  = 'multiprocessing'
-multiprocesses_No = None
+multiprocesses_No = 24
 
 method  = 'MSE'
 verbose = True
