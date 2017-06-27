@@ -1,5 +1,5 @@
 from    numpy.random            import multinomial
-from    itertools               import izip, product, repeat
+from    itertools               import izip, repeat
 from    MassTodonPy.PeakPicker  import PeakPickerBootstrap
 from    multiprocessing         import Pool
 from    MassTodonPy.Misc        import cvxopt_wrapper
@@ -79,7 +79,7 @@ def run_bootstrap(  bootstrap_repeats,
     cut_off = spectra['cut_off']
     original_total_intensity = spectra['original total intensity']
 
-    iter_of_args = product(
+    iter_of_args = izip(
         repeat(cut_off),
         repeat(original_total_intensity),
         repeat(mzs),
