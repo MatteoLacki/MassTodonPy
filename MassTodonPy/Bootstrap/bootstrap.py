@@ -69,6 +69,10 @@ def run_bootstrap(  bootstrap_repeats,
                     verbose             = False
     ):
     '''Run a bootstrap procedure for an existing MassTodon task.'''
+
+    if verbose:
+        print 'Running bootstrap!'
+        print
     mzs, intensities = spectra['trimmed']
     boot_intensities = list(multinomial(ions_no, intensities/intensities.sum(), bootstrap_repeats).astype(np.float) * intensities.sum()/float(ions_no))
 
@@ -88,6 +92,10 @@ def run_bootstrap(  bootstrap_repeats,
         repeat(fasta),
         repeat(verbose)
     )
+
+    if verbose:
+        print 'Problems ready'
+        print
 
     with cvxopt_wrapper():
         P = Pool(multiprocesses_No)
