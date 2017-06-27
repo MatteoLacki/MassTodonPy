@@ -350,17 +350,17 @@ def MassTodonize(
 
     results = {}
     results['summary']              = M.summarize_results()
-    results['basic analysis']       = M.analyze_reactions('basic')
-    results['intermediate analysis']= M.analyze_reactions('intermediate')
-    results['advanced analysis']    = M.analyze_reactions('advanced')
+    results['basic_analysis']       = M.analyze_reactions('basic')
+    results['intermediate_analysis']= M.analyze_reactions('intermediate')
+    results['advanced_analysis']    = M.analyze_reactions('advanced')
 
     if raw_data:
-        results['raw estimates'] = M.res
+        results['raw_estimates'] = M.res
 
     if forPlot:
-        results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
-        results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
-        results['original spectrum']    = M.spectrum_iter('original')
+        results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
+        results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
+        results['original_spectrum']    = M.spectrum_iter('original')
 
     T1 = time()
     if verbose:
