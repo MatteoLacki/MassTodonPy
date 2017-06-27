@@ -8,8 +8,7 @@ from    MassTodonPy.Summarator  import summarize_results
 from    MassTodonPy.MatchMaker  import match_cz_ions
 import  numpy                   as     np
 from    collections             import Counter
-
-import traceback
+import  traceback
 
 def trim_spectrum(mz, intensity, cut_off=100):
     '''Remove peaks below a given cut off.'''
@@ -63,6 +62,7 @@ def bootstrap_worker(args):
 
         if verbose:
             print 'Bootstrap worker finished!'
+
     except Exception as e:
         traceback.print_exc()
         print()

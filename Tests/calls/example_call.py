@@ -2,8 +2,8 @@ from MassTodonPy import MassTodon, MassTodonize
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from time  import time
 
-mol = substanceP.copy()
-# mol = ubiquitin.copy()
+# mol = substanceP.copy()
+mol = ubiquitin.copy()
 
 jP = .999
 
@@ -15,7 +15,7 @@ max_times_solve = 10
 
 # solver  = 'sequential'
 solver  = 'multiprocessing'
-multiprocesses_No = 4
+multiprocesses_No = None
 
 method  = 'MSE'
 verbose = True
