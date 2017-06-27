@@ -15,4 +15,4 @@ with open(data_path+'substanceP_spectra_parsed.cPickle', 'r') as f:
     substancesP = pickle.load(f)
 
 # analyze_experiments(substancesP, results_path, K=2, bootstrap_size=200)
-analyze_experiments(substancesP, results_path, K=None, bootstrap_size=1000)
+analyze_experiments(substancesP, results_path, K=None, bootstrap_size=250)

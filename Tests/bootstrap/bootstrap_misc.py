@@ -4,22 +4,27 @@ from    multiprocessing import Pool
 from    numpy.random    import multinomial
 import  numpy as np
 from    MassTodonPy import MassTodonize
-
+import  traceback
 
 def bootstrap_worker(worker_args):
     info, fasta, Q, mz_prec, opt_P, modifications, masses, intensities, max_times_solve, verbose = worker_args
-    results = MassTodonize(
-        fasta           = fasta,
-        precursor_charge= Q,
-        mz_prec         = mz_prec,
-        opt_P           = opt_P,
-        modifications   = modifications,
-        spectrum        = (masses, intensities),
-        solver          = 'sequential',
-        max_times_solve = max_times_solve,
-        raw_data        = False,
-        verbose         = verbose )
-    results.update(info)
+    try:
+        results = MassTodonize(
+            fasta           = fasta,
+            precursor_charge= Q,
+            mz_prec         = mz_prec,
+            opt_P           = opt_P,
+            modifications   = modifications,
+            spectrum        = (masses, intensities),
+            solver          = 'sequential',
+            max_times_solve = max_times_solve,
+            raw_data        = False,
+            verbose         = verbose )
+        results.update(info)
+    except Exception as e:
+        traceback.print_exc()
+        print()
+        results = None
     return results
 
 
