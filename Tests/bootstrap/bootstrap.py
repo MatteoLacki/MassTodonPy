@@ -64,8 +64,16 @@ Results['advanced analysis']    = M.analyze_reactions('advanced')
 ######### Here we will do bootstrap (actually we could add original tasks to the pool.. the hell with it...)
 mzs, intensities = M.spectra['trimmed']
 
-boot_intensities = multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no)
+boot_intensities = list(multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no))
+
+
+
+
+
 clusters = M.clusters
+
+
+
 
 from MassTodonPy.PeakPicker import PeakPickerBootstrap
 from MassTodonPy.Solver     import solve

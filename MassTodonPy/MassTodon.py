@@ -74,6 +74,7 @@ from Summarator         import summarize_results
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
+from Bootstrap          import run_bootstrap
 
 class MassTodon():
     def __init__(   self,
@@ -181,17 +182,6 @@ class MassTodon():
                             verbose= self.verbose   )
         if forPlot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
-
-
-    # def provide_clusters(self):
-    #     '''Provide a copy of the connected components of the deconvolution graph.
-    #
-    #     The experimental peaks E are not yet grouped into groups G.
-    #     Intended to be used in bootstrap procedures.'''
-    #     if self.clusters:
-    #         return [ SG.copy() for SG in self.clusters ]
-    #     else:
-    #         return None
 
 
     # TODO is the thing below necessary?
@@ -313,12 +303,13 @@ def MassTodonize(
         spectrum        = None,
         spectrum_path   = None,
         modifications   = {},
-        bootstrap        = False,
+        bootstrap_repeats = 0,
         frag_type       = 'cz',
         joint_probability_of_envelope   = .999,
         min_prob_of_envelope_in_picking = .7,
-        iso_masses       = None,
-        iso_probs        = None,
+        ions_no_in_bootstrap = 100000,
+        iso_masses  = None,
+        iso_probs   = None,
         L1_x = .001,
         L2_x = .001,
         L1_alpha= .001,
@@ -347,34 +338,44 @@ def MassTodonize(
                                     cut_off,
                                     opt_P   )
 
-    M.run(  solver  = solver,
+    M.run(  solver = solver,
             multiprocesses_No = multiprocesses_No,
-            method  = method,
+            method = method,
             max_times_solve = max_times_solve,
             min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            bootstrap    = bootstrap,
-            forPlot     = forPlot,
-            L1_x        = L1_x,
-            L2_x        = L2_x,
-            L1_alpha    = L1_alpha,
-            L2_alpha    = L2_alpha,
-            verbose     = verbose       )
+            bootstrap = bootstrap,
+            forPlot   = forPlot,
+            L1_x      = L1_x,
+            L2_x      = L2_x,
+            L1_alpha  = L1_alpha,
+            L2_alpha  = L2_alpha,
+            verbose   = verbose    )
 
     results = {}
-    if bootstrap:
-        pass
-    else:
-        results['summary']              = M.summarize_results()
-        results['basic analysis']       = M.analyze_reactions('basic')
-        results['intermediate analysis']= M.analyze_reactions('intermediate')
-        results['advanced analysis']    = M.analyze_reactions('advanced')
+    if bootstrap_repeats:
+        results['bootstrap'] = run_bootstrap(
+            bootstrap_repeats   = bootstrap_repeats,
+            spectra             = M.spectra,
+            clusters            = M.clusters,
+            mz_prec             = mz_prec,
+            Q                   = precursor_charge,
+            fasta               = fasta,
+            ions_no             = ions_no_in_bootstrap,
+            multiprocesses_No   = multiprocesses_No,
+            verbose             = verbose
+        )
 
-        if raw_data:
-            results['raw estimates'] = M.res
+    results['summary']              = M.summarize_results()
+    results['basic analysis']       = M.analyze_reactions('basic')
+    results['intermediate analysis']= M.analyze_reactions('intermediate')
+    results['advanced analysis']    = M.analyze_reactions('advanced')
 
-        if forPlot:
-            results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
-            results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
-            results['original spectrum']    = M.spectrum_iter('original')
+    if raw_data:
+        results['raw estimates'] = M.res
+
+    if forPlot:
+        results['short data to plot']   = M.export_information_for_spectrum_plotting(False)
+        results['long data to plot']    = M.export_information_for_spectrum_plotting(True)
+        results['original spectrum']    = M.spectrum_iter('original')
 
     return results
