@@ -161,7 +161,7 @@ class MassTodon():
             method              ='MSE',
             max_times_solve     = 5,
             min_prob_per_molecule = .75,
-            bootstrap           = False,
+            bootstrap           = 0,
             forPlot             = False,
             **args ):
         '''Perform the deconvolution of problems.'''
@@ -343,7 +343,7 @@ def MassTodonize(
             method = method,
             max_times_solve = max_times_solve,
             min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            bootstrap = bootstrap,
+            bootstrap = bootstrap_repeats,
             forPlot   = forPlot,
             L1_x      = L1_x,
             L2_x      = L2_x,
@@ -360,6 +360,7 @@ def MassTodonize(
             mz_prec             = mz_prec,
             Q                   = precursor_charge,
             fasta               = fasta,
+            min_prob_per_molecule = min_prob_of_envelope_in_picking,
             ions_no             = ions_no_in_bootstrap,
             multiprocesses_No   = multiprocesses_No,
             verbose             = verbose

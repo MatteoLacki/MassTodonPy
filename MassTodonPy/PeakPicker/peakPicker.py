@@ -114,7 +114,7 @@ class PeakPickerBootstrap(PeakPickerBase):
         self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
         self.G_stats= []
-        self.stats= Counter()
+        self.stats  = Counter()
 
     def turn_clusters_2_problems(   self,
                                     clusters,
@@ -205,7 +205,7 @@ class PeakPicker(PeakPickerBase):
     def get_problems(   self,
                         massSpectrum,
                         min_prob_per_molecule = .7,
-                        bootstrap = False
+                        bootstrap = 0
         ):
         '''Enumerate deconvolution problems.'''
         Graph = self.represent_as_Graph(massSpectrum)

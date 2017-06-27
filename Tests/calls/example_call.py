@@ -2,8 +2,8 @@ from MassTodonPy import MassTodon, MassTodonize
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from time  import time
 
-# mol = substanceP.copy()
-mol = ubiquitin.copy()
+mol = substanceP.copy()
+# mol = ubiquitin.copy()
 
 jP = .999
 
@@ -19,28 +19,9 @@ multiprocesses_No = 4
 
 method  = 'MSE'
 verbose = True
-
+bootstrap_repeats = 5
 
 T0 = time()
-
-#
-# M = MassTodon(  fasta           = mol['fasta'],
-#                 precursor_charge= mol['Q'],
-#                 joint_probability_of_envelope= jP,
-#                 mz_prec         = mzPrec,
-#                 modifications   = mol['modifications'],
-#                 verbose         = verbose   )
-# #
-# M.read_n_preprocess_spectrum(
-#     spectrum = mol['spectrum'],
-#     cut_off  = cutOff  )
-#
-# M.run(  solver  = solver,
-#         multiprocesses_No = multiprocesses_No,
-#         min_prob_per_molecule = M_minProb,
-#         method  = method,
-#         max_times_solve = max_times_solve )
-
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
                     mz_prec         = mzPrec,
@@ -51,13 +32,9 @@ res = MassTodonize( fasta           = mol['fasta'],
                     solver          = solver,
                     multiprocesses_No = 4,
                     max_times_solve = max_times_solve,
+                    bootstrap_repeats = bootstrap_repeats,
                     verbose         = verbose )
-
-
 T1 = time()
-
-print 'Envelopes Generation', M.IsoCalc.stats['Envelopes Generation Total T']
-print
 print 'Total Time', T1-T0
 print
 

@@ -3,7 +3,7 @@ from    itertools               import izip, product, repeat
 from    MassTodonPy.PeakPicker  import PeakPickerBootstrap
 from    multiprocessing         import Pool
 from    MassTodonPy.Misc        import cvxopt_wrapper
-
+import  numpy                   as np
 
 
 
@@ -48,7 +48,7 @@ def bootstrap_worker(args):
                                 accept_nonOptimalDeconv = True,
                                 verbose                 = verbose  )
             ),['basic', 'intermediate', 'advanced'] )))
-    
+
     return results
 
 
@@ -58,6 +58,7 @@ def run_bootstrap(  bootstrap_repeats,
                     mz_prec,
                     Q,
                     fasta,
+                    min_prob_per_molecule = .75,
                     ions_no             = 100000,
                     multiprocesses_No   = None,
                     verbose             = False
