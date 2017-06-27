@@ -13,13 +13,13 @@ opt_P  = .99
 M_minProb  = .7
 max_times_solve = 10
 
-# solver  = 'sequential'
-solver  = 'multiprocessing'
+solver  = 'sequential'
+# solver  = 'multiprocessing'
 multiprocesses_No = None
 
 method  = 'MSE'
 verbose = True
-bootstrap_repeats = 10
+bootstrap_repeats = 0
 
 T0 = time()
 res = MassTodonize( fasta           = mol['fasta'],
