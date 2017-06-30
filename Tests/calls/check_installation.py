@@ -64,9 +64,9 @@ else:
     print 'Some results are not within error bounds.'
     print results_counter
     print [ (k,sk,all_the_same[k][sk]) for k in all_the_same for sk in all_the_same[k] if all_the_same[k][sk] == False]
-    value_errors = [ r['summary']['L1_error_value_error'] for r in results if r['summary']['L1_error_value_error'] > 0.0 ]
+    value_errors = [ results[k]['summary']['L1_error_value_error'] for k in results if results[k]['summary']['L1_error_value_error'] > 0.0 ]
     print 'L1 errors', value_errors
     print '\t Total = ', sum(value_errors)
-    total_intensity = sum( r['summary']['intensity_original'] for r in results)
+    total_intensity = sum( results[k]['summary']['intensity_original'] for r in results)
     print 'Total Intensity =', total_intensity
     print 'Total Value Error Intensity / Total Intensity =', value_errors/float(total_intensity)
