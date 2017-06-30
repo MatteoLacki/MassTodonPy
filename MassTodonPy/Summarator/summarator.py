@@ -16,8 +16,11 @@ def summarize_results(  spectra,
 
     for r in raw_masstodon_res:
         summary['L1_error'] += r['L1_error']
-        summary['underestimates']+= r['underestimates']
-        summary['overestimates'] += r['overestimates']
+        if r['status'] == 'ValueError':
+            summary['L1_error_value_error'] += r['L1_error']
+        else:
+            summary['underestimates']+= r['underestimates']
+            summary['overestimates'] += r['overestimates']
 
         if r['status'] != 'optimal':
             summary['L1_error_nonoptimal'] += r['L1_error']
@@ -26,10 +29,12 @@ def summarize_results(  spectra,
 
     if spectra['original total intensity'] > 0.0:
         summary['L1_fit_error_and_unused_intensity/original_total_intensity']= (summary['L1_error']+unused_E_total_intensity)/spectra['original total intensity']
+        summary['L1_error_value_error/original_total_intensity'] = summary['L1_error_value_error']/spectra['original total intensity']
 
     if used_E_total_intensity > 0.0:
         summary['L1_error/intensity_within_tolerance'] = summary['L1_error']/used_E_total_intensity
         summary['underestimates/intensity_within_tolerance'] = summary['underestimates']/used_E_total_intensity
         summary['overestimates/intensity_within_tolerance'] = summary['overestimates']/used_E_total_intensity
+        summary['L1_error_value_error/intensity_within_tolerance'] = summary['L1_error_value_error']/used_E_total_intensity
 
     return summary

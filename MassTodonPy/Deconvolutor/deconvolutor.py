@@ -144,6 +144,10 @@ class Deconvolutor(object):
         L1_error = sum(abs(G['estimate']-G['intensity']) for G in self.iSG('G'))
         return float(L1_error)
 
+    def get_sum_of_node_intensities(self):
+        node_intensity = sum(G['intensity'] for G in self.iSG('G'))
+        return float(node_intensity)
+
     def get_L2_error(self):
         L2_error = sqrt(sum((G['estimate']-G['intensity'])**2 for G in self.iSG('G')))
         return float(L2_error)
@@ -200,9 +204,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
             if verbose:
                 res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
                 res['exception'] = ve
+                res['L1_error'] = self.get_sum_of_node_intensities()
             traceback.print_exc()
         return res
 
+#TODO: make this a valid option to use.
 class Deconvolutor_Max_Flow(Deconvolutor):
     def set_names(self, cnts):
         # self.var_No = cnts['GI'] + cnts['M'] + cnts['G'] #TODO: why cnts['G'] appeared?
