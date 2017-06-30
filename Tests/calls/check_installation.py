@@ -69,4 +69,4 @@ else:
     print '\t Total = ', sum(value_errors)
     total_intensity = sum( results[k]['summary']['intensity_original'] for r in results)
     print 'Total Intensity =', total_intensity
-    print 'Total Value Error Intensity / Total Intensity =', value_errors/float(total_intensity)
+    print 'Total Value Error Intensity / Total Intensity =', sum(value_errors)/float(total_intensity)
