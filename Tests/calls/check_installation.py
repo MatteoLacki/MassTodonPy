@@ -4,12 +4,12 @@ os.environ['OMP_NUM_THREADS'] = "1"
 
 from MassTodonPy.TestScripts.standard_datasets import substancesP, substancesP_results_macOS
 from MassTodonPy import MassTodonize
-
+import cPickle as pickle
 
 jP      = .999
 mz_prec = .05
-# opt_P   = .99
-cut_off = 500.0
+opt_P   = .99
+# cut_off = 500.0
 max_times_solve = 10
 multiprocesses_No = None
 verbose = True
@@ -26,17 +26,17 @@ for ID, mol in enumerate(substancesP):
         joint_probability_of_envelope= jP,
         modifications   = mol['modifications'],
         spectrum        = mol['spectrum'],
-        # opt_P           = opt_P,
-        cut_off         = cut_off,
+        opt_P           = opt_P,
+        # cut_off         = cut_off,
         solver          = solver,
         multiprocesses_No = multiprocesses_No,
         max_times_solve = max_times_solve,
+        raw_data        = True,
         verbose         = verbose               )
 
 # saving the data on macOS
-# import cPickle as pickle
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/substancesP_results.example', 'w') as f:
-#     pickle.dump(results,f)
+with open('/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/substancesP_results.example', 'w') as f:
+    pickle.dump(results,f)
 
 def compare_counters(a, b, diff=.00001):
     return all( abs(a[k]-b[k]) < diff for k in set(a.keys()) | set(b.keys()))
@@ -59,6 +59,8 @@ from collections import Counter
 
 results_counter = Counter( all_the_same[k][sk] for k in all_the_same for sk in all_the_same[k] )
 
+
+
 if results_counter['True'] == sum(results_counter[k] for k in results_counter):
     print 'All results are within error bounds.'
     print results_counter
@@ -73,3 +75,7 @@ else:
     print 'Total Intensity =', total_intensity
     print 'Total Value Error Intensity / Total Intensity =', sum(value_errors)/float(total_intensity)
     print [results[r]['summary']['L1_error_value_error/intensity_within_tolerance'] for r in results]
+    error_prone_cases = dict( (k, results[k]['raw_estimates']) for k in results if results[k]['summary']['L1_error_value_error'] > 0.0 )
+
+    with open('errors_raw.matteo', 'w') as f:
+        pickle.dump(error_prone_cases,f)
