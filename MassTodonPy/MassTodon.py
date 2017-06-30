@@ -360,6 +360,9 @@ def MassTodonize(
     results['intermediate_analysis']= M.analyze_reactions('intermediate')
     results['advanced_analysis']    = M.analyze_reactions('advanced')
 
+    if verbose:
+        print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
+        print
     if raw_data:
         results['raw_estimates'] = M.res
 
@@ -370,7 +373,6 @@ def MassTodonize(
 
     T1 = time()
     if verbose:
-        print
         print 'Total analysis took', T1-T0
 
     return results

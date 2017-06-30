@@ -55,7 +55,6 @@ for key in substancesP_results_macOS:
 
 from collections import Counter
 
-p = Counter({'a':10,'b':100})
 results_counter = Counter( all_the_same[k][sk] for k in all_the_same for sk in all_the_same[k] )
 
 if results_counter['True'] == sum(results_counter[k] for k in results_counter):
