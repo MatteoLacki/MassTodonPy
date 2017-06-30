@@ -43,7 +43,9 @@ setup(
     package_data={
         "Data": [   "Data/isotopes.txt",
                     "Data/amino_acids.txt",
+                    "Data/substanceP.example",
                     "Data/substancesP.example",
+                    "Data/substancesP_results.example",
                     "Data/ubiquitin.example"        ],
     }
 )

@@ -16,6 +16,10 @@ install_mac:
 reinstall:
 	$(PIP) uninstall -y MassTodonPy
 	$(PIP) install -e .
+
+check_installation:
+	$(PYTHON) ./Tests/calls/check_installation.py
+
 ### Running
 example_call:
 	$(PYTHON) ./Tests/calls/example_call.py
@@ -25,7 +29,7 @@ compare_spectra_plots: # Relies on Rscript
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
 run_bootstrap_substance_P:
-	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py ./Tests/data/ ./Tests/bootstrap/RESULTS_CSV_27_06_2017/
+	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_27_06_2017/
 
 analyze_bootstrap_substance_P: # Relies on Rscript
 	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R

@@ -18,6 +18,8 @@ Tests/experimental_spectra/results/
 Tests/in_silico/masstodon_in_silico_analysis/data/
 Tests/in_silico/masstodon_in_silico_analysis/visual/
 Tests/bootstrap/RESULTS_CSV_27_06_2017/
+Tests/bootstrap/RESULTS_CSV_27_06_2017_czczmiel/
+Tests/bootstrap/RESULTS_fixing_bootstrap/
 
 *.zip
 

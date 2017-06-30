@@ -15,27 +15,13 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
-import os
-
-# Setting up locally the number of threads used by
-# BLAS to 1.
-old = os.environ.get('OMP_NUM_THREADS', None)
-os.environ['OMP_NUM_THREADS'] = "1"
-
 from    math        import sqrt
 from    collections import Counter
 from    random      import randint
 from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers, setseed
 
-
-if old:
-    os.environ['OMP_NUM_THREADS'] = old
-else:
-    del os.environ['OMP_NUM_THREADS']
-
-
-
+class Error_in_update_scaling(Exception):
+    pass
 
 solvers.options['show_progress'] = False
 solvers.options['maxiters'] = 1000
@@ -178,35 +164,42 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         setseed(randint(0,1000000))
         # this is to test from different points
         # apparently this is used by the asynchroneous BLAS library
-        self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
-        Xopt = self.sol['x']
-        #################### reporting results
-        alphas = []
-        for N_name in self.SG:
-            N = self.SG.node[N_name]
-            if N['type'] == 'M':
-                N['estimate'] = Xopt[self.GI_No + N['cnt']]
-                alphas.append(N.copy())
-            if N['type'] == 'G':
-                N['estimate'] = 0.0
-                for I_name in self.SG[N_name]:
-                    NI = self.SG.edge[N_name][I_name]
-                    NI['estimate'] = Xopt[NI['cnt']]
-                    N['estimate'] += Xopt[NI['cnt']]
 
-        res = { 'alphas':   alphas,
-                'L1_error': self.get_L1_error(),
-                'L2_error': self.get_L2_error(),
-                'underestimates': self.get_L1_signed_error(sign=1.0),
-                'overestimates':  self.get_L1_signed_error(sign=-1.0),
-                'status':   self.sol['status'],
-                'SG':       self.SG
-        }
-        if verbose:
-            res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
-            res['sol']  = self.sol
+        try:
+            self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
+            Xopt = self.sol['x']
+            #################### reporting results
+            alphas = []
+            for N_name in self.SG:
+                N = self.SG.node[N_name]
+                if N['type'] == 'M':
+                    N['estimate'] = Xopt[self.GI_No + N['cnt']]
+                    alphas.append(N.copy())
+                if N['type'] == 'G':
+                    N['estimate'] = 0.0
+                    for I_name in self.SG[N_name]:
+                        NI = self.SG.edge[N_name][I_name]
+                        NI['estimate'] = Xopt[NI['cnt']]
+                        N['estimate'] += Xopt[NI['cnt']]
+
+            res = { 'alphas':   alphas,
+                    'L1_error': self.get_L1_error(),
+                    'L2_error': self.get_L2_error(),
+                    'underestimates': self.get_L1_signed_error(sign=1.0),
+                    'overestimates':  self.get_L1_signed_error(sign=-1.0),
+                    'status':   self.sol['status'],
+                    'SG':       self.SG
+            }
+            if verbose:
+                res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
+                res['sol']  = self.sol
+        except ValueError as ve:
+            print ve
+            if verbose:
+                res = { 'SG': self.SG }
+                res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
+                res['status']= 'ValueError'
         return res
-
 
 class Deconvolutor_Max_Flow(Deconvolutor):
     def set_names(self, cnts):

@@ -73,6 +73,9 @@ def analyze_experiments(substances,
         WV = mol['experimental_setting']['WV']
         mol['info'] = {'WH':WH, 'WV':WV, 'ID':ID}
 
+        if verbose:
+            print 'starting calculations on real data'
+
         results['real'] = bootstrap_worker((mol['info'],
                                             mol['fasta'],
                                             mol['precursorCharge'],
@@ -84,7 +87,19 @@ def analyze_experiments(substances,
                                             max_times_solve,
                                             verbose))
 
-        results['bootstrap'] = bootstrap_substance_P(mol, bootstrap_size)
+        if verbose:
+            print 'starting bootstrap calculations'
+
+        results['bootstrap'] = bootstrap_substance_P(
+            mol,
+            bootstrap_size,
+            ions_no,
+            mz_prec,
+            opt_P,
+            max_times_solve,
+            multiprocesses_No,
+            verbose )
+
         with open(results_path+str(ID), 'w') as handler:
             pickle.dump(results, handler)
-        print 'Dumped', ID, 'out of', len(substances)
+        print 'Dumped', ID+1, 'out of', len(substances)

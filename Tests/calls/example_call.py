@@ -1,23 +1,18 @@
-from MassTodonPy import MassTodon, MassTodonize
+from MassTodonPy import MassTodonize
 from MassTodonPy.TestScripts import substanceP, ubiquitin
 from time  import time
 
 mol = substanceP.copy()
 # mol = ubiquitin.copy()
 
-jP = .999
-
-cutOff = 100
-mzPrec = .05
-opt_P  = .99
-M_minProb  = .7
+jP      = .999
+mzPrec  = .05
+opt_P   = .99
 max_times_solve = 10
-
-# solver  = 'sequential'
-solver  = 'multiprocessing'
 multiprocesses_No = None
-method  = 'MSE'
 verbose = True
+solver  = 'multiprocessing'
+# solver  = 'sequential'
 
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
