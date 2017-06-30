@@ -9,7 +9,7 @@ from MassTodonPy import MassTodonize
 jP      = .999
 mz_prec = .05
 # opt_P   = .99
-cut_off = 100.0
+cut_off = 500.0
 max_times_solve = 10
 multiprocesses_No = None
 verbose = True
@@ -33,7 +33,7 @@ for ID, mol in enumerate(substancesP):
         max_times_solve = max_times_solve,
         verbose         = verbose               )
 
-# # saving the data on macOS
+# saving the data on macOS
 # import cPickle as pickle
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/substancesP_results.example', 'w') as f:
 #     pickle.dump(results,f)
