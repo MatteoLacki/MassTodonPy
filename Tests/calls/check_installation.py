@@ -67,6 +67,6 @@ else:
     value_errors = [ results[k]['summary']['L1_error_value_error'] for k in results if results[k]['summary']['L1_error_value_error'] > 0.0 ]
     print 'L1 errors', value_errors
     print '\t Total = ', sum(value_errors)
-    total_intensity = sum( results[k]['summary']['intensity_original'] for r in results)
+    total_intensity = sum( results[r]['summary']['intensity_original'] for r in results)
     print 'Total Intensity =', total_intensity
     print 'Total Value Error Intensity / Total Intensity =', sum(value_errors)/float(total_intensity)
