@@ -8,7 +8,8 @@ from MassTodonPy import MassTodonize
 
 jP      = .999
 mz_prec = .05
-opt_P   = .99
+# opt_P   = .99
+cut_off = 100.0
 max_times_solve = 10
 multiprocesses_No = None
 verbose = True
@@ -25,7 +26,8 @@ for ID, mol in enumerate(substancesP):
         joint_probability_of_envelope= jP,
         modifications   = mol['modifications'],
         spectrum        = mol['spectrum'],
-        opt_P           = opt_P,
+        # opt_P           = opt_P,
+        cut_off         = cut_off,
         solver          = solver,
         multiprocesses_No = multiprocesses_No,
         max_times_solve = max_times_solve,
