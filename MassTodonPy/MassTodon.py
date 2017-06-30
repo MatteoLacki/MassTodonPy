@@ -171,13 +171,19 @@ class MassTodon():
 
         self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
 
-        self.res = solve(   problems = self.problems,
+        self.res, self.solver_stats = solve(
+                            problems = self.problems,
                             args   = args,
                             solver = solver,
                             multiprocesses_No = multiprocesses_No,
                             method = method,
                             max_times_solve = max_times_solve,
                             verbose= self.verbose   )
+
+        if self.verbose:
+            print 'Solver stats:'
+            print self.solver_stats
+            print
         if forPlot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 

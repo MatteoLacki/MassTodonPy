@@ -208,7 +208,9 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
             if verbose:
                 res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
                 res['exception'] = ve
-            traceback.print_exc()
+
+            print res['L1_error']
+            # traceback.print_exc()
         return res
 
 #TODO: make this a valid option to use.

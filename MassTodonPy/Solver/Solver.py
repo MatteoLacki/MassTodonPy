@@ -99,4 +99,6 @@ def solve(  problems,
         print 'Solved problem in', T1-T0
         print
 
-    return results
+    stats.update(Counter([ r['status'] for r in results ]))
+
+    return results, stats
