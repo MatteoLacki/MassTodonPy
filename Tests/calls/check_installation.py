@@ -70,3 +70,4 @@ else:
     total_intensity = sum( results[r]['summary']['intensity_original'] for r in results)
     print 'Total Intensity =', total_intensity
     print 'Total Value Error Intensity / Total Intensity =', sum(value_errors)/float(total_intensity)
+    print [results[r]['summary']['L1_error_value_error/intensity_within_tolerance'] for r in results]

@@ -211,7 +211,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
 
             print res['L1_error']
             # traceback.print_exc()
-            print  [results[r]['summary']['L1_error_value_error/intensity_within_tolerance'] for r in results]
+
         return res
 
 #TODO: make this a valid option to use.
