@@ -23,6 +23,9 @@ from    itertools import repeat
 from    collections import Counter
 
 
+class Error_in_update_scaling(Exception):
+    pass
+
 def worker(worker_args):
     SG, args, method, max_times_solve, verbose = worker_args
     T0 = time()
