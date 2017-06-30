@@ -19,6 +19,7 @@ from    math        import sqrt
 from    collections import Counter
 from    random      import randint
 from    cvxopt      import matrix, spmatrix, sparse, spdiag, solvers, setseed
+import  traceback
 
 class Error_in_update_scaling(Exception):
     pass
@@ -195,10 +196,11 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
                 res['sol']  = self.sol
         except ValueError as ve:
             print ve
+            res = { 'SG': self.SG }
             if verbose:
-                res = { 'SG': self.SG }
                 res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
                 res['status']= 'ValueError'
+            traceback.print_exc()
         return res
 
 class Deconvolutor_Max_Flow(Deconvolutor):
