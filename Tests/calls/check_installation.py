@@ -11,7 +11,7 @@ mz_prec = .05
 opt_P   = .99
 max_times_solve = 10
 multiprocesses_No = None
-verbose = False
+verbose = True
 solver  = 'multiprocessing'
 # solver  = 'sequential'
 

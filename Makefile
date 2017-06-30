@@ -9,6 +9,10 @@ install_linux:
 	virtualenv -p /usr/bin/python2.7 ../MassTodonVE
 	$(PIP) install -e .
 
+install_quaqua:
+	virtualenv -p /usr/bin/python2.7 ../MassTodonVE
+	../MassTodonVE/bin/pip install -e .
+
 install_mac:
 	virtualenv ../MassTodonVE
 	$(PIP) install -e .
