@@ -54,8 +54,10 @@ from collections import Counter
 p = Counter({'a':10,'b':100})
 results_counter = Counter( all_the_same[k][sk] for k in all_the_same for sk in all_the_same[k] )
 
-if results_counter['True'] = sum(results_counter[k] for k in results_counter):
+if results_counter['True'] == sum(results_counter[k] for k in results_counter):
     print 'All results are within error bounds.'
+    print results_counter
 else:
-    print 'Some results are not within error bounds'.
+    print 'Some results are not within error bounds.'
+    print results_counter
     print [ (k,sk,all_the_same[k][sk]) for k in all_the_same for sk in all_the_same[k] if all_the_same[k][sk] == False]
