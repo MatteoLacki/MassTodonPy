@@ -201,10 +201,10 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         except ValueError as ve:
             print ve
             res = { 'SG': self.SG, 'status':'ValueError' }
+            res['L1_error'] = self.get_sum_of_node_intensities()
             if verbose:
                 res['param']= {'P':P,'q':q,'G':G,'h':h,'A':A,'b':b,'x0':x0}
                 res['exception'] = ve
-                res['L1_error'] = self.get_sum_of_node_intensities()
             traceback.print_exc()
         return res
 
