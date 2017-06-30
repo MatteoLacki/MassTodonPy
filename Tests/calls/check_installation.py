@@ -35,8 +35,8 @@ for ID, mol in enumerate(substancesP):
         verbose         = verbose               )
 
 # saving the data on macOS
-with open('/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/substancesP_results.example', 'w') as f:
-    pickle.dump(results,f)
+# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/substancesP_results.example', 'w') as f:
+#     pickle.dump(results,f)
 
 def compare_counters(a, b, diff=.00001):
     return all( abs(a[k]-b[k]) < diff for k in set(a.keys()) | set(b.keys()))
