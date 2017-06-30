@@ -1,3 +1,7 @@
+import  os
+os.environ['OMP_NUM_THREADS'] = "1"
+
+
 from MassTodonPy.TestScripts.standard_datasets import substancesP, substancesP_results_macOS
 from MassTodonPy import MassTodonize
 
