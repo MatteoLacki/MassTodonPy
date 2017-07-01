@@ -7,7 +7,7 @@ from MassTodonPy import MassTodonize
 import cPickle as pickle
 
 jP      = .999
-mz_prec = .05
+mz_prec = .065 # mz_prec = .05
 opt_P   = .99
 # cut_off = 500.0
 max_times_solve = 10
