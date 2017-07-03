@@ -1,6 +1,6 @@
 {
   "name": "masstodon-server",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "yay",
   "main": "src/index.coffee",
   "scripts": {
@@ -9,11 +9,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/storage": "^1.1.1",
     "async": "^2.3.0",
     "axios": "^0.16.1",
     "call-me-maybe": "^1.0.1",
     "es6-promisify": "^5.0.0",
+    "firebase-admin": "^5.0.0",
     "lodash": "^4.17.4",
+    "mkdirp": "^0.5.1",
     "needle": "^1.6.0",
     "promisify-node": "^0.4.0",
     "request-promise": "^4.2.0"
