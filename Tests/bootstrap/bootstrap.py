@@ -11,4 +11,14 @@ if not os.path.exists(results_path):
     os.makedirs(results_path)
 
 # analyze_experiments(substancesP, results_path, K=2, bootstrap_size=200)
-analyze_experiments(substancesP, results_path, K=None, bootstrap_size=250)
+# analyze_experiments(
+#     substances      = substancesP,
+#     results_path    = results_path,
+#     K = 2, bootstrap_size = 10, mz_prec = .065, verbose = True )
+# analyze_experiments(substancesP, results_path, bootstrap_size=250)
+
+analyze_experiments(    substancesP,
+                        results_path,
+                        mz_prec         = .065,
+                        opt_P           = .99,
+                        bootstrap_size  = 250   )

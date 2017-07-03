@@ -21,16 +21,21 @@ import  json
 # sigmas = [ probs2sigmas[a] for a in (0.01168997000000005, 0.14815520000000004, 0.49865629) ]
 # fp_in   = fp_main+'/results_Ciach/'
 # sigma = sigmas[0]
-# molsNo = 1000
+# molsNo = 100000
 # with open(fp_in+'/results_molsNo-'+str(molsNo), "rb") as f:
 #     ciachator_res = pickle.load(f)
 # simulation_res = ciachator_res[0]
 # solver='sequential'
 # verbose=False
+# mz_prec=.065
+# opt_P=.999
+
 def getResults( simulation_res,
                 sigma,
-                solver='sequential',
-                verbose=False             ):
+                mz_prec     = .05,
+                opt_P       = .999,
+                solver      = 'sequential',
+                verbose     = False     ):
     '''Run MassTodon on Ciachator simulated spectra.'''
     (Q, fasta, eps, molsNo, (PTR, ETnoD, ETD)), simulated_data = simulation_res
     formulas = dict( ( (mT, q, p), (f,bp) ) for mT,f,bp,q,p in make_formulas(fasta, Q, 'cz').makeMolecules(1) )
@@ -52,17 +57,18 @@ def getResults( simulation_res,
         # Running simulation
     masstodon_res = MassTodonize(   fasta           = fasta,
                                     precursor_charge= Q,
-                                    mz_prec         = .05,
+                                    mz_prec         = mz_prec,
                                     spectrum        = spectrum,
-                                    opt_P           = 0.999,
+                                    opt_P           = opt_P,
                                     solver          = solver,
                                     raw_data        = True,
                                     verbose         = verbose       )
         # Getting envelopes estimates
-    estimates = dict(((e['molType'], e['formula'], e['q'], e['g']), e['estimate']) for r in masstodon_res['raw estimates'] for e in r['alphas'])
+    estimates = dict(((e['molType'], e['formula'], e['q'], e['g']), e['estimate']) for r in masstodon_res['raw_estimates'] for e in r['alphas'])
     total_estimated_intensity = sum(estimates.values())
     simulated_data_cnt, estimates_cnt = map( Counter, (simulated_data_dict, estimates))
     fit_errors = dict( (k, (simulated_data_cnt[k], estimates_cnt[k])) for k in set(simulated_data_cnt) | set(estimates) )
+
     stats = {}  # Establishing some statistics
     stats['total_fit_error_L1'] = sum( abs(real - estim) for real, estim in fit_errors.values())
     stats['total_fit_error_L2'] = sqrt(sum( (real - estim)**2 for real, estim in fit_errors.values()))
@@ -74,11 +80,13 @@ def getResults( simulation_res,
     stats['relative_overestimates'] = stats['total_underestimates']/total_estimated_intensity
     probs = {'PTR':PTR, 'ETnoD':ETnoD, 'ETD':ETD} # Simulated probs
         # Update results
-    masstodon_res['deconvolution stats']        = stats
-    masstodon_res['deconvolution fit errors']   = fit_errors
+    masstodon_res['deconvolution_stats']        = stats
+    masstodon_res['deconvolution_fit_errors']   = fit_errors
     masstodon_res['probs'] = probs
-    del masstodon_res['raw estimates'] # takes way too much space
+    del masstodon_res['raw_estimates'] # takes way too much space
     return masstodon_res
+
+
 
 fp_main = sys.argv[1]
 fp_in  = fp_main+'/results_Ciach'
