@@ -38,6 +38,11 @@ run_bootstrap_substance_P:
 analyze_bootstrap_substance_P: # Relies on Rscript
 	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R
 
+
+SPECTRUM_PATH = 
+test_CLI:
+	masstodon
+
 # run_real_substance_P:
 # 	$(PYTHON) $(PATH_INSILICO)/real_subP.py
 

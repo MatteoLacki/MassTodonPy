@@ -1,5 +1,3 @@
-#TODO UPDATE THIS !!!!
-
 from    MassTodonPy  import MassTodon
 from    time import time
 import  json
@@ -11,68 +9,56 @@ def run_masstodon(  spectrum_path,
                     Q,
                     modifications = {},
                     jP          =.999,
-                    mzPrec      =.05,
-                    precDigits  = 2,
+                    mz_prec     =.065,
                     M_minProb   = .7,
+                    opt_P       = .999,
                     cutOff      = 100.,
                     cutOff2     = 0.0,
                     topPercent  = .999,
                     solver      = 'sequential',
                     solver_mode = 'MSE',
-                    solver_max_T= 30,
+                    multiproc_No= None,
+                    solver_max_T= 10,
                     L1_x        = 0.001,
                     L2_x        = 0.001,
                     L1_alpha    = 0.001,
                     L2_alpha    = 0.001,
+                    frag_type   = 'cz',
+                    raw_data    = False,
                     verbose     = False ):
 
     '''Run MassTodon and analyze its results by basic, intermediate and upper intermediate analyzers.'''
 
-    params = (fasta, Q, modifications, spectrum_path, jP, mzPrec, precDigits, M_minProb, cutOff, topPercent, solver_max_T, L1_x, L2_x, L1_alpha, L2_alpha)
-
+    params = (fasta, Q, modifications, spectrum_path, jP, mz_prec, M_minProb, cutOff, topPercent, solver_max_T, L1_x, L2_x, L1_alpha, L2_alpha)
+    assert frag_type == 'cz'
     try:
-        M = MassTodon(  fasta           = fasta,
-                        precursorCharge = Q,
-                        precDigits      = precDigits,
-                        jointProbability= jP,
-                        mzPrec          = mzPrec,
-                        modifications   = modifications  )
+        res = MassTodonize(
+            fasta           = fasta,
+            precursor_charge= Q,
+            mz_prec         = mz_prec,
+            cut_off         = cutOff,
+            opt_P           = opt_P,
+            spectrum        = None,
+            spectrum_path   = spectrum_path,
+            modifications   = modifications,
+            frag_type       = frag_type,
+            joint_probability_of_envelope   = jP,
+            min_prob_of_envelope_in_picking = M_minProb,
+            iso_masses  = None,
+            iso_probs   = None,
+            L1_x    = L1_x,
+            L2_x    = L2_x,
+            L1_alpha= L1_alpha,
+            L2_alpha= L2_alpha,
+            solver  = solver,
+            multiprocesses_No = multiproc_No,
+            method  = solver_mode,
+            max_times_solve = solver_max_T,
+            forPlot = False,
+            raw_data= raw_data,
+            verbose = verbose )
 
-        M.readSpectrum( path        = spectrum_path,
-                        cutOff      = cutOff,
-                        digits      = precDigits,
-                        topPercent  = topPercent  )
-
-        M.prepare_problems(M_minProb)
-        T0_deconv = time()
-        deconvolution_results = M.run(
-                        solver          = solver,
-                        method          = solver_mode,
-                        max_times_solve = solver_max_T,
-                        L1_x=L1_x, L2_x=L2_x, L1_alpha=L1_alpha, L2_alpha=L2_alpha,
-                        verbose = verbose )
-
-        T1_deconv = time()
-        T_deconv  = T1_deconv - T0_deconv
-
-        results_analyzed = {}
-        try:
-            results_analyzed['base'] = M.analyze_reactions(analyzer='basic')
-        except:
-            print 'Basis missing'
-        try:
-            results_analyzed['inter'] = M.analyze_reactions(analyzer='inter')
-        except:
-            print 'Intermediate missing'
-        try:
-            results_analyzed['up_inter']= M.analyze_reactions(analyzer='up_inter')
-        except:
-            print 'Upper-Intermediate missing'
-
-        if verbose:
-            res = deconvolution_results, results_analyzed, params, T1_deconv
-        else:
-            res = deconvolution_results, results_analyzed
+        
     except Exception as e:
         res = e, params
     return res
@@ -80,6 +66,7 @@ def run_masstodon(  spectrum_path,
 
 def get_name(key):
     return "_".join(map(str,key))
+
 
 def get_subsequence(fasta, name):
     if name[0]=='p':
@@ -89,6 +76,7 @@ def get_subsequence(fasta, name):
     else:
         return fasta[0:int(name[1:])]
 
+
 def gen_data(deconvolution_results, fasta, Q):
     for r in deconvolution_results:
         for x in r['alphas']:
@@ -96,6 +84,7 @@ def gen_data(deconvolution_results, fasta, Q):
             if not (name == 'precursor' and x['q'] == Q):
                 f = {'seq':get_subsequence(fasta, name), 'Q':x['q'],'G':x['g'],'fragName':name, 'intensity':x['estimate'] }
                 yield f
+
 
 def perform_calculations(spectrum_path, output_path, file_name, config):
     '''Run MassTodonPy on a given spectrum into a given output folder.'''
@@ -112,7 +101,6 @@ def perform_calculations(spectrum_path, output_path, file_name, config):
         path_or_buf = output_path + file_name + ".csv",
         index   = False,
         sep     = '\t' )
-
 
 
 # spectrum_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt'

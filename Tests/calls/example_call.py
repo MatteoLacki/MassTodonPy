@@ -17,13 +17,14 @@ solver  = 'multiprocessing'
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
                     mz_prec         = mzPrec,
-                    joint_probability_of_envelope= jP,
+                    joint_probability_of_envelope = jP,
                     modifications   = mol['modifications'],
                     spectrum        = mol['spectrum'],
                     opt_P           = opt_P,
                     solver          = solver,
                     multiprocesses_No = multiprocesses_No,
                     max_times_solve = max_times_solve,
+                    raw_data        = True,
                     verbose         = verbose )
 
 

@@ -2,7 +2,7 @@
 
 import  argparse
 import  json
-from    MassTodonPy.CSI import run_masstodon, perform_calculations
+from    MassTodonPy.CLI import run_masstodon, perform_calculations
 from    MassTodonPy.Parsers import parse_path
 import  os
 
