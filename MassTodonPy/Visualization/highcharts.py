@@ -82,8 +82,8 @@ def make_etnod_ptr_probability_plot(res):
     return H
 
 # import json
-H = make_etnod_ptr_probability_plot(res)
-H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnod_ptr')
+# H = make_etnod_ptr_probability_plot(res)
+# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnod_ptr_plots')
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnodPtr_options.json','w') as h:
 #     json.dump(H.option, h)
 #
@@ -129,7 +129,7 @@ def make_branching_ratio_plot(branching_ratios, branching_ratio, pk):
     H.add_data_set( data        = branching_ratios,
                     dataLabels  = {'format': '{y:.2f}'},
                     name        = 'branching ratios for different number of reactions'     )
-    H.add_data_set( data        = [(0,branching_ratio), (max(pk),branching_ratio) ],
+    H.add_data_set( data        = [(0,branching_ratio), (max(pk)-1,branching_ratio) ],
                     type        = 'line',
                     dataLabels  = {'format': '{y:.2f}'},
                     name        = 'branching ratio aggregated over all reactions'     )
@@ -137,7 +137,7 @@ def make_branching_ratio_plot(branching_ratios, branching_ratio, pk):
 
 # import json
 # H = make_branching_ratio_plot(branching_ratios, branching_ratio, pk)
-# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/lines')
+# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/branching_ratio')
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/lines_option.json','w') as h:
 #     json.dump(H.option, h)
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/lines_data.json','w') as h:
@@ -199,3 +199,126 @@ def make_fragmentation_prob_plot(fasta, res):
 #
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragmentation_probs_data.json','w') as h:
 #     json.dump(H.data, h)
+
+#TODO: fix this mother-fucking function. I hate these Highcharts....
+def make_fragment_pyramid_plot(fasta, fragments):
+    H = Highchart(width=750, height=1000)
+    fasta_list = [f for f in fasta]
+    categories = range(1,len(fasta)+1)
+    options = {
+        'chart': {'type': 'bar'},
+        'title': {'text': 'Intensities of Fragments'},
+        'subtitle': {'text': 'as estimated by the MassTodon'},
+        'xAxis': [{
+          'categories': categories,
+          'reversed': False,
+          'labels': {
+            'step': 1,
+            'format': 'z{value}'
+          }
+        }, {
+          'opposite': True,
+          'reversed': True,
+          'linkedTo': 0,
+          'labels': {
+              'step': 1,
+              'format': 'c{value}'
+          }
+        }],
+        'yAxis': {
+          'title': {'text': None},
+          'labels': {
+                'formatter': 'function () {\
+                    return Math.abs(this.value);\
+                }'
+            }
+        },
+        'plotOptions': {
+          'series': { 'stacking': 'normal' }
+        },
+        'tooltip': {
+            'valueDecimals': 0,
+            'headerFormat': '<table>',
+            'pointFormat': "<tr><td style='color:{series.color};padding:0'>{series.name}{point.x}: <b>{point.y:.0f}</b> </td></tr>",
+            'footerFormat': '</table>',
+            'shared':     True,
+            'useHTML':  True
+        }
+        # 'tooltip': {
+        #     'formatter': "function () {\
+        #         var s = '';\
+        #         var d;\
+        #         $.each(this.points, function () {\
+        #             if (this.x < 0){\
+        #                 d = this.x;\
+        #                 s += '<br/>' + this.series.name + x +  ': ' +\
+        #                     this.y;\
+        #             } else {\
+        #                 d = -int(this.x);\
+        #                 s += '<br/>' + this.series.name + x +  ': ' +\
+        #                     this.y;\
+        #             }\
+        #         });\
+        #         return s;\
+        #     }",
+        #     'useHTML':  True,
+        #     'shared':   True
+        # }
+     }
+    H.set_dict_options(options)
+    H.add_data_set( data = [ fragments['c'][i-1] for i in categories ],
+                    type = 'bar',
+                    name = 'c'     )
+
+
+    categories.reverse()
+    H.add_data_set( data = [ -fragments['z'][i-1] for i in categories ],
+                    type = 'bar',
+                    name = 'z'     )
+    return H
+# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragment_pyramid')
+
+
+
+def make_highcharts(res, Q):
+    '''Prepare the outputs of MassTodon for highcharts.'''
+    precursors  = defaultdict(Counter)
+    precursors_intensitites = Counter()
+    fragments   = defaultdict(Counter)
+    for r in res['raw_estimates']:
+        for M in r['alphas']:
+            if M['molType'] == 'precursor':
+                ETnoDs  = M['g']
+                PTRs    = Q-M['q']-M['g']
+                ReactionsNo = ETnoDs + PTRs
+                precursors_intensitites[M['q']] += M['estimate']
+                if ReactionsNo>0:
+                    precursors[ReactionsNo]['PTR'] += M['estimate']*PTRs
+                    precursors[ReactionsNo]['ETnoD'] += M['estimate']*ETnoDs
+            else:
+                frag_type   = M['molType'][0]
+                frag_number = int(M['molType'][1:])
+                fragments[frag_type][frag_number] += M['estimate']
+    pk = precursors.keys()
+    pk.sort()
+    branching_ratios = []
+    for i in pk:
+        PTRs = precursors[i]['PTR']
+        ETnoDs = precursors[i]['ETnoD']
+        try:
+            branching_ratio = PTRs/float(ETnoDs)
+        except ZeroDivisionError:
+            branching_ratio = None
+        branching_ratios.append( branching_ratio )
+    probs, counts = res['basic_analysis']
+    try:
+        branching_ratio = probs['PTR']/probs['ETnoD']
+    except ZeroDivisionError:
+        branching_ratio = None
+    precursor_intensity_plot    = make_precursor_intensity_plot(precursors)
+    etnod_ptr_probability_plot  = make_etnod_ptr_probability_plot(res)
+    branching_ratio_plot        = make_branching_ratio_plot(branching_ratios, branching_ratio, pk)
+    fragmentation_prob_plot     = make_fragmentation_prob_plot(fasta, res)
+    fragment_pyramid_plot       = make_fragment_pyramid_plot(fasta, fragments)
+
+    return precursor_intensity_plot, etnod_ptr_probability_plot, branching_ratio_plot, fragmentation_prob_plot, fragment_pyramid_plot

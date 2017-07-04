@@ -69,12 +69,13 @@ from PeakPicker         import PeakPicker
 from Solver             import solve
 from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import match_cz_ions
-from Visualization      import ResultsPlotter
+from Visualization      import ResultsPlotter, make_highcharts
 from Summarator         import summarize_results
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
 from time               import time
+
 
 class MassTodon():
     def __init__(   self,
@@ -321,6 +322,7 @@ def MassTodonize(
         method  = 'MSE',
         max_times_solve = 10,
         forPlot = False,
+        highcharts = False,
         raw_data= False,
         verbose = False
     ):
@@ -370,6 +372,9 @@ def MassTodonize(
         results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
         results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
         results['original_spectrum']    = M.spectrum_iter('original')
+
+    if highcharts:
+        results['highcharts'] = make_highcharts()
 
     T1 = time()
     if verbose:
