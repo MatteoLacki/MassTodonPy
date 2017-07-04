@@ -18,4 +18,4 @@
 
 # from plot import plot_spectrum, plot_deconvolution_graph
 from ResultsPlotter import ResultsPlotter
-from highcharts import make_highcharts
+from prepare_highcharts import make_highcharts

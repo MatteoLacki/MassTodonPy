@@ -24,8 +24,8 @@ res = MassTodonize( fasta           = mol['fasta'],
                     solver          = solver,
                     multiprocesses_No = multiprocesses_No,
                     max_times_solve = max_times_solve,
-                    raw_data        = True,
-                    highcharts      = False,
+                    raw_data        = False,
+                    highcharts      = True,
                     verbose         = verbose )
 
 

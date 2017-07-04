@@ -339,6 +339,7 @@ def MassTodonize(
                     iso_probs,
                     verbose )
 
+
     M.read_n_preprocess_spectrum(   spectrum_path,
                                     spectrum,
                                     cut_off,
@@ -365,6 +366,10 @@ def MassTodonize(
     if verbose:
         print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
         print
+
+    if highcharts:
+        raw_data = highcharts
+
     if raw_data:
         results['raw_estimates'] = M.res
 
@@ -374,7 +379,7 @@ def MassTodonize(
         results['original_spectrum']    = M.spectrum_iter('original')
 
     if highcharts:
-        results['highcharts'] = make_highcharts()
+        results['highcharts'] = make_highcharts(results, precursor_charge, fasta)
 
     T1 = time()
     if verbose:

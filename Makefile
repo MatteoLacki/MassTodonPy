@@ -39,7 +39,7 @@ analyze_bootstrap_substance_P: # Relies on Rscript
 	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R
 
 
-SPECTRUM_PATH = 
+SPECTRUM_PATH =
 test_CLI:
 	masstodon
 
@@ -65,7 +65,7 @@ clean_ve:
 
 
 ### Mikolaj Stuff :D
-
+### Trolololo!!!!
 
 projectName = masstodon
 

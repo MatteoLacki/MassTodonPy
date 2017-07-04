@@ -1,13 +1,11 @@
 from highcharts import Highchart
+from collections import Counter, defaultdict
 
-
-def make_precursor_intensity_plot(precursors):
+def make_precursor_intensity_plot(precursors_intensitites):
     H = Highchart(width=750, height=600)
-    charges = precursors.keys()
-    Q_min = 1
-    Q_max = max(charges)
-    categories = range(Q_min,Q_max+1)
-    values = [ int(precursors[q]) for q in categories ]
+    charges = precursors_intensitites.keys()
+    categories = range(1,max(charges)+1)
+    values = [ int(precursors_intensitites[q]) for q in categories ]
     options = {
     	'title': {'text': 'Total Intensity of Precursors'},
         'subtitle':{'text': 'for different charge states'},
@@ -280,7 +278,7 @@ def make_fragment_pyramid_plot(fasta, fragments):
 
 
 
-def make_highcharts(res, Q):
+def make_highcharts(res, Q, fasta):
     '''Prepare the outputs of MassTodon for highcharts.'''
     precursors  = defaultdict(Counter)
     precursors_intensitites = Counter()
@@ -315,7 +313,7 @@ def make_highcharts(res, Q):
         branching_ratio = probs['PTR']/probs['ETnoD']
     except ZeroDivisionError:
         branching_ratio = None
-    precursor_intensity_plot    = make_precursor_intensity_plot(precursors)
+    precursor_intensity_plot    = make_precursor_intensity_plot(precursors_intensitites)
     etnod_ptr_probability_plot  = make_etnod_ptr_probability_plot(res)
     branching_ratio_plot        = make_branching_ratio_plot(branching_ratios, branching_ratio, pk)
     fragmentation_prob_plot     = make_fragmentation_prob_plot(fasta, res)

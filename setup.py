@@ -37,7 +37,7 @@ setup(
         'Programming Language :: Python :: 2.7'],
     install_requires=[ 'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'lxml',
         'cvxopt', 'IsoSpecPy', 'scipy', 'networkx', 'intervaltree', 'pyinterval',
-        'pandas', 'highcharts'],
+        'pandas', 'python-highcharts'],
     scripts=['bin/masstodon'],
     include_package_data = True,
     package_data={
