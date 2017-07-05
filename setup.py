@@ -27,10 +27,10 @@ setup(
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.3.tar.gz',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.4.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: GNU Affero General Public License v3',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Chemistry',
