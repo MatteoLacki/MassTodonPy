@@ -58,7 +58,7 @@ def run_masstodon(  spectrum_path,
             raw_data= raw_data,
             verbose = verbose )
 
-        
+
     except Exception as e:
         res = e, params
     return res
