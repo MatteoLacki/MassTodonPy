@@ -367,9 +367,6 @@ def MassTodonize(
         print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
         print
 
-    if highcharts:
-        raw_data = highcharts
-
     if raw_data:
         results['raw_estimates'] = M.res
 
@@ -379,7 +376,13 @@ def MassTodonize(
         results['original_spectrum']    = M.spectrum_iter('original')
 
     if highcharts:
-        results['highcharts'] = make_highcharts(results, precursor_charge, fasta)
+        algos = {   'basic_analysis':           results['basic_analysis'],
+                    'intermediate_analysis':    results['intermediate_analysis'],
+                    'advanced_analysis':        results['advanced_analysis']        }
+        results['highcharts'] = make_highcharts(fasta   = fasta,
+                                                Q       = precursor_charge,
+                                                raw_estimates = M.res,
+                                                algos   = algos)
 
     T1 = time()
     if verbose:

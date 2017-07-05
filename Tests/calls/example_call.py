@@ -28,5 +28,4 @@ res = MassTodonize( fasta           = mol['fasta'],
                     highcharts      = True,
                     verbose         = verbose )
 
-
 print res

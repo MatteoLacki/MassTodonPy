@@ -39,13 +39,12 @@ def make_precursor_intensity_plot(precursors_intensitites):
 #     json.dump(H.data, h)
 
 
-def make_etnod_ptr_probability_plot(res):
+def make_etnod_ptr_probability_plot(algos):
     categories = ('PTR', 'ETnoD')
-    algos = ('basic_analysis', 'intermediate_analysis', 'advanced_analysis')
     H = Highchart(width=750, height=600)
     for cat in categories:
         H.add_data_set(
-            data = [ res[a][0][cat]*100 for a in algos],
+            data = [ algos[a][0][cat]*100 for a in algos],
             name = cat,
             type = 'bar'
         )
@@ -80,7 +79,7 @@ def make_etnod_ptr_probability_plot(res):
     return H
 
 # import json
-# H = make_etnod_ptr_probability_plot(res)
+# H = make_etnod_ptr_probability_plot(algos)
 # H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnod_ptr_plots')
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnodPtr_options.json','w') as h:
 #     json.dump(H.option, h)
@@ -142,7 +141,7 @@ def make_branching_ratio_plot(branching_ratios, branching_ratio, pk):
 #     json.dump(H.data, h)
 
 
-def make_fragmentation_prob_plot(fasta, res):
+def make_fragmentation_prob_plot(fasta, algos):
     H = Highchart(width=2000, height=500)
     fasta_list = [f for f in fasta]
     options = {
@@ -180,9 +179,8 @@ def make_fragmentation_prob_plot(fasta, res):
         }
      }
     H.set_dict_options(options)
-    algos = ('basic_analysis', 'intermediate_analysis', 'advanced_analysis')
     for algo in algos:
-        probs, counts = res[algo]
+        probs, counts = algos[algo]
         H.add_data_set(
             data = [probs[i]*100 for i in xrange(len(fasta))],
             name = algo.split('_')[0].title() ,
@@ -190,7 +188,7 @@ def make_fragmentation_prob_plot(fasta, res):
         )
     return H
 
-# H = make_fragmentation_prob_plot(fasta, res)
+# H = make_fragmentation_prob_plot(fasta, algos)
 # H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragmentation_probs')
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragmentation_probs_options.json','w') as h:
 #     json.dump(H.option, h)
@@ -278,12 +276,12 @@ def make_fragment_pyramid_plot(fasta, fragments):
 
 
 
-def make_highcharts(res, Q, fasta):
+def make_highcharts(fasta, Q, raw_estimates, algos):
     '''Prepare the outputs of MassTodon for highcharts.'''
     precursors  = defaultdict(Counter)
     precursors_intensitites = Counter()
     fragments   = defaultdict(Counter)
-    for r in res['raw_estimates']:
+    for r in raw_estimates:
         for M in r['alphas']:
             if M['molType'] == 'precursor':
                 ETnoDs  = M['g']
@@ -308,15 +306,15 @@ def make_highcharts(res, Q, fasta):
         except ZeroDivisionError:
             branching_ratio = None
         branching_ratios.append( branching_ratio )
-    probs, counts = res['basic_analysis']
+    probs, counts = algos['basic_analysis']
     try:
         branching_ratio = probs['PTR']/probs['ETnoD']
     except ZeroDivisionError:
         branching_ratio = None
     precursor_intensity_plot    = make_precursor_intensity_plot(precursors_intensitites)
-    etnod_ptr_probability_plot  = make_etnod_ptr_probability_plot(res)
+    etnod_ptr_probability_plot  = make_etnod_ptr_probability_plot(algos)
     branching_ratio_plot        = make_branching_ratio_plot(branching_ratios, branching_ratio, pk)
-    fragmentation_prob_plot     = make_fragmentation_prob_plot(fasta, res)
+    fragmentation_prob_plot     = make_fragmentation_prob_plot(fasta, algos)
     fragment_pyramid_plot       = make_fragment_pyramid_plot(fasta, fragments)
 
     return precursor_intensity_plot, etnod_ptr_probability_plot, branching_ratio_plot, fragmentation_prob_plot, fragment_pyramid_plot

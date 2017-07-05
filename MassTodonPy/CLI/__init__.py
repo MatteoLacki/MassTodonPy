@@ -16,4 +16,4 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from MassTodon_wrapper import run_masstodon, perform_calculations
+from MassTodon_wrapper import perform_calculations
