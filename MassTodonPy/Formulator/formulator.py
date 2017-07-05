@@ -19,8 +19,17 @@
 from linearCounter import linearCounter as lCnt
 from itertools import chain
 from protonations import protonate
-from bricks import makeBricks
+import  pkg_resources
 from collections import defaultdict
+import re
+try:
+   import cPickle as pickle
+except:
+   import pickle
+
+
+data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+bricks  = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
 
 def countIsNegative(atomCnt):
     '''Check if any element of a dictionary is a negative number.'''
@@ -39,7 +48,11 @@ def standardize(modifications):
     backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
     R = defaultdict(lambda:defaultdict(lCnt))
     for tag, atomCnt in modifications.items():
-        R[ tag[1]-1 ][ backboneAtom2aaNomen[tag[0]] ] = lCnt(atomCnt)
+        match = re.match(r"([a-z]+)([0-9]+)", tag, re.I)
+        if match:
+            aa, aa_idx = match.groups()
+            aa_idx = int(aa_idx) - 1
+        R[aa_idx][ backboneAtom2aaNomen[aa] ] = lCnt(atomCnt)
     return R
 
 
@@ -54,8 +67,6 @@ def prolineBlockedFragments(fasta):
 
 def make_cz_fragments(fasta, modifications):
     '''Prepares the precursor and the c and z fragments atom counts.'''
-    bricks = makeBricks()
-
     def getBrick(aaPart, aa):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
         if countIsNegative(brick):
@@ -84,18 +95,18 @@ def make_cz_fragments(fasta, modifications):
         for i in range(N-1):
             cFrag += superAtoms[i]
             cFrag_tmp = lCnt(cFrag)
-            fragType = 'c'+str(i)
-            if not fragType in blockedFragments and not i == 0:
-                yield (fragType, atomCnt2string(cFrag_tmp), i)
-    #
+            frag_type = 'c'+str(i)
+            if not frag_type in blockedFragments and not i == 0:
+                yield (frag_type, atomCnt2string(cFrag_tmp), i)
+
     def getZfrags():
         zFrag = lCnt()
         for i in range(1,N):
             zFrag += superAtoms[N-i]
             zFrag_tmp = lCnt(zFrag)
-            fragType = 'z'+str(i)
-            if not fragType in blockedFragments:
-                yield (fragType, atomCnt2string(zFrag_tmp), i)
+            frag_type = 'z'+str(i)
+            if not frag_type in blockedFragments:
+                yield (frag_type, atomCnt2string(zFrag_tmp), i)
 
     return getPrecursor, getCfrags, getZfrags
 #TODO It seems very strange to return these functions. Inspect it later on.
@@ -142,10 +153,10 @@ class CZformulator_qg_competition(CZformulator):
                     yield molType, atomCnt_str, sideChainsNo, q, g
 
 
-def makeFormulas(
+def make_formulas(
         fasta,
         Q,
-        fragType     ='cz',
+        frag_type ='cz',
         modifications={}
     ):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
@@ -154,5 +165,5 @@ def makeFormulas(
     formClass       = {
         'cz':CZformulator,
         'cz_qg_competition':CZformulator_qg_competition
-    }[fragType](fasta, Q, modifications )
+    }[frag_type](fasta, Q, modifications )
     return formClass

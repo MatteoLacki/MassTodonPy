@@ -16,4 +16,4 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from deconvolutor import deconvolve, Deconvolutor_Max_Flow
+from deconvolutor import deconvolve, Deconvolutor_Max_Flow, Deconvolutor, Deconvolutor_Min_Sum_Squares

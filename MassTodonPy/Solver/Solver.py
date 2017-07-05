@@ -15,31 +15,90 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-from MassTodonPy.Deconvolutor import deconvolve
-
-class Solver(object):
-    def __init__(self, problemsGenerator):
-        self.prob_gen = problemsGenerator
-    def run(self, args, method='MSE'):
-        raise NotImplementedError
-
-
-class SequentialSolver(Solver):
-    def run(self, args, method='MSE'):
-        return [ deconvolve(
-            SFG = SFG, args = args,
-            method=method) for SFG in self.prob_gen ]
-
-#TODO: add multiprocessing
-class MultiprocessingSolver(Solver):
-    def run(self, args, method='MSE'):
-        raise NotImplementedError
+from    MassTodonPy.Deconvolutor import deconvolve
+from    MassTodonPy.Misc import cvxopt_wrapper
+from    time import time
+from    multiprocessing import Pool
+from    itertools import repeat
+from    collections import Counter
 
 
-def solve(problemsGenerator, args, solver='sequential', method='MSE'):
-    solver = {
-        'sequential':   SequentialSolver,
-        'MaxFlow':      MultiprocessingSolver
-    }[solver](problemsGenerator)
-    res = solver.run(args=args, method=method)
+class Error_in_update_scaling(Exception):
+    pass
+
+def worker(worker_args):
+    SG, args, method, max_times_solve, verbose = worker_args
+    T0 = time()
+    solved = False
+    try:
+        i = 0
+        stop = False
+        while not stop:
+            i += 1
+            T00 = time()
+            res = deconvolve(   SG      = SG,
+                                args    = args,
+                                method  = method )
+
+            T01 = time()
+            if verbose:
+                print 'CVXOPT call lasted', T01-T00
+            if res['status'] == 'optimal':
+                stop    = True
+                solved  = True
+            if i == max_times_solve:
+                stop = True
+                print 'Deconvolution proved non optimal', max_times_solve, 'times'
+    except Error_in_update_scaling as e:
+        pass
+    T1 = time()
+    if verbose:
+        if solved:
+            print 'Solved problem in' , T1-T0, 'It was big as', len(SG)
+        else:
+            print 'Problem not solved in' , T1-T0, 'It was big as', len(SG)
     return res
+
+
+def solve(  problems,
+            args,
+            solver              = 'sequential',
+            multiprocesses_No   = None,
+            method              = 'MSE',
+            max_times_solve     = 5,
+            verbose             = False    ):
+
+    '''Wrapper over the solver class.
+
+    Runs the solver with a given set of inputs.'''
+    stats = Counter()
+
+    with cvxopt_wrapper():
+        T0 = time()
+        if solver == 'sequential':
+            results = [worker((SG, args, method, max_times_solve, verbose)) for SG in problems]
+        elif solver == 'multiprocessing':
+            #Start solving bigger, i.e. graphs with more nodes, problems first
+            problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
+            pool_args = zip(problems,
+                            repeat(args),
+                            repeat(method),
+                            repeat(max_times_solve),
+                            repeat(verbose) )
+            P = Pool(multiprocesses_No)
+            results = P.map( worker, pool_args )
+            P.close()
+            P.join()
+        else:
+            print "'solver' should have been either 'sequential' or 'multiprocessing'. Stick to the name conventions, please."
+            raise NotImplementedError
+        T1 = time()
+
+    stats['Deconvolution Total T'] = T1-T0
+    if verbose:
+        print 'Solved problem in', T1-T0
+        print
+
+    stats.update(Counter([ r['status'] for r in results ]))
+
+    return results, stats

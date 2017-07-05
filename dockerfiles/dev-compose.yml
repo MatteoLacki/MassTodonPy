@@ -1,0 +1,12 @@
+version: '2'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: "./app-dev-1"
+    volumes:
+      - ../:/src
+    ports:
+      - '33500:80'
+    command: /bin/bash
+    stdin_open: true

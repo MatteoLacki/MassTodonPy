@@ -21,30 +21,31 @@ from setuptools import setup, find_packages
 
 setup(
     name          = 'MassTodonPy',
-    # packages      = ['MassTodonPy', 'MassTodonPy.data', 'MassTodonPy.Deconvolutor'], # this must be the same as the name above
     packages      = find_packages(),
-    version       = '0.2.3.1',
+    version       = '0.2.4',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.3.1.tar.gz',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.3.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU Affero General Public License v3',
-        'Programming Language :: Python :: 2.7',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Chemistry',
-        'Programming Language :: Python :: 2.7'
-    ],
-    install_requires=[
-        'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'cvxopt', 'IsoSpecPy', 'scipy', 'matplotlib', 'python-igraph', 'networkx', 'intervaltree'
-    ],
+        'Programming Language :: Python :: 2.7'],
+    install_requires=[ 'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'lxml',
+        'cvxopt', 'IsoSpecPy', 'scipy', 'networkx', 'intervaltree', 'pyinterval',
+        'pandas', 'python-highcharts'],
+    scripts=['bin/masstodon'],
     include_package_data = True,
     package_data={
-        "data": [
-            "data/isotopes.txt"
-        ],
+        "Data": [   "Data/isotopes.txt",
+                    "Data/amino_acids.txt",
+                    "Data/substanceP.example",
+                    "Data/substancesP.example",
+                    "Data/substancesP_results.example",
+                    "Data/ubiquitin.example"        ],
     }
 )

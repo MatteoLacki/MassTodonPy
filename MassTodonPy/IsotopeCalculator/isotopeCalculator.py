@@ -24,10 +24,11 @@ try:
   import cPickle as pickle
 except:
   import pickle
-from numpy.random   import multinomial, normal
-import scipy.stats  as ss
-import numpy        as np
-import pkg_resources
+from    numpy.random   import multinomial, normal
+import  scipy.stats  as ss
+import  numpy        as np
+import  pkg_resources
+from    time import time
 
 def cdata2numpyarray(x):
     '''Turn c-data into a numpy array.'''
@@ -61,36 +62,39 @@ def merge_runs(spec1, spec2):
     return aggregate(mz, I)
 
 
-class isotopeCalculator:
+# To do: change how the IsoSpec is called to make it faster.
+class IsotopeCalculator:
     '''A class for isotope calculations.'''
 
     def __init__(   self,
                     jP = .999,
-                    precDigits= 2,
-                    isoMasses = None,
-                    isoProbs  = None  ):
+                    prec_digits = 2,
+                    iso_masses = None,
+                    iso_probs  = None,
+                    verbose    = False     ):
         '''Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations.'''
 
-        if isoMasses==None or isoProbs==None:
-            path = pkg_resources.resource_filename('MassTodonPy', 'data/')
-            isoMasses, isoProbs = pickle.load(open(path+'isotopes.txt', 'rb'))
-        self.isoMasses = isoMasses
-        self.isoProbs  = isoProbs
+        if iso_masses==None or iso_probs==None:
+            path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+            iso_masses, iso_probs = pickle.load(open(path+'isotopes.txt', 'rb'))
+        self.iso_masses = iso_masses
+        self.iso_probs  = iso_probs
         self.jP = jP
         self.elementsMassMean = dict(
-            (el, sum( pr*m for pr, m in zip(self.isoProbs[el], self.isoMasses[el]) ) )
-            for el in self.isoMasses.keys() )
+            (el, sum( pr*m for pr, m in zip(self.iso_probs[el], self.iso_masses[el]) ) )
+            for el in self.iso_masses.keys() )
         self.elementsMassVar  = dict(
-            (el, sum( pr*m**2 for pr, m in zip(self.isoProbs[el], self.isoMasses[el])) - self.elementsMassMean[el]**2 )
-            for el in self.isoMasses.keys() )
+            (el, sum( pr*m**2 for pr, m in zip(self.iso_probs[el], self.iso_masses[el])) - self.elementsMassMean[el]**2 )
+            for el in self.iso_masses.keys() )
         self.isotopicEnvelopes = {}
-        self.precDigits = precDigits
+        self.prec_digits = prec_digits
         self.formParser = formulaParser()
-
+        self.verbose = verbose
+        self.stats = Counter()
 
     def getMonoisotopicMass(self, atomCnt):
         '''Calculate monoisotopic mass of an atom count.'''
-        return sum( self.isoMasses[el][0]*elCnt for el, elCnt in atomCnt.items() )
+        return sum( self.iso_masses[el][0]*elCnt for el, elCnt in atomCnt.items() )
 
 
     def getMassMean(self, atomCnt):
@@ -110,62 +114,65 @@ class isotopeCalculator:
                     self.getMassVar(atomCnt)    )
 
 
-    def getOldEnvelope(self, atomCnt_str, jP, precDigits):
-        masses, probs = self.isotopicEnvelopes[(atomCnt_str, jP, precDigits)]
+    def getOldEnvelope(self, atomCnt_str, jP, prec_digits):
+        masses, probs = self.isotopicEnvelopes[(atomCnt_str, jP, prec_digits)]
         return masses.copy(), probs.copy()
 
 
-    def getNewEnvelope(self, atomCnt_str, jP, precDigits):
+    def getNewEnvelope(self, atomCnt_str, jP, prec_digits):
+        T0 = time()
         counts          = []
         isotope_masses  = []
         isotope_probs   = []
         atomCnt = self.formParser.parse(atomCnt_str)
         for el, cnt in atomCnt.items():
             counts.append(cnt)
-            isotope_masses.append(self.isoMasses[el])
-            isotope_probs.append(self.isoProbs[el])
+            isotope_masses.append(self.iso_masses[el])
+            isotope_probs.append(self.iso_probs[el])
         envelope = IsoSpecPy.IsoSpec( counts, isotope_masses, isotope_probs, jP )
         masses, logprobs, _ = envelope.getConfsRaw()
         masses  = cdata2numpyarray(masses)
         probs   = np.exp(cdata2numpyarray(logprobs))
-        masses, probs = agg_spec_proper(masses, probs, precDigits)
-        # memoization
-        self.isotopicEnvelopes[ (atomCnt_str, jP, precDigits) ] = ( masses, probs )
+        masses, probs = agg_spec_proper(masses, probs, prec_digits)
+        # memoization#TODO get rid of it when IsoSpec using stats convolution
+        self.isotopicEnvelopes[ (atomCnt_str, jP, prec_digits) ] = ( masses, probs )
+        T1 = time()
+        self.stats['Envelopes Generation Total T'] += T1-T0
         return masses.copy(), probs.copy()
 
 
-    def getEnvelope(self, atomCnt_str, jP, precDigits):
-        if (atomCnt_str, jP, precDigits) in self.isotopicEnvelopes:
-            masses, probs = self.getOldEnvelope(atomCnt_str,jP,precDigits)
+    def getEnvelope(self, atomCnt_str, jP, prec_digits):
+        if (atomCnt_str, jP, prec_digits) in self.isotopicEnvelopes:
+            masses, probs = self.getOldEnvelope(atomCnt_str,jP,prec_digits)
         else:
-            masses, probs = self.getNewEnvelope(atomCnt_str,jP,precDigits)
+            masses, probs = self.getNewEnvelope(atomCnt_str,jP,prec_digits)
         return masses, probs
 
 
-    def isoEnvelope(self, atomCnt_str, jP=None, q=0, g=0, precDigits=None):
+    def isoEnvelope(self, atomCnt_str, jP=None, q=0, g=0, prec_digits=None):
         '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
         if jP is None:
             jP = self.jP
-        if precDigits is None:
-            precDigits = self.precDigits
-        masses, probs  = self.getEnvelope(atomCnt_str, jP, precDigits)
+        if prec_digits is None:
+            prec_digits = self.prec_digits
+        masses, probs  = self.getEnvelope(atomCnt_str, jP, prec_digits)
         if q is not 0:
-            masses = np.around( (masses + g + q)/q, decimals=precDigits )
+            masses = np.around( (masses + g + q)/q, decimals=prec_digits )
         masses, probs = aggregate(masses, probs)
         return masses, probs
 
 
-    def makeRandomSpectrum(self, mols, quants, sigma, jP=None, precDigits=None):
+    def makeRandomSpectrum(self, mols, quants, sigma, jP=None, prec_digits=None):
         x0 = sum(quants)
-        if not precDigits:
-            precDigits = self.precDigits
+        if not prec_digits:
+            prec_digits = self.prec_digits
         if not jP:
             jP = self.jP
 
         def get_intensity_measure(mols, quants):
             for mol, quant in zip(mols, quants):
                 _, atomCnt_str, _, q, g = mol
-                ave_mz, ave_intensity = self.isoEnvelope(atomCnt_str=atomCnt_str, jP=jP, q=q, g=g, precDigits=2)
+                ave_mz, ave_intensity = self.isoEnvelope(atomCnt_str=atomCnt_str, jP=jP, q=q, g=g, prec_digits=2)
                 ave_intensity = quant * ave_intensity
                 yield ave_mz, ave_intensity
 
@@ -177,10 +184,10 @@ class isotopeCalculator:
             spectrum = Counter()
             for m_average,cnt in zip(mz_average, counts):
                 if cnt > 0:
-                    m_over_z = np.round(normal(loc=m_average, scale=sigma, size=cnt), precDigits)
+                    m_over_z = np.round(normal(loc=m_average, scale=sigma, size=cnt), prec_digits)
                     spectrum.update(m_over_z)
 
-            spectrum = np.array(spectrum.keys()), np.array([ spectrum[k] for k in spectrum ])
+            spectrum = np.array(spectrum.keys()), np.array([ float(spectrum[k]) for k in spectrum ])
         else:
             spectrum = (mz_average, counts)
         return spectrum

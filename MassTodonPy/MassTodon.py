@@ -63,74 +63,329 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
-from Formulator         import makeFormulas
-from IsotopeCalculator  import isotopeCalculator
+from Formulator         import make_formulas
+from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
 from Solver             import solve
-from Parsers            import readSpectrum
+from Parsers            import read_n_preprocess_spectrum
+from MatchMaker         import match_cz_ions
+from Visualization      import ResultsPlotter, make_highcharts
+from Summarator         import summarize_results
+from itertools          import izip
+from math               import ceil, log10
+from intervaltree       import Interval as interval, IntervalTree
+from time               import time
+
 
 class MassTodon():
     def __init__(   self,
                     fasta,
-                    precursorCharge,
-                    fragType        = 'cz',
-                    precDigits      = 2,
-                    mzPrec          = .05,
-                    jointProbability= 0.999,
-                    isoMasses       = None,
-                    isoProbs        = None,
-                    modifications   = {} ):
-        self.fasta  = fasta
-        self.Q      = precursorCharge
+                    precursor_charge,
+                    mz_prec,
+                    modifications   = {},
+                    frag_type       = 'cz',
+                    joint_probability_of_envelope = 0.999,
+                    iso_masses      = None,
+                    iso_probs       = None,
+                    verbose         = False
+        ):
+        '''Make MassTodon somewhat less extinct by creating its instance.'''
 
-        self.Forms  = makeFormulas(
+        self.mz_prec = mz_prec
+            # precision one digit lower than the input precision of spectra, eg.
+            # mz_prec = .05     -->     prec_digits = 3
+            # mz_prec = .005    -->     prec_digits = 4
+        # self.prec_digits = int(ceil(-log10(mz_prec)))+1
+        self.prec_digits = int(ceil(-log10(mz_prec)))
+        self.fasta  = fasta
+        self.Q      = precursor_charge
+        self.verbose= verbose
+
+        self.Forms  = make_formulas(
             fasta   = fasta,
             Q       = self.Q,
-            fragType= fragType,
+            frag_type     = frag_type,
             modifications = modifications )
 
-        self.IsoCalc = isotopeCalculator(
-            jP          = jointProbability,
-            precDigits  = precDigits,
-            isoMasses   = isoMasses,
-            isoProbs    = isoProbs )
+        self.IsoCalc = IsotopeCalculator(
+            jP          = joint_probability_of_envelope,
+            prec_digits = self.prec_digits,
+            iso_masses  = iso_masses,
+            iso_probs   = iso_probs,
+            verbose     = verbose   )
 
         self.peakPicker = PeakPicker(
-            Forms   = self.Forms,
-            IsoCalc = self.IsoCalc,
-            mzPrec  = mzPrec )
+            _Forms   = self.Forms,
+            _IsoCalc = self.IsoCalc,
+            mz_prec = mz_prec,
+            verbose = verbose   )
 
+        self.ResPlotter = ResultsPlotter(mz_prec)
+        self.modifications = modifications
+        self.spectra = {}
+        self.small_graphs_no_G = None
 
-    def readSpectrum(   self,
-                        spectrum=None,
-                        path=None,
-                        cutOff=100.,
-                        digits=2,
-                        topPercent=1.0 ):
-        '''Read in a mass spectrum.
+    def read_n_preprocess_spectrum(self,
+            path    = None,
+            spectrum= None,
+            cut_off = None,
+            opt_P   = None
+        ):
+        '''Read in a mass spectrum and round the masses to prec_digits digits after 0.
 
         Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
         '''
-        if path:
-            self.spectrum = readSpectrum( path,
-            cutOff, digits, topPercent)
-        else:
-            if spectrum:
-                self.spectrum = spectrum # a tupple of two numpy arrays
-            else:
-                print 'Wrong path or you did not provide a spectrum.'
-                raise KeyError
+        self.spectra= read_n_preprocess_spectrum(
+            path    = path,
+            spectrum= spectrum,
+            prec_digits = self.prec_digits,
+            cut_off = cut_off,
+            opt_P   = opt_P      )
 
-    def prepare_problems(self, M_minProb=.75):
-        '''Prepare a generator of deconvolution problems.'''
-        self.problems = self.peakPicker.get_problems(self.spectrum, M_minProb)
+        if self.verbose:
+            print
+            print 'original total intensity',   self.spectra['original total intensity']
+            print 'total intensity after trim', self.spectra['total intensity after trim']
+            print 'trimmed intensity', self.spectra['trimmed intensity']
+            print
 
-        #TODO: add multiprocessing
-    def run(self, solver='sequential', method='MSE', **args):
+    # TODO is the thing below necessary?
+    def spectrum_iter(self, spectrum_type):
+        assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
+        for mz, intensity in izip(*self.spectra[spectrum_type]):
+            yield {'mz':mz, 'intensity':intensity}
+
+
+    def run(self,
+            solver              = 'sequential',
+            multiprocesses_No   = None,
+            method              ='MSE',
+            max_times_solve     = 5,
+            min_prob_per_molecule = .75,
+            forPlot             = False,
+            **args ):
         '''Perform the deconvolution of problems.'''
-        res = solve(
-            problemsGenerator = self.problems,
-            solver = solver,
+
+        self.problems, self.clusters= self.peakPicker.get_problems(
+            massSpectrum            = self.spectra['trimmed'],
+            min_prob_per_molecule   = min_prob_per_molecule )
+
+        self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
+
+        self.res, self.solver_stats = solve(
+                            problems = self.problems,
+                            args   = args,
+                            solver = solver,
+                            multiprocesses_No = multiprocesses_No,
+                            method = method,
+                            max_times_solve = max_times_solve,
+                            verbose= self.verbose   )
+
+        if self.verbose:
+            print 'Solver stats:'
+            print self.solver_stats
+            print
+        if forPlot:
+            self.ResPlotter.add_mz_ranges_to_results(self.res)
+
+
+    # TODO is the thing below necessary?
+    def results_iter(self):
+        '''Iterate over results.
+
+        Mainly useful for ETDetective.'''
+        for r in self.res:
+            for N, info in r["small_graph"].nodes(data=True):
+                if info["type"] == "G":
+                    mz, intensity, estimate = info['mz'], info['intensity'], info['estimate']
+                    L, R = mz.begin, mz.end
+                    yield {'L':L,'R':R,'I':intensity,'E':estimate }
+        for mz, intensity in izip(*self.spectra['trimmed']):
+            prec = self.mz_prec
+            yield {'L':mz-prec,'R':mz+prec,'I':intensity,'E':.0 }
+
+
+    def summarize_results(self):
+        '''Summarize the results of MassTodon.'''
+        return summarize_results(   spectra             = self.spectra,
+                                    raw_masstodon_res   = self.res              )
+
+
+    def export_information_for_spectrum_plotting(self, full_info=False):
+        '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
+        prec = self.mz_prec
+        for res in self.ResPlotter.G_info_iter(full_info):
+            yield res
+        for mz_int in zip(*self.spectra['original']):
+            if not mz_int in self.peakPicker.Used_Exps:
+                mz, intensity = mz_int
+                yield { 'mz_L': mz - prec,
+                        'mz_R': mz + prec,
+                        'tot_estimate': 0.0,
+                        'tot_intensity':intensity,
+                        'where': 'not_explainable' }
+
+
+    # TODO is the thing below necessary?
+    def flatten_results(self, minimal_estimated_intensity=100.0):
+        '''Return one list of results, one list of difficult cases, and the error.'''
+        optimal     = []
+        nonoptimal  = []
+        total_error  = 0.0
+        for mols, error, status in self.res:
+            if status=='optimal':
+                total_error += error
+                for mol in mols:
+                    if mol['estimate'] > minimal_estimated_intensity:
+                        mol_res = {}
+                        for key in ['estimate', 'molType', 'q', 'g', 'formula']:
+                            mol_res[key] = mol[key]
+                        optimal.append(mol_res)
+            else:
+                nonoptimal.append(mols)
+        return optimal, nonoptimal, total_error
+
+
+    #TODO: push Ciach to write a general structure.
+    def get_subsequence(self, name):
+        '''For purpose of ETDetective, to bridge gaps in definitions.'''
+        if self.modifications == {'C11': {'H': 1, 'N': 1, 'O': -1}}:
+            suffix = '*'
+        else:
+            suffix = ''
+        if name[0]=='p':
+            return '*'+self.fasta+suffix
+        if name[0]=='z':
+            return self.fasta[ len(self.fasta)-int(name[1:]): ] + suffix
+        else:
+            return '*' + self.fasta[ 0:int(name[1:]) ]
+
+
+    def i_flatten_results_for_ETDetective(self):
+        '''Generate pairs substance-estimate.'''
+        for subproblem in self.res:
+            for r in subproblem['alphas']:
+                seq = self.get_subsequence( r['molType'] )
+                yield (seq, r['q'], r['g'], r['molType']), r['estimate']
+
+
+    def gen_ETDetective_inputs(self):
+        '''Get inputs for ETDetective.'''
+        data = {}
+        for r in self.i_flatten_results_for_ETDetective():
+            (seq, q, g, molType), estimate = r
+            if q == self.Q and g == 0 and molType=='precursor':
+                precursor = seq, q, g, molType
+            else:
+                data[(seq, q, g, molType)] = estimate
+        return precursor, data
+
+
+    def analyze_reactions(  self,
+                            analyzer                = 'intermediate',
+                            accept_nonOptimalDeconv = False,
+                            min_acceptEstimIntensity= 0.0, # might change it to self.spectra['cut_off']
+                            verbose                 = False,
+                            **advanced_args     ):
+        '''Estimate reaction constants and quantities of fragments.'''
+        return match_cz_ions(   results_to_pair         = self.res,
+                                Q                       = self.Q,
+                                fasta                   = self.fasta,
+                                min_acceptEstimIntensity= min_acceptEstimIntensity,
+                                analyzer                = analyzer,
+                                accept_nonOptimalDeconv = accept_nonOptimalDeconv,
+                                verbose                 = verbose,
+                                advanced_args           = advanced_args   )
+
+
+
+def MassTodonize(
+        fasta,
+        precursor_charge,
+        mz_prec,
+        cut_off         = None,
+        opt_P           = None,
+        spectrum        = None,
+        spectrum_path   = None,
+        modifications   = {},
+        frag_type       = 'cz',
+        joint_probability_of_envelope   = .999,
+        min_prob_of_envelope_in_picking = .7,
+        iso_masses  = None,
+        iso_probs   = None,
+        L1_x = .001,
+        L2_x = .001,
+        L1_alpha= .001,
+        L2_alpha= .001,
+        solver  = 'sequential',
+        multiprocesses_No = None,
+        method  = 'MSE',
+        max_times_solve = 10,
+        forPlot = False,
+        highcharts = False,
+        raw_data= False,
+        verbose = False
+    ):
+    '''Run a full session of MassTodon on your problem.'''
+
+    T0 = time()
+    M = MassTodon(  fasta,
+                    precursor_charge,
+                    mz_prec,
+                    modifications,
+                    frag_type,
+                    joint_probability_of_envelope,
+                    iso_masses,
+                    iso_probs,
+                    verbose )
+
+
+    M.read_n_preprocess_spectrum(   spectrum_path,
+                                    spectrum,
+                                    cut_off,
+                                    opt_P   )
+
+    M.run(  solver = solver,
+            multiprocesses_No = multiprocesses_No,
             method = method,
-            args = args)
-        return res
+            max_times_solve = max_times_solve,
+            min_prob_per_molecule = min_prob_of_envelope_in_picking,
+            forPlot   = forPlot,
+            L1_x      = L1_x,
+            L2_x      = L2_x,
+            L1_alpha  = L1_alpha,
+            L2_alpha  = L2_alpha,
+            verbose   = verbose    )
+
+    results = {}
+    results['summary']              = M.summarize_results()
+    results['basic_analysis']       = M.analyze_reactions('basic')
+    results['intermediate_analysis']= M.analyze_reactions('intermediate')
+    results['advanced_analysis']    = M.analyze_reactions('advanced')
+
+    if verbose:
+        print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
+        print
+
+    if raw_data:
+        results['raw_estimates'] = M.res
+
+    if forPlot:
+        results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
+        results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
+        results['original_spectrum']    = M.spectrum_iter('original')
+
+    if highcharts:
+        algos = {   'basic_analysis':           results['basic_analysis'],
+                    'intermediate_analysis':    results['intermediate_analysis'],
+                    'advanced_analysis':        results['advanced_analysis']        }
+        results['highcharts'] = make_highcharts(fasta   = fasta,
+                                                Q       = precursor_charge,
+                                                raw_estimates = M.res,
+                                                algos   = algos)
+
+    T1 = time()
+    if verbose:
+        print 'Total analysis took', T1-T0
+
+    return results
