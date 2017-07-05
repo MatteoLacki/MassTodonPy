@@ -39,10 +39,10 @@ analyze_bootstrap_substance_P: # Relies on Rscript
 	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R
 
 
-SPECTRUM_PATH =
 test_CLI_mac:
 	node ./Tests/CLI_tests/test_input.js
 	masstodon ./Tests/data/FRL-010513-SUBP-WH000-WV300.txt  ./Tests/CLI_tests/config.json -o ./Tests/CLI_tests/
+	cat ./Tests/CLI_tests/output.json
 
 # run_real_substance_P:
 # 	$(PYTHON) $(PATH_INSILICO)/real_subP.py
