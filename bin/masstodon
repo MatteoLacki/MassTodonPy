@@ -50,7 +50,3 @@ print('')
 print('Thank you!')
 print('Please, be kind to MassTodons.')
 print('')
-
-
-# output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/output'
-# spectrum_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt'
