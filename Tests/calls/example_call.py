@@ -1,7 +1,6 @@
 from MassTodonPy import MassTodonize
-from MassTodonPy.TestScripts.substanceP import substanceP
-from MassTodonPy.TestScripts.ubiquitin  import ubiquitin
-from time import time
+from MassTodonPy.TestScripts import substanceP, ubiquitin
+from time  import time
 
 mol = substanceP.copy()
 # mol = ubiquitin.copy()

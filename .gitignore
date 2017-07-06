@@ -37,13 +37,10 @@ Tests/data/FRL-010513-SUBP-WH000-WV300.txt
 Tests/data/substanceP_spectra_parsed.cPickle
 Tests/experimental_spectra/parsed_sub_P.matteo
 
-# Tests
-Tests/
-
 # My own junk and notes
 Old/
 temp_data
-
+Notes/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
