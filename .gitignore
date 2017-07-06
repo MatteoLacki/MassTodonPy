@@ -24,10 +24,11 @@ Tests/bootstrap/RESULTS_CSV_27_06_2017_czczmiel/
 Tests/bootstrap/RESULTS_fixing_bootstrap/
 Tests/bootstrap/RESULTS_CSV_03_07_2017/
 Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/
+MassTodonPy/Data/ubiquitins.example
 
 *.zip
 *.html
-*.matteo 
+*.matteo
 server/src/envs/
 
 # Spectra

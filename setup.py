@@ -22,12 +22,12 @@ from setuptools import setup, find_packages
 setup(
     name          = 'MassTodonPy',
     packages      = find_packages(),
-    version       = '0.2.6',
+    version       = '0.2.7',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.6.tar.gz',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.2.7.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [
         'Development Status :: 3 - Alpha',
