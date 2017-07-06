@@ -1,7 +1,0 @@
-# DEV
-
-FROM python:2
-
-VOLUME ["/src"]
-WORKDIR /src
-EXPOSE 80
