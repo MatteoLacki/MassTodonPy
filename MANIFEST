@@ -1,6 +1,0 @@
-# data
-include MassTodonPy/Data/isotopes.txt
-include MassTodonPy/Data/amino_acids.txt
-include MassTodonPy/Data/substanceP.example
-include MassTodonPy/Data/substancesP.example
-include MassTodonPy/Data/ubiquitin.example
