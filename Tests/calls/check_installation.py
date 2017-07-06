@@ -1,20 +1,10 @@
 import  os
 os.environ['OMP_NUM_THREADS'] = "1"
 
-
-from MassTodonPy.TestScripts.standard_datasets import substancesP, substancesP_results_macOS
+from MassTodonPy.TestScripts.substancesP import substancesP
+from MassTodonPy.TestScripts.substancesP_results import substancesP_results_macOS
 from MassTodonPy import MassTodonize
 import cPickle as pickle
-
-jP      = .999
-mz_prec = .065 # mz_prec = .05
-opt_P   = .99
-# cut_off = 500.0
-max_times_solve = 10
-multiprocesses_No = None
-verbose = True
-solver  = 'multiprocessing'
-# solver  = 'sequential'
 
 results = {}
 for ID, mol in enumerate(substancesP):
@@ -22,17 +12,16 @@ for ID, mol in enumerate(substancesP):
     results[(ID, WH, WV)] = MassTodonize(
         fasta           = mol['fasta'],
         precursor_charge= mol['precursorCharge'],
-        mz_prec         = mz_prec,
-        joint_probability_of_envelope= jP,
+        mz_prec         = .065,                     # mz_prec = .05
+        joint_probability_of_envelope= .999,
         modifications   = mol['modifications'],
         spectrum        = mol['spectrum'],
-        opt_P           = opt_P,
-        # cut_off         = cut_off,
-        solver          = solver,
-        multiprocesses_No = multiprocesses_No,
-        max_times_solve = max_times_solve,
+        opt_P           = .99, # cut_off = 500.0,
+        solver          = 'multiprocessing',# solver  = 'sequential'
+        multiprocesses_No = None,
+        max_times_solve = 10,
         raw_data        = True,
-        verbose         = verbose               )
+        verbose         = True )
 
 # saving the data on macOS
 # with open('/Users/matteo/Documents/MassTodon/MassTodonPy/MassTodonPy/Data/substancesP_results.example', 'w') as f:

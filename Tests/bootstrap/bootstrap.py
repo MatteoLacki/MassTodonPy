@@ -1,7 +1,7 @@
 import  os
 os.environ['OMP_NUM_THREADS'] = "1"
 
-from    MassTodonPy.TestScripts.standard_datasets import substancesP
+from    MassTodonPy.TestScripts.substancesP import substancesP
 from    bootstrap_misc  import analyze_experiments
 import  sys
 
