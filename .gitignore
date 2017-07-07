@@ -3,7 +3,8 @@
 node_modules
 yarn.lock
 .tmp
-
+*.png
+*.pdf
 
 # Folders
 Tests/bootstrap/RESULTS_CSV/
@@ -25,9 +26,10 @@ Tests/bootstrap/RESULTS_fixing_bootstrap/
 Tests/bootstrap/RESULTS_CSV_03_07_2017/
 Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/
 
+*.csv
 *.zip
 *.html
-*.matteo 
+*.matteo
 server/src/envs/
 
 # Spectra

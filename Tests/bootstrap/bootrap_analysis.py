@@ -1,37 +1,38 @@
 import cPickle as pickle
 import os
 from collections import Counter
+from pandas import DataFrame as DF
+from itertools import islice
+
+def make_a_row(info, real_or_bootstrap = 'real'):
+    res = {'real_or_bootstrap':real_or_bootstrap}
+    for k in ('ID','WV','WH'):
+        res[k] = info[k]
+    for algo in ('basic_analysis','intermediate_analysis','advanced_analysis'):
+        for thing, thing_name in zip(info[algo], ('prob','count')):
+            for k in thing:
+                short_algo = algo.split('_')[0]
+                res[short_algo+'-'+thing_name+'-'+str(k)] = thing[k]
+    for k in info['summary']:
+        res[k] = info['summary'][k]
+    return res
+
+def results_iter(res):
+    yield make_a_row(res['real'], real_or_bootstrap = 'real')
+    for info in res['bootstrap']:
+        yield make_a_row(info, real_or_bootstrap = 'boot')
 
 
-# res = []
-# for x in xrange(51):
-#     with open('RESULTS_CSV_27_06_2017_czczmiel/'+str(x)) as f:
-#         res.append(pickle.load(f))
+indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/'
+outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/CSV_03_07_2017_mzPrec-065/'
 
+if not os.path.exists(outdir):
+    os.makedirs(outdir)
 
-# res = []
-# for x in xrange(0):
-#     with open('RESULTS_fixing_bootstrap/'+str(x)) as f:
-#         res.append(pickle.load(f))
-
-with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS_fixing_bootstrap/0','r') as f:
-    res = pickle.load(f)
-
-res = [res]
-
-len(res[0]['real'])
-
-len(res[0]['bootstrap'])
-
-
-[b['summary'] for b in res[0]['bootstrap']]
-
-errors = [ (i,len([ k for k in r['bootstrap'] if k is None])) for i,r in enumerate(res)  ]
-
-i_max, error_max = max(errors, key=lambda x:x[1])
-
-res[i_max].keys()
-
-
-len(res[i_max]['bootstrap'])
-res[i_max]['bootstrap'][1]
+N = None
+for r, d, fs in os.walk(indir):
+    for f in islice(fs,N):
+        print r+f
+        with open(r+f,'r') as h:
+            res = pickle.load(h)
+        DF(results_iter(res)).to_csv(path_or_buf=outdir+f+str('.csv'), index=False)

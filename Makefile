@@ -25,18 +25,18 @@ check_installation:
 	$(PYTHON) ./Tests/calls/check_installation.py
 
 ### Running
-example_call:
-	$(PYTHON) ./Tests/calls/example_call.py
+example_call: 			## run an example session of the algorithm
+	$(PYTHON) ./bin/masstodon_example_call
 
-compare_spectra_plots: # Relies on Rscript
+compare_spectra_plots:
 	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
-run_bootstrap_substance_P:
-	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065git st/
+run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
+	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
 
-analyze_bootstrap_substance_P: # Relies on Rscript
-	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R
+analyze_bootstrap_substance_P: 	## make plots
+	Rscript $(PATH_BOOTSTRAP)/analyze_bootstrap.R
 
 
 SPECTRUM_PATH =
@@ -61,7 +61,7 @@ run_in_silico_analysis_wloczykij:
 run_in_silico_analysis_czczmiel:
 	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py  /home/matteo/masstodon/MassTodonPy/Tests/in_silico 25
 ### Cleaning
-clean_ve:
+clean_ve: 			## remove the python virtual environment
 	rm -rf ../MassTodonVE
 
 
