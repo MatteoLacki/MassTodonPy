@@ -1,7 +1,7 @@
 library('tidyverse'); library('stringr'); library('car')
 
 
-D = list.files('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/CSV_03_07_2017_mzPrec-065', full.names = T) %>%
+D = list.files(17, full.names = T) %>%
   lapply(read.csv) %>% 
   lapply(as_data_frame) %>% 
   bind_rows() %>%
@@ -26,7 +26,6 @@ estimates_plot150 =
   ) +
   scale_y_continuous(
     labels   = scales::percent,
-    sec.axis = sec_axis(
       trans = ~1-., 
       labels=scales::percent,
       name  = 'PTR'
@@ -63,7 +62,7 @@ reaction_plot150 =
   theme(legend.position="top")+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
   
-WH150 = cowplot::plot_grid(reaction_plot, estimates_plot, nrow=2, align='v')
+WH150 = cowplot::plot_grid(reaction_plot150, estimates_plot150, nrow=2, align='v')
 
 ################################################################################################
 

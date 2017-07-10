@@ -324,6 +324,7 @@ def MassTodonize(
         forPlot = False,
         highcharts = False,
         raw_data= False,
+        analyze_raw_data = True,
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
@@ -358,10 +359,12 @@ def MassTodonize(
             verbose   = verbose    )
 
     results = {}
-    results['summary']              = M.summarize_results()
-    results['basic_analysis']       = M.analyze_reactions('basic')
-    results['intermediate_analysis']= M.analyze_reactions('intermediate')
-    results['advanced_analysis']    = M.analyze_reactions('advanced')
+
+    if analyze_raw_data:
+        results['summary']              = M.summarize_results()
+        results['basic_analysis']       = M.analyze_reactions('basic')
+        results['intermediate_analysis']= M.analyze_reactions('intermediate')
+        results['advanced_analysis']    = M.analyze_reactions('advanced')
 
     if verbose:
         print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
