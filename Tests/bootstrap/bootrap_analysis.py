@@ -23,6 +23,7 @@ def results_iter(res):
         yield make_a_row(info, real_or_bootstrap = 'boot')
 
 
+
 indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/'
 outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/CSV_03_07_2017_mzPrec-065/'
 
