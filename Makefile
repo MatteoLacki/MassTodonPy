@@ -1,5 +1,4 @@
 PATH_VISUAL 	= ./Tests/visual
-PATH_BOOTSTRAP 	= ./Tests/bootstrap
 PATH_INSILICO   = ./Tests/in_silico
 PYTHON   	= ../MassTodonVE/bin/python2
 PIP 		= ../MassTodonVE/bin/pip2
@@ -33,11 +32,12 @@ compare_spectra_plots:
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
 run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
-	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
+	$(PYTHON) ./Tests/bootstrap/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
 
 analyze_bootstrap_substance_P: 	## make plots
-	Rscript $(PATH_BOOTSTRAP)/analyze_bootstrap.R
-
+	Rscript ./Tests/bootstrap/analyze_bootstrap.R
+	Rscript ./Tests/bootstrap/analyze_frag_probs.R
+	Rscript ./Tests/bootstrap/analyze_fit_error.R
 
 SPECTRUM_PATH =
 test_CLI_mac:
