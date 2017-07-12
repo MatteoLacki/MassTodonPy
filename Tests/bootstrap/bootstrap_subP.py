@@ -2,7 +2,7 @@ import  os
 os.environ['OMP_NUM_THREADS'] = "1"
 
 from    MassTodonPy.TestScripts.substancesP import substancesP
-from    bootstrap_misc  import analyze_experiments
+from    bootstrap_misc  import analyze_experiments, bootstrap_substance_P
 import  sys
 
 _, results_path = sys.argv
@@ -18,6 +18,7 @@ if not os.path.exists(results_path):
 # analyze_experiments(substancesP, results_path, bootstrap_size=250)
 
 analyze_experiments(    substancesP,
+                        bootstrap_substance_P,
                         results_path,
                         mz_prec         = .065,
                         opt_P           = .99,

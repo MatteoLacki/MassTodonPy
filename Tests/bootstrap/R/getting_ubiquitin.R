@@ -4,7 +4,7 @@ library(jsonlite)
 #################### getting parsed spectra names. these include the description of the experimental conditions
 str1 = function(x) str(x, max.level=1)
 load('/Users/matteo/Dropbox/MassTodon/ProcessedData/ubiquitin/Orbi_2014_Dec/info.RData')
-write_json(as.list(experimentalParameters), '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubi_params.json')
+write_json(experimentalParameters, '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubi_params.json')
 
 #################### getting spectra
 get_spectrum = function(MassTodon)
@@ -31,3 +31,85 @@ spectra = lapply(
 
 write_json(spectra, '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubi_spectra.json')
 
+
+
+############################ analysis
+
+summaries = spectra %>% lapply(summary)
+summaries[[1]]
+spectrum = spectra[[1]]
+
+
+# histogram = hist(log(spectrum$intensity), breaks=100 )
+# 
+# D = tibble(mids = histogram$mids, counts=histogram$counts) %>%
+# mutate( 
+#   I    = exp(mids)*counts,
+#   perc = I/sum(I),
+#   I_cs = cumsum(I)/sum(I)
+# ) 
+#   
+# D %>% 
+# ggplot(aes(x=mids, y = counts)) + 
+# geom_point(aes(size=perc)) +
+# geom_line() + 
+# theme_minimal()
+#   
+# eps = 0.05
+# 
+# D %>% 
+#   ggplot() +
+#   geom_rect(
+#     aes( xmin = mids-eps, 
+#          xmax = mids+eps, 
+#          ymin = 0,
+#          ymax = counts)
+#   )
+
+spectrum %>% plot(type='h')
+log10(spectrum$intensity) %>% hist(breaks=100)
+
+
+tol = .95
+i = 2
+
+
+show_plot = function(spectrum){
+x = sort(spectrum$intensity, decreasing=T)
+w = cumsum(x)/sum(spectrum$intensity) - tol > 0
+qplot(x=log(spectrum$intensity), geom='histogram', bins = 150 ) + 
+  geom_vline(xintercept = log(x[w][1]), col = 'red')
+} 
+
+plots = lapply(spectra, show_plot)
+
+big_plot = cowplot::plot_grid(plotlist = plots, nrow=167)
+cowplot::ggsave('histograms.pdf', big_plot, limitsize = F, dpi=600, width = 100, height = 6000, units = 'mm', scale=1)
+
+# spectrum %>% summary
+# spectrum %>% filter(intensity < 10e4) %>% plot(type='h')
+# 
+# spectrum$intensity %>% sort(decreasing = T) %>% cumsum %>% plot(type='l')
+# spectrum$intensity %>% sort(decreasing = T) %>% plot(type='l')
+# 
+# 
+# library(modeest)
+# 
+# plots = lapply(spectra, function(spectrum){
+#   x = mlv(log(spectrum$intensity), method = "mfv")
+#   qplot(x=log(spectrum$intensity), geom='histogram', bins=150) + geom_vline(xintercept = x$M, color = 'red')
+# })
+# 
+# spectrum
+# 
+# hist(, plot=F)
+# 
+# for( i in 1:length(plots)){
+#   print(i)
+#   plot(plots[[i]])
+# }
+# 
+# 
+# 
+# spectrum$intensity %>% sort %>% cumsum %>% plot(type='l')
+# spectrum$intensity %>% sort %>% plot(type='l')

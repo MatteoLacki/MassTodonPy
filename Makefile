@@ -32,7 +32,10 @@ compare_spectra_plots:
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
 run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
-	$(PYTHON) ./Tests/bootstrap/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
+	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
+
+run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
+	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_11_07_2017_mzPrec-065
 
 analyze_bootstrap_substance_P: 	## make plots
 	Rscript ./Tests/bootstrap/analyze_bootstrap.R

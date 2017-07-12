@@ -7,13 +7,14 @@ from    MassTodonPy import MassTodonize
 import  traceback
 
 def bootstrap_worker(worker_args):
-    info, fasta, Q, mz_prec, opt_P, modifications, masses, intensities, max_times_solve, verbose = worker_args
+    info, fasta, Q, mz_prec, opt_P, cut_off, modifications, masses, intensities, max_times_solve, verbose = worker_args
     try:
         results = MassTodonize(
             fasta           = fasta,
             precursor_charge= Q,
             mz_prec         = mz_prec,
             opt_P           = opt_P,
+            cut_off         = cut_off,
             modifications   = modifications,
             spectrum        = (masses, intensities),
             solver          = 'sequential',
@@ -28,14 +29,15 @@ def bootstrap_worker(worker_args):
     return results
 
 
-def bootstrap_substance_P(  mol,
-                            bootstrap_size  = 1000,
-                            ions_no         = 10**6,
-                            mz_prec         = 0.05,
-                            opt_P           = .999,
-                            max_times_solve = 10,
-                            multiprocesses_No = None,
-                            verbose         = False
+def bootstrap(  mol,
+                bootstrap_size  = 1000,
+                ions_no         = 10**6,
+                mz_prec         = 0.05,
+                opt_P           = None,
+                cut_off         = None,
+                max_times_solve = 10,
+                multiprocesses_No = None,
+                verbose         = False
     ):
     '''Run a bootstrap.'''
     mzs, intensities = mol['spectrum']
@@ -45,6 +47,7 @@ def bootstrap_substance_P(  mol,
                         repeat(mol['precursorCharge']),
                         repeat(mz_prec),
                         repeat(opt_P),
+                        repeat(cut_off),
                         repeat(mol['modifications']),
                         repeat(mzs),
                         sim_intensities,
@@ -59,28 +62,34 @@ def bootstrap_substance_P(  mol,
 
 def analyze_experiments(substances,
                         results_path,
-                        K = None,
+                        K               = None,
                         bootstrap_size  = 1000,
                         ions_no         = 10**6,
                         mz_prec         = 0.05,
-                        opt_P           = .999,
+                        cut_off         = None,
+                        opt_P           = None,
                         max_times_solve = 10,
                         multiprocesses_No = None,
                         verbose         = False  ):
+
     for ID, mol in enumerate(islice(substances, K)):
-        results = {}
-        WH = mol['experimental_setting']['WH']
-        WV = mol['experimental_setting']['WV']
-        mol['info'] = {'WH':WH, 'WV':WV, 'ID':ID}
+        results  = {}
+        settings = mol['experimental_setting']
+        del mol['experimental_setting']
+        settings['ID'] = ID
+        mol['info'] = settings
 
         if verbose:
             print 'starting calculations on real data'
+            print 'fasta:', mol['fasta']
+            print 'Q:', mol['precursorCharge']
 
         results['real'] = bootstrap_worker((mol['info'],
                                             mol['fasta'],
                                             mol['precursorCharge'],
                                             mz_prec,
                                             opt_P,
+                                            cut_off,
                                             mol['modifications'],
                                             mol['spectrum'][0],
                                             mol['spectrum'][1],
@@ -90,12 +99,13 @@ def analyze_experiments(substances,
         if verbose:
             print 'starting bootstrap calculations'
 
-        results['bootstrap'] = bootstrap_substance_P(
+        results['bootstrap'] = bootstrap(
             mol,
             bootstrap_size,
             ions_no,
             mz_prec,
             opt_P,
+            cut_off,
             max_times_solve,
             multiprocesses_No,
             verbose )
