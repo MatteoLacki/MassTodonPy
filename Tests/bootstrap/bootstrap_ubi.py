@@ -19,5 +19,5 @@ analyze_experiments(ubiquitins,
                     mz_prec         = .05,
                     # cut_off         = 500, # this is totally nonsensical
                     opt_P           = .95, # cannot take .8 / cannot take .99
-                    bootstrap_size  = 100,
+                    bootstrap_size  = 250,
                     verbose         = True     )
