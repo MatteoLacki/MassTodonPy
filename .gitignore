@@ -17,6 +17,8 @@ Tests/data/output/
 Tests/in_silico/visual/
 Tests/visual/data/
 Tests/visual/spectra_plots/
+Tests/bootstrap/UBI
+Tests/bootstrap/UBI_csv
 Tests/bootstrap/substanceP_analyzed.sadoMasto
 Tests/bootstrap/visual/
 Tests/experimental_spectra/results/

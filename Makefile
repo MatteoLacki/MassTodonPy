@@ -33,15 +33,16 @@ compare_spectra_plots:
 
 run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
 	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
+	$(PYTHON) Tests/bootstrap/bootstrap_analysis_subP.py
+	Rscript Tests/bootstrap/analyze_bootstrap.R
+	Rscript Tests/bootstrap/analyze_frag_probs.R
+	Rscript Tests/bootstrap/analyze_fit_error.R
+
 
 run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
 	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_11_07_2017_mzPrec-065
-
-analyze_bootstrap_substance_P: 	## make plots
-	Rscript ./Tests/bootstrap/analyze_bootstrap.R
-	Rscript ./Tests/bootstrap/analyze_frag_probs.R
-	Rscript ./Tests/bootstrap/analyze_fit_error.R
-
+	$(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
+	
 SPECTRUM_PATH =
 test_CLI_mac:
 	node ./Tests/CLI_tests/test_input.js
@@ -66,6 +67,7 @@ run_in_silico_analysis_czczmiel:
 ### Cleaning
 clean_ve: 			## remove the python virtual environment
 	rm -rf ../MassTodonVE
+
 
 
 ### Mikolaj Stuff :D
