@@ -6,6 +6,7 @@ yarn.lock
 .tmp
 *.png
 *.pdf
+.RData
 
 # Folders
 Tests/bootstrap/RESULTS_CSV/
