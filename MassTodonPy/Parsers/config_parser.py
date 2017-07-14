@@ -52,5 +52,3 @@ def parse_plain_config_file(path):
                 value = config_tmp[k]
         config[k] = value
     return config
-
-parse_plain_config_file('example_config_plain_text.txt')
