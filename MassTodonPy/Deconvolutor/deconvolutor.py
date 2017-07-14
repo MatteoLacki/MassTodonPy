@@ -38,6 +38,15 @@ def normalize_rows(M):
         M[i,:] = row_hopefully/sum(abs(row_hopefully))
 
 
+# def normalize_rows2(M):
+#     '''Divide rows of a matrix by their sums.'''
+#     for i in xrange(M.size[0]):
+#         row_hopefully = M[i,:]
+#         M[i,:] = row_hopefully/sum(abs(row_hopefully))
+
+
+
+
 def number_graph(SG):
     '''Add numbers to graph nodes and GI edges and return the counts thereof.'''
     cnts = Counter()
@@ -161,6 +170,9 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
     def run(self, L1_x=.001, L2_x=.001, L1_alpha=.001, L2_alpha=.001, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
+        if verbose:
+            print('Preparing matrices')
+
         P, q = get_P_q(self.SG, self.M_No, self.var_No, L1_x, L2_x, L1_alpha, L2_alpha)
         x0   = get_initvals(self.var_No)
         G, h = get_G_h(self.var_No)
@@ -169,9 +181,12 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         setseed(randint(0,1000000))
         # this is to test from different points
         # apparently this is used by the asynchroneous BLAS library
-
         try:
+            if verbose:
+                print('optimizing')
             self.sol = solvers.qp(P, q, G, h, A, b, initvals=x0)
+            if verbose:
+                print('finished')
             Xopt = self.sol['x']
             #################### reporting results
             alphas = []

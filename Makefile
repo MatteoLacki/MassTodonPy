@@ -1,5 +1,4 @@
 PATH_VISUAL 	= ./Tests/visual
-PATH_BOOTSTRAP 	= ./Tests/bootstrap
 PATH_INSILICO   = ./Tests/in_silico
 PYTHON   	= ../MassTodonVE/bin/python2
 PIP 		= ../MassTodonVE/bin/pip2
@@ -25,23 +24,32 @@ check_installation:
 	$(PYTHON) ./Tests/calls/check_installation.py
 
 ### Running
-example_call:
-	$(PYTHON) ./Tests/calls/example_call.py
+example_call: 			## run an example session of the algorithm
+	$(PYTHON) ./bin/masstodon_example_call
 
-compare_spectra_plots: # Relies on Rscript
+compare_spectra_plots:
 	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
-run_bootstrap_substance_P:
-	$(PYTHON) $(PATH_BOOTSTRAP)/bootstrap.py ./Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065git st/
+run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
+	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
+	$(PYTHON) Tests/bootstrap/bootstrap_analysis_subP.py
+	Rscript Tests/bootstrap/analyze_bootstrap_subP.R
+	Rscript Tests/bootstrap/analyze_frag_probs_subP.R
+	Rscript Tests/bootstrap/analyze_fit_error_subP.R
 
-analyze_bootstrap_substance_P: # Relies on Rscript
-	Rscript $(PATH_BOOTSTRAP)/merge_ETnoD_PTR_plots.R
 
+run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
+	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
+	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
+	# Rscript Tests/bootstrap/analyze_bootstrap_ubi.R
+	# Rscript Tests/bootstrap/analyze_frag_probs_ubi.R
+	# Rscript Tests/bootstrap/analyze_fit_error_ubi.R
+
+SPECTRUM_PATH =
 test_CLI_mac:
 	node ./Tests/CLI_tests/test_input.js
 	masstodon ./Tests/data/FRL-010513-SUBP-WH000-WV300.txt  ./Tests/CLI_tests/config.json -o ./Tests/CLI_tests/
-	cat ./Tests/CLI_tests/output.json
 
 # run_real_substance_P:
 # 	$(PYTHON) $(PATH_INSILICO)/real_subP.py
@@ -60,8 +68,9 @@ run_in_silico_analysis_wloczykij:
 run_in_silico_analysis_czczmiel:
 	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py  /home/matteo/masstodon/MassTodonPy/Tests/in_silico 25
 ### Cleaning
-clean_ve:
+clean_ve: 			## remove the python virtual environment
 	rm -rf ../MassTodonVE
+
 
 
 ### Mikolaj Stuff :D

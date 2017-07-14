@@ -15,6 +15,9 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
+
+# Here is our little pet MassTodon!
 # ................................................................................
 # ............~MMM:...............................................................
 # ..........:M....NM..............................................................
@@ -71,6 +74,8 @@ from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import match_cz_ions
 from Visualization      import ResultsPlotter, make_highcharts
 from Summarator         import summarize_results
+from Outputing          import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
+
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
@@ -226,24 +231,24 @@ class MassTodon():
                         'where': 'not_explainable' }
 
 
-    # TODO is the thing below necessary?
-    def flatten_results(self, minimal_estimated_intensity=100.0):
-        '''Return one list of results, one list of difficult cases, and the error.'''
-        optimal     = []
-        nonoptimal  = []
-        total_error  = 0.0
-        for mols, error, status in self.res:
-            if status=='optimal':
-                total_error += error
-                for mol in mols:
-                    if mol['estimate'] > minimal_estimated_intensity:
-                        mol_res = {}
-                        for key in ['estimate', 'molType', 'q', 'g', 'formula']:
-                            mol_res[key] = mol[key]
-                        optimal.append(mol_res)
-            else:
-                nonoptimal.append(mols)
-        return optimal, nonoptimal, total_error
+    # # TODO is the thing below necessary?
+    # def flatten_results(self, minimal_estimated_intensity=100.0):
+    #     '''Return one list of results, one list of difficult cases, and the error.'''
+    #     optimal     = []
+    #     nonoptimal  = []
+    #     total_error  = 0.0
+    #     for mols, error, status in self.res:
+    #         if status=='optimal':
+    #             total_error += error
+    #             for mol in mols:
+    #                 if mol['estimate'] > minimal_estimated_intensity:
+    #                     mol_res = {}
+    #                     for key in ['estimate', 'molType', 'q', 'g', 'formula']:
+    #                         mol_res[key] = mol[key]
+    #                     optimal.append(mol_res)
+    #         else:
+    #             nonoptimal.append(mols)
+    #     return optimal, nonoptimal, total_error
 
 
     #TODO: push Ciach to write a general structure.
@@ -324,6 +329,9 @@ def MassTodonize(
         forPlot = False,
         highcharts = False,
         raw_data= False,
+        analyze_raw_data = True,
+        output_csv_path  = None,
+        output_deconvolution_threshold = 0.0,
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
@@ -358,10 +366,12 @@ def MassTodonize(
             verbose   = verbose    )
 
     results = {}
-    results['summary']              = M.summarize_results()
-    results['basic_analysis']       = M.analyze_reactions('basic')
-    results['intermediate_analysis']= M.analyze_reactions('intermediate')
-    results['advanced_analysis']    = M.analyze_reactions('advanced')
+
+    if analyze_raw_data:
+        results['summary']              = M.summarize_results()
+        results['basic_analysis']       = M.analyze_reactions('basic')
+        results['intermediate_analysis']= M.analyze_reactions('intermediate')
+        results['advanced_analysis']    = M.analyze_reactions('advanced')
 
     if verbose:
         print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
@@ -370,7 +380,7 @@ def MassTodonize(
     if raw_data:
         results['raw_estimates'] = M.res
 
-    if forPlot:
+    # if forPlot:
         results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
         results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
         results['original_spectrum']    = M.spectrum_iter('original')
@@ -385,6 +395,13 @@ def MassTodonize(
                                                 algos   = algos)
 
     T1 = time()
+    results['summary']['total_time'] = T1-T0
+
+    if output_csv_path:
+        write_raw_to_csv(M.res, output_csv_path, output_deconvolution_threshold)
+        write_counts_n_probs_to_csv(results, fasta, output_csv_path)
+        write_summary_to_csv(results, output_csv_path)
+
     if verbose:
         print 'Total analysis took', T1-T0
 

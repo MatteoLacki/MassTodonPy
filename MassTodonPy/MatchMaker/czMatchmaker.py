@@ -47,6 +47,9 @@ class czMatchMaker(object):
 
     def get_graph_analyze_precursor(self):
         '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.'''
+        if self.verbose:
+            print('Building up a c-z fragment graph.')
+            print('')
         unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
         graph = nx.Graph()
         Q = self.Q
@@ -218,10 +221,19 @@ class czMatchMakerIntermediate(czMatchMaker):
     def define_fragment(self, molecule):
         molG = molecule['g']
         molQ = molecule['q']
+
+        if self.verbose:
+            print 'molG =', molG
+            print 'molQ =', molQ
+
         if molG == - 1:     # HTR product
             molG += 1
         if molG + molQ == self.Q:# HTR product
             molG -= 1
+
+        if self.verbose:
+            print molecule['molType'], molQ, molG
+            print
         return molecule['molType'], molQ, molG
 
     def etnod_ptr_on_c_z_pairing(self, q0, g0, q1, g1):
@@ -274,19 +286,32 @@ class czMatchMakerIntermediate(czMatchMaker):
             for C, Z in G.edges_iter():
                 if C[0][0]=='z':
                     C,Z = Z,C
+                # WHAT ABOUT THE UNPAIRED INTENSITIES ???
+                #   We cannot tell, how much ETnoD or PTR were there specifically.
+                #   All we know, is that there must be a fixed minimal total of both reactions.
+                #   So we neglect them in ETnoD and PTR count.
+                # BUT WE SHOULD ADD THEM TO OVERALL FRAGMENTATION COUNT, DO WE?
                 TotalETnoD  += flows[C][Z]*G.edge[C][Z]['ETnoD']
                 TotalPTR    += flows[C][Z]*G.edge[C][Z]['PTR']
         else:
+            if self.verbose:
+                print('Single node graph.')
+
             (nType, nQ, nG), Data =  G.nodes(data=True)[0]
             I   = Data['intensity']
             bP  = self.get_break_point(nType)
+
             TotalPTR   = 0
             TotalETnoD = 0
+
             TotalFrags = I
             flow_val = flows = None
 
         Counts = Counter({'ETnoD_frag':TotalETnoD, 'PTR_frag':TotalPTR, bP: TotalFrags})
         if self.verbose:
+            print(G.nodes(data=True))
+            print(G.edges(data=True))
+            print('')
             return Counts, (flow_val, flows)
         else:
             return Counts
