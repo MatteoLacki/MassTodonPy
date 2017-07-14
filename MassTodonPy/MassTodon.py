@@ -15,6 +15,9 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
+
+# Here is our little pet MassTodon!
 # ................................................................................
 # ............~MMM:...............................................................
 # ..........:M....NM..............................................................
@@ -71,6 +74,8 @@ from Parsers            import read_n_preprocess_spectrum
 from MatchMaker         import match_cz_ions
 from Visualization      import ResultsPlotter, make_highcharts
 from Summarator         import summarize_results
+from Outputing          import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
+
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
@@ -325,6 +330,8 @@ def MassTodonize(
         highcharts = False,
         raw_data= False,
         analyze_raw_data = True,
+        output_csv_path  = None,
+        output_deconvolution_threshold = 0.0,
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
@@ -389,6 +396,11 @@ def MassTodonize(
 
     T1 = time()
     results['summary']['total_time'] = T1-T0
+
+    if output_csv_path:
+        write_raw_to_csv(M.res, output_csv_path, output_deconvolution_threshold)
+        write_counts_n_probs_to_csv(results, fasta, output_csv_path)
+        write_summary_to_csv(results, output_csv_path)
 
     if verbose:
         print 'Total analysis took', T1-T0
