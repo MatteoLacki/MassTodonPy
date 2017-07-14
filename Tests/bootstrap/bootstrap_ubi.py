@@ -3,10 +3,14 @@ os.environ['OMP_NUM_THREADS'] = "1"
 
 import  sys
 from    bootstrap_misc  import analyze_experiments
-import cPickle as pickle
+import  cPickle as pickle
+
+# with open('../../MassTodonPy/Data/ubiquitins.example', 'r') as h:
+#     ubiquitins = pickle.load(h)
 with open('MassTodonPy/Data/ubiquitins.example', 'r') as h:
     ubiquitins = pickle.load(h)
 
+# results_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test/'
 _, results_path = sys.argv
 
 if not os.path.exists(results_path):

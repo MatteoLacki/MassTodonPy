@@ -34,15 +34,18 @@ compare_spectra_plots:
 run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
 	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
 	$(PYTHON) Tests/bootstrap/bootstrap_analysis_subP.py
-	Rscript Tests/bootstrap/analyze_bootstrap.R
-	Rscript Tests/bootstrap/analyze_frag_probs.R
-	Rscript Tests/bootstrap/analyze_fit_error.R
+	Rscript Tests/bootstrap/analyze_bootstrap_subP.R
+	Rscript Tests/bootstrap/analyze_frag_probs_subP.R
+	Rscript Tests/bootstrap/analyze_fit_error_subP.R
 
 
 run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
-	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_11_07_2017_mzPrec-065
-	$(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
-	
+	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
+	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
+	# Rscript Tests/bootstrap/analyze_bootstrap_ubi.R
+	# Rscript Tests/bootstrap/analyze_frag_probs_ubi.R
+	# Rscript Tests/bootstrap/analyze_fit_error_ubi.R
+
 SPECTRUM_PATH =
 test_CLI_mac:
 	node ./Tests/CLI_tests/test_input.js

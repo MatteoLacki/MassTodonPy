@@ -25,8 +25,33 @@ res = MassTodonize( fasta           = mol['fasta'],
                     solver          = solver,
                     multiprocesses_No = multiprocesses_No,
                     max_times_solve = max_times_solve,
-                    raw_data        = True,
+                    raw_data        = False,
                     highcharts      = True,
                     verbose         = verbose )
 
-print res
+
+res.keys()
+
+
+
+from pandas import DataFrame as DF
+
+def i_flatten_raw_estimates(raw_estimates):
+    for r in raw_estimates:
+        for e in r['alphas']:
+            e = e.copy()
+            del e['cnt']
+            del e['type']
+            e['status'] = r['status']
+            yield e
+
+
+def write_raw_to_csv(raw_estimates, path):
+    try:
+        res_df = DF(i_flatten_raw_estimates(raw_estimates))
+        res_df = res_df[['molType','formula','q','g','estimate','status']]
+        res_df = res_df.sort_values('estimate', ascending=False)
+        res_df.to_csv(path_or_buf = path, index = False)
+        print 'Saved estimates to file.'
+    except:
+        print 'Results not saved.'

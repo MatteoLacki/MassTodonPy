@@ -226,24 +226,24 @@ class MassTodon():
                         'where': 'not_explainable' }
 
 
-    # TODO is the thing below necessary?
-    def flatten_results(self, minimal_estimated_intensity=100.0):
-        '''Return one list of results, one list of difficult cases, and the error.'''
-        optimal     = []
-        nonoptimal  = []
-        total_error  = 0.0
-        for mols, error, status in self.res:
-            if status=='optimal':
-                total_error += error
-                for mol in mols:
-                    if mol['estimate'] > minimal_estimated_intensity:
-                        mol_res = {}
-                        for key in ['estimate', 'molType', 'q', 'g', 'formula']:
-                            mol_res[key] = mol[key]
-                        optimal.append(mol_res)
-            else:
-                nonoptimal.append(mols)
-        return optimal, nonoptimal, total_error
+    # # TODO is the thing below necessary?
+    # def flatten_results(self, minimal_estimated_intensity=100.0):
+    #     '''Return one list of results, one list of difficult cases, and the error.'''
+    #     optimal     = []
+    #     nonoptimal  = []
+    #     total_error  = 0.0
+    #     for mols, error, status in self.res:
+    #         if status=='optimal':
+    #             total_error += error
+    #             for mol in mols:
+    #                 if mol['estimate'] > minimal_estimated_intensity:
+    #                     mol_res = {}
+    #                     for key in ['estimate', 'molType', 'q', 'g', 'formula']:
+    #                         mol_res[key] = mol[key]
+    #                     optimal.append(mol_res)
+    #         else:
+    #             nonoptimal.append(mols)
+    #     return optimal, nonoptimal, total_error
 
 
     #TODO: push Ciach to write a general structure.
@@ -388,6 +388,8 @@ def MassTodonize(
                                                 algos   = algos)
 
     T1 = time()
+    results['summary']['total_time'] = T1-T0
+
     if verbose:
         print 'Total analysis took', T1-T0
 
