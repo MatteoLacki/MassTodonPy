@@ -1,0 +1,5 @@
+fasta = RPKPQQFFGLM
+precursor_charge = 3
+modification C11 = H:1, O:-1, N:1
+cut_off = 100
+mz_prec = .05

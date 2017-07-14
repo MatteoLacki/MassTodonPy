@@ -36,9 +36,14 @@ output_path = add_backslash(output_path)
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-#________Load_confg______________________________________
-with open(args.config_path, 'r') as f:
-    config = json.load(f)
+#________Load_config______________________________________
+config_path, config_ext  = os.path.splitext(args.config_path)
+
+if config_ext == 'json':
+    with open(args.config_path, 'r') as f:
+        config = json.load(f)
+else:
+
 
 #________Run_MassTodon___________________________________
 perform_calculations(   spectrum_path   = args.spectrum_path,
