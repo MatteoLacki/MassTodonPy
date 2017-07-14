@@ -7,7 +7,7 @@ from itertools import islice
 
 def make_a_row(info, real_or_bootstrap = 'real'):
     res = {'real_or_bootstrap':real_or_bootstrap}
-    for k in ('preActive', 'supActive', 'retentionTime', 'precursorMZ', 'ID'):
+    for k in ('preActive', 'supActive', 'retentionTime', 'precursorMZ', 'ID', 'run', 'files'):
         if k in info:
             res[k] = info[k]
     for algo in ('basic_analysis','intermediate_analysis','advanced_analysis'):
@@ -31,6 +31,8 @@ def results_iter(res):
 indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI/'
 outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI_csv/'
 
+# indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test/'
+# outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test_res/'
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 

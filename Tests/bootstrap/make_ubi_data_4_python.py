@@ -8,13 +8,13 @@ with open( '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubi_spectra
 with open( '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubi_params.json', 'r') as h:
     params = json.load(h)
 
+
 print 'The same data:', len(spectra) == len(params)
 
 ubiquitin_fasta = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG'
 
 ubiquitins = []
 for spectrum, param in zip(spectra, params):
-    del param['files']
     Q = param['precursorCharge']
     del param['precursorCharge']
     mol = {'fasta':    ubiquitin_fasta,
