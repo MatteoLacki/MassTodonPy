@@ -86,6 +86,8 @@ csv = True
 
 # Python Scripting
 
+Using MassTodonPy in scripts is straight-forward: simply import the MassTodonize function from the MassTodonPy module. Then, provide the parameters. For instance:
+
 ```{python}
 from MassTodonPy import MassTodonize
 from MassTodonPy.TestScripts.substanceP import substanceP
@@ -111,6 +113,6 @@ res = MassTodonize( fasta           = mol['fasta'],
 
 # Web Service
 
-This is coming up soon!
+We are currently working on simplifying your life even more, by making the MassTodon project available online. The project will be available soon!
 
 Remember: be nice to MassTodons.
