@@ -42,8 +42,9 @@ There are now two ways to run the program:
 1. In terminal.
 2. As part of another Python script.
 
-To run MassTodonPy in terminal, simply type
+# Terminal Call
 
+To run MassTodonPy in terminal, simply type
 
 ```{bash}
 masstodon <spectrum_path> <config_path> -o <results_path>
@@ -82,4 +83,13 @@ If you want to save a csv file with results for later inspection, add the follow
 csv = True
 ```
 
-That should be it! But remember: be nice to MassTodons.
+
+# Python Scripting
+
+
+
+# Web Service
+
+This is coming up soon!
+
+Remember: be nice to MassTodons.
