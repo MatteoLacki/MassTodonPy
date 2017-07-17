@@ -104,7 +104,7 @@ class czMatchMaker(object):
                 if isinstance(k, (int,long)):
                     Probs[k] = float(Counts[k])/Counts['total_frags']
         Counts['total_reactions'] = sum(Counts[k] for k in Counts if k != 'unreacted_precursors')
-        Probs = self.get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' )
+        Probs = self.get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' ) # TODO: proportion of untouched precursor
         if Counts['total_reactions'] > 0.0:
             Probs['fragmentation'] = float(Counts['total_frags'])/Counts['total_reactions']
             Probs['no fragmentation'] = 1.0 - Probs['fragmentation']
