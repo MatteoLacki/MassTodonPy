@@ -22,7 +22,7 @@ from setuptools import setup, find_packages
 setup(
     name          = 'MassTodonPy',
     packages      = find_packages(),
-    version       = '0.3',
+    version       = '0.3.1',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
