@@ -44,15 +44,13 @@ if config_ext == 'json':
     with open(args.config_path, 'r') as f:
         config = json.load(f)
 else:
-    config = parse_plain_config_file()
-
-print config
+    config = parse_plain_config_file(args.config_path)
 
 #________Run_MassTodon___________________________________
-# perform_calculations(   spectrum_path   = args.spectrum_path,
-#                         output_path     = output_path,
-#                         file_name       = file_name,
-#                         config          = config            )
+perform_calculations(   spectrum_path   = args.spectrum_path,
+                        output_path     = output_path,
+                        file_name       = file_name,
+                        config          = config            )
 
 print('')
 print('Thank you!')

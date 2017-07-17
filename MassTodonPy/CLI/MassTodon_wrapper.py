@@ -28,12 +28,9 @@ def perform_calculations(spectrum_path, output_path, file_name, config):
 
     # todo: config should not contain an entry
     try:
-        results = MassTodonize(spectrum_path= spectrum_path,
-                               forPlot      = False,
-                               highcharts   = True,
-                               verbose      = False,
-                               max_times_solve = 10,
-                               **config )
+        config['highcharts'] = True
+
+        results = MassTodonize(spectrum_path= spectrum_path, **config )
 
         highcharts = results['highcharts']
         del results['highcharts']

@@ -67,6 +67,12 @@ run_in_silico_analysis_wloczykij:
 
 run_in_silico_analysis_czczmiel:
 	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py  /home/matteo/masstodon/MassTodonPy/Tests/in_silico 25
+
+### Tests
+test_terminal_masstodon:  	## Test MassTodon's CLI.
+	../MassTodonVE/bin/masstodon /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/CLI_tests/subP_spectrum.txt  /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/CLI_tests/example_config_plain_text.txt
+
+
 ### Cleaning
 clean_ve: 			## remove the python virtual environment
 	rm -rf ../MassTodonVE
