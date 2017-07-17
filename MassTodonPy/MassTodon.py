@@ -216,74 +216,19 @@ class MassTodon():
                                     raw_masstodon_res   = self.res              )
 
 
-    def export_information_for_spectrum_plotting(self, full_info=False):
-        '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
-        prec = self.mz_prec
-        for res in self.ResPlotter.G_info_iter(full_info):
-            yield res
-        for mz_int in zip(*self.spectra['original']):
-            if not mz_int in self.peakPicker.Used_Exps:
-                mz, intensity = mz_int
-                yield { 'mz_L': mz - prec,
-                        'mz_R': mz + prec,
-                        'tot_estimate': 0.0,
-                        'tot_intensity':intensity,
-                        'where': 'not_explainable' }
-
-
-    # # TODO is the thing below necessary?
-    # def flatten_results(self, minimal_estimated_intensity=100.0):
-    #     '''Return one list of results, one list of difficult cases, and the error.'''
-    #     optimal     = []
-    #     nonoptimal  = []
-    #     total_error  = 0.0
-    #     for mols, error, status in self.res:
-    #         if status=='optimal':
-    #             total_error += error
-    #             for mol in mols:
-    #                 if mol['estimate'] > minimal_estimated_intensity:
-    #                     mol_res = {}
-    #                     for key in ['estimate', 'molType', 'q', 'g', 'formula']:
-    #                         mol_res[key] = mol[key]
-    #                     optimal.append(mol_res)
-    #         else:
-    #             nonoptimal.append(mols)
-    #     return optimal, nonoptimal, total_error
-
-
-    #TODO: push Ciach to write a general structure.
-    def get_subsequence(self, name):
-        '''For purpose of ETDetective, to bridge gaps in definitions.'''
-        if self.modifications == {'C11': {'H': 1, 'N': 1, 'O': -1}}:
-            suffix = '*'
-        else:
-            suffix = ''
-        if name[0]=='p':
-            return '*'+self.fasta+suffix
-        if name[0]=='z':
-            return self.fasta[ len(self.fasta)-int(name[1:]): ] + suffix
-        else:
-            return '*' + self.fasta[ 0:int(name[1:]) ]
-
-
-    def i_flatten_results_for_ETDetective(self):
-        '''Generate pairs substance-estimate.'''
-        for subproblem in self.res:
-            for r in subproblem['alphas']:
-                seq = self.get_subsequence( r['molType'] )
-                yield (seq, r['q'], r['g'], r['molType']), r['estimate']
-
-
-    def gen_ETDetective_inputs(self):
-        '''Get inputs for ETDetective.'''
-        data = {}
-        for r in self.i_flatten_results_for_ETDetective():
-            (seq, q, g, molType), estimate = r
-            if q == self.Q and g == 0 and molType=='precursor':
-                precursor = seq, q, g, molType
-            else:
-                data[(seq, q, g, molType)] = estimate
-        return precursor, data
+    # def export_information_for_spectrum_plotting(self, full_info=False):
+    #     '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
+    #     prec = self.mz_prec
+    #     for res in self.ResPlotter.G_info_iter(full_info):
+    #         yield res
+    #     for mz_int in zip(*self.spectra['original']):
+    #         if not mz_int in self.peakPicker.Used_Exps:
+    #             mz, intensity = mz_int
+    #             yield { 'mz_L': mz - prec,
+    #                     'mz_R': mz + prec,
+    #                     'tot_estimate': 0.0,
+    #                     'tot_intensity':intensity,
+    #                     'where': 'not_explainable' }
 
 
     def analyze_reactions(  self,
@@ -292,6 +237,7 @@ class MassTodon():
                             min_acceptEstimIntensity= 0.0, # might change it to self.spectra['cut_off']
                             verbose                 = False,
                             **advanced_args     ):
+
         '''Estimate reaction constants and quantities of fragments.'''
         return match_cz_ions(   results_to_pair         = self.res,
                                 Q                       = self.Q,

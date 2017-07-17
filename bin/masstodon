@@ -2,7 +2,8 @@
 import  argparse
 import  json
 from    MassTodonPy.CLI import perform_calculations
-from    MassTodonPy.Parsers import parse_path
+from    MassTodonPy.Parsers import parse_path, config_parser
+from    MassTodonPy.Parsers.config_parser import parse_plain_config_file
 import  os
 
 parser = argparse.ArgumentParser()
@@ -36,9 +37,14 @@ output_path = add_backslash(output_path)
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-#________Load_confg______________________________________
-with open(args.config_path, 'r') as f:
-    config = json.load(f)
+#________Load_config______________________________________
+config_path, config_ext  = os.path.splitext(args.config_path)
+
+if config_ext == 'json':
+    with open(args.config_path, 'r') as f:
+        config = json.load(f)
+else:
+    config = parse_plain_config_file(args.config_path)
 
 #________Run_MassTodon___________________________________
 perform_calculations(   spectrum_path   = args.spectrum_path,
