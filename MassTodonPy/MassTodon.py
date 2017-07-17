@@ -278,6 +278,7 @@ def MassTodonize(
         analyze_raw_data = True,
         output_csv_path  = None,
         output_deconvolution_threshold = 0.0,
+        etdetective = False,
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
@@ -347,6 +348,9 @@ def MassTodonize(
         write_raw_to_csv(M.res, output_csv_path, output_deconvolution_threshold)
         write_counts_n_probs_to_csv(results, fasta, output_csv_path)
         write_summary_to_csv(results, output_csv_path)
+
+    if etdetective:
+        results['etdetective'] = results_to_etdetective( M.res, M.fasta, M.modifications )
 
     if verbose:
         print 'Total analysis took', T1-T0
