@@ -1,32 +1,23 @@
 from MassTodonPy import MassTodonize
 from MassTodonPy.TestScripts.substanceP import substanceP
 from MassTodonPy.TestScripts.ubiquitin  import ubiquitin
+from MassTodonPy.Outputing.to_etdetective import results_to_etdetective
 from time  import time
 
 mol = substanceP.copy()
 # mol = ubiquitin.copy()
 
-jP      = .999
-mzPrec  = .05
-opt_P   = .99
-max_times_solve = 10
-multiprocesses_No = None
-verbose = True
-solver  = 'multiprocessing'
-# solver  = 'sequential'
-
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
-                    mz_prec         = mzPrec,
-                    joint_probability_of_envelope = jP,
+                    mz_prec         = .05,
+                    joint_probability_of_envelope = .999,
                     modifications   = mol['modifications'],
                     spectrum        = mol['spectrum'],
-                    opt_P           = opt_P,
-                    solver          = solver,
-                    multiprocesses_No = multiprocesses_No,
-                    max_times_solve = max_times_solve,
-                    raw_data        = False,
-                    highcharts      = True,
-                    verbose         = verbose )
-
-print res
+                    opt_P           = .99,
+                    solver          = 'multiprocessing',
+                    multiprocesses_No = None,
+                    max_times_solve = 10,
+                    raw_data        = True,
+                    output_csv_path = '/Users/matteo/Documents/MassTodon/results/',
+                    highcharts      = False,
+                    verbose         = False )

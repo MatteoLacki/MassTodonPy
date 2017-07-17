@@ -326,7 +326,7 @@ def MassTodonize(
     if raw_data:
         results['raw_estimates'] = M.res
 
-    # if forPlot:
+    if forPlot:
         results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
         results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
         results['original_spectrum']    = M.spectrum_iter('original')

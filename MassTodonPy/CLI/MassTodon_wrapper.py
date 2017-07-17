@@ -30,6 +30,11 @@ def perform_calculations(spectrum_path, output_path, file_name, config):
     try:
         config['highcharts'] = True
 
+        if 'csv' in config:
+            del config['csv']
+            config['output_csv_path'] = output_path
+
+
         results = MassTodonize(spectrum_path= spectrum_path, **config )
 
         highcharts = results['highcharts']
