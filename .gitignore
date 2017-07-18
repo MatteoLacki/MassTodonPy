@@ -34,7 +34,6 @@ Tests/bootstrap/ubi_14_07_2017/
 
 *.csv
 *.zip
-*.html
 *.matteo
 server/src/envs/
 

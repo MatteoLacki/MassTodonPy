@@ -21,11 +21,14 @@ reinstall:
 	$(PIP) install -e .
 
 check_installation:
-	$(PYTHON) ./Tests/calls/check_installation.py
+	$(PYTHON) Tests/calls/check_installation.py
 
 ### Running
 example_call: 			## run an example session of the algorithm
 	$(PYTHON) ./bin/masstodon_example_call
+
+run_ubiquitins:			## run on all available ubiquitins
+	$(PYTHON) Tests/calls/real_ubiquitins.py
 
 compare_spectra_plots:
 	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py

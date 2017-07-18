@@ -28,8 +28,13 @@ def results_iter(res):
             yield make_a_row(info, real_or_bootstrap = 'boot')
 
 
-indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI/'
-outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI_csv/'
+
+# indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI/'
+# outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI_csv/'
+
+    # The most thresh data.
+indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_07_2017/'
+outdir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_07_2017_csv/'
 
 # indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test/'
 # outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test_res/'
