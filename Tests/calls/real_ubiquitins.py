@@ -6,7 +6,7 @@ from MassTodonPy.Outputing.to_etdetective import results_to_etdetective
 from time  import time
 import cPickle as pickle
 
-with open('Data/ubiquitins.example', 'r') as h:
+with open('Tests/bootstrap/Data/ubiquitins.example', 'r') as h:
     ubiquitins = pickle.load(h)
 
 results = []
