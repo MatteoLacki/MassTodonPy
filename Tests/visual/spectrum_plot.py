@@ -30,5 +30,4 @@ def iBG(raw_estimates, node_type):
                 yield N, N_D
 
 gnodes = DF( G for _, G in iBG(res['raw_estimates'], 'G'))
-
-gnodes[gnodes.min_mz < gnodes.max_mz]
+inodes = DF( G for _, G in iBG(res['raw_estimates'], 'I'))

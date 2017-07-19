@@ -66,6 +66,7 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
+#### MassTodonPy modules
 from Formulator         import make_formulas
 from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
@@ -76,6 +77,7 @@ from Visualization      import ResultsPlotter, make_highcharts
 from Summarator         import summarize_results
 from Outputing          import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 
+#### standard modules
 from itertools          import izip
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
@@ -171,7 +173,7 @@ class MassTodon():
             **args ):
         '''Perform the deconvolution of problems.'''
 
-        self.problems, self.clusters= self.peakPicker.get_problems(
+        self.problems = self.peakPicker.get_problems(
             massSpectrum            = self.spectra['trimmed'],
             min_prob_per_molecule   = min_prob_per_molecule )
 
