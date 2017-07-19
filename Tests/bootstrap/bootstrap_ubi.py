@@ -7,8 +7,12 @@ import  cPickle as pickle
 
 # with open('../../MassTodonPy/Data/ubiquitins.example', 'r') as h:
 #     ubiquitins = pickle.load(h)
-with open('MassTodonPy/Data/ubiquitins.example', 'r') as h:
+
+with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Data/ubiquitins.example', 'r') as h:
     ubiquitins = pickle.load(h)
+
+# with open('MassTodonPy/Data/ubiquitins.example', 'r') as h:
+    # ubiquitins = pickle.load(h)
 
 # results_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test/'
 _, results_path = sys.argv

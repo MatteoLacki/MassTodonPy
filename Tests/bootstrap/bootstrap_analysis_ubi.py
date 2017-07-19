@@ -41,14 +41,17 @@ outdir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_0
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 
-N = None
+N = 1
 for r, d, fs in os.walk(indir):
     for f in islice(fs,N):
         with open(r+f,'r') as h:
             res = pickle.load(h)
-        try:
-            DF(results_iter(res)).to_csv(path_or_buf=outdir+f+str('.csv'), index=False)
-        except:
-            print f
-            print 'Something went terribly wrong. Please contact the God, as he is ultimately responsible for it. '
-            break
+        # try:
+        #     DF(results_iter(res)).to_csv(path_or_buf=outdir+f+str('.csv'), index=False)
+        # except:
+        #     print f
+        #     print 'Something went terribly wrong. Please contact the God, as he is ultimately responsible for it. '
+        #     break
+
+# res['real']
+# res['bootstrap'][0]
