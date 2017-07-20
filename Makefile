@@ -73,7 +73,7 @@ run_in_silico_analysis_czczmiel:
 
 ### Tests
 test_terminal_masstodon:  	## Test MassTodon's CLI.
-	../MassTodonVE/bin/masstodon /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/CLI_tests/subP_spectrum.txt  /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/CLI_tests/example_config_plain_text.txt
+	../MassTodonVE/bin/masstodon /Users/matteo/Documents/MassTodon/transport/subP_spectrum.txt /Users/matteo/Documents/MassTodon/transport/example_config_plain_text.txt -o /Users/matteo/Documents/MassTodon/transport/output
 
 
 ### Cleaning

@@ -42,8 +42,9 @@ There are now two ways to run the program:
 1. In terminal.
 2. As part of another Python script.
 
-To run MassTodonPy in terminal, simply type
+# Terminal Call
 
+To run MassTodonPy in terminal, simply type
 
 ```{bash}
 masstodon <spectrum_path> <config_path> -o <results_path>
@@ -82,4 +83,36 @@ If you want to save a csv file with results for later inspection, add the follow
 csv = True
 ```
 
-That should be it! But remember: be nice to MassTodons.
+
+# Python Scripting
+
+Using MassTodonPy in scripts is straight-forward: simply import the MassTodonize function from the MassTodonPy module. Then, provide the parameters. For instance:
+
+```{python}
+from MassTodonPy import MassTodonize
+from MassTodonPy.TestScripts.substanceP import substanceP
+
+mol = substanceP.copy() # some data to compare
+
+res = MassTodonize( fasta           = mol['fasta'],
+                    precursor_charge= mol['Q'],
+                    mz_prec         = .05,
+                    joint_probability_of_envelope = .999,
+                    modifications   = mol['modifications'],
+                    spectrum        = mol['spectrum'],
+                    opt_P           = .99,
+                    solver          = 'multiprocessing',
+                    multiprocesses_No = None,
+                    max_times_solve = 10,
+                    raw_data        = True,
+                    output_csv_path = '/Users/matteo/Documents/MassTodon/results/',
+                    highcharts      = False,
+                    verbose         = False )
+
+```
+
+# Web Service
+
+We are currently working on simplifying your life even more, by making the MassTodon project available online. The project will be available soon!
+
+Remember: be nice to MassTodons.
