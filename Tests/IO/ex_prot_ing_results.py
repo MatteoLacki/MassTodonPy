@@ -29,8 +29,6 @@ res = MassTodonize( fasta           = mol['fasta'],
                     highcharts      = True,
                     verbose         = False )
 
-res.keys()
-
 
 from pandas import DataFrame as DF
 import os
