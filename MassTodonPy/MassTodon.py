@@ -169,7 +169,7 @@ class MassTodon():
             method              ='MSE',
             max_times_solve     = 5,
             min_prob_per_molecule = .75,
-            forPlot             = False,
+            for_plot            = False,
             **args ):
         '''Perform the deconvolution of problems.'''
 
@@ -192,7 +192,7 @@ class MassTodon():
             print 'Solver stats:'
             print self.solver_stats
             print
-        if forPlot:
+        if for_plot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 
 
@@ -218,19 +218,19 @@ class MassTodon():
                                     raw_masstodon_res   = self.res              )
 
 
-    # def export_information_for_spectrum_plotting(self, full_info=False):
-    #     '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
-    #     prec = self.mz_prec
-    #     for res in self.ResPlotter.G_info_iter(full_info):
-    #         yield res
-    #     for mz_int in zip(*self.spectra['original']):
-    #         if not mz_int in self.peakPicker.Used_Exps:
-    #             mz, intensity = mz_int
-    #             yield { 'mz_L': mz - prec,
-    #                     'mz_R': mz + prec,
-    #                     'tot_estimate': 0.0,
-    #                     'tot_intensity':intensity,
-    #                     'where': 'not_explainable' }
+    def export_information_for_spectrum_plotting(self, full_info=False):
+        '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
+        prec = self.mz_prec
+        for res in self.ResPlotter.G_info_iter(full_info):
+            yield res
+        for mz_int in zip(*self.spectra['original']):
+            if not mz_int in self.peakPicker.Used_Exps:
+                mz, intensity = mz_int
+                yield { 'mz_L': mz - prec,
+                        'mz_R': mz + prec,
+                        'tot_estimate': 0.0,
+                        'tot_intensity':intensity,
+                        'where': 'not_explainable' }
 
 
     def analyze_reactions(  self,
@@ -274,7 +274,7 @@ def MassTodonize(
         multiprocesses_No = None,
         method  = 'MSE',
         max_times_solve = 10,
-        forPlot = False,
+        for_plot= False,
         highcharts = False,
         raw_data= False,
         analyze_raw_data = True,
@@ -307,7 +307,7 @@ def MassTodonize(
             method = method,
             max_times_solve = max_times_solve,
             min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            forPlot   = forPlot,
+            for_plot  = for_plot,
             L1_x      = L1_x,
             L2_x      = L2_x,
             L1_alpha  = L1_alpha,
@@ -328,11 +328,12 @@ def MassTodonize(
 
     if raw_data:
         results['raw_estimates'] = M.res
+        results['spectra'] = M.spectra
 
-    if forPlot:
-        results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
-        results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
-        results['original_spectrum']    = M.spectrum_iter('original')
+    if for_plot:
+        results['for_plot_short']= list(M.export_information_for_spectrum_plotting(False))
+        results['for_plot_long'] = list(M.export_information_for_spectrum_plotting(True))
+        results['original_spectrum'] = M.spectrum_iter('original')
 
     if highcharts:
         algos = {   'basic_analysis':           results['basic_analysis'],

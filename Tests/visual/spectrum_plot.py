@@ -6,8 +6,8 @@ from time  import time
 from pandas import DataFrame as DF
 
 
-mol = substanceP.copy()
-# mol = ubiquitin.copy()
+# mol = substanceP.copy()
+mol = ubiquitin.copy()
 
 res = MassTodonize( fasta           = mol['fasta'],
                     precursor_charge= mol['Q'],
@@ -15,19 +15,13 @@ res = MassTodonize( fasta           = mol['fasta'],
                     joint_probability_of_envelope = .999,
                     modifications   = mol['modifications'],
                     spectrum        = mol['spectrum'],
-                    opt_P           = .99,
+                    opt_P           = .95,
                     solver          = 'multiprocessing',
                     multiprocesses_No = None,
-                    raw_data        = True,
-                    verbose         = False )
+                    raw_data = True,
+                    for_plot = 'long',
+                    verbose  = False )
 
-def iBG(raw_estimates, node_type):
-    for r in raw_estimates:
-        SG = r['SG']
-        for N in SG:
-            N_D = SG.node[N]
-            if N_D['type'] == node_type:
-                yield N, N_D
 
-gnodes = DF( G for _, G in iBG(res['raw_estimates'], 'G'))
-inodes = DF( G for _, G in iBG(res['raw_estimates'], 'I'))
+long_data = res['for_plot_long']
+len(long_data)

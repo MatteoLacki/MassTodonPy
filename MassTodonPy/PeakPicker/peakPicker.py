@@ -38,9 +38,12 @@ class MultiCounter(Counter):
         return str(key) + str(val)
 
 
-def contains_experimental_peaks(cc):
-    '''Check if a given problem contains any experimental peaks.'''
-    return any(isinstance(N, float) for N in cc)
+
+# def contains_experimental_peaks(cc):
+#     '''Check if a given problem contains any experimental peaks. Only these peaks have keys that are floats.'''
+#     return any(isinstance(N, float) for N in cc)
+
+
 
 def trim_unlikely_molecules(cc, minimal_prob=0.7):
     '''Trim molecules whose isotopic envelopes cover potentially less than the minimal_prob threshold.'''
@@ -92,6 +95,7 @@ class PeakPicker(object):
             print 'Representing problem as a graph.'
 
         T0 = time()
+
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
             I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
 
@@ -105,6 +109,7 @@ class PeakPicker(object):
 
             for I_mz, I_intensity in izip(I_mzs, I_intensities):
                 I = self.cnts('I')
+
                 Graph.add_node(I,  mz   = I_mz,
                                    intensity = I_intensity,
                                    type = 'I'   )
@@ -114,12 +119,14 @@ class PeakPicker(object):
                     no_exp_per_iso[len(Exps[I_mz])] += 1
                     E_mz, E_intensity = E_interval.data
                     self.Used_Exps.add( E_interval.data )
+
                     if not E_mz in Graph:
                         Graph.add_node( E_mz,
                                         intensity   = E_intensity,
                                         type        = 'E'  )
                     Graph.add_edge(I, E_mz)
                     self.stats['E-I No'] += 1
+
             self.stats['M No'] += 1
         T1 = time()
 
@@ -140,11 +147,20 @@ class PeakPicker(object):
         ):
         '''Enumerate deconvolution problems.'''
         Graph = self.represent_as_Graph(massSpectrum)
-        problems = ifilter( contains_experimental_peaks, nx.connected_component_subgraphs(Graph) )
+
+        ## contains_experimental_peaks should return a set covering the one given by trim_unlikely_molecules.
+
+        # problems = ifilter( contains_experimental_peaks, nx.connected_component_subgraphs(Graph) )
+        # problems = [ self.add_G_nodes(SG) \
+        #     for cc in problems \
+        #         for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
+        #             if len(SG) > 1 ]
+
         problems = [ self.add_G_nodes(SG) \
-            for cc in problems \
+            for cc in nx.connected_component_subgraphs(Graph) \
                 for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
                     if len(SG) > 1 ]
+
 
         self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
 
@@ -152,9 +168,7 @@ class PeakPicker(object):
 
 
     def add_G_nodes(self, small_graph):
-        '''Collect experimental peaks into groups of experimental data G.
-
-        This is done without any loss in resolution.'''
+        '''Collect experimental peaks into groups of experimental data G.'''
         T0 = time()
 
         E_to_remove = []
@@ -190,11 +204,14 @@ class PeakPicker(object):
                 if len(small_graph[I]) == 1: # only the molecule node in the neighbourhood
                     G = self.cnts('G')
                     mz = small_graph.node[I]['mz']
-                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz, 'max_mz':mz }) )
+                    # newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz-self.mz_prec, 'max_mz':mz+self.mz_prec }) )
+                    ## Two E peaks can get together ....
+                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz, 'max_mz':mz}) )
                     newGIedges.append( (G,I) )
         small_graph.add_nodes_from(newGnodes)
         small_graph.add_edges_from(newGIedges)
         T1 = time()
+
         self.G_stats.append(T1-T0)
 
         return small_graph

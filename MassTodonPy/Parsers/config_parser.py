@@ -44,7 +44,7 @@ def parse_plain_config_file(path):
     mz_prec = .05
     '''
     config_tmp = {}
-    boolean_keys = ('forPlot', 'highcharts', 'raw_data', 'analyze_raw_data', 'verbose', 'csv')
+    boolean_keys = ('for_plot', 'highcharts', 'raw_data', 'analyze_raw_data', 'verbose', 'csv')
     float_keys = ('mz_prec', 'cut_off', 'opt_P', 'joint_probability_of_envelope',
         'min_prob_of_envelope_in_picking', 'L1_x', 'L2_x', 'L1_alpha', 'L2_alpha', 'output_deconvolution_threshold' )
     int_keys = ('precursor_charge', 'multiprocesses_No', 'max_times_solve')
