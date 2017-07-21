@@ -1,53 +1,69 @@
 from highcharts import Highchart
 from collections import Counter, defaultdict
 
-def make_precursor_intensity_plot(precursors_intensitites):
-    H = Highchart(width=750, height=600)
-    charges = precursors_intensitites.keys()
+def make_highchart(width, height, options, series):
+    H = Highchart(width=width, height=height)
+    H.set_dict_options(options)
+    for s in series:
+        H.add_data_set(**s)
+    return H
+
+
+def prepare_precursor_intensities(precursors_intensitites):
+    charges    = precursors_intensitites.keys()
     categories = range(1,max(charges)+1)
-    values = [ int(precursors_intensitites[q]) for q in categories ]
-    options = {
-    	'title': {'text': 'Total Intensity of Precursors'},
-        'subtitle':{'text': 'for different charge states'},
+    series = [
+        {
+            'name': 'Intensity',
+            'data': [ int(precursors_intensitites[q]) for q in categories ],
+            'type': 'bar'
+        }
+    ]
+    options= {
+        'title': {
+            'text': 'Total Intensity of Precursors'
+        },
+        'subtitle':{
+            'text': 'for different charge states'
+        },
         'xAxis': {
-            'categories': categories,
-            'title': { 'text': 'Charge State'},
-            'labels':{ 'format': 'q = {value}'}
+            'categories':   categories,
+            'title': {
+                'text': 'Charge State'
+            },
+            'labels':{
+                'format': 'q = {value}'
+            }
         },
         'yAxis': {
-            'min': 0,
+            'min':  0,
             'title': {
                 'text': 'Intensity',
                 'align': 'high'
             },
-            'labels': {'overflow': 'justify'}
+            'labels': {
+                'overflow': 'justify'
+            }
         },
         'plotOptions': {
-            'bar': {'dataLabels': { 'enabled': True }}
+            'bar': {
+                'dataLabels':{
+                    'enabled': True
+                }
+            }
         }
     }
-    H.set_dict_options(options)
-    H.add_data_set(data=values,type='bar', name='Intensity')
-    return H
-
-# H = make_precursor_intensity_plot(precursors_intensitites)
-# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/precursorCharge')
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/options.json','w') as h:
-#     json.dump(H.option, h)
-#
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/data.json','w') as h:
-#     json.dump(H.data, h)
+    return {'options': options,
+            'series' : series   }
 
 
-def make_etnod_ptr_probability_plot(algos):
+def prepare_etnod_ptr_probabilities(algos):
     categories = ('PTR', 'ETnoD')
-    H = Highchart(width=750, height=600)
-    for cat in categories:
-        H.add_data_set(
-            data = [ algos[a][0][cat]*100 for a in algos],
-            name = cat,
-            type = 'bar'
-        )
+    series = [  {   'name': cat,
+                    'data': [ algos[a][0][cat]*100 for a in algos ],
+                    'type': 'bar'
+                } for cat in categories ]
+
     options = {
         'chart': { 'type': 'bar' },
         'title': { 'text': 'Probabilities of PTR and ETnoD'},
@@ -74,21 +90,13 @@ def make_etnod_ptr_probability_plot(algos):
             'series': {
                 'stacking': 'normal'
             }
-        }}
-    H.set_dict_options(options)
-    return H
+        }
+    }
+    return {'options': options,
+            'series' : series   }
 
-# import json
-# H = make_etnod_ptr_probability_plot(algos)
-# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnod_ptr_plots')
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnodPtr_options.json','w') as h:
-#     json.dump(H.option, h)
-#
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/etnodPtr_data.json','w') as h:
-#     json.dump(H.data, h)
 
-def make_branching_ratio_plot(branching_ratios, branching_ratio, pk):
-    H = Highchart(width=750, height=600)
+def prepare_branching_ratios(branching_ratios, branching_ratio, pk):
     options = {
         'chart': {
             'type': 'line'
@@ -121,28 +129,22 @@ def make_branching_ratio_plot(branching_ratios, branching_ratio, pk):
         'tooltip': {
             'valueDecimals': 4
         }
-        }
-    H.set_dict_options(options)
-    H.add_data_set( data        = branching_ratios,
-                    dataLabels  = {'format': '{y:.2f}'},
-                    name        = 'branching ratios for different number of reactions'     )
-    H.add_data_set( data        = [(0,branching_ratio), (max(pk)-1,branching_ratio) ],
-                    type        = 'line',
-                    dataLabels  = {'format': '{y:.2f}'},
-                    name        = 'branching ratio aggregated over all reactions'     )
-    return H
+    }
+    series = [
+        {   'name': 'branching ratios for different number of reactions',
+            'data':        branching_ratios,
+            'dataLabels':  {'format': '{y:.2f}'}     },
 
-# import json
-# H = make_branching_ratio_plot(branching_ratios, branching_ratio, pk)
-# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/branching_ratio')
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/lines_option.json','w') as h:
-#     json.dump(H.option, h)
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/lines_data.json','w') as h:
-#     json.dump(H.data, h)
+        {   'name': 'branching ratio aggregated over all reactions',
+            'data': [(0,branching_ratio), (max(pk)-1,branching_ratio) ],
+            'type': 'line',
+            'dataLabels':  {'format': '{y:.2f}'}     }
+    ]
+    return {'options': options,
+            'series':  series}
 
 
-def make_fragmentation_prob_plot(fasta, algos):
-    H = Highchart(width=2000, height=500)
+def prepare_fragmentation_probs(fasta, algos):
     fasta_list = [f for f in fasta]
     options = {
         'chart': {'type': 'column'},
@@ -177,28 +179,22 @@ def make_fragmentation_prob_plot(fasta, algos):
                 'borderWidth': 0
             }
         }
-     }
-    H.set_dict_options(options)
+    }
+    series = []
     for algo in algos:
         probs, counts = algos[algo]
-        H.add_data_set(
-            data = [probs[i]*100 for i in xrange(len(fasta))],
-            name = algo.split('_')[0].title() ,
-            type = 'column'
+        series.append(
+            {
+                'data': [probs[i]*100 for i in xrange(len(fasta))],
+                'name': algo.split('_')[0].title(),
+                'type': 'column'
+            }
         )
-    return H
+    return {'options': options,
+            'series' : series  }
 
-# H = make_fragmentation_prob_plot(fasta, algos)
-# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragmentation_probs')
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragmentation_probs_options.json','w') as h:
-#     json.dump(H.option, h)
-#
-# with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragmentation_probs_data.json','w') as h:
-#     json.dump(H.data, h)
-
-#TODO: fix this mother-fucking function. I hate these Highcharts....
-def make_fragment_pyramid_plot(fasta, fragments):
-    H = Highchart(width=750, height=1000)
+#TODO: fix this function. check if fragments are correctly matched
+def prepare_fragment_pyramid(fasta, fragments):
     fasta_list = [f for f in fasta]
     categories = range(1,len(fasta)+1)
     options = {
@@ -260,23 +256,28 @@ def make_fragment_pyramid_plot(fasta, fragments):
         #     'useHTML':  True,
         #     'shared':   True
         # }
-     }
-    H.set_dict_options(options)
-    H.add_data_set( data = [ fragments['c'][i-1] for i in categories ],
-                    type = 'bar',
-                    name = 'c'     )
-
-
+    }
+    series = [
+        {
+            'name': 'c',
+            'data': [ fragments['c'][i-1] for i in categories ],
+            'type': 'bar'
+        }
+    ]
     categories.reverse()
-    H.add_data_set( data = [ -fragments['z'][i-1] for i in categories ],
-                    type = 'bar',
-                    name = 'z'     )
-    return H
-# H.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/fragment_pyramid')
+    series.append(
+        {
+            'name': 'z',
+            'data': [ -fragments['z'][i-1] for i in categories ],
+            'type': 'bar'
+        }
+    )
+    return {'options': options,
+            'series' : series  }
 
 
 
-def make_highcharts(fasta, Q, raw_estimates, algos):
+def make_highcharts(fasta, Q, raw_estimates, algos, make_plots = False):
     '''Prepare the outputs of MassTodon for highcharts.'''
     precursors  = defaultdict(Counter)
     precursors_intensitites = Counter()
@@ -289,8 +290,8 @@ def make_highcharts(fasta, Q, raw_estimates, algos):
                 ReactionsNo = ETnoDs + PTRs
                 precursors_intensitites[M['q']] += M['estimate']
                 if ReactionsNo>0:
-                    precursors[ReactionsNo]['PTR'] += M['estimate']*PTRs
-                    precursors[ReactionsNo]['ETnoD'] += M['estimate']*ETnoDs
+                    precursors[ReactionsNo]['PTR']  += M['estimate']*PTRs
+                    precursors[ReactionsNo]['ETnoD']+= M['estimate']*ETnoDs
             else:
                 frag_type   = M['molType'][0]
                 frag_number = int(M['molType'][1:])
@@ -311,10 +312,16 @@ def make_highcharts(fasta, Q, raw_estimates, algos):
         branching_ratio = probs['PTR']/probs['ETnoD']
     except ZeroDivisionError:
         branching_ratio = None
-    precursor_intensity_plot    = make_precursor_intensity_plot(precursors_intensitites)
-    etnod_ptr_probability_plot  = make_etnod_ptr_probability_plot(algos)
-    branching_ratio_plot        = make_branching_ratio_plot(branching_ratios, branching_ratio, pk)
-    fragmentation_prob_plot     = make_fragmentation_prob_plot(fasta, algos)
-    fragment_pyramid_plot       = make_fragment_pyramid_plot(fasta, fragments)
 
-    return precursor_intensity_plot, etnod_ptr_probability_plot, branching_ratio_plot, fragmentation_prob_plot, fragment_pyramid_plot
+    charts = {
+        'precursor_intensities' : prepare_precursor_intensities(precursors_intensitites),
+        'etnod_ptr_probability' : prepare_etnod_ptr_probabilities(algos),
+        'branching_ratios'      : prepare_branching_ratios(branching_ratios, branching_ratio, pk),
+        'fragmentation_probs'   : prepare_fragmentation_probs(fasta, algos),
+        'fragment_pyramid'      : prepare_fragment_pyramid(fasta, fragments)
+    }
+
+    if make_plots:
+        charts = map(make_highchart, charts)
+
+    return charts
