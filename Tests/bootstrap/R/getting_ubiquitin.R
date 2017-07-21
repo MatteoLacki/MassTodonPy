@@ -13,7 +13,7 @@ check_which_run = function(file) ifelse( file %in% initial_run_spectra, 'initial
 experimentalParameters =
   experimentalParameters %>%
   mutate(
-    run = check_which_run(files),
+    run = check_which_run(tools::file_path_sans_ext(files)),
     supActive = sapply( strsplit( as.character(supActive),'\\s'), '[[',3 )
   )
 
