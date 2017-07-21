@@ -40,7 +40,7 @@ server/src/envs/
 
 # Spectra
 *.mzXML
-*.json
+
 Tests/data/FRL-010513-SUBP-WH000-WV300.txt
 Tests/data/substanceP_spectra_parsed.cPickle
 Tests/experimental_spectra/parsed_sub_P.matteo
