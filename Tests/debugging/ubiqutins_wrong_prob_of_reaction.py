@@ -1,7 +1,9 @@
 from MassTodonPy import MassTodonize
 import cPickle as pickle
-with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Data/ubiquitins.example', 'r') as h:
+
+with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubiquitins.example', 'r') as h:
     ubiquitins = pickle.load(h)
+
 
 # mol = ubiquitins[120]
 
