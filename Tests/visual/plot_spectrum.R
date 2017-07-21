@@ -6,18 +6,55 @@ all_ubis =
     list.files('ubiquitins', full.names = T) %>%
     lapply( read_csv )
 
+spectrum = all_ubis[[100]]
 
+filenames = list.files('ubiquitins') %>% 
+    sapply(tools::file_path_sans_ext) %>% 
+    sapply(function(x) paste0( '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/ubiquitins_plots/', x, '.pdf', sep='', collapse='') )
 
+for( i in 1:length(all_ubis)){
+    spectrum = all_ubis[[i]]
+    pdf(filenames[i])
+        plot(spectrum$mass, spectrum$intensity, type='h' )
+    dev.off()
+}
 
-OD = read_json('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/ubi_original.json') 
+# plot_stupid = 
+#     spectrum %>%
+#     ggplot( aes(x=mass, xend=mass, y=0, yend=intensity )) +
+#     geom_segment() + 
+#     theme_minimal() + 
+#     theme(
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#     ) +
+#     xlab('m/z') +
+#     ylab('intensity') + 
+#     scale_x_continuous(
+#         breaks = seq( min_mz, max_mz, by = 1 )
+#     ) 
+#     
+# ggsave( filename = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/ubiquitins_plots/test.pdf', 
+#         limitsize = F,
+#         width = 5000,
+#         height = 30,
+#         plot_stupid)
+# 
+# 
+# 
+OD = read_json('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/ubi_original.json')
 OD = data_frame(mz        = OD %>% sapply('[[',1),
                 intensity = OD %>% sapply('[[',2) )
 
+plot(OD, type='h')
 
-
-OD %>% plot(type='h')
-
-ubi_data = read_csv('ubi_data.csv')
+hchart(OD, "scatter", x = day_of_week, y = diff_ppt)
+# 
+# 
+# 
+# OD %>% plot(type='h')
+# 
+# ubi_data = read_csv('ubi_data.csv')
 
 
 

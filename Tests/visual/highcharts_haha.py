@@ -1,21 +1,27 @@
 from MassTodonPy import MassTodonize
-from MassTodonPy.TestScripts.substanceP import substanceP
-from MassTodonPy.TestScripts.ubiquitin  import ubiquitin
 from MassTodonPy.Outputing.to_etdetective import results_to_etdetective
 from time  import time
 from pprint import pprint
 import json
 
 # mol = substanceP.copy()
-mol = ubiquitin.copy()
+# mol = ubiquitin.copy()
+
+import cPickle as pickle
+from pandas import DataFrame as DF
+
+with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Data/ubiquitins.example', 'r') as h:
+    ubiquitins = pickle.load(h)
+
+mol = ubiquitins[120]
 
 res = MassTodonize( fasta           = mol['fasta'],
-                    precursor_charge= mol['Q'],
+                    precursor_charge= mol['precursorCharge'],
                     mz_prec         = .05,
                     joint_probability_of_envelope = .999,
                     modifications   = mol['modifications'],
                     spectrum        = mol['spectrum'],
-                    opt_P           = .99,
+                    opt_P           = .95,
                     solver          = 'multiprocessing',
                     multiprocesses_No = None,
                     max_times_solve = 10,
@@ -23,11 +29,14 @@ res = MassTodonize( fasta           = mol['fasta'],
                     highcharts      = True,
                     verbose         = False )
 
+# h1 = res['highcharts'][0]
+# h1.data
+# h1.options
+# h1.buildhtml()
 
-h1 = res['highcharts'][0]
-h1.data
-h1.options
-h1.buildhtml()
+res['highcharts'][0].options
+res['highcharts'][0].data
+res['highcharts'][0].buildhtml()
 
 for i, h in enumerate(res['highcharts']):
     h.save_file('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/h'+str(i))
