@@ -181,6 +181,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         setseed(randint(0,1000000))
         # this is to test from different points
         # apparently this is used by the asynchroneous BLAS library
+        # I hate the asynchroneous BLAS library
         try:
             if verbose:
                 print('optimizing')

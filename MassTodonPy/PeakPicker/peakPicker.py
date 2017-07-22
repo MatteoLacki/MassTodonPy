@@ -38,13 +38,6 @@ class MultiCounter(Counter):
         return str(key) + str(val)
 
 
-
-# def contains_experimental_peaks(cc):
-#     '''Check if a given problem contains any experimental peaks. Only these peaks have keys that are floats.'''
-#     return any(isinstance(N, float) for N in cc)
-
-
-
 def trim_unlikely_molecules(cc, minimal_prob=0.7):
     '''Trim molecules whose isotopic envelopes cover potentially less than the minimal_prob threshold.'''
     nodes_to_remove = []
@@ -75,9 +68,9 @@ class PeakPicker(object):
         self.IsoCalc= _IsoCalc
         self.mz_prec= mz_prec
         self.cnts   = MultiCounter() # TODO finish it.
-        self.Used_Exps = set()
         self.verbose= verbose
         self.stats  = Counter()
+        self.Used_Exps = set()
         self.G_stats= []
 
 
@@ -101,20 +94,20 @@ class PeakPicker(object):
 
             self.stats['I No'] += len(I_mzs)
             M = self.cnts('M')
-            Graph.add_node(M,  formula  = M_formula,
-                               type     ='M',
-                               q        = M_q,
-                               g        = M_g,
-                               molType  = M_type    )
+
+            Graph.add_node( M,
+                            formula  = M_formula,
+                            type     ='M',
+                            q        = M_q,
+                            g        = M_g,
+                            molType  = M_type    )
 
             for I_mz, I_intensity in izip(I_mzs, I_intensities):
                 I = self.cnts('I')
-
                 Graph.add_node(I,  mz   = I_mz,
                                    intensity = I_intensity,
                                    type = 'I'   )
                 Graph.add_edge(M, I)
-
                 for E_interval in Exps[I_mz]:
                     no_exp_per_iso[len(Exps[I_mz])] += 1
                     E_mz, E_intensity = E_interval.data
@@ -126,10 +119,9 @@ class PeakPicker(object):
                                         type        = 'E'  )
                     Graph.add_edge(I, E_mz)
                     self.stats['E-I No'] += 1
-
             self.stats['M No'] += 1
-        T1 = time()
 
+        T1 = time()
         self.stats['graph construction T'] = T1 - T0
 
         if self.verbose:
@@ -147,20 +139,17 @@ class PeakPicker(object):
         ):
         '''Enumerate deconvolution problems.'''
         Graph = self.represent_as_Graph(massSpectrum)
+        problems = []
 
-        ## contains_experimental_peaks should return a set covering the one given by trim_unlikely_molecules.
-
-        # problems = ifilter( contains_experimental_peaks, nx.connected_component_subgraphs(Graph) )
-        # problems = [ self.add_G_nodes(SG) \
-        #     for cc in problems \
-        #         for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
-        #             if len(SG) > 1 ]
-
-        problems = [ self.add_G_nodes(SG) \
-            for cc in nx.connected_component_subgraphs(Graph) \
-                for SG in nx.connected_component_subgraphs( trim_unlikely_molecules(cc, min_prob_per_molecule) ) \
-                    if len(SG) > 1 ]
-
+        for cc in nx.connected_component_subgraphs(Graph):
+            reduced_cc = trim_unlikely_molecules(cc, min_prob_per_molecule)# less M and I, not E
+            for SG in nx.connected_component_subgraphs(reduced_cc):
+                if len(SG) > 1:
+                    problems.append( self.add_G_nodes(SG) )
+                else:
+                    mz, data = SG.nodes(data=True)[0]
+                    if data['type'] == 'E':
+                        self.Used_Exps.remove( (mz, data['intensity']) ) # this peaks does not get used
 
         self.stats['total intensity of experimental peaks paired with isotopologues'] = sum( SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
 

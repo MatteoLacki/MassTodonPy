@@ -120,7 +120,7 @@ def read_n_preprocess_spectrum( path    = None,
         }[file_ext]
         spectrum = reader(path, prec_digits)
     else:
-        spectrum = round_spec(*spectrum, prec_digits=prec_digits)
+        spectrum = round_spec( *spectrum, prec_digits=prec_digits)
 
     spectra = {}
     spectra['original'] = spectrum

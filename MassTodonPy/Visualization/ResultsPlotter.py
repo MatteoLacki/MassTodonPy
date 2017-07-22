@@ -63,33 +63,48 @@ class ResultsPlotter(object):
                 G_D['mz_L'] = G_D['mz_R'] = None
 
 
-    def G_info_iter(self, full_info=False):
-        '''Iterate over all information on experimental groupings G.'''
+    def iter_G(self):
+        '''Iterate over information on experimental groupings G.'''
         for cluster_id, r in enumerate(self.BG):
             SG = r['SG']
             for G in SG:
                 if SG.node[G]['type'] == 'G':
                     G_D = SG.node[G]
-                    if not full_info and G_D['mz_L'] and G_D['mz_R']:
-                        yield { 'mz_L': G_D['mz_L'],
-                                'mz_R': G_D['mz_R'],
+                    if G_D['mz_L'] and G_D['mz_R']:
+                        yield { 'mz_L':         G_D['mz_L'],
+                                'mz_R':         G_D['mz_R'],
                                 'tot_estimate': G_D['estimate'],
                                 'tot_intensity':G_D['intensity'],
-                                'where': 'theoretically_achievable',
-                                'cluster_id': cluster_id }
-                    else:
-                        for I in SG[G]:
-                            for M in SG[I]:
-                                if SG.node[M]['type'] == 'M':
-                                    M_D = SG.node[M]
-                                    yield { 'formula':  M_D['formula'],
-                                            'molType':  M_D['molType'],
-                                            'q':        M_D['q'],
-                                            'g':        M_D['g'],
-                                            'mz_L':     G_D['mz_L'],
-                                            'mz_R':     G_D['mz_R'],
-                                            'estimate': SG.edge[G][I]['estimate'],
-                                            'tot_estimate': G_D['estimate'],
-                                            'tot_intensity':G_D['intensity'],
-                                            'where': 'theoretically_achievable',
-                                            'cluster_id': cluster_id }
+                                'cluster_id':   cluster_id,
+                                'G_tag':        G  }
+
+
+    def iter_MIG(self):
+        '''Iterate over information on pathways MIG.'''
+        for cluster_id, r in enumerate(self.BG):
+            SG = r['SG']
+            for M in SG:
+                if SG.node[M]['type'] == 'M':
+                    M_D = SG.node[M]
+                    for I in SG[M]:
+                        I_D = SG.node[I]
+                        for G in SG[I]:
+                            if SG.node[G]['type'] == 'G':
+                                G_D = SG.node[G]
+                                yield { 'formula':  M_D['formula'],
+                                        'molType':  M_D['molType'],
+                                        'q':        M_D['q'],
+                                        'g':        M_D['g'],
+                                        'mz_L':     G_D['mz_L'],
+                                        'mz_R':     G_D['mz_R'],
+                                        'estimate': SG.edge[G][I]['estimate'],
+                                        'tot_estimate_tmp': G_D['estimate'],  # these are repeating
+                                        'tot_intensity_tmp':G_D['intensity'], # these are repeating
+                                        'cluster_id': cluster_id,
+                                        'G_tag':    G,
+                                        'I_tag':    I,
+                                        'M_tag':    M      }
+
+    def make_data_for_spectrum_plot(self):
+        return {'G_nodes_data':     list(self.iter_G()),
+                'MIG_paths_data':   list(self.iter_MIG()) }

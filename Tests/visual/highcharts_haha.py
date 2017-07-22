@@ -33,7 +33,6 @@ res = MassTodonize( fasta           = mol['fasta'],
 highcharts = res['highcharts']
 
 
-
 with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/IO/highcharts.json', 'w') as f:
     json.dump(highcharts, f)
 

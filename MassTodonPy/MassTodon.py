@@ -78,7 +78,7 @@ from Summarator         import summarize_results
 from Outputing          import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 
 #### standard modules
-from itertools          import izip
+from itertools          import izip, chain
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
 from time               import time
@@ -192,6 +192,7 @@ class MassTodon():
             print 'Solver stats:'
             print self.solver_stats
             print
+
         if for_plot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 
@@ -218,19 +219,22 @@ class MassTodon():
                                     raw_masstodon_res   = self.res              )
 
 
-    def export_information_for_spectrum_plotting(self, full_info=False):
-        '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
-        prec = self.mz_prec
-        for res in self.ResPlotter.G_info_iter(full_info):
-            yield res
-        for mz_int in zip(*self.spectra['original']):
-            if not mz_int in self.peakPicker.Used_Exps:
-                mz, intensity = mz_int
-                yield { 'mz_L': mz - prec,
-                        'mz_R': mz + prec,
-                        'tot_estimate': 0.0,
-                        'tot_intensity':intensity,
-                        'where': 'not_explainable' }
+    #TODO use Bokeh from Python directly!
+    def make_data_for_spectrum_plot(self):
+        '''Provide estimates easily exportable to Bokeh via R.'''
+        data_4_plot = self.ResPlotter.make_data_for_spectrum_plot()
+        data_4_plot['remaining_peaks'] = [
+            {   'mz_L':         mz - self.mz_prec,
+                'mz_R':         mz + self.mz_prec,
+                'tot_estimate': 0.0,
+                'tot_intensity':intensity,
+                'where':        'not_explainable' }
+                for mz, intensity in izip(*self.spectra['original'])
+                if not (mz, intensity) in self.peakPicker.Used_Exps
+            ]
+
+
+        return data_4_plot
 
 
     def analyze_reactions(  self,
@@ -331,18 +335,19 @@ def MassTodonize(
         results['spectra'] = M.spectra
 
     if for_plot:
-        results['for_plot_short']= list(M.export_information_for_spectrum_plotting(False))
-        results['for_plot_long'] = list(M.export_information_for_spectrum_plotting(True))
-        results['original_spectrum'] = M.spectrum_iter('original')
+        results['for_plot']= M.make_data_for_spectrum_plot()
 
     if highcharts:
-        algos = {   'basic_analysis':           results['basic_analysis'],
+        algos = {   'basic_analysis':
+        results['basic_analysis'],
                     'intermediate_analysis':    results['intermediate_analysis'],
                     'advanced_analysis':        results['advanced_analysis']        }
-        results['highcharts'] = make_highcharts(fasta   = fasta,
-                                                Q       = precursor_charge,
-                                                raw_estimates = M.res,
-                                                algos   = algos)
+
+        results['highcharts'] = make_highcharts(
+            fasta   = fasta,
+            Q       = precursor_charge,
+            raw_estimates = M.res,
+            algos   = algos)
 
     T1 = time()
     results['summary']['total_time'] = T1-T0
