@@ -20,9 +20,9 @@ res = MassTodonize( fasta           = mol['fasta'],
                     opt_P           = .95,
                     solver          = 'multiprocessing',
                     multiprocesses_No = None,
-                    raw_data = True,
-                    for_plot = True,
-                    verbose  = False )
+                    raw_data        = True,
+                    for_plot        = True,
+                    verbose         = False )
 
 short_data          = res['for_plot']['G_nodes_data']
 remaining_peaks     = res['for_plot']['remaining_peaks']
@@ -33,7 +33,7 @@ DF(short_data).to_csv(
     index = False )
 
 DF(remaining_peaks).to_csv(
-    path_or_buf = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/ubi_remaining_peaks.csv',
+    path_or_buf = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tsests/visual/ubi_remaining_peaks.csv',
     index = False )
 
 DF(long_data).to_csv(

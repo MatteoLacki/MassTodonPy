@@ -30,6 +30,9 @@ example_call: 			## run an example session of the algorithm
 run_ubiquitins:			## run on all available ubiquitins
 	$(PYTHON) Tests/calls/run_ubiquitins.py
 
+run_ubiquitins_plots:			## run on all available ubiquitins
+	$(PYTHON) Tests/calls/run_ubiquitins_plots.py
+
 compare_spectra_plots:
 	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R

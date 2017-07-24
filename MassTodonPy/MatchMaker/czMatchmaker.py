@@ -54,7 +54,8 @@ class czMatchMaker(object):
         graph = nx.Graph()
         Q = self.Q
         for res in self.MassTodonResults:
-            if (self.accept_nonOptimalDeconv or res['status']=='optimal') and res['status'] != 'ValueError': #TODO what to do otherwise? Nothing for now.
+            # if (self.accept_nonOptimalDeconv or res['status']=='optimal') and res['status'] != 'ValueError': #TODO what to do otherwise? Nothing for now.
+            if res['status'] != 'ValueError':
                 for mol in res['alphas']:
                     estimate = mol['estimate']
                     if estimate > self.min_acceptEstimIntensity:
@@ -62,6 +63,7 @@ class czMatchMaker(object):
                             q, g = mol['q'], mol['g']
                             if q==Q and g==0:
                                 unreacted_precursors = int(estimate)
+                                print unreacted_precursors
                             else:
                                 ETnoDs_on_precursors += g * estimate
                                 PTRs_on_precursors   += (Q-q-g) * estimate

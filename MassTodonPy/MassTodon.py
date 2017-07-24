@@ -227,9 +227,8 @@ class MassTodon():
             {   'mz_L':         mz - self.mz_prec,
                 'mz_R':         mz + self.mz_prec,
                 'tot_estimate': 0.0,
-                'tot_intensity':intensity,
-                'where':        'not_explainable' }
-                for mz, intensity in izip(*self.spectra['original'])
+                'tot_intensity':intensity
+            }   for mz, intensity in izip(*self.spectra['original'])
                 if not (mz, intensity) in self.peakPicker.Used_Exps
             ]
 
@@ -299,7 +298,6 @@ def MassTodonize(
                     iso_masses,
                     iso_probs,
                     verbose )
-
 
     M.read_n_preprocess_spectrum(   spectrum_path,
                                     spectrum,

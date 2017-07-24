@@ -46,6 +46,11 @@ def worker(worker_args):
             if res['status'] == 'optimal':
                 stop    = True
                 solved  = True
+            else:
+                # for penalty in ('L1_x', 'L2_x', 'L1_alpha', 'L2_alpha'):
+                #     args[penalty] *= 10.0
+                if verbose:
+                    print args
             if i == max_times_solve:
                 stop = True
                 print 'Deconvolution proved non optimal', max_times_solve, 'times'

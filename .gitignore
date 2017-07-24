@@ -31,8 +31,9 @@ Tests/bootstrap/RESULTS_fixing_bootstrap/
 Tests/bootstrap/RESULTS_CSV_03_07_2017/
 Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/
 Tests/bootstrap/ubi_14_07_2017/
+Tests/visual/ubiquitins/
 
-
+*.example
 *.html
 *.csv
 *.zip
