@@ -4,15 +4,13 @@ import  sys
 from    bootstrap_misc  import analyze_experiments
 import  cPickle as pickle
 
-with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubiquitins.example', 'r') as h:
-    ubiquitins = pickle.load(h)
-
-
-# results_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/boot_ubi/'
-_, results_path = sys.argv
+_, data_path, results_path = sys.argv
 
 if not os.path.exists(results_path):
     os.makedirs(results_path)
+
+with open(data_path, 'r') as h:
+    ubiquitins = pickle.load(h)
 
 analyze_experiments(ubiquitins,
                     results_path,

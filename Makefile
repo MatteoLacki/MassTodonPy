@@ -46,7 +46,7 @@ run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substan
 
 
 run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
-	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
+	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/data/ubiquitins.example  Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
 	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
 	# Rscript Tests/bootstrap/analyze_bootstrap_ubi.R
 	# Rscript Tests/bootstrap/analyze_frag_probs_ubi.R
