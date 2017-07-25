@@ -19,7 +19,7 @@ for ID, mol in enumerate(substancesP):
     Q    = mol['precursorCharge']
     res  = MassTodonize(fasta           = fasta,
                         precursor_charge= Q,
-                        mz_prec         = .1,
+                        mz_prec         = .05,
                         joint_probability_of_envelope = .999,
                         spectrum        = mol['spectrum'],
                         modifications   = mol['modifications'],

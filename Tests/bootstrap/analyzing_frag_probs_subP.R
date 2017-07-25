@@ -6,6 +6,7 @@ D = list.files('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/CS
   bind_rows() %>%
   mutate(WH = factor(WH), WV = factor(WV) )
 
+D = D %>% filter(ID != 13)
 
 D150 = D %>% filter(WH == '150')
 D300 = D %>% filter(WV == '300')

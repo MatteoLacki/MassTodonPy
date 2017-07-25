@@ -33,25 +33,28 @@ def results_iter(res):
 # outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/UBI_csv/'
 
     # The most thresh data.
-indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_07_2017/'
-outdir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_07_2017_csv/'
+# indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_07_2017/'
+# outdir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_14_07_2017_csv/'
 
 # indir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test/'
 # outdir='/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/Boot_ubi_test_res/'
+indir  = '/Users/matteo/czczmiel/masstodon/bootstrap_24_07_2017/ubi/MassTodonPy/Tests/bootstrap/ubi_24_07_2017_mzPrec-065/'
+outdir = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/boot_ubi_csv/'
+
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 
-N = 1
+N = None
 for r, d, fs in os.walk(indir):
     for f in islice(fs,N):
         with open(r+f,'r') as h:
             res = pickle.load(h)
-        # try:
-        #     DF(results_iter(res)).to_csv(path_or_buf=outdir+f+str('.csv'), index=False)
-        # except:
-        #     print f
-        #     print 'Something went terribly wrong. Please contact the God, as he is ultimately responsible for it. '
-        #     break
+        try:
+            DF(results_iter(res)).to_csv(path_or_buf=outdir+f+str('.csv'), index=False)
+        except:
+            print f
+            print 'Something went terribly wrong. Please contact the God, as he is ultimately responsible for it. '
+            break
 
 # res['real']
 # res['bootstrap'][0]

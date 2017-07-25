@@ -1,7 +1,7 @@
 library(tidyverse); library(ggthemes); library(ggiraph); library(ggthemes); library(htmlwidgets); library(rbokeh)
 
 
-# path_to_data = list.files('substancesP', full.names = T)[1] 
+# path_to_data = list.files('substancesP', full.names = T)[25] 
 # path_output = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/substancesP_plots' 
 make_plot = function(path_to_data, path_output){
     
