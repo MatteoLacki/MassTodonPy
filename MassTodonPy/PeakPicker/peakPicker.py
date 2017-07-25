@@ -102,6 +102,9 @@ class PeakPicker(object):
                             g        = M_g,
                             molType  = M_type    )
 
+            if M_type == 'precursor' and M_q == 1 and M_g == 0:
+                print I_mzs
+
             for I_mz, I_intensity in izip(I_mzs, I_intensities):
                 I = self.cnts('I')
                 Graph.add_node(I,  mz   = I_mz,

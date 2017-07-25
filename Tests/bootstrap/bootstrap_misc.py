@@ -44,7 +44,7 @@ def bootstrap(  mol,
     sim_intensities  = multinomial(ions_no, intensities/intensities.sum(), bootstrap_size).astype(np.float) * intensities.sum()/float(ions_no)
     pool_args = izip(   repeat(mol['info']),
                         repeat(mol['fasta']),
-                        repeat(mol['precursorCharge']),
+                        repeat(mol['Q']),
                         repeat(mz_prec),
                         repeat(opt_P),
                         repeat(cut_off),
@@ -82,11 +82,11 @@ def analyze_experiments(substances,
         if verbose:
             print 'starting calculations on real data'
             print 'fasta:', mol['fasta']
-            print 'Q:', mol['precursorCharge']
+            print 'Q:', mol['Q']
 
         results['real'] = bootstrap_worker((mol['info'],
                                             mol['fasta'],
-                                            mol['precursorCharge'],
+                                            mol['Q'],
                                             mz_prec,
                                             opt_P,
                                             cut_off,

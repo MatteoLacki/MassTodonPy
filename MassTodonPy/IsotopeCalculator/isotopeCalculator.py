@@ -138,6 +138,7 @@ class IsotopeCalculator:
         self.isotopicEnvelopes[ (atomCnt_str, jP, prec_digits) ] = ( masses, probs )
         T1 = time()
         self.stats['Envelopes Generation Total T'] += T1-T0
+
         return masses.copy(), probs.copy()
 
 
@@ -159,6 +160,9 @@ class IsotopeCalculator:
         if q is not 0:
             masses = np.around( (masses + g + q)/q, decimals=prec_digits )
         masses, probs = aggregate(masses, probs)
+        #
+        # print atomCnt_str, q, g, masses
+        # print
         return masses, probs
 
 
