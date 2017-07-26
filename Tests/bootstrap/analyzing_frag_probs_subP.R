@@ -18,7 +18,10 @@ get_AA = function(x)
 uniform_prob = 1/sum(fasta != "P")
 
 prep_data = function(D_no) D_no %>%
-  select( WH, WV, ID, real_or_bootstrap, matches('basic.prob.'), matches('intermediate.prob.'), matches('advanced.prob.') ) %>%
+  select( WH, WV, ID, real_or_bootstrap, 
+    matches('basic.prob.'), 
+    matches('intermediate.prob.'), 
+    matches('advanced.prob.') ) %>%
   select(-contains('ETnoD')) %>%
   select(-contains('PTR')) %>%
   select(-contains('fragmentation')) %>%
@@ -26,8 +29,15 @@ prep_data = function(D_no) D_no %>%
   gather( 'AA', 'prob', -c(1:4), na.rm = TRUE ) %>%
   mutate(
     algo = strsplit(AA, '[.]') %>% sapply('[[',1),
-    algo = factor( algo, levels=c('basic', 'intermediate', 'advanced'), ordered = T ),
-    algo = plyr::revalue(algo, c('basic'='Basic', 'intermediate'='Intermediate', 'advanced'='Advanced')),
+    algo = factor( 
+        algo, 
+        levels=c('basic', 'intermediate', 'advanced'), ordered = T ),
+    algo = plyr::revalue(
+        algo, 
+        c(  'basic'='Basic', 
+            'intermediate'='Intermediate', 
+            'advanced'='Advanced')
+    ),
     AA_no= as.integer(str_match(AA, "[0-9]+"))+1,
     AA   = get_AA(AA_no)
   ) %>% split(.$real_or_bootstrap)

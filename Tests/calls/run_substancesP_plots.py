@@ -13,7 +13,7 @@ output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/substa
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-# mol = substancesP[0]; ID = 0
+# mol = substancesP[0]; ID = 0; mol['modifications']
 for ID, mol in enumerate(substancesP):
     fasta= mol['fasta']
     Q    = mol['precursorCharge']
@@ -43,9 +43,7 @@ for ID, mol in enumerate(substancesP):
 
     DF(short_data).to_csv(  path_or_buf = file_path + 'short.csv',
                             index = False )
-
     DF(remaining_peaks).to_csv( path_or_buf = file_path + 'remaining_peaks.csv',
                                 index = False )
-
     DF(long_data).to_csv(   path_or_buf = file_path + 'long.csv',
                             index = False )

@@ -7,8 +7,6 @@ D = list.files('boot_subP_24_07_2017_csv', full.names = T) %>%
     bind_rows() %>%
     mutate(WH = factor(WH), WV = factor(WV) )
 
-D %>% filter(WH == '150', WV == '300', real_or_bootstrap=='real')
-D %>% filter(WH == '150') %>% select(contains('basic')) %>% colnames
 
 D = D %>% filter(ID != 13)
 D150 = D %>% filter(WH == '150') %>%
