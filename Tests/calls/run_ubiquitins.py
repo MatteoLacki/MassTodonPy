@@ -23,6 +23,7 @@ for ubiquitin in ubiquitins:
                         opt_P           = .95,
                         solver          = 'multiprocessing',
                         multiprocesses_No = None,
+                        distance_charges= 5,
                         max_times_solve = 10,
                         raw_data        = True,
                         verbose         = False )
@@ -35,3 +36,6 @@ for ubiquitin in ubiquitins:
 
 with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/bootstrap/ubi_only_real/ubiquitins.masstodon', 'w') as h:
     pickle.dump(results, h, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+# res['summary']

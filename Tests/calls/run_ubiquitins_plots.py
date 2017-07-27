@@ -12,7 +12,7 @@ with open('/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/ubiquitins.e
 
 output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/visual/ubiquitins/'
 
-
+# ubiquitin = ubiquitins[0]
 for ubiquitin in ubiquitins:
     fasta= ubiquitin['fasta']
     Q    = ubiquitin['Q']
@@ -47,3 +47,7 @@ for ubiquitin in ubiquitins:
 
     DF(long_data).to_csv(   path_or_buf = file_path + 'long.csv',
                             index = False )
+
+
+# from MassTodonPy.Formulator import make_formulas
+# list(make_formulas(ubiquitin['fasta'], ubiquitin['Q']).makeMolecules())

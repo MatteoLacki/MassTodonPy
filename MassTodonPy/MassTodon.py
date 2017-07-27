@@ -91,6 +91,7 @@ class MassTodon():
                     mz_prec,
                     modifications   = {},
                     frag_type       = 'cz',
+                    distance_charges= 5,
                     joint_probability_of_envelope = 0.999,
                     iso_masses      = None,
                     iso_probs       = None,
@@ -109,10 +110,11 @@ class MassTodon():
         self.verbose= verbose
 
         self.Forms  = make_formulas(
-            fasta   = fasta,
-            Q       = self.Q,
-            frag_type     = frag_type,
-            modifications = modifications )
+            fasta           = fasta,
+            Q               = self.Q,
+            frag_type       = frag_type,
+            distance_charges= distance_charges,
+            modifications   = modifications )
 
         self.IsoCalc = IsotopeCalculator(
             jP          = joint_probability_of_envelope,
@@ -265,6 +267,7 @@ def MassTodonize(
         spectrum_path   = None,
         modifications   = {},
         frag_type       = 'cz',
+        distance_charges= 5,
         joint_probability_of_envelope   = .999,
         min_prob_of_envelope_in_picking = .7,
         iso_masses  = None,
@@ -294,6 +297,7 @@ def MassTodonize(
                     mz_prec,
                     modifications,
                     frag_type,
+                    distance_charges,
                     joint_probability_of_envelope,
                     iso_masses,
                     iso_probs,

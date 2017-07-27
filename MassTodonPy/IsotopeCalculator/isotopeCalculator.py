@@ -160,9 +160,6 @@ class IsotopeCalculator:
         if q is not 0:
             masses = np.around( (masses + g + q)/q, decimals=prec_digits )
         masses, probs = aggregate(masses, probs)
-        #
-        # print atomCnt_str, q, g, masses
-        # print
         return masses, probs
 
 
