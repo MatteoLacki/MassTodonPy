@@ -36,6 +36,9 @@ run_ubiquitins_plots:			## run on all available ubiquitins for plots
 run_substancesP_plots:			## run on all available substances P for plots
 	$(PYTHON) Tests/calls/run_substancesP_plots.py
 
+substancesP_ETDetective_input:	## make substances P for ETDetecitve
+	$(PYTHON) Tests/calls/run_substancesP_etdetective.py
+
 
 compare_spectra_plots:
 	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py

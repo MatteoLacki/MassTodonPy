@@ -218,3 +218,14 @@ cowplot::ggsave(
 cowplot::ggsave(
     'substance_P_intensities_of_etnod_ptr_300.png',
     final_plot, limitsize = F, dpi=300, width = 400, height = 100, units = 'mm', scale=1)
+
+#### runtime analysis
+
+D %>% colnames
+
+runtime_data_subP =
+    D %>% 
+    select( ID, WH, WV, real_or_bootstrap,
+            total_time )
+
+save(runtime_data_subP, file = 'runtime_data_subP.rda')

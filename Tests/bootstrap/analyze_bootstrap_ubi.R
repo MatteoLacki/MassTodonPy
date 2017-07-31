@@ -72,3 +72,22 @@ estimates_plot_6 = DE$'6' %>% prep_data_4_plot %>% make_nice_plot()
 estimates_plot = cowplot::plot_grid(
     estimates_plot_9, estimates_plot_6, 
     nrow=2, align='v', labels = c('Q = 9', 'Q = 6'))
+
+
+cowplot::ggsave(
+    'ubi_plot.pdf',
+    estimates_plot, limitsize = F, dpi=100, width = 300, height = 150, units = 'mm', scale=1)
+
+
+
+######## Rut Times
+
+E$normal_run %>% colnames
+
+
+runtime_data_ubi = 
+    E$normal_run %>% 
+    select( ID, real_or_bootstrap, precursorMZ, preActive, 
+            total_time, retentionTime )
+
+save(runtime_data_ubi, file = 'runtime_data_ubi.rda')

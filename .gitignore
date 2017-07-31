@@ -7,6 +7,7 @@ yarn.lock
 *.png
 *.pdf
 .RData
+*.rda
 *.masstodon
 
 # Folders
