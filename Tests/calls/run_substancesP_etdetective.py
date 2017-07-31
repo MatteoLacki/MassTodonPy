@@ -8,6 +8,8 @@ from MassTodonPy.Outputing.to_etdetective   import results_to_etdetective
 
 results = []
 
+
+
 # mol = substancesP[0]; ID = 0
 for ID, mol in enumerate(substancesP):
     fasta= mol['fasta']
@@ -29,7 +31,10 @@ for ID, mol in enumerate(substancesP):
     results.append({
         'masstodon_output':         res,
         'experimental_setting':     mol['experimental_setting'],
-        'etdetective_input':        results_to_etdetective( res, fasta, mol['modifications'] ) })
+        'etdetective_input':        results_to_etdetective( masstodon_results = res,
+                                                            fasta = fasta,
+                                                            Q = Q,
+                                                            modifications = mol['modifications'] ) })
 
     print "Dumped", ID+1, "out of", len(substancesP)
 
