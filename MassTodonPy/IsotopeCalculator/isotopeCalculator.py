@@ -138,6 +138,7 @@ class IsotopeCalculator:
         self.isotopicEnvelopes[ (atomCnt_str, jP, prec_digits) ] = ( masses, probs )
         T1 = time()
         self.stats['Envelopes Generation Total T'] += T1-T0
+
         return masses.copy(), probs.copy()
 
 

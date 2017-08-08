@@ -112,31 +112,44 @@ def make_cz_fragments(fasta, modifications):
 #TODO It seems very strange to return these functions. Inspect it later on.
 
 class Formulator(object):
-    def __init__(self, fasta, Q, modifications={} ):
-        self.fasta  = fasta
-        self.Q      = Q
+    def __init__(   self,
+                    fasta,
+                    Q,
+                    distance_charges = 5,
+                    modifications    = {}
+        ):
+        self.Q = Q
+        self.fasta = fasta
+        self.d_charges = distance_charges
         self.modifications = modifications
 
 class CZformulator(Formulator):
-    def __init__(self, fasta, Q, modifications={} ):
-        super(CZformulator,self).__init__(fasta, Q, modifications)
+    def __init__(   self,
+                    fasta,
+                    Q,
+                    distance_charges = 5,
+                    modifications={}
+        ):
+        "Initialize the class that generates chemical formulas."
+        super(CZformulator,self).__init__(fasta, Q, distance_charges, modifications)
         self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
 
-                            # aaPerOneCharge
-    def makeMolecules(self, distanceBetweenCharges=5):
+
+    def makeMolecules(self):
         '''Generate possible molecules in c/z fragmentation.
 
         Returns: tuples ( type_of_mol, mol_formula, amino_acids_no, charge, quenched_charge ).'''
         for molType, atomCnt_str, sideChainsNo in chain( self.precs(), self.cfrags(), self.zfrags() ):
             for q,g in protonate( self.Q, molType[0] ):
-                potentialChargesNo = sideChainsNo / distanceBetweenCharges
-                if sideChainsNo % distanceBetweenCharges > 0:
-                    potentialChargesNo += 1 # +0000 +0000 00+  at most 3 charges
+                potentialChargesNo = sideChainsNo / self.d_charges
+                if sideChainsNo % self.d_charges > 0:
+                    potentialChargesNo += 1
+                    # +0000 +0000 00+  at most 3 charges
                 if potentialChargesNo >= q:
                     yield molType, atomCnt_str, sideChainsNo, q, g
 
 class CZformulator_qg_competition(CZformulator):
-    def makeMolecules(self, distanceBetweenCharges=5):
+    def makeMolecules(self):
         '''Generate possible molecules in c/z fragmentation. Take into account that q and g charges compete for the bloody places.
 
         Returns: tuples ( type_of_mol, mol_formula, amino_acids_no, charge, quenched_charge ).'''
@@ -146,24 +159,23 @@ class CZformulator_qg_competition(CZformulator):
                     totalCharges = q+g
                 else:
                     totalCharges = q
-                potentialChargesNo = sideChainsNo / distanceBetweenCharges
-                if sideChainsNo % distanceBetweenCharges > 0:
+                potentialChargesNo = sideChainsNo / self.d_charges
+                if sideChainsNo % self.d_charges > 0:
                     potentialChargesNo += 1 # +0000 +0000 00+  at most 3 charges
                 if potentialChargesNo >= totalCharges:
                     yield molType, atomCnt_str, sideChainsNo, q, g
 
 
-def make_formulas(
-        fasta,
-        Q,
-        frag_type ='cz',
-        modifications={}
+def make_formulas(  fasta,
+                    Q,
+                    frag_type ='cz',
+                    distance_charges = 5,
+                    modifications = {}
     ):
     '''Generate all possible fragments given a Roepstorf Scheme [or its generalization].
     '''
     modifications   = standardize(modifications)
-    formClass       = {
-        'cz':CZformulator,
-        'cz_qg_competition':CZformulator_qg_competition
-    }[frag_type](fasta, Q, modifications )
+    formClass       = { 'cz':CZformulator,
+                        'cz_qg_competition':CZformulator_qg_competition
+    }[frag_type](fasta, Q, distance_charges, modifications)
     return formClass

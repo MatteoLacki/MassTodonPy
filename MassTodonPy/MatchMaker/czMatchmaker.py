@@ -54,7 +54,8 @@ class czMatchMaker(object):
         graph = nx.Graph()
         Q = self.Q
         for res in self.MassTodonResults:
-            if (self.accept_nonOptimalDeconv or res['status']=='optimal') and res['status'] != 'ValueError': #TODO what to do otherwise? Nothing for now.
+            # if (self.accept_nonOptimalDeconv or res['status']=='optimal') and res['status'] != 'ValueError': #TODO what to do otherwise? Nothing for now.
+            if res['status'] != 'ValueError':
                 for mol in res['alphas']:
                     estimate = mol['estimate']
                     if estimate > self.min_acceptEstimIntensity:
@@ -104,7 +105,7 @@ class czMatchMaker(object):
                 if isinstance(k, (int,long)):
                     Probs[k] = float(Counts[k])/Counts['total_frags']
         Counts['total_reactions'] = sum(Counts[k] for k in Counts if k != 'unreacted_precursors')
-        Probs = self.get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' )
+        Probs = self.get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' ) # TODO: proportion of untouched precursor
         if Counts['total_reactions'] > 0.0:
             Probs['fragmentation'] = float(Counts['total_frags'])/Counts['total_reactions']
             Probs['no fragmentation'] = 1.0 - Probs['fragmentation']

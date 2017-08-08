@@ -170,8 +170,10 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
     def run(self, L1_x=.001, L2_x=.001, L1_alpha=.001, L2_alpha=.001, verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
+
         if verbose:
             print('Preparing matrices')
+            print(L1_x, L2_x, L1_alpha, L2_alpha)
 
         P, q = get_P_q(self.SG, self.M_No, self.var_No, L1_x, L2_x, L1_alpha, L2_alpha)
         x0   = get_initvals(self.var_No)
@@ -181,6 +183,7 @@ class Deconvolutor_Min_Sum_Squares(Deconvolutor):
         setseed(randint(0,1000000))
         # this is to test from different points
         # apparently this is used by the asynchroneous BLAS library
+        # I hate the asynchroneous BLAS library
         try:
             if verbose:
                 print('optimizing')

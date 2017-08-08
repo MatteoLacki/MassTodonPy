@@ -7,6 +7,7 @@ yarn.lock
 *.png
 *.pdf
 .RData
+*.rda
 *.masstodon
 
 # Folders
@@ -31,17 +32,22 @@ Tests/bootstrap/RESULTS_fixing_bootstrap/
 Tests/bootstrap/RESULTS_CSV_03_07_2017/
 Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/
 Tests/bootstrap/ubi_14_07_2017/
-MassTodonPy/Data/ubiquitins.example
+Tests/visual/ubiquitins/
+Tests/visual/substancesP_plots/
+Tests/visual/ubiquitin_plots/
+Tests/bootstrap/boot_ubi
+Tests/bootstrap/boot_subP*
 
+*.example
+*.html
 *.csv
 *.zip
-*.html
 *.matteo
 server/src/envs/
 
 # Spectra
 *.mzXML
-*.json
+
 Tests/data/FRL-010513-SUBP-WH000-WV300.txt
 Tests/data/substanceP_spectra_parsed.cPickle
 Tests/experimental_spectra/parsed_sub_P.matteo

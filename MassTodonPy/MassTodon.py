@@ -66,6 +66,7 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
+#### MassTodonPy modules
 from Formulator         import make_formulas
 from IsotopeCalculator  import IsotopeCalculator
 from PeakPicker         import PeakPicker
@@ -75,8 +76,10 @@ from MatchMaker         import match_cz_ions
 from Visualization      import ResultsPlotter, make_highcharts
 from Summarator         import summarize_results
 from Outputing          import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
+from Outputing.to_etdetective  import results_to_etdetective
 
-from itertools          import izip
+#### standard modules
+from itertools          import izip, chain
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
 from time               import time
@@ -89,6 +92,7 @@ class MassTodon():
                     mz_prec,
                     modifications   = {},
                     frag_type       = 'cz',
+                    distance_charges= 5,
                     joint_probability_of_envelope = 0.999,
                     iso_masses      = None,
                     iso_probs       = None,
@@ -107,10 +111,11 @@ class MassTodon():
         self.verbose= verbose
 
         self.Forms  = make_formulas(
-            fasta   = fasta,
-            Q       = self.Q,
-            frag_type     = frag_type,
-            modifications = modifications )
+            fasta           = fasta,
+            Q               = self.Q,
+            frag_type       = frag_type,
+            distance_charges= distance_charges,
+            modifications   = modifications )
 
         self.IsoCalc = IsotopeCalculator(
             jP          = joint_probability_of_envelope,
@@ -167,11 +172,11 @@ class MassTodon():
             method              ='MSE',
             max_times_solve     = 5,
             min_prob_per_molecule = .75,
-            forPlot             = False,
+            for_plot            = False,
             **args ):
         '''Perform the deconvolution of problems.'''
 
-        self.problems, self.clusters= self.peakPicker.get_problems(
+        self.problems = self.peakPicker.get_problems(
             massSpectrum            = self.spectra['trimmed'],
             min_prob_per_molecule   = min_prob_per_molecule )
 
@@ -190,7 +195,8 @@ class MassTodon():
             print 'Solver stats:'
             print self.solver_stats
             print
-        if forPlot:
+
+        if for_plot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 
 
@@ -216,19 +222,21 @@ class MassTodon():
                                     raw_masstodon_res   = self.res              )
 
 
-    # def export_information_for_spectrum_plotting(self, full_info=False):
-    #     '''Provide a generator of dictionaries easy to export as csv file to read in R.'''
-    #     prec = self.mz_prec
-    #     for res in self.ResPlotter.G_info_iter(full_info):
-    #         yield res
-    #     for mz_int in zip(*self.spectra['original']):
-    #         if not mz_int in self.peakPicker.Used_Exps:
-    #             mz, intensity = mz_int
-    #             yield { 'mz_L': mz - prec,
-    #                     'mz_R': mz + prec,
-    #                     'tot_estimate': 0.0,
-    #                     'tot_intensity':intensity,
-    #                     'where': 'not_explainable' }
+    #TODO use Bokeh from Python directly!
+    def make_data_for_spectrum_plot(self):
+        '''Provide estimates easily exportable to Bokeh via R.'''
+        data_4_plot = self.ResPlotter.make_data_for_spectrum_plot()
+        data_4_plot['remaining_peaks'] = [
+            {   'mz_L':         mz - self.mz_prec,
+                'mz_R':         mz + self.mz_prec,
+                'tot_estimate': 0.0,
+                'tot_intensity':intensity
+            }   for mz, intensity in izip(*self.spectra['original'])
+                if not (mz, intensity) in self.peakPicker.Used_Exps
+            ]
+
+
+        return data_4_plot
 
 
     def analyze_reactions(  self,
@@ -260,6 +268,7 @@ def MassTodonize(
         spectrum_path   = None,
         modifications   = {},
         frag_type       = 'cz',
+        distance_charges= 5,
         joint_probability_of_envelope   = .999,
         min_prob_of_envelope_in_picking = .7,
         iso_masses  = None,
@@ -272,13 +281,12 @@ def MassTodonize(
         multiprocesses_No = None,
         method  = 'MSE',
         max_times_solve = 10,
-        forPlot = False,
+        for_plot= False,
         highcharts = False,
         raw_data= False,
         analyze_raw_data = True,
         output_csv_path  = None,
         output_deconvolution_threshold = 0.0,
-        etdetective = False,
         verbose = False
     ):
     '''Run a full session of MassTodon on your problem.'''
@@ -289,11 +297,11 @@ def MassTodonize(
                     mz_prec,
                     modifications,
                     frag_type,
+                    distance_charges,
                     joint_probability_of_envelope,
                     iso_masses,
                     iso_probs,
                     verbose )
-
 
     M.read_n_preprocess_spectrum(   spectrum_path,
                                     spectrum,
@@ -305,7 +313,7 @@ def MassTodonize(
             method = method,
             max_times_solve = max_times_solve,
             min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            forPlot   = forPlot,
+            for_plot  = for_plot,
             L1_x      = L1_x,
             L2_x      = L2_x,
             L1_alpha  = L1_alpha,
@@ -326,20 +334,22 @@ def MassTodonize(
 
     if raw_data:
         results['raw_estimates'] = M.res
+        results['spectra'] = M.spectra
 
-    if forPlot:
-        results['short_data_to_plot']   = M.export_information_for_spectrum_plotting(False)
-        results['long_data_to_plot']    = M.export_information_for_spectrum_plotting(True)
-        results['original_spectrum']    = M.spectrum_iter('original')
+    if for_plot:
+        results['for_plot']= M.make_data_for_spectrum_plot()
 
     if highcharts:
-        algos = {   'basic_analysis':           results['basic_analysis'],
+        algos = {   'basic_analysis':
+        results['basic_analysis'],
                     'intermediate_analysis':    results['intermediate_analysis'],
                     'advanced_analysis':        results['advanced_analysis']        }
-        results['highcharts'] = make_highcharts(fasta   = fasta,
-                                                Q       = precursor_charge,
-                                                raw_estimates = M.res,
-                                                algos   = algos)
+
+        results['highcharts'] = make_highcharts(
+            fasta   = fasta,
+            Q       = precursor_charge,
+            raw_estimates = M.res,
+            algos   = algos)
 
     T1 = time()
     results['summary']['total_time'] = T1-T0
@@ -348,9 +358,6 @@ def MassTodonize(
         write_raw_to_csv(M.res, output_csv_path, output_deconvolution_threshold)
         write_counts_n_probs_to_csv(results, fasta, output_csv_path)
         write_summary_to_csv(results, output_csv_path)
-
-    if etdetective:
-        results['etdetective'] = results_to_etdetective( M.res, M.fasta, M.modifications )
 
     if verbose:
         print 'Total analysis took', T1-T0

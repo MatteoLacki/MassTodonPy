@@ -21,26 +21,39 @@ reinstall:
 	$(PIP) install -e .
 
 check_installation:
-	$(PYTHON) ./Tests/calls/check_installation.py
+	$(PYTHON) Tests/calls/check_installation.py
 
 ### Running
 example_call: 			## run an example session of the algorithm
 	$(PYTHON) ./bin/masstodon_example_call
+
+run_ubiquitins:			## run on all available ubiquitins
+	$(PYTHON) Tests/calls/run_ubiquitins.py
+
+run_ubiquitins_plots:			## run on all available ubiquitins for plots
+	$(PYTHON) Tests/calls/run_ubiquitins_plots.py
+
+run_substancesP_plots:			## run on all available substances P for plots
+	$(PYTHON) Tests/calls/run_substancesP_plots.py
+
+substancesP_ETDetective_input:	## make substances P for ETDetecitve
+	$(PYTHON) Tests/calls/run_substancesP_etdetective.py
+
 
 compare_spectra_plots:
 	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py
 	Rscript $(PATH_VISUAL)/spectrum_fitting.R
 
 run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
-	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065
-	$(PYTHON) Tests/bootstrap/bootstrap_analysis_subP.py
-	Rscript Tests/bootstrap/analyze_bootstrap_subP.R
-	Rscript Tests/bootstrap/analyze_frag_probs_subP.R
-	Rscript Tests/bootstrap/analyze_fit_error_subP.R
+	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/boot_subP_24_07_2017/
+	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_subP.py
+	# Rscript Tests/bootstrap/analyze_bootstrap_subP.R
+	# Rscript Tests/bootstrap/analyze_frag_probs_subP.R
+	# Rscript Tests/bootstrap/analyze_fit_error_subP.R
 
 
 run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
-	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
+	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/data/ubiquitins.example  Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
 	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
 	# Rscript Tests/bootstrap/analyze_bootstrap_ubi.R
 	# Rscript Tests/bootstrap/analyze_frag_probs_ubi.R
