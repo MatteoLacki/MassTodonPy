@@ -23,7 +23,6 @@ import  numpy           as     np
 from    collections     import Counter, defaultdict
 from    itertools       import izip, ifilter
 from    time            import time
-from    numpy.random    import multinomial
 
 inf = float('inf')
 

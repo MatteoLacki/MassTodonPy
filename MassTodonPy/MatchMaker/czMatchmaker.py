@@ -22,12 +22,25 @@ from    cvxopt          import  matrix, spmatrix, sparse, spdiag, solvers
 
 
 class czMatchMaker(object):
-    '''Virtual class of all matchmakers.'''
+    """Virtual class of all matchmakers.
+
+    Parameters
+    ----------
+    MassTodonResults : list
+        A list of raw results of MassTodon.run().
+
+    Q : int
+        The charge of the precursor ion.
+
+    fasta : str
+        The fasta of the studied molecular species.
+
+
+    """
     def __init__(   self,
                     MassTodonResults,
                     Q,
                     fasta,
-                    accept_nonOptimalDeconv = False,
                     min_acceptEstimIntensity= 100.,
                     verbose = False):
         self.MassTodonResults = MassTodonResults
@@ -35,18 +48,17 @@ class czMatchMaker(object):
         self.fasta = fasta
         self.verbose = verbose
         self.min_acceptEstimIntensity = min_acceptEstimIntensity
-        self.accept_nonOptimalDeconv = accept_nonOptimalDeconv
 
     def define_fragment(self, molecule):
-        '''Defines what should be considered a node in the c-z matching graphs.'''
+        """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
     def add_edges(self, graph):
-        '''Defines what should be considered a node in the c-z matching graphs.'''
+        """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
     def get_graph_analyze_precursor(self):
-        '''Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.'''
+        """Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors."""
         if self.verbose:
             print('Building up a c-z fragment graph.')
             print('')
@@ -54,7 +66,6 @@ class czMatchMaker(object):
         graph = nx.Graph()
         Q = self.Q
         for res in self.MassTodonResults:
-            # if (self.accept_nonOptimalDeconv or res['status']=='optimal') and res['status'] != 'ValueError': #TODO what to do otherwise? Nothing for now.
             if res['status'] != 'ValueError':
                 for mol in res['alphas']:
                     estimate = mol['estimate']
@@ -77,11 +88,11 @@ class czMatchMaker(object):
         return graph, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
 
     def optimize(self):
-        '''Perform the optimal pairing of c and z fragments.'''
+        """Perform the optimal pairing of c and z fragments."""
         raise NotImplementedError
 
     def get_probs(self, Counts, Probs, tag1, tag2, name1=None, name2=None):
-        '''Make two probabilities out of counts and name them properly.'''
+        """Make two probabilities out of counts and name them properly."""
         if not name1:
             name1 = tag1
         if not name2:
@@ -116,7 +127,7 @@ class czMatchMaker(object):
 
 
     def match(self):
-        '''Pair molecules minimizing the number of reactions and calculate the resulting probabilities.'''
+        """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""
         Counts = Counter()
 
         graph, Counts['ETnoD_precursor'], Counts['PTR_precursor'], Counts['unreacted_precursors'] = self.get_graph_analyze_precursor()
@@ -160,10 +171,10 @@ class czMatchMakerBasic(czMatchMaker):
         return graph
 
     def optimize(self, G):
-        '''Finds the minimal number of reactions necessary to explain the MassTodon results.
+        """Finds the minimal number of reactions necessary to explain the MassTodon results.
 
         Uses the max flow algorithm in all but trivial cases.
-        '''
+        """
         no_edges_reactions_cnt = sum( (self.Q-1-N[1])*G.node[N]['intensity'] for N in G)
         Counts = Counter()
         if len(G)>1:
@@ -227,9 +238,9 @@ class czMatchMakerIntermediate(czMatchMaker):
             print 'molG =', molG
             print 'molQ =', molQ
 
-        if molG == - 1:     # HTR product
+        if molG == - 1:           # HTR product
             molG += 1
-        if molG + molQ == self.Q:# HTR product
+        if molG + molQ == self.Q: # HTR product
             molG -= 1
 
         if self.verbose:
@@ -238,13 +249,13 @@ class czMatchMakerIntermediate(czMatchMaker):
         return molecule['molType'], molQ, molG
 
     def etnod_ptr_on_c_z_pairing(self, q0, g0, q1, g1):
-        '''Get the number of ETnoD and PTR reactions on a regular edge.'''
+        """Get the number of ETnoD and PTR reactions on a regular edge."""
         Netnod  = g0 + g1
         Nptr    = self.Q - 1 - g0 - g1 - q0 - q1
         return Netnod, Nptr
 
     def get_break_point(self, nType ):
-        '''Get the amino acid number that was cleft.'''
+        """Get the amino acid number that was cleft."""
         if nType[0] == 'c':
             bP = int(nType[1:])
         else:
@@ -335,7 +346,6 @@ solvers.options['show_progress'] = False
 
 class czMatchMakerAdvanced(czMatchMakerIntermediate):
     def __init__(self, MassTodonResults, Q, fasta,
-                 accept_nonOptimalDeconv  = False,
                  min_acceptEstimIntensity = 100.,
                  verbose = False,
                  L1 = 0.0, L2 = 0.01
@@ -343,8 +353,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
         self.MassTodonResults = MassTodonResults
         self.Q = Q
         self.fasta = fasta
-        self.min_acceptEstimIntensity   = min_acceptEstimIntensity
-        self.accept_nonOptimalDeconv    = accept_nonOptimalDeconv
+        self.min_acceptEstimIntensity = min_acceptEstimIntensity
         self.L1 = L1
         self.L2 = L2
         self.verbose = verbose
@@ -367,12 +376,12 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
 
 
     def diag(self, val, dim):
-        '''Make a sparse identity matrix multiplied by a scalar val.'''
+        """Make a sparse identity matrix multiplied by a scalar val."""
         return spdiag([spmatrix(val,[0],[0]) for i in xrange(dim)])
 
 
     def incidence_matrix(self, G, Jdim, Idim):
-        '''Make a sparse incidence matrix of the graph G.'''
+        """Make a sparse incidence matrix of the graph G."""
         L = spmatrix([], [], [], size=(Jdim,Idim) )
         NodesNo = dict([ (N,i) for i,N in enumerate(G)])
         for j, (N0, N1) in enumerate(G.edges()):
@@ -382,7 +391,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
 
 
     def optimize(self, G):
-        '''Find regularized max flow.'''
+        """Find regularized max flow."""
         if len(G) > 1:
             bP= self.get_break_point(next(G.nodes_iter())[0])
             J = matrix([ float(G.node[N]['intensity']) for N in G ])
@@ -428,7 +437,6 @@ def match_cz_ions(  results_to_pair,
                     advanced_args,
                     min_acceptEstimIntensity = 0.0,
                     analyzer = 'intermediate',
-                    accept_nonOptimalDeconv = True,
                     verbose = False    ):
 
     if analyzer != 'advanced':
@@ -438,7 +446,6 @@ def match_cz_ions(  results_to_pair,
         }[analyzer](results_to_pair,
                     Q,
                     fasta,
-                    accept_nonOptimalDeconv,
                     min_acceptEstimIntensity,
                     verbose     )
     else:
@@ -446,7 +453,6 @@ def match_cz_ions(  results_to_pair,
                     results_to_pair,
                     Q,
                     fasta,
-                    accept_nonOptimalDeconv,
                     min_acceptEstimIntensity,
                     verbose,
                     **advanced_args )

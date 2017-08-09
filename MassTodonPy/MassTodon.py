@@ -241,7 +241,6 @@ class MassTodon():
 
     def analyze_reactions(  self,
                             analyzer                = 'intermediate',
-                            accept_nonOptimalDeconv = False,
                             min_acceptEstimIntensity= 0.0, # might change it to self.spectra['cut_off']
                             verbose                 = False,
                             **advanced_args     ):
@@ -252,7 +251,6 @@ class MassTodon():
                                 fasta                   = self.fasta,
                                 min_acceptEstimIntensity= min_acceptEstimIntensity,
                                 analyzer                = analyzer,
-                                accept_nonOptimalDeconv = accept_nonOptimalDeconv,
                                 verbose                 = verbose,
                                 advanced_args           = advanced_args   )
 

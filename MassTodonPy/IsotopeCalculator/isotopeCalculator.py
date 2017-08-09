@@ -31,7 +31,17 @@ import  pkg_resources
 from    time import time
 
 def cdata2numpyarray(x):
-    '''Turn c-data into a numpy array.'''
+    """Turn c-data into a numpy array.
+    Parameters
+    ----------
+    x : cdata table
+        A table of cdata from cffi.
+
+    Returns
+    -------
+    res : array
+        A numpy array of numbers.
+    """
     res = np.empty(len(x))
     for i in xrange(len(x)):
         res[i] = x[i]
@@ -39,7 +49,7 @@ def cdata2numpyarray(x):
 
 
 def agg_spec_proper(masses, probs, digits=2):
-    '''Aggregate values with the same keys.'''
+    """Aggregate values with the same keys."""
     lists = defaultdict(list)
     for mass, prob in zip(masses.round(digits), probs):
         lists[mass].append(prob)
@@ -51,7 +61,20 @@ def agg_spec_proper(masses, probs, digits=2):
 
 
 def aggregate( keys, values=None ):
-    '''Aggregate values with the same keys.'''
+    """Aggregate values with the same keys.
+
+    Parameters
+    ----------
+    keys : array
+        Keys, usually m/z values.
+    values : array
+        Values to aggregate, usually intensities.
+
+    Returns
+    -------
+    out : tuple
+        A tuple containing unique keys and aggregated values.
+    """
     uniqueKeys, indices = np.unique( keys, return_inverse=True)
     return uniqueKeys, np.bincount( indices, weights=values )
 
@@ -64,7 +87,7 @@ def merge_runs(spec1, spec2):
 
 # To do: change how the IsoSpec is called to make it faster.
 class IsotopeCalculator:
-    '''A class for isotope calculations.'''
+    """A class for isotope calculations."""
 
     def __init__(   self,
                     jP = .999,
@@ -72,7 +95,7 @@ class IsotopeCalculator:
                     iso_masses = None,
                     iso_probs  = None,
                     verbose    = False     ):
-        '''Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations.'''
+        """Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations."""
 
         if iso_masses==None or iso_probs==None:
             path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
@@ -92,34 +115,34 @@ class IsotopeCalculator:
         self.verbose = verbose
         self.stats = Counter()
 
-    def getMonoisotopicMass(self, atomCnt):
-        '''Calculate monoisotopic mass of an atom count.'''
+    def __getMonoisotopicMass(self, atomCnt):
+        """Calculate monoisotopic mass of an atom count."""
         return sum( self.iso_masses[el][0]*elCnt for el, elCnt in atomCnt.items() )
 
 
-    def getMassMean(self, atomCnt):
-        '''Calculate average mass of an atom count.'''
+    def __getMassMean(self, atomCnt):
+        """Calculate average mass of an atom count."""
         return sum( self.elementsMassMean[el]*elCnt for el, elCnt in atomCnt.items() )
 
 
-    def getMassVar(self, atomCnt):
-        '''Calculate mass variance of an atom count.'''
+    def __getMassVar(self, atomCnt):
+        """Calculate mass variance of an atom count."""
         return sum( self.elementsMassVar[el]*elCnt for el, elCnt in atomCnt.items() )
 
 
-    def getSummary(self, atomCnt_str):
+    def __getSummary(self, atomCnt_str):
         atomCnt = self.formParser.parse(atomCnt_str)
-        return (    self.getMonoisotopicMass(atomCnt),
-                    self.getMassMean(atomCnt),
-                    self.getMassVar(atomCnt)    )
+        return (    self._getMonoisotopicMass(atomCnt),
+                    self._getMassMean(atomCnt),
+                    self._getMassVar(atomCnt)    )
 
 
-    def getOldEnvelope(self, atomCnt_str, jP, prec_digits):
+    def __getOldEnvelope(self, atomCnt_str, jP, prec_digits):
         masses, probs = self.isotopicEnvelopes[(atomCnt_str, jP, prec_digits)]
         return masses.copy(), probs.copy()
 
 
-    def getNewEnvelope(self, atomCnt_str, jP, prec_digits):
+    def __getNewEnvelope(self, atomCnt_str, jP, prec_digits):
         T0 = time()
         counts          = []
         isotope_masses  = []
@@ -142,21 +165,40 @@ class IsotopeCalculator:
         return masses.copy(), probs.copy()
 
 
-    def getEnvelope(self, atomCnt_str, jP, prec_digits):
+    def __getEnvelope(self, atomCnt_str, jP, prec_digits):
         if (atomCnt_str, jP, prec_digits) in self.isotopicEnvelopes:
-            masses, probs = self.getOldEnvelope(atomCnt_str,jP,prec_digits)
+            masses, probs = self.__getOldEnvelope(atomCnt_str,jP,prec_digits)
         else:
-            masses, probs = self.getNewEnvelope(atomCnt_str,jP,prec_digits)
+            masses, probs = self.__getNewEnvelope(atomCnt_str,jP,prec_digits)
         return masses, probs
 
 
     def isoEnvelope(self, atomCnt_str, jP=None, q=0, g=0, prec_digits=None):
-        '''Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.'''
+        """Get an isotopic envelope consisting of a numpy array of masses and numpy array of probabilities.
+
+        Parameters
+        ----------
+        atomCnt_str : str
+            The chemical formula of a molecular species.
+        jP : float
+            The joint probability of the theoretical isotopic envelope.
+        q : int
+            The charge-state of the molecular species.
+        g : int
+            The quenched charge of teh molecular species.
+        prec_digits : float
+            The number of digits after which the floats get rounded.
+
+        Returns
+        -------
+        out : tuple
+            A tuple containing the theoretical spectrum: mass over charge values and intensities.
+        """
         if jP is None:
             jP = self.jP
         if prec_digits is None:
             prec_digits = self.prec_digits
-        masses, probs  = self.getEnvelope(atomCnt_str, jP, prec_digits)
+        masses, probs  = self.__getEnvelope(atomCnt_str, jP, prec_digits)
         if q is not 0:
             masses = np.around( (masses + g + q)/q, decimals=prec_digits )
         masses, probs = aggregate(masses, probs)
@@ -164,6 +206,26 @@ class IsotopeCalculator:
 
 
     def makeRandomSpectrum(self, mols, quants, sigma, jP=None, prec_digits=None):
+        """Simulate a mixture of isotopic envelopes.
+
+        Parameters
+        ----------
+        mols : list
+            A list of molecular species: tuples containing (id, chemical formula string, something, charge, quenched charge)
+        quants : list
+            A list of total intensities of each molecular species.
+        sigma : float
+            The standard deviation of the masses of isotopologues - theoretical equivalent of the mass resolution.
+        jP : float
+            The joint probability of the theoretical isotopic envelope.
+        prec_digits : float
+            The number of digits after which the floats get rounded.
+
+        Returns
+        -------
+        spectrum : tuple
+            A tuple containing the theoretical spectrum: mass over charge values and intensities.
+        """
         x0 = sum(quants)
         if not prec_digits:
             prec_digits = self.prec_digits

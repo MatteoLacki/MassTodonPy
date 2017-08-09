@@ -23,13 +23,18 @@ import os
 
 
 def check_and_create_folder(path):
-    '''Check the path and create it if it does not exist.
+    """Check the path and create it if it does not exist.
 
     Parameters
     ----------
     path : str
         A path to the output directory.
-    '''
+
+    Returns
+    -------
+    path : str
+        Correct path to existing directory.
+    """
     if path[-1] != '/':
         path += '/'
     if not os.path.exists(path):
@@ -39,7 +44,7 @@ def check_and_create_folder(path):
 
 
 def i_flatten_raw_estimates(raw_estimates, threshold=0.0):
-    '''Prepare a dictionary corresponding to one row in the output CSV file containing raw estimates.
+    """Prepare a dictionary corresponding to one row in the output CSV file containing raw estimates.
 
     Parameters
     ----------
@@ -50,8 +55,9 @@ def i_flatten_raw_estimates(raw_estimates, threshold=0.0):
 
     Returns
     -------
-        A dictionary with fields: molType, formula, q, g, estimate, and status.
-    '''
+        out : generator
+        A generator producing dictionaries with fields: molType, formula, q, g, estimate, and status.
+    """
     for r in raw_estimates:
         for e in r['alphas']:
             if e['estimate'] > threshold:
@@ -64,7 +70,7 @@ def i_flatten_raw_estimates(raw_estimates, threshold=0.0):
 
 
 def write_raw_to_csv(raw_estimates, path, threshold=0.0):
-    '''Write raw deconvolution estimates to a CSV file.
+    """Write raw deconvolution estimates to a CSV file.
 
     Parameters
     ----------
@@ -74,11 +80,7 @@ def write_raw_to_csv(raw_estimates, path, threshold=0.0):
         A path to the output directory.
     threshold : float
         Show outputs with estimates higher than that number.
-
-    Returns
-    -------
-    A CSV file containing deconvolution estimates.
-    '''
+    """
     try:
         path = check_and_create_folder(path)
         res_df = DF(i_flatten_raw_estimates(raw_estimates, threshold))
@@ -93,7 +95,7 @@ def write_raw_to_csv(raw_estimates, path, threshold=0.0):
 
 
 def iterate_algo(res, fasta):
-    '''Prepare a dictionary corresponding to one row in the output CSV file containing counts and probabilities.
+    """Prepare a dictionary corresponding to one row in the output CSV file containing counts and probabilities.
 
     Parameters
     ----------
@@ -104,8 +106,9 @@ def iterate_algo(res, fasta):
 
     Returns
     -------
-    A dictionary with fields: Algorithm, Key (description of the output), Probability, and Count.
-    '''
+    out : generator
+        A generator producing dictionaries with fields: Algorithm, Key (description of the output), Probability, and Count.
+    """
     for algo in ('basic_analysis','intermediate_analysis','advanced_analysis'):
         probs, counts = res[algo]
         for k in set(probs) | set(counts):
@@ -126,7 +129,7 @@ def iterate_algo(res, fasta):
 
 
 def write_counts_n_probs_to_csv(res, fasta, path):
-    '''Write counts and probabilities estimates to a CSV file.
+    """Write counts and probabilities estimates to a CSV file.
 
     Parameters
     ----------
@@ -136,11 +139,7 @@ def write_counts_n_probs_to_csv(res, fasta, path):
         A string containing the amino acid sequence of the studied compound.
     path : str
         A path to the output directory.
-
-    Returns
-    -------
-    A CSV file containing counts and probabilities estimates.
-    '''
+    """
     try:
         path    = check_and_create_folder(path)
         res_df  = DF(iterate_algo(res, fasta))[['Algorithm', 'Key', 'Count', 'Probability']]
@@ -153,7 +152,7 @@ def write_counts_n_probs_to_csv(res, fasta, path):
 
 
 def iterate_summary(summary):
-    '''Prepare a dictionary corresponding to one row in the output CSV file containing counts and probabilities.
+    """Prepare a dictionary corresponding to one row in the output CSV file containing counts and probabilities.
 
     Parameters
     ----------
@@ -162,8 +161,9 @@ def iterate_summary(summary):
 
     Returns
     -------
-    A dictionary with fields: Statistic (e.g. L1 error), and Value (the value of the error).
-    '''
+    out : generator
+        A generator producing dictionaries with fields: Statistic (e.g. L1 error), and Value (the value of the error).
+    """
     for k in summary:
         if not k in ('L1_error_value_error/original_total_intensity', 'L1_error_value_error/intensity_within_tolerance'):
             yield {'Statistic': k, 'Value': summary[k]}
@@ -171,7 +171,7 @@ def iterate_summary(summary):
 
 
 def write_summary_to_csv(res, path):
-    '''Write the summary to a CSV file.
+    """Write the summary to a CSV file.
 
     Parameters
     ----------
@@ -179,11 +179,7 @@ def write_summary_to_csv(res, path):
         A dictionary of MassTodon results.
     path : str
         A path to the output directory.
-
-    Returns
-    -------
-    A CSV file containing the summary.
-    '''
+    """
     try:
         path    = check_and_create_folder(path)
         res_df  = DF(iterate_summary(res['summary']))[['Statistic', 'Value']]
