@@ -72,10 +72,6 @@ def solve(  problems,
             method              = 'MSE',
             max_times_solve     = 5,
             verbose             = False    ):
-
-    '''Wrapper over the solver class.
-
-    Runs the solver with a given set of inputs.'''
     stats = Counter()
 
     with cvxopt_wrapper():

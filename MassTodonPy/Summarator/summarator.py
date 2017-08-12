@@ -2,7 +2,20 @@ from collections import Counter
 
 def summarize_results(  spectra,
                         raw_masstodon_res   ):
-    '''Summarize the results of MassTodon.'''
+    '''Summarize the results of MassTodon.
+
+    Parameters
+    ----------
+    spectra : dictionary
+        The spectras as prepared by the parsers.
+    raw_masstodon_res : list
+        A list of raw results from the call of **MassTodon.run()**.
+
+    Returns
+    -------
+    summary
+        A dictionary containing the summarized results of MassTodonPy.
+    '''
     summary = Counter()
     used_E_total_intensity = spectra['intensity of peaks paired with isotopologues']
 

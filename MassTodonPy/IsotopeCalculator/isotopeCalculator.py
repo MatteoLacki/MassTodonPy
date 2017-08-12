@@ -192,7 +192,7 @@ class IsotopeCalculator:
         Returns
         -------
         out : tuple
-            A tuple containing the theoretical spectrum: mass over charge values and intensities.
+            A tuple containing the theoretical spectrum: mass over charge values and intensities, both numpy arrays.
         """
         if jP is None:
             jP = self.jP

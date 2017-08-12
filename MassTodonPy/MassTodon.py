@@ -86,6 +86,33 @@ from time               import time
 
 
 class MassTodon():
+    '''Make MassTodon somewhat less extinct...
+
+    Parameters
+    ----------
+    fasta : str
+        The fasta of the studied molecular species.
+
+    precursor_charge : int
+        The charge of the precursor ion.
+
+    mz_prec : float
+        The precision in the m/z domain: how far away [in Daltons] should we search for peaks from the theoretical mass.
+
+    modifications : dict
+        A dictionary of modifications.
+
+        The key in the modifications' dictionary should with of form **<N|Calpha|C><amino acid No>**, e.g. C10.
+        The values contain dictionaries with diffs in elements, e.g. **{'H': 1, 'N': 1, 'O': -1}**.
+
+    frag_type : str
+        The type of framgentation.
+
+        Only **cz** fragmentation supported.
+
+    distance_charges : int
+        
+    '''
     def __init__(   self,
                     fasta,
                     precursor_charge,
@@ -98,8 +125,6 @@ class MassTodon():
                     iso_probs       = None,
                     verbose         = False
         ):
-        '''Make MassTodon somewhat less extinct by creating its instance.'''
-
         self.mz_prec = mz_prec
             # precision one digit lower than the input precision of spectra, eg.
             # mz_prec = .05     -->     prec_digits = 3

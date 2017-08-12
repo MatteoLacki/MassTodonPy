@@ -24,19 +24,71 @@ import os
 from operator import itemgetter
 from itertools import izip
 
+
+
 def round_spec(mz, intensity, prec_digits=2):
-    '''Aggregate the spectrum so that intensities of masses with the same number of significant digits are summed.'''
+    """Bin the spectrum by rounding m/z with the same number of significant digits.
+
+    Parameters
+    ----------
+    mz : array
+        The m/z values.
+    intensity : array
+        The intensities to bin.
+    prec_digits : float
+        The number of digits after which the floats get rounded.
+
+    Returns
+    -------
+    out : tuple
+        A tuple containing the binned experimental spectrum: mass over charge values and intensities, both numpy arrays.
+    """
     mz = np.round(mz, prec_digits)
     mz, intensity = aggregate(mz, intensity)
     return mz, intensity
 
 
+
+
 def trim_spectrum(mz, intensity, cut_off=100):
-    '''Remove peaks below a given cut off.'''
+    """Remove peaks below a given cut off.
+
+    Parameters
+    ----------
+    mz : array
+        The m/z values.
+    intensity : array
+        The intensities to bin.
+    cut_off : float
+        The cut off value for intensity.
+
+    Returns
+    -------
+    out : tuple
+        A tuple containing the binned experimental spectrum: mass over charge values and intensities, both numpy arrays.
+    """
     return ( mz[intensity >= cut_off], intensity[intensity >= cut_off] ), ( mz[intensity < cut_off], intensity[intensity < cut_off] )
 
 
+
+
 def quantile_trim(mz, intensities, perc = .95):
+    """Obtain the minimal peak height in the set of the heighest peaks in spectrum that cover its **perc** percent.
+
+    Parameters
+    ----------
+    mz : array
+        The m/z values.
+    intensity : array
+        The intensities to bin.
+    perc : float
+        The percentage of heighest peaks to remain.
+
+    Returns
+    -------
+    effective_cut_off : float
+        The minimal peak height.
+    """
     mz_res, intensities_res = tuple( np.array(x) for x in izip(*sorted(izip(mz, intensities), key=itemgetter(1))) )
     i = 0
     S = 0.0
@@ -51,8 +103,23 @@ def quantile_trim(mz, intensities, perc = .95):
     return effective_cut_off
 
 
+
+
 def get_mzxml(path, prec_digits=2):
-    '''Generate a sequence of rounded and trimmed spectra from individual runs of the instrument.'''
+    """Generate a sequence of rounded and trimmed spectra from individual runs of the instrument.
+
+    Parameters
+    ----------
+    path : str
+        Path to the mzXml file containing the mass spectrum.
+    prec_digits : float
+        The number of digits after which the floats get rounded.
+
+    Returns
+    -------
+    out : generator
+        Generates tuples of numpy arrays corresponding to different runs of the experimental spectrum.
+    """
     with mzxml.read(path) as reader:
         for spectrum in reader:
             mz = spectrum['m/z array']
@@ -61,13 +128,43 @@ def get_mzxml(path, prec_digits=2):
             yield mz, intensity
 
 
+
+
 def read_mzxml(path, prec_digits=2):
-    '''Read and merge runs of the instrument.'''
+    """Read spectrum form an mzXml and merge runs of the instrument.
+
+    Parameters
+    ----------
+    path : str
+        Path to the mzXml file containing the mass spectrum.
+    prec_digits : float
+        The number of digits after which the floats get rounded.
+
+    Returns
+    -------
+    out : generator
+        Generates tuples of numpy arrays corresponding to different runs of the experimental spectrum.
+    """
     mz, intensity = reduce( merge_runs, get_mzxml(path, prec_digits) )
     return mz, intensity
 
 
+
 def read_txt(path, prec_digits=2):
+    """Read spectrum from a text file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the mzXml file containing the mass spectrum.
+    prec_digits : float
+        The number of digits after which the floats get rounded.
+
+    Returns
+    -------
+    out : generator
+        Generates tuples of numpy arrays corresponding to different runs of the experimental spectrum.
+    """
     mz = []
     intensity = []
     total_intensity = 0.0
@@ -85,7 +182,18 @@ def read_txt(path, prec_digits=2):
 
 
 def parse_path(path):
-    '''Parsers path to the file.'''
+    """Parse path to the file.
+
+    Parameters
+    ----------
+    path : str
+        Any path.
+
+    Returns
+    -------
+    out : tuple
+        Path of file, name of file, and file's extension.
+    """
     file_path, file_ext  = os.path.splitext(path)
     file_name = file_path.split('/')[-1]
     file_path = "/".join(file_path.split('/')[:-1]) + '/'
@@ -97,10 +205,39 @@ def read_n_preprocess_spectrum( path    = None,
                                 prec_digits = 2,
                                 cut_off = None,
                                 opt_P   = None  ):
-    '''Read the spectrum from path or directly from provided variable, round masses to prec_digits significant digits, apply intensity based thresholding of peaks.
+    """Read the spectrum, round it, apply intensity based thresholding of peaks.
 
-    It can either directly cut off peaks with intensities below the provided cut_off value or compute the smallest set of peaks with their cumulative intensity equal to opt_P percent of the total intensity.
-    '''
+    Parameters
+    ----------
+    path : str
+        Path to spectrum.
+    spectrum : tuple
+        The experimental spectrum, a tuple of m/z numpy array and intensities numpy array.
+    prec_digits : float
+        The number of digits after which the floats get rounded.
+    cut_off : float
+        The cut off value for peak intensity.
+    opt_P :
+        The percentage of the heighest peaks being used in the analysis.
+
+    Warning
+    -------
+    You should provide either the path or the spectrum, not both simultaneously.
+
+    Returns
+    -------
+    spectra : dict
+        A dictionary containing the experimental spectrum split into several subspectra.
+
+    Notes
+    -----
+    **spectra** contains
+        * the original experimental spectrum
+        * its total intensity
+        * spectrum after trimming, *trimmed*
+        * total intensity after trim
+        * the effective peak height cut off
+    """
 
     assert path or spectrum, "No path to mass spectrum or no mass spectrum."
 

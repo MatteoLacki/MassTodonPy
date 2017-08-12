@@ -27,9 +27,13 @@ from    time            import time
 inf = float('inf')
 
 class MultiCounter(Counter):
-    '''Callable Counter for special field operations.
+    '''A callable Counter, for special field operations.
 
-    Offers stroke to any functional purist.
+    This is a sort of counter.
+
+    Notes
+    -----
+    All you functional purist - simply go away, please. Big Boys are playing now.
     '''
     def __call__(self, key):
         val = self[key]
@@ -37,7 +41,7 @@ class MultiCounter(Counter):
         return str(key) + str(val)
 
 
-def trim_unlikely_molecules(cc, minimal_prob=0.7):
+def __trim_unlikely_molecules(cc, minimal_prob=0.7):
     '''Trim molecules whose isotopic envelopes cover potentially less than the minimal_prob threshold.'''
     nodes_to_remove = []
     for M in cc:
@@ -73,10 +77,21 @@ class PeakPicker(object):
         self.G_stats= []
 
 
-    def represent_as_Graph(self, massSpectrum):
-        '''Prepare the Graph based on mass spectrum and the formulas.'''
+    def represent_as_Graph(self, spectrum):
+        '''Prepare the Graph based on mass spectrum and the formulas.
+
+        Parameters
+        ----------
+        spectrum : tuple
+            The experimental spectrum, a tuple of m/z numpy array and intensities numpy array.
+
+        Returns
+        -------
+        Graph : graph
+            The deconvolution graph.
+        '''
         prec = self.mz_prec
-        Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*massSpectrum) )
+        Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*spectrum) )
 
             #TODO eliminate the above using binary search solo
         Graph = nx.Graph()
@@ -133,18 +148,26 @@ class PeakPicker(object):
 
     def get_problems(
             self,
-            massSpectrum,
+            spectrum,
             min_prob_per_molecule = .7
         ):
-        '''Enumerate deconvolution problems.'''
-        Graph = self.represent_as_Graph(massSpectrum)
+        '''Enumerate deconvolution problems.
+
+        Parameters
+        ----------
+        spectrum : tuple
+            The experimental spectrum, a tuple of m/z numpy array and intensities numpy array.
+        min_prob_per_molecule :
+            The minimal probability an envelope has to scoop to be included in the graph.
+        '''
+        Graph = self.represent_as_Graph(spectrum)
         problems = []
 
         for cc in nx.connected_component_subgraphs(Graph):
-            reduced_cc = trim_unlikely_molecules(cc, min_prob_per_molecule)# less M and I, not E
+            reduced_cc = __trim_unlikely_molecules(cc, min_prob_per_molecule)# less M and I, not E
             for SG in nx.connected_component_subgraphs(reduced_cc):
                 if len(SG) > 1:
-                    problems.append( self.add_G_nodes(SG) )
+                    problems.append( self.__add_G_nodes(SG) )
                 else:
                     mz, data = SG.nodes(data=True)[0]
                     if data['type'] == 'E':
@@ -155,7 +178,7 @@ class PeakPicker(object):
         return problems
 
 
-    def add_G_nodes(self, small_graph):
+    def __add_G_nodes(self, small_graph):
         '''Collect experimental peaks into groups of experimental data G.'''
         T0 = time()
 

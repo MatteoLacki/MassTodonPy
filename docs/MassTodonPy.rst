@@ -15,9 +15,7 @@ Subpackages
     MassTodonPy.Outputing
     MassTodonPy.Parsers
     MassTodonPy.PeakPicker
-    MassTodonPy.Solver
     MassTodonPy.Summarator
-    MassTodonPy.TestScripts
     MassTodonPy.Visualization
 
 Submodules

@@ -27,15 +27,17 @@ class czMatchMaker(object):
     Parameters
     ----------
     MassTodonResults : list
-        A list of raw results of MassTodon.run().
-
+        A list of raw results of **MassTodon.run()**.
     Q : int
         The charge of the precursor ion.
-
     fasta : str
         The fasta of the studied molecular species.
+    min_acceptEstimIntensity : float
+        The minimal probability an envelope must potentially find in the spectrum to get included into the deconvolution graph.
 
-
+    Notes
+    ------
+        We simply check, how many theoretical peaks have some data around. If their total probability exceeds the **min_acceptEstimIntensity**, then it is more likely that this molecular species really is in the spectrum.
     """
     def __init__(   self,
                     MassTodonResults,
@@ -49,16 +51,22 @@ class czMatchMaker(object):
         self.verbose = verbose
         self.min_acceptEstimIntensity = min_acceptEstimIntensity
 
-    def define_fragment(self, molecule):
+    def __define_fragment(self, molecule):
         """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
-    def add_edges(self, graph):
+    def __add_edges(self, graph):
         """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
     def get_graph_analyze_precursor(self):
-        """Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors."""
+        """Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.
+
+        Returns
+        -------
+            out : tuple
+                The graph of pairings, the intensity of ETnoD on precursors, the intensity of PTR on precursors, the intensity of the unreacted precursors.
+        """
         if self.verbose:
             print('Building up a c-z fragment graph.')
             print('')
@@ -78,20 +86,20 @@ class czMatchMaker(object):
                                 ETnoDs_on_precursors += g * estimate
                                 PTRs_on_precursors   += (Q-q-g) * estimate
                         else:
-                            frag = self.define_fragment(mol)
+                            frag = self.__define_fragment(mol)
                             if not frag in graph:
                                 graph.add_node( frag, intensity=0 )
                             graph.node[frag]['intensity'] += int(estimate)
         ETnoDs_on_precursors = int(ETnoDs_on_precursors)
         PTRs_on_precursors   = int(PTRs_on_precursors)
-        graph = self.add_edges(graph)
+        graph = self.__add_edges(graph)
         return graph, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
 
     def optimize(self):
         """Perform the optimal pairing of c and z fragments."""
         raise NotImplementedError
 
-    def get_probs(self, Counts, Probs, tag1, tag2, name1=None, name2=None):
+    def __get_probs(self, Counts, Probs, tag1, tag2, name1=None, name2=None):
         """Make two probabilities out of counts and name them properly."""
         if not name1:
             name1 = tag1
@@ -103,12 +111,24 @@ class czMatchMaker(object):
             Probs[name2] = 1.0 - Probs[name1]
         return Probs
 
-    def get_etnod_ptr_probs(self, Counts, Probs):
-        Probs = self.get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
-        Probs = self.get_probs(Counts,Probs,'ETnoD','PTR')
+    def __get_etnod_ptr_probs(self, Counts, Probs):
+        Probs = self.__get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
+        Probs = self.__get_probs(Counts,Probs,'ETnoD','PTR')
         return Probs
 
-    def analyze_counts(self, Counts):
+    def __analyze_counts(self, Counts):
+        """Calculate probabilities based on counts.
+
+        Parameters
+        ----------
+        Counts : Counter
+            A counter of different intensities.
+
+        Returns
+        -------
+        out : tuple
+            Probabilities and intensities of reactions.
+        """
         Counts['total_frags'] = float(sum(Counts[k] for k in Counts if isinstance(k,(int,long))))
         Probs = Counter()
         if Counts['total_frags'] > 0.0:
@@ -116,18 +136,24 @@ class czMatchMaker(object):
                 if isinstance(k, (int,long)):
                     Probs[k] = float(Counts[k])/Counts['total_frags']
         Counts['total_reactions'] = sum(Counts[k] for k in Counts if k != 'unreacted_precursors')
-        Probs = self.get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' ) # TODO: proportion of untouched precursor
+        Probs = self.__get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' ) # TODO: proportion of untouched precursor
         if Counts['total_reactions'] > 0.0:
             Probs['fragmentation'] = float(Counts['total_frags'])/Counts['total_reactions']
             Probs['no fragmentation'] = 1.0 - Probs['fragmentation']
         Counts['ETnoD'] = Counts['ETnoD_frag'] + Counts['ETnoD_precursor']
         Counts['PTR']   = Counts['PTR_frag'] + Counts['PTR_precursor']
-        Probs = self.get_etnod_ptr_probs(Counts,Probs)
+        Probs = self.__get_etnod_ptr_probs(Counts,Probs)
         return Probs, Counts
 
 
     def match(self):
-        """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""
+        """Pair molecules minimizing the number of reactions and calculate the resulting probabilities.
+
+        Returns
+        -------
+        out : tuple
+            Probabilities and intensities of reactions.
+        """
         Counts = Counter()
 
         graph, Counts['ETnoD_precursor'], Counts['PTR_precursor'], Counts['unreacted_precursors'] = self.get_graph_analyze_precursor()
@@ -141,7 +167,7 @@ class czMatchMaker(object):
             else:
                 Counts += self.optimize(G)
 
-        Probs, Counts = self.analyze_counts(Counts)
+        Probs, Counts = self.__analyze_counts(Counts)
 
         if self.verbose:
             return Probs, Counts, OptimInfo
@@ -155,11 +181,11 @@ class czMatchMaker(object):
 
 
 class czMatchMakerBasic(czMatchMaker):
-    def define_fragment(self, molecule):
+    def __define_fragment(self, molecule):
         return molecule['molType'], molecule['q']
 
 
-    def add_edges(self, graph):
+    def __add_edges(self, graph):
         for C, qC in graph: # adding edges between c and z fragments
             if C[0]=='c':
                 for Z, qZ in graph:
@@ -225,12 +251,12 @@ class czMatchMakerBasic(czMatchMaker):
 
 
 
-##################################################################################################
+
 
 
 
 class czMatchMakerIntermediate(czMatchMaker):
-    def define_fragment(self, molecule):
+    def __define_fragment(self, molecule):
         molG = molecule['g']
         molQ = molecule['q']
 
@@ -262,7 +288,7 @@ class czMatchMakerIntermediate(czMatchMaker):
             bP = len(self.fasta) - int(nType[1:])
         return bP
 
-    def add_edges(self, graph):
+    def __add_edges(self, graph):
         for Ctype, qC, gC in graph: # adding edges between c and z fragments
                 if Ctype[0]=='c':
                     for Ztype, qZ, gZ in graph:
@@ -328,17 +354,17 @@ class czMatchMakerIntermediate(czMatchMaker):
         else:
             return Counts
 
-    def get_etnod_ptr_probs(self, Counts, Probs):
-        Probs = self.get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
-        Probs = self.get_probs(Counts,Probs,'ETnoD','PTR')
-        Probs = self.get_probs(Counts,Probs,'ETnoD_frag','PTR_frag')
+    def __get_etnod_ptr_probs(self, Counts, Probs):
+        Probs = self.__get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
+        Probs = self.__get_probs(Counts,Probs,'ETnoD','PTR')
+        Probs = self.__get_probs(Counts,Probs,'ETnoD_frag','PTR_frag')
         return Probs
 
 
 
 
 
-##################################################################################################
+
 
 
 
@@ -359,7 +385,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
         self.verbose = verbose
 
 
-    def add_edges(self, graph):
+    def __add_edges(self, graph):
         for Ctype, qC, gC in graph: # adding edges between c and z fragments
                 # add self loops
             N = (Ctype, qC, gC)
@@ -428,7 +454,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
             return res
 
 
-######## wrapper
+
 
 
 def match_cz_ions(  results_to_pair,

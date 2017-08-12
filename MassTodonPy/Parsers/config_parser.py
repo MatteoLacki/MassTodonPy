@@ -36,11 +36,11 @@ def parse_true_false(key, value):
 def parse_plain_config_file(path):
     '''Parse a text file in a format similar to:
 
-    fasta = RPKPQQFFGLM
-    precursor_charge = 3
-    modification C11 = H:1, O:-1, N:1
-    cut_off = 100
-    mz_prec = .05
+    * fasta = RPKPQQFFGLM
+    * precursor_charge = 3
+    * modification C11 = H:1, O:-1, N:1
+    * cut_off = 100
+    * mz_prec = .05
     '''
     config_tmp = {}
     boolean_keys = ('for_plot', 'highcharts', 'raw_data', 'analyze_raw_data', 'verbose', 'csv')
