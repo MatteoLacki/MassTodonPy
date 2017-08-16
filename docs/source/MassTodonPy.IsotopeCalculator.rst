@@ -8,17 +8,23 @@ MassTodonPy\.IsotopeCalculator\.formulaParser module
 ----------------------------------------------------
 
 .. automodule:: MassTodonPy.IsotopeCalculator.formulaParser
-    :members: 
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 MassTodonPy\.IsotopeCalculator\.isotopeCalculator module
 --------------------------------------------------------
 
 .. automodule:: MassTodonPy.IsotopeCalculator.isotopeCalculator
     :members:
-    :exclude-members: multinomial, normal
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
 
 .. automodule:: MassTodonPy.IsotopeCalculator
     :members:
+    :undoc-members:
+    :show-inheritance:

@@ -9,6 +9,8 @@ MassTodonPy\.Deconvolutor\.deconvolutor module
 
 .. automodule:: MassTodonPy.Deconvolutor.deconvolutor
     :members:
+    :undoc-members:
+    :show-inheritance:
 
 
 Module contents
@@ -16,3 +18,5 @@ Module contents
 
 .. automodule:: MassTodonPy.Deconvolutor
     :members:
+    :undoc-members:
+    :show-inheritance:

@@ -9,21 +9,16 @@ MassTodonPy\.Visualization\.ResultsPlotter module
 
 .. automodule:: MassTodonPy.Visualization.ResultsPlotter
     :members:
-
-
-MassTodonPy\.Visualization\.plot module
----------------------------------------
-
-.. automodule:: MassTodonPy.Visualization.plot
-    :members:
-
+    :undoc-members:
+    :show-inheritance:
 
 MassTodonPy\.Visualization\.prepare\_highcharts module
 ------------------------------------------------------
 
 .. automodule:: MassTodonPy.Visualization.prepare_highcharts
     :members:
-
+    :undoc-members:
+    :show-inheritance:
 
 
 Module contents
@@ -31,3 +26,5 @@ Module contents
 
 .. automodule:: MassTodonPy.Visualization
     :members:
+    :undoc-members:
+    :show-inheritance:
