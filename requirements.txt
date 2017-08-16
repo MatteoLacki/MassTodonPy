@@ -1,3 +1,4 @@
+brewer2mpl==1.4.1
 cffi==1.10.0
 crlibm==1.0.3
 cvxopt==1.1.9
@@ -5,12 +6,14 @@ cycler==0.10.0
 decorator==4.0.11
 functools32==3.2.3.post2
 future==0.16.0
+ggplot==0.11.5
 intervaltree==2.1.0
 IsoSpecPy==1.0.3
 Jinja2==2.9.6
 linearCounter==0.23
 lxml==3.8.0
 MarkupSafe==1.0
+-e git+https://MatteoLacki@bitbucket.org/MatteoLacki/masstodonpy.git@b76330b6846fa07a90ea0d996d5eed3ee2018ef2#egg=MassTodonPy
 matplotlib==2.0.2
 networkx==1.11
 numpy==1.13.0
