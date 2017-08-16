@@ -18,17 +18,13 @@
 
 from linearCounter import linearCounter as lCnt
 from itertools import chain
-import  pkg_resources
+import pkg_resources
 from collections import defaultdict
 import re
 try:
    import cPickle as pickle
 except:
    import pickle
-
-
-data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-bricks = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
 
 def countIsNegative(atomCnt):
     """Check if any element of a dictionary is a negative number.
@@ -141,6 +137,9 @@ def make_cz_fragments(fasta, modifications):
     out : tuple
         A tuple with generators of precursors, c fragments, and z fragments.
     """
+
+    data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+    bricks = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
 
     def getBrick(aaPart, aa):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
