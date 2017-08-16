@@ -26,5 +26,4 @@ pytz==2017.2
 scipy==0.19.1
 six==1.10.0
 sortedcontainers==1.5.7
-statsmodels==0.8.0
 subprocess32==3.2.7
