@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
 import mock
 
 MOCK_MODULES = ['numpy', 'numpy.random', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate',
-'linearCounter', 'pandas', 'pyteomics', 'lxml', 'cvxopt', 'IsoSpecPy', 'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree', 'pyinterval','python-highcharts']
+'linearCounter', 'pandas', 'lxml', 'cvxopt', 'IsoSpecPy', 'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree', 'pyinterval','python-highcharts']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
