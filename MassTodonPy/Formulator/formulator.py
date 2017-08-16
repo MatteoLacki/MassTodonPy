@@ -18,7 +18,6 @@
 
 from linearCounter import linearCounter as lCnt
 from itertools import chain
-from protonations import protonate
 import  pkg_resources
 from collections import defaultdict
 import re
