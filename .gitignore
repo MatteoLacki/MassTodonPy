@@ -10,34 +10,6 @@ yarn.lock
 *.rda
 *.masstodon
 
-# Folders
-Tests/bootstrap/RESULTS_CSV/
-Tests/bootstrap/RESULTS_CSV_31_05_2017/
-Tests/bootstrap/RESULTS_REAL/
-Tests/bootstrap/RESULTS_REAL_31_05_2017/
-Tests/data/output/
-Tests/in_silico/visual/
-Tests/visual/data/
-Tests/visual/spectra_plots/
-Tests/bootstrap/UBI
-Tests/bootstrap/UBI_csv
-Tests/bootstrap/substanceP_analyzed.sadoMasto
-Tests/bootstrap/visual/
-Tests/experimental_spectra/results/
-Tests/in_silico/masstodon_in_silico_analysis/data/
-Tests/in_silico/masstodon_in_silico_analysis/visual/
-Tests/bootstrap/RESULTS_CSV_27_06_2017/
-Tests/bootstrap/RESULTS_CSV_27_06_2017_czczmiel/
-Tests/bootstrap/RESULTS_fixing_bootstrap/
-Tests/bootstrap/RESULTS_CSV_03_07_2017/
-Tests/bootstrap/RESULTS_CSV_03_07_2017_mzPrec-065/
-Tests/bootstrap/ubi_14_07_2017/
-Tests/visual/ubiquitins/
-Tests/visual/substancesP_plots/
-Tests/visual/ubiquitin_plots/
-Tests/bootstrap/boot_ubi
-Tests/bootstrap/boot_subP*
-
 *.example
 *.html
 *.csv
@@ -48,13 +20,8 @@ server/src/envs/
 # Spectra
 *.mzXML
 
-Tests/data/FRL-010513-SUBP-WH000-WV300.txt
-Tests/data/substanceP_spectra_parsed.cPickle
-Tests/experimental_spectra/parsed_sub_P.matteo
-
 # My own junk and notes
 Old/
-temp_data
 Notes/
 
 # Byte-compiled / optimized / DLL files
@@ -99,34 +66,9 @@ var/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*,cover
-.hypothesis/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
 # Sphinx documentation
-docs/_build/
+docs/build/
+
 
 # PyBuilder
 target/
