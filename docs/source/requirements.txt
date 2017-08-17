@@ -6,7 +6,6 @@ decorator==4.0.11
 functools32==3.2.3.post2
 future==0.16.0
 intervaltree==2.1.0
-IsoSpecPy==1.0.3
 Jinja2==2.9.6
 linearCounter==0.23
 lxml==3.8.0
