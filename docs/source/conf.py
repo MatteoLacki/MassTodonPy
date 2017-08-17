@@ -21,8 +21,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
 import mock
 
-MOCK_MODULES = ['numpy', 'numpy.random', 'scipy', 'scipy.stats', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate',
-'linearCounter', 'pandas', 'lxml', 'cvxopt', 'IsoSpecPy', 'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree', 'pyinterval','python-highcharts']
+MOCK_MODULES = [ 'numpy', 'numpy.random', 'scipy', 'scipy.stats', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'linearCounter', 'pandas', 'lxml', 'cvxopt', 'IsoSpecPy', 'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree', 'pyinterval','python-highcharts']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
@@ -39,14 +38,11 @@ for mod_name in MOCK_MODULES:
 extensions = [  'sphinx.ext.autodoc',
                 'sphinx.ext.mathjax',
                 'sphinx.ext.viewcode',
-                'sphinx.ext.napoleon'
-]
+                'sphinx.ext.napoleon'   ]
 
 from recommonmark.parser import CommonMarkParser
 
-source_parsers = {
-    '.md': CommonMarkParser,
-}
+source_parsers = {'.md': CommonMarkParser}
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -54,7 +50,6 @@ templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
 source_suffix = ['.rst', '.md']
 
 
@@ -62,9 +57,9 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = u'MassTodonPy'
-copyright = u'2017, Mateusz Krzysztof Lacki'
-author = u'Mateusz Krzysztof Lacki'
+project     = u'MassTodonPy'
+copyright   = u'2017, Mateusz Krzysztof Lacki'
+author      = u'Mateusz Krzysztof Łącki'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -96,9 +91,6 @@ add_module_names            = False
 
 # -- Options for HTML output ----------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
