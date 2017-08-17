@@ -4,8 +4,6 @@ ubiquitins.example
 node_modules
 yarn.lock
 .tmp
-*.png
-*.pdf
 .RData
 *.rda
 *.masstodon
