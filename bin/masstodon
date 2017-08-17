@@ -40,7 +40,7 @@ if not os.path.exists(output_path):
 #________Load_config______________________________________
 config_path, config_ext  = os.path.splitext(args.config_path)
 
-if config_ext == 'json':
+if config_ext == '.json':
     with open(args.config_path, 'r') as f:
         config = json.load(f)
 else:

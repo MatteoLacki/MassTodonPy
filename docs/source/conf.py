@@ -21,15 +21,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
 
 
-
-# import mock
-# MOCK_MODULES = [ 'numpy', 'numpy.random', 'scipy', 'scipy.stats']
-# for mod_name in MOCK_MODULES:
-    # sys.modules[mod_name] = mock.Mock()
-
-# from unittest.mock import MagicMock
 from mock import Mock as MagicMock
-
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
@@ -37,7 +29,6 @@ class Mock(MagicMock):
 
 MOCK_MODULES = [ 'numpy', 'numpy.random', 'scipy', 'scipy.stats', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'linearCounter', 'lxml', 'cvxopt', 'IsoSpecPy', 'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree', 'pyinterval','python-highcharts', 'pandas', 'pyteomics']
 
-# MOCK_MODULES = ['pygtk', 'gtk', 'gobject', 'argparse', 'numpy', 'pandas']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
@@ -118,7 +109,8 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_logo = 'figs/masstodon_cracowian.jpg'
+html_logo = 'figs/masstodon_cracowian.png'
+
 
 # -- Options for HTMLHelp output ------------------------------------------
 
