@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 from MassTodonPy import MassTodonize
-from MassTodonPy.TestScripts.substanceP import substanceP
 from time  import time
+import pkg_resources
+import cPickle as pickle
+
+if __name__ == '__main__':
+    path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+    with open( path+'substanceP.example','r') as f:
+        substanceP = pickle.load(f)
 
 mol = substanceP.copy()
 res = MassTodonize( fasta           = mol['fasta'],

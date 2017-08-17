@@ -41,7 +41,7 @@ class MultiCounter(Counter):
         return str(key) + str(val)
 
 
-def __trim_unlikely_molecules(cc, minimal_prob=0.7):
+def trim_unlikely_molecules(cc, minimal_prob=0.7):
     '''Trim molecules whose isotopic envelopes cover potentially less than the minimal_prob threshold.'''
     nodes_to_remove = []
     for M in cc:
@@ -164,7 +164,7 @@ class PeakPicker(object):
         problems = []
 
         for cc in nx.connected_component_subgraphs(Graph):
-            reduced_cc = __trim_unlikely_molecules(cc, min_prob_per_molecule)# less M and I, not E
+            reduced_cc = trim_unlikely_molecules(cc, min_prob_per_molecule)# less M and I, not E
             for SG in nx.connected_component_subgraphs(reduced_cc):
                 if len(SG) > 1:
                     problems.append( self.__add_G_nodes(SG) )

@@ -16,7 +16,7 @@ install_mac:
 	virtualenv ../MassTodonVE
 	$(PIP) install -e .
 
-reinstall:
+reinstall:   			## reinstall MassTodonPy
 	$(PIP) uninstall -y MassTodonPy
 	$(PIP) install -e .
 

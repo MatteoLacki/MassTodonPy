@@ -111,7 +111,7 @@ class MassTodon():
         Only **cz** fragmentation supported.
 
     distance_charges : int
-        
+
     '''
     def __init__(   self,
                     fasta,
@@ -202,8 +202,8 @@ class MassTodon():
         '''Perform the deconvolution of problems.'''
 
         self.problems = self.peakPicker.get_problems(
-            massSpectrum            = self.spectra['trimmed'],
-            min_prob_per_molecule   = min_prob_per_molecule )
+            spectrum = self.spectra['trimmed'],
+            min_prob_per_molecule = min_prob_per_molecule )
 
         self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
 

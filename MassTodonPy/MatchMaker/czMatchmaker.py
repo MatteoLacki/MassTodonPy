@@ -51,11 +51,11 @@ class czMatchMaker(object):
         self.verbose = verbose
         self.min_acceptEstimIntensity = min_acceptEstimIntensity
 
-    def __define_fragment(self, molecule):
+    def define_fragment(self, molecule):
         """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
-    def __add_edges(self, graph):
+    def add_edges(self, graph):
         """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
@@ -86,13 +86,13 @@ class czMatchMaker(object):
                                 ETnoDs_on_precursors += g * estimate
                                 PTRs_on_precursors   += (Q-q-g) * estimate
                         else:
-                            frag = self.__define_fragment(mol)
+                            frag = self.define_fragment(mol)
                             if not frag in graph:
                                 graph.add_node( frag, intensity=0 )
                             graph.node[frag]['intensity'] += int(estimate)
         ETnoDs_on_precursors = int(ETnoDs_on_precursors)
         PTRs_on_precursors   = int(PTRs_on_precursors)
-        graph = self.__add_edges(graph)
+        graph = self.add_edges(graph)
         return graph, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
 
     def optimize(self):
@@ -181,11 +181,11 @@ class czMatchMaker(object):
 
 
 class czMatchMakerBasic(czMatchMaker):
-    def __define_fragment(self, molecule):
+    def define_fragment(self, molecule):
         return molecule['molType'], molecule['q']
 
 
-    def __add_edges(self, graph):
+    def add_edges(self, graph):
         for C, qC in graph: # adding edges between c and z fragments
             if C[0]=='c':
                 for Z, qZ in graph:
@@ -256,7 +256,7 @@ class czMatchMakerBasic(czMatchMaker):
 
 
 class czMatchMakerIntermediate(czMatchMaker):
-    def __define_fragment(self, molecule):
+    def define_fragment(self, molecule):
         molG = molecule['g']
         molQ = molecule['q']
 
@@ -288,7 +288,7 @@ class czMatchMakerIntermediate(czMatchMaker):
             bP = len(self.fasta) - int(nType[1:])
         return bP
 
-    def __add_edges(self, graph):
+    def add_edges(self, graph):
         for Ctype, qC, gC in graph: # adding edges between c and z fragments
                 if Ctype[0]=='c':
                     for Ztype, qZ, gZ in graph:
@@ -385,7 +385,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
         self.verbose = verbose
 
 
-    def __add_edges(self, graph):
+    def add_edges(self, graph):
         for Ctype, qC, gC in graph: # adding edges between c and z fragments
                 # add self loops
             N = (Ctype, qC, gC)
