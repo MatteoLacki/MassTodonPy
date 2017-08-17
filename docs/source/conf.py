@@ -27,7 +27,8 @@ sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
 # for mod_name in MOCK_MODULES:
     # sys.modules[mod_name] = mock.Mock()
 
-from unittest.mock import MagicMock
+# from unittest.mock import MagicMock
+from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
