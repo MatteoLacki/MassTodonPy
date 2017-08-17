@@ -49,7 +49,6 @@ else:
 #________Run_MassTodon___________________________________
 perform_calculations(   spectrum_path   = args.spectrum_path,
                         output_path     = output_path,
-                        file_name       = file_name,
                         config          = config            )
 
 print('')

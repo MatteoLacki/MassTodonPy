@@ -157,6 +157,7 @@ class PeakPicker(object):
         ----------
         spectrum : tuple
             The experimental spectrum, a tuple of m/z numpy array and intensities numpy array.
+
         min_prob_per_molecule :
             The minimal probability an envelope has to scoop to be included in the graph.
         '''

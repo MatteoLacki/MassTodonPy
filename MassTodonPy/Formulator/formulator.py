@@ -16,15 +16,16 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from linearCounter import linearCounter as lCnt
-from itertools import chain
-import pkg_resources
-from collections import defaultdict
 import re
+import pkg_resources
 try:
    import cPickle as pickle
 except:
    import pickle
+
+from linearCounter import linearCounter as lCnt
+from itertools import chain
+from collections import defaultdict
 
 def countIsNegative(atomCnt):
     """Check if any element of a dictionary is a negative number.

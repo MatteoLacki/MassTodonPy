@@ -16,76 +16,24 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from IsoSpecPy      import IsoSpecPy
-from formulaParser  import formulaParser
-from math           import exp, floor, fsum
-from collections    import Counter, defaultdict
+import scipy.stats as ss
+import numpy as np
+import pkg_resources
 try:
   import cPickle as pickle
 except:
   import pickle
-from    numpy.random   import multinomial, normal
-import  scipy.stats  as ss
-import  numpy        as np
-import  pkg_resources
-from    time import time
 
-def cdata2numpyarray(x):
-    """Turn c-data into a numpy array.
-    Parameters
-    ----------
-    x : cdata table
-        A table of cdata from cffi.
+from IsoSpecPy import IsoSpecPy
+from collections import Counter
+from numpy.random import multinomial, normal
+from time import time
 
-    Returns
-    -------
-    res : array
-        A numpy array of numbers.
-    """
-    res = np.empty(len(x))
-    for i in xrange(len(x)):
-        res[i] = x[i]
-    return res
+from MassTodonPy.Parsers.formula_parser import formulaParser
+from MassTodonPy.Spectra.operations import cdata2numpyarray, aggregate, merge_runs, aggregate_envelopes
 
 
-def agg_spec_proper(masses, probs, digits=2):
-    """Aggregate values with the same keys."""
-    lists = defaultdict(list)
-    for mass, prob in zip(masses.round(digits), probs):
-        lists[mass].append(prob)
-    newMasses = np.array(lists.keys())
-    newProbs  = np.empty(len(newMasses))
-    for prob, mass in zip(np.nditer(newProbs,op_flags=['readwrite']), newMasses):
-        prob[...] = fsum(lists[mass])
-    return newMasses, newProbs
-
-
-def aggregate( keys, values=None ):
-    """Aggregate values with the same keys.
-
-    Parameters
-    ----------
-    keys : array
-        Keys, usually m/z values.
-    values : array
-        Values to aggregate, usually intensities.
-
-    Returns
-    -------
-    out : tuple
-        A tuple containing unique keys and aggregated values.
-    """
-    uniqueKeys, indices = np.unique( keys, return_inverse=True)
-    return uniqueKeys, np.bincount( indices, weights=values )
-
-
-def merge_runs(spec1, spec2):
-    mz = np.concatenate((spec1[0], spec2[0]))
-    I  = np.concatenate((spec1[1], spec2[1]))
-    return aggregate(mz, I)
-
-
-# To do: change how the IsoSpec is called to make it faster.
+#TODO: convolute spectra with diffs spectra instead of Dirac deltas.
 class IsotopeCalculator:
     """A class for isotope calculations."""
 
@@ -156,7 +104,7 @@ class IsotopeCalculator:
         masses, logprobs, _ = envelope.getConfsRaw()
         masses  = cdata2numpyarray(masses)
         probs   = np.exp(cdata2numpyarray(logprobs))
-        masses, probs = agg_spec_proper(masses, probs, prec_digits)
+        masses, probs = aggregate_envelopes(masses, probs, prec_digits)
         # memoization#TODO get rid of it when IsoSpec using stats convolution
         self.isotopicEnvelopes[ (atomCnt_str, jP, prec_digits) ] = ( masses, probs )
         T1 = time()

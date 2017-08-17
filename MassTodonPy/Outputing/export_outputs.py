@@ -20,7 +20,7 @@
 from intervaltree import Interval as interval, IntervalTree
 
 
-class ResultsPlotter(object):
+class OutputExporter(object):
     def __init__( self, mz_prec ):
         self.mz_prec = mz_prec
         self.BG = None

@@ -66,23 +66,22 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
-#### MassTodonPy modules
-from Formulator         import make_formulas
-from IsotopeCalculator  import IsotopeCalculator
-from PeakPicker         import PeakPicker
-from Solver             import solve
-from Parsers            import read_n_preprocess_spectrum
-from MatchMaker         import match_cz_ions
-from Visualization      import ResultsPlotter, make_highcharts
-from Summarator         import summarize_results
-from Outputing          import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
-from Outputing.to_etdetective  import results_to_etdetective
-
-#### standard modules
 from itertools          import izip, chain
 from math               import ceil, log10
 from intervaltree       import Interval as interval, IntervalTree
 from time               import time
+from IsotopeCalculator  import IsotopeCalculator
+
+from Formulator.formulator import make_formulas
+from PeakPicker.peakPicker import PeakPicker
+from Solver.solver import solve
+from Parsers.spectrum_parser import read_n_preprocess_spectrum
+from MatchMaker.match_cz_ions import match_cz_ions
+from Outputing.export_outputs import OutputExporter
+from Visualization.prepare_highcharts import make_highcharts
+from Summarator.summarator import summarize_results
+from Outputing.export_to_ETDetective import results_to_etdetective
+from Outputing.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 
 
 class MassTodon():
@@ -111,7 +110,7 @@ class MassTodon():
         Only **cz** fragmentation supported.
 
     distance_charges : int
-
+        The minimal distance between charges on the protein. If set to 5, at least 4 amino acids must lay between consecutive *charged* amino acids.
     '''
     def __init__(   self,
                     fasta,
@@ -155,7 +154,7 @@ class MassTodon():
             mz_prec = mz_prec,
             verbose = verbose   )
 
-        self.ResPlotter = ResultsPlotter(mz_prec)
+        self.ResPlotter = OutputExporter(mz_prec)
         self.modifications = modifications
         self.spectra = {}
         self.small_graphs_no_G = None
@@ -179,7 +178,7 @@ class MassTodon():
 
         if self.verbose:
             print
-            print 'original total intensity',   self.spectra['original total intensity']
+            print 'original total intensity', self.spectra['original total intensity']
             print 'total intensity after trim', self.spectra['total intensity after trim']
             print 'trimmed intensity', self.spectra['trimmed intensity']
             print
@@ -312,19 +311,158 @@ def MassTodonize(
         output_deconvolution_threshold = 0.0,
         verbose = False
     ):
-    '''Run a full session of MassTodon on your problem.'''
+    """Run a full session of MassTodon on your problem.
+
+    Parameters
+    ==========
+    fasta : str
+        The fasta of the studied molecular species.
+
+    precursor_charge : int
+        The charge of the precursor ion.
+
+    mz_prec : float
+        The precision in the m/z domain: how far away [in Daltons] should we search for peaks from the theoretical mass.
+
+    cut_off : float
+        The cut off value for peak intensity.
+
+        Warning
+        =======
+        You should provide either the path or the spectrum, not both simultaneously.
+
+    opt_P :
+        The percentage of the heighest peaks being used in the analysis.
+
+        Warning
+        =======
+        You should provide either the path or the spectrum, not both simultaneously.
+
+    spectrum : tuple of numpy arrays
+        A mass spectrum that you prepared *30 minutes before the programme*, consisting of a tuple of numpy arrays. The first array corresponds to different **m/z** ratios, the other contains their respective intensity values.
+
+        Warning
+        =======
+        You should set either *spectrum* or *spectrum_path*, but not both simultaneously.
+
+    spectrum_path : str
+        The path to spectrum in either mzXml or tsv format.
+
+        Warning
+        =======
+        You should set either *spectrum* or *spectrum_path*, but not both simultaneously.
+
+    modifications : dict
+        A dictionary of modifications.
+
+        The key in the modifications' dictionary should with of form **<N|Calpha|C><amino acid No>**, e.g. C10.
+        The values contain dictionaries with diffs in elements, e.g. **{'H': 1, 'N': 1, 'O': -1}**.
+
+    frag_type : str
+        The type of framgentation.
+
+        Warning
+        =======
+        Only **cz** fragmentation supported.
+
+    distance_charges : int
+        The minimal distance between charges on the protein. If set to 5, at least 4 amino acids must lay between consecutive *charged* amino acids.
+
+    joint_probability_of_envelope : float
+        The joint probability threshold for generating theoretical isotopic envelopes.
+
+    min_prob_of_envelope_in_picking : float
+        The minimal probability an envelope has to scoop to be included in the graph.
+
+    iso_masses : dict
+        The isotopic masses.
+
+    iso_probs : dict
+        The isotopic frequencies.
+
+    L1_x : float
+        The $L_1$ penalty for flows (intensities attributed to particular isotopologous and experimental groups) in the deconvolution problem.
+
+    L2_x : float
+        The $L_2$ penalty for flows (intensities attributed to particular isotopologous and experimental groups) in the deconvolution problem.
+
+    L1_alpha : float
+        The $L_1$ penalty for total intensities attributed to particular molecular species in the deconvolution problem.
+
+    L2_alpha : float
+        The $L_2$ penalty for total intensities attributed to particular molecular species in the deconvolution problem.
+
+    solver : str
+        Select the mode of solving the deconvolution tasks: either *sequential* or *multiprocessing*.
+
+        Note
+        ====
+        Despite the possibility to solve simultaneously deconvolution problems for different regions of the mass spectrum, the sequential solver is usually faster due to overheads on process comunication or my terrible coding skills.
+
+        Warning
+        =======
+        While implementing some multiprocessing routine of your own that could involve MassTodonPy, please use rather the sequential fitting. Altogether, making CVXOPT and multiprocessing work is a nightmare.
+
+    multiprocesses_No : int
+        How many processes should be used during the deconvolution. Defaults to the number of cores.
+
+    method : str
+        What kind of optimization scheme should be used for deconvolution?
+
+        Warning
+        =======
+        Currently only accepts "MSE", which means that the deconvolution will be performed using the Means Square Error minimization, which leads to a quadratic programme with linear constraints.
+
+    max_times_solve : int
+        How many times the CVXOPT solver should try to find the optimal deconvolution of the isotopic envelopes.
+
+        Note
+        ====
+        CVXOPT sometimes does not meet its optimality criteria.
+        However, it uses underneath the OPENBLAS library and this baby has its own dynamic scheduling that might sometimes influence the output of the calculations. Here, we try to use it to our advantage, in order to help CVXOPT meets its optimisation criteria.
+
+        This is clearly not the nice way to do it, but we will soon go bayesian anyway and use a different approach to perform the deconvolution.
+
+    for_plot : boolean
+        Add data for plot to results.
+
+    highcharts : boolean
+        Generate options and series for highcharts.
+
+    raw_data : boolean
+        Should we add the raw output (peak assignement) to the output?
+
+    analyze_raw_data : boolean
+        Select **True** to pair the estimates of fragments and perform their analysis. Among the output, you will find probabilities of fragmentations and the ETnoD and PTR reactions, as well as their intensities.
+
+    output_csv_path : str
+        Path to where you want to save the output, if you want to save it.
+
+    output_deconvolution_threshold : float
+        Only results with estimates above this threshold will be shown in the final output.
+
+    verbose : boolean
+        Do you want to check what MassTodon did undercover?
+
+
+    Returns
+    =======
+    results : dict
+        A dictionary containing the results of MassTodonPy.
+    """
 
     T0 = time()
-    M = MassTodon(  fasta,
-                    precursor_charge,
-                    mz_prec,
-                    modifications,
-                    frag_type,
-                    distance_charges,
-                    joint_probability_of_envelope,
-                    iso_masses,
-                    iso_probs,
-                    verbose )
+
+    M = MassTodon(  fasta = fasta,
+                    precursor_charge = precursor_charge,
+                    mz_prec = mz_prec,
+                    modifications = modifications,
+                    frag_type = frag_type,
+                    distance_charges = distance_charges,
+                    joint_probability_of_envelope = joint_probability_of_envelope,
+                    iso_masses = iso_masses,
+                    iso_probs = iso_probs,
+                    verbose = verbose )
 
     M.read_n_preprocess_spectrum(   spectrum_path,
                                     spectrum,

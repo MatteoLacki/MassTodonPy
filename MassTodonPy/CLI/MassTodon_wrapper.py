@@ -23,8 +23,20 @@ def gen_data(deconvolution_results, fasta, Q):
                 yield f
 
 
-def perform_calculations(spectrum_path, output_path, file_name, config):
-    '''Run MassTodonPy on a given spectrum into a given output folder.'''
+def perform_calculations(spectrum_path, output_path, config):
+    '''Run MassTodonPy on a given spectrum and save the results into a given output folder.
+
+    Parameters
+    ----------
+    spectrum_path : str
+        Path to the spectrum in a mzXml or tsv format.
+
+    output_path : str
+        Path to the output.
+
+    config : dict
+        A dictionary with the parsed configuration of MassTodon.
+    '''
     config['highcharts'] = True
     if 'csv' in config:
         del config['csv']

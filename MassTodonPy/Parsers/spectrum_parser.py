@@ -16,93 +16,12 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from pyteomics   import mzxml # >= 3.41
-from collections import defaultdict
-from MassTodonPy.IsotopeCalculator import aggregate, merge_runs
 import numpy as np
 import os
-from operator import itemgetter
-from itertools import izip
 
+from pyteomics import mzxml # >= 3.41
 
-
-def round_spec(mz, intensity, prec_digits=2):
-    """Bin the spectrum by rounding m/z with the same number of significant digits.
-
-    Parameters
-    ----------
-    mz : array
-        The m/z values.
-    intensity : array
-        The intensities to bin.
-    prec_digits : float
-        The number of digits after which the floats get rounded.
-
-    Returns
-    -------
-    out : tuple
-        A tuple containing the binned experimental spectrum: mass over charge values and intensities, both numpy arrays.
-    """
-    mz = np.round(mz, prec_digits)
-    mz, intensity = aggregate(mz, intensity)
-    return mz, intensity
-
-
-
-
-def trim_spectrum(mz, intensity, cut_off=100):
-    """Remove peaks below a given cut off.
-
-    Parameters
-    ----------
-    mz : array
-        The m/z values.
-    intensity : array
-        The intensities to bin.
-    cut_off : float
-        The cut off value for intensity.
-
-    Returns
-    -------
-    out : tuple
-        A tuple containing the binned experimental spectrum: mass over charge values and intensities, both numpy arrays.
-    """
-    return ( mz[intensity >= cut_off], intensity[intensity >= cut_off] ), ( mz[intensity < cut_off], intensity[intensity < cut_off] )
-
-
-
-
-def quantile_trim(mz, intensities, perc = .95):
-    """Obtain the minimal peak height in the set of the heighest peaks in spectrum that cover its **perc** percent.
-
-    Parameters
-    ----------
-    mz : array
-        The m/z values.
-    intensity : array
-        The intensities to bin.
-    perc : float
-        The percentage of heighest peaks to remain.
-
-    Returns
-    -------
-    effective_cut_off : float
-        The minimal peak height.
-    """
-    mz_res, intensities_res = tuple( np.array(x) for x in izip(*sorted(izip(mz, intensities), key=itemgetter(1))) )
-    i = 0
-    S = 0.0
-    total = intensities_res.sum()
-    while True:
-        S += intensities_res[i]/total
-        if S < 1.0-perc:
-            i += 1
-        else:
-            break
-    effective_cut_off = intensities_res[i]
-    return effective_cut_off
-
-
+from MassTodonPy.Spectra.operations import aggregate, merge_runs, trim_spectrum, round_spectrum, remove_lower_quantile
 
 
 def get_mzxml(path, prec_digits=2):
@@ -124,10 +43,8 @@ def get_mzxml(path, prec_digits=2):
         for spectrum in reader:
             mz = spectrum['m/z array']
             intensity = spectrum['intensity array']
-            mz, intensity = round_spec(mz, intensity, prec_digits)
+            mz, intensity = round_spectrum(mz, intensity, prec_digits)
             yield mz, intensity
-
-
 
 
 def read_mzxml(path, prec_digits=2):
@@ -147,7 +64,6 @@ def read_mzxml(path, prec_digits=2):
     """
     mz, intensity = reduce( merge_runs, get_mzxml(path, prec_digits) )
     return mz, intensity
-
 
 
 def read_txt(path, prec_digits=2):
@@ -177,7 +93,7 @@ def read_txt(path, prec_digits=2):
             intensity.append(I)
     mz = np.array(mz)
     intensity = np.array(intensity)
-    mz, intensity = round_spec(mz, intensity, prec_digits)
+    mz, intensity = round_spectrum(mz, intensity, prec_digits)
     return mz, intensity
 
 
@@ -257,14 +173,14 @@ def read_n_preprocess_spectrum( path    = None,
         }[file_ext]
         spectrum = reader(path, prec_digits)
     else:
-        spectrum = round_spec( *spectrum, prec_digits=prec_digits)
+        spectrum = round_spectrum( *spectrum, prec_digits=prec_digits)
 
     spectra = {}
     spectra['original'] = spectrum
     spectra['original total intensity'] = sum(spectrum[1])
 
     if opt_P: # cut_off == None
-        cut_off = quantile_trim( *spectrum, perc = opt_P)
+        cut_off = remove_lower_quantile(*spectrum, retained_percentage = opt_P)
 
     spectra['trimmed'], spectra['left out'] = trim_spectrum( *spectrum, cut_off=cut_off)
     spectra['total intensity after trim'] = spectra['trimmed'][1].sum()

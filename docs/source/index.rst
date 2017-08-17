@@ -6,7 +6,8 @@
 MassTodonPy
 ===========
 
-MassTodonPy is a python module developed to study Electron Transfer Dissociation.
+MassTodonPy is a python module developed to study Electron Transfer Dissociation. It implements the workflow presented in the `MassTodon manuscript <https://arxiv.org/abs/1708.00234>`_.
+
 
 .. toctree::
    :maxdepth: 2
