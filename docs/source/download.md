@@ -11,7 +11,7 @@ To play with MassTodonPy you need:
 2. python2.7
 
 To check if you have python2.7 (or later, but not 3 something yet), open your terminal and type
-```{bash}
+```
 python2.7
 ```
 
@@ -24,14 +24,14 @@ Installation
 ##### PIP
 
 To install globally MassTodonPy, run in terminal
-```{bash}
+```
 pip2 install MassTodonPy
 ```
 
 This will install MassTodonPy and the required dependencies.
 To check the installation, simply write now:
 
-```{bash}
+```
 masstodon_example_call
 ```
 
