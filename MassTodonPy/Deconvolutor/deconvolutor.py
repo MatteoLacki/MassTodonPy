@@ -24,8 +24,6 @@ import  traceback
 class Error_in_update_scaling(Exception):
     pass
 
-solvers.options['show_progress'] = False
-solvers.options['maxiters'] = 1000
 
 def diag(val, dim):
     return spdiag([spmatrix(val,[0],[0]) for i in xrange(dim)])
@@ -43,8 +41,6 @@ def normalize_rows(M):
 #     for i in xrange(M.size[0]):
 #         row_hopefully = M[i,:]
 #         M[i,:] = row_hopefully/sum(abs(row_hopefully))
-
-
 
 
 def number_graph(SG):
@@ -125,6 +121,9 @@ class Deconvolutor(object):
         self.SG = SG
         cnts = number_graph(self.SG)
         self.set_names(cnts)
+        solvers.options['show_progress'] = False
+        solvers.options['maxiters'] = 1000
+
 
     def iSG(self, node_type):
         '''Iterate over all nodes of a given type in the small graph **SG**.

@@ -22,7 +22,6 @@ res = MassTodonize( fasta           = mol['fasta'],
                     max_times_solve = 10,
                     raw_data        = False,
                     highcharts      = True,
-                    verbose         = True
-                    )
+                    verbose         = True )
 
 print res
