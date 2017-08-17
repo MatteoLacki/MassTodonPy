@@ -36,3 +36,7 @@ masstodon_example_call
 ```
 
 This will run an example session of the program to check that you are able to get any output. By no means is it necessary to run it more than once, just after installation.
+
+##### GitHub
+
+Sources are also available on [GitHub](https://github.com/MatteoLacki/MassTodonPy/archive/0.3.2.zip).

@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to MassTodonPy's documentation!
-=======================================
+Hello and welcome to MassTodonPy
+================================
 
 .. toctree::
    :maxdepth: 2
@@ -12,7 +12,7 @@ Welcome to MassTodonPy's documentation!
 
    copyright
    download
-   intro
+   examples
 
 
 Indices and tables
@@ -21,3 +21,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Remember: be nice to MassTodons.
