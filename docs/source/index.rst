@@ -10,6 +10,8 @@ Welcome to MassTodonPy's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   copyright
+   download
    intro
 
 
