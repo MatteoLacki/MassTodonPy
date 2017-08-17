@@ -16,7 +16,7 @@ python2.7
 ```
 
 You should see:
-![Alt](/Webpage/python_terminal.png)
+![Alt](/figs/python_terminal.png)
 
 Installation
 -------------
