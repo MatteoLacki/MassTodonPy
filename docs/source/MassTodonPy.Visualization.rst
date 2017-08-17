@@ -11,13 +11,6 @@ MassTodonPy\.Visualization\.ResultsPlotter module
     :members:
 
 
-MassTodonPy\.Visualization\.plot module
----------------------------------------
-
-.. automodule:: MassTodonPy.Visualization.plot
-    :members:
-
-
 MassTodonPy\.Visualization\.prepare\_highcharts module
 ------------------------------------------------------
 
