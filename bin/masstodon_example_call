@@ -2,26 +2,30 @@
 from MassTodonPy import MassTodonize
 from time  import time
 import pkg_resources
-import cPickle as pickle
+try:
+  import cPickle as pickle
+except:
+  import pickle
 
 if __name__ == '__main__':
     path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+
     with open( path+'substanceP.example','r') as f:
         substanceP = pickle.load(f)
 
-mol = substanceP.copy()
-res = MassTodonize( fasta           = mol['fasta'],
-                    precursor_charge= mol['Q'],
-                    mz_prec         = .05,
-                    joint_probability_of_envelope = .999,
-                    modifications   = mol['modifications'],
-                    spectrum        = mol['spectrum'],
-                    opt_P           = .99,
-                    solver          = 'multiprocessing',
-                    multiprocesses_No = None,
-                    max_times_solve = 10,
-                    raw_data        = False,
-                    highcharts      = True,
-                    verbose         = True )
+    mol = substanceP.copy()
+    res = MassTodonize( fasta           = mol['fasta'],
+                        precursor_charge= mol['Q'],
+                        mz_prec         = .05,
+                        joint_probability_of_envelope = .999,
+                        modifications   = mol['modifications'],
+                        spectrum        = mol['spectrum'],
+                        opt_P           = .99,
+                        solver          = 'multiprocessing',
+                        multiprocesses_No = None,
+                        max_times_solve = 10,
+                        raw_data        = False,
+                        highcharts      = True,
+                        verbose         = True )
 
-print res
+    print res

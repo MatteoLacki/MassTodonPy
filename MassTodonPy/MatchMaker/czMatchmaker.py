@@ -368,7 +368,7 @@ class czMatchMakerIntermediate(czMatchMaker):
 
 
 
-solvers.options['show_progress'] = False
+
 
 class czMatchMakerAdvanced(czMatchMakerIntermediate):
     def __init__(self, MassTodonResults, Q, fasta,
@@ -376,6 +376,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
                  verbose = False,
                  L1 = 0.0, L2 = 0.01
         ):
+        solvers.options['show_progress'] = False
         self.MassTodonResults = MassTodonResults
         self.Q = Q
         self.fasta = fasta
