@@ -73,15 +73,15 @@ from time               import time
 from IsotopeCalculator  import IsotopeCalculator
 
 from Formulator.formulator import make_formulas
-from PeakPicker.peakPicker import PeakPicker
-from Solver.solver import solve
 from Parsers.spectrum_parser import read_n_preprocess_spectrum
+from PeakPicker.peakPicker import PeakPicker
 from MatchMaker.match_cz_ions import match_cz_ions
-from Outputing.export_outputs import OutputExporter
-from Visualization.prepare_highcharts import make_highcharts
+from Outputting.export_outputs import OutputExporter
+from Outputting.export_to_ETDetective import results_to_etdetective
+from Outputting.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
+from Solver.solver import solve
 from Summarator.summarator import summarize_results
-from Outputing.export_to_ETDetective import results_to_etdetective
-from Outputing.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
+from Visualization.prepare_highcharts import make_highcharts
 
 
 class MassTodon():

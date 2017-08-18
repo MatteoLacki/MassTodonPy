@@ -12,9 +12,11 @@ Subpackages
     MassTodonPy.IsotopeCalculator
     MassTodonPy.MatchMaker
     MassTodonPy.Misc
-    MassTodonPy.Outputing
+    MassTodonPy.Outputting
     MassTodonPy.Parsers
     MassTodonPy.PeakPicker
+    MassTodonPy.Solver
+    MassTodonPy.Spectra
     MassTodonPy.Summarator
     MassTodonPy.Visualization
 

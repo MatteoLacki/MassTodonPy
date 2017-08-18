@@ -15,12 +15,13 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-from    MassTodonPy.Deconvolutor import deconvolve
-from    MassTodonPy.Misc import cvxopt_wrapper
-from    time import time
-from    multiprocessing import Pool
-from    itertools import repeat
-from    collections import Counter
+
+from MassTodonPy.Deconvolutor import deconvolve
+from MassTodonPy.Misc import cvxopt_wrapper
+from time import time
+from multiprocessing import Pool
+from itertools import repeat
+from collections import Counter
 
 
 class Error_in_update_scaling(Exception):
