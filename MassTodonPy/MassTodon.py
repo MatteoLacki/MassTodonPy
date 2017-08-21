@@ -66,18 +66,16 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
-from itertools          import izip, chain
-from math               import ceil, log10
-from intervaltree       import Interval as interval, IntervalTree
-from time               import time
-from IsotopeCalculator  import IsotopeCalculator
+from itertools import izip
+from math import ceil, log10
+from time import time
+from IsotopeCalculator import IsotopeCalculator
 
 from Formulator.formulator import make_formulas
 from Parsers.spectrum_parser import read_n_preprocess_spectrum
 from PeakPicker.peakPicker import PeakPicker
 from MatchMaker.match_cz_ions import match_cz_ions
 from Outputting.export_outputs import OutputExporter
-from Outputting.export_to_ETDetective import results_to_etdetective
 from Outputting.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 from Solver.solver import solve
 from Summarator.summarator import summarize_results
@@ -96,13 +94,17 @@ class MassTodon():
         The charge of the precursor ion.
 
     mz_prec : float
-        The precision in the m/z domain: how far away [in Daltons] should we search for peaks from the theoretical mass.
+        The precision in the m/z domain: how far away [in Daltons]
+        should we search for peaks from the theoretical mass.
 
     modifications : dict
         A dictionary of modifications.
 
-        The key in the modifications' dictionary should with of form **<N|Calpha|C><amino acid No>**, e.g. C10.
-        The values contain dictionaries with diffs in elements, e.g. **{'H': 1, 'N': 1, 'O': -1}**.
+        The key in the modifications' dictionary should with of form
+        **<N|Calpha|C><amino acid No>**, e.g. C10.
+
+        The values contain dictionaries with diffs in elements,
+        e.g. **{'H': 1, 'N': 1, 'O': -1}**.
 
     frag_type : str
         The type of framgentation.
@@ -110,49 +112,44 @@ class MassTodon():
         Only **cz** fragmentation supported.
 
     distance_charges : int
-        The minimal distance between charges on the protein. If set to 5, at least 4 amino acids must lay between consecutive *charged* amino acids.
+        The minimal distance between charges on the protein.
+        If set to 5, at least 4 amino acids must lay between
+        consecutive *charged* amino acids.
     '''
-    def __init__(   self,
-                    fasta,
-                    precursor_charge,
-                    mz_prec,
-                    modifications   = {},
-                    frag_type       = 'cz',
-                    distance_charges= 5,
-                    joint_probability_of_envelope = 0.999,
-                    iso_masses      = None,
-                    iso_probs       = None,
-                    verbose         = False
-        ):
+
+    def __init__(self,
+                 fasta,
+                 precursor_charge,
+                 mz_prec,
+                 modifications={},
+                 frag_type='cz',
+                 distance_charges=5,
+                 joint_probability_of_envelope=0.999,
+                 iso_masses=None,
+                 iso_probs=None,
+                 verbose=False):
+
         self.mz_prec = mz_prec
-            # precision one digit lower than the input precision of spectra, eg.
-            # mz_prec = .05     -->     prec_digits = 3
-            # mz_prec = .005    -->     prec_digits = 4
+        # precision one digit lower than the input precision of spectra, eg.
+        # mz_prec = .05     -->     prec_digits = 3
+        # mz_prec = .005    -->     prec_digits = 4
         # self.prec_digits = int(ceil(-log10(mz_prec)))+1
         self.prec_digits = int(ceil(-log10(mz_prec)))
-        self.fasta  = fasta
-        self.Q      = precursor_charge
-        self.verbose= verbose
+        self.fasta = fasta
+        self.Q = precursor_charge
+        self.verbose = verbose
 
-        self.Forms  = make_formulas(
-            fasta           = fasta,
-            Q               = self.Q,
-            frag_type       = frag_type,
-            distance_charges= distance_charges,
-            modifications   = modifications )
+        self.Forms = make_formulas(
+            fasta=fasta, Q=self.Q, frag_type=frag_type,
+            distance_charges=distance_charges, modifications=modifications)
 
         self.IsoCalc = IsotopeCalculator(
-            jP          = joint_probability_of_envelope,
-            prec_digits = self.prec_digits,
-            iso_masses  = iso_masses,
-            iso_probs   = iso_probs,
-            verbose     = verbose   )
+            jP=joint_probability_of_envelope, prec_digits=self.prec_digits,
+            iso_masses=iso_masses, iso_probs=iso_probs, verbose=verbose)
 
         self.peakPicker = PeakPicker(
-            _Forms   = self.Forms,
-            _IsoCalc = self.IsoCalc,
-            mz_prec = mz_prec,
-            verbose = verbose   )
+            _Forms=self.Forms, _IsoCalc=self.IsoCalc,
+            mz_prec=mz_prec, verbose=verbose)
 
         self.ResPlotter = OutputExporter(mz_prec)
         self.modifications = modifications
@@ -160,60 +157,57 @@ class MassTodon():
         self.small_graphs_no_G = None
 
     def read_n_preprocess_spectrum(self,
-            path    = None,
-            spectrum= None,
-            cut_off = None,
-            opt_P   = None
-        ):
+                                   path=None,
+                                   spectrum=None,
+                                   cut_off=None,
+                                   opt_P=None):
         '''Read in a mass spectrum and round the masses to prec_digits digits after 0.
 
-        Read either an individual text file or merge runs from an mzXml files. In case of the mzXml file
+        Read either an individual text file or merge runs from an mzXml files.
+        In case of the mzXml file, the spectra are additionally merged.
         '''
-        self.spectra= read_n_preprocess_spectrum(
-            path    = path,
-            spectrum= spectrum,
-            prec_digits = self.prec_digits,
-            cut_off = cut_off,
-            opt_P   = opt_P      )
+
+        self.spectra = read_n_preprocess_spectrum(
+            path=path, spectrum=spectrum, prec_digits=self.prec_digits,
+            cut_off=cut_off, opt_P=opt_P)
 
         if self.verbose:
-            print
-            print 'original total intensity', self.spectra['original total intensity']
-            print 'total intensity after trim', self.spectra['total intensity after trim']
-            print 'trimmed intensity', self.spectra['trimmed intensity']
-            print
+            print()
+            print('original total intensity', self.spectra['original total intensity'])
+            print('total intensity after trim', self.spectra['total intensity after trim'])
+            print('trimmed intensity', self.spectra['trimmed intensity'])
+            print()
 
     # TODO is the thing below necessary?
     def spectrum_iter(self, spectrum_type):
         assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
         for mz, intensity in izip(*self.spectra[spectrum_type]):
-            yield {'mz':mz, 'intensity':intensity}
-
+            yield {'mz': mz, 'intensity': intensity}
 
     def run(self,
-            solver              = 'sequential',
-            multiprocesses_No   = None,
-            method              ='MSE',
-            max_times_solve     = 5,
-            min_prob_per_molecule = .75,
-            for_plot            = False,
-            **args ):
+            solver='sequential',
+            multiprocesses_No=None,
+            method='MSE',
+            max_times_solve=5,
+            min_prob_per_molecule=.75,
+            for_plot=False,
+            **args):
         '''Perform the deconvolution of problems.'''
 
         self.problems = self.peakPicker.get_problems(
-            spectrum = self.spectra['trimmed'],
-            min_prob_per_molecule = min_prob_per_molecule )
+            spectrum=self.spectra['trimmed'],
+            min_prob_per_molecule=min_prob_per_molecule)
 
         self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
 
         self.res, self.solver_stats = solve(
-                            problems = self.problems,
-                            args   = args,
-                            solver = solver,
-                            multiprocesses_No = multiprocesses_No,
-                            method = method,
-                            max_times_solve = max_times_solve,
-                            verbose= self.verbose   )
+                            problems=self.problems,
+                            args=args,
+                            solver=solver,
+                            multiprocesses_No=multiprocesses_No,
+                            method=method,
+                            max_times_solve=max_times_solve,
+                            verbose=self.verbose)
 
         if self.verbose:
             print 'Solver stats:'
@@ -223,94 +217,83 @@ class MassTodon():
         if for_plot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
 
-
     # TODO is the thing below necessary?
     def results_iter(self):
         '''Iterate over results.
-
         Mainly useful for ETDetective.'''
         for r in self.res:
             for N, info in r["small_graph"].nodes(data=True):
                 if info["type"] == "G":
                     mz, intensity, estimate = info['mz'], info['intensity'], info['estimate']
                     L, R = mz.begin, mz.end
-                    yield {'L':L,'R':R,'I':intensity,'E':estimate }
+                    yield {'L': L, 'R': R, 'I': intensity, 'E': estimate}
         for mz, intensity in izip(*self.spectra['trimmed']):
             prec = self.mz_prec
-            yield {'L':mz-prec,'R':mz+prec,'I':intensity,'E':.0 }
-
+            yield {'L': mz-prec, 'R': mz+prec, 'I': intensity, 'E': .0}
 
     def summarize_results(self):
         '''Summarize the results of MassTodon.'''
-        return summarize_results(   spectra             = self.spectra,
-                                    raw_masstodon_res   = self.res              )
+        return summarize_results(spectra=self.spectra,
+                                 raw_masstodon_res=self.res)
 
-
-    #TODO use Bokeh from Python directly!
+    # TODO use Bokeh from Python directly!
     def make_data_for_spectrum_plot(self):
         '''Provide estimates easily exportable to Bokeh via R.'''
         data_4_plot = self.ResPlotter.make_data_for_spectrum_plot()
         data_4_plot['remaining_peaks'] = [
-            {   'mz_L':         mz - self.mz_prec,
-                'mz_R':         mz + self.mz_prec,
-                'tot_estimate': 0.0,
-                'tot_intensity':intensity
-            }   for mz, intensity in izip(*self.spectra['original'])
-                if not (mz, intensity) in self.peakPicker.Used_Exps
-            ]
-
-
+            {'mz_L': mz - self.mz_prec,
+             'mz_R': mz + self.mz_prec,
+             'tot_estimate': 0.0,
+             'tot_intensity': intensity}
+            for mz, intensity in izip(*self.spectra['original'])
+            if not (mz, intensity) in self.peakPicker.Used_Exps]
         return data_4_plot
 
-
-    def analyze_reactions(  self,
-                            analyzer                = 'intermediate',
-                            min_acceptEstimIntensity= 0.0, # might change it to self.spectra['cut_off']
-                            verbose                 = False,
-                            **advanced_args     ):
-
+    def analyze_reactions(self,
+                          analyzer='intermediate',
+                          min_acceptEstimIntensity=0.0,  # self.spectra['cut_off']
+                          verbose=False,
+                          **advanced_args):
         '''Estimate reaction constants and quantities of fragments.'''
-        return match_cz_ions(   results_to_pair         = self.res,
-                                Q                       = self.Q,
-                                fasta                   = self.fasta,
-                                min_acceptEstimIntensity= min_acceptEstimIntensity,
-                                analyzer                = analyzer,
-                                verbose                 = verbose,
-                                advanced_args           = advanced_args   )
-
+        return match_cz_ions(results_to_pair=self.res,
+                             Q=self.Q,
+                             fasta=self.fasta,
+                             min_acceptEstimIntensity=min_acceptEstimIntensity,
+                             analyzer=analyzer,
+                             verbose=verbose,
+                             advanced_args=advanced_args)
 
 
 def MassTodonize(
         fasta,
         precursor_charge,
         mz_prec,
-        cut_off         = None,
-        opt_P           = None,
-        spectrum        = None,
-        spectrum_path   = None,
-        modifications   = {},
-        frag_type       = 'cz',
-        distance_charges= 5,
-        joint_probability_of_envelope   = .999,
-        min_prob_of_envelope_in_picking = .7,
-        iso_masses  = None,
-        iso_probs   = None,
-        L1_x = .001,
-        L2_x = .001,
-        L1_alpha= .001,
-        L2_alpha= .001,
-        solver  = 'sequential',
-        multiprocesses_No = None,
-        method  = 'MSE',
-        max_times_solve = 10,
-        for_plot= False,
-        highcharts = False,
-        raw_data= False,
-        analyze_raw_data = True,
-        output_csv_path  = None,
-        output_deconvolution_threshold = 0.0,
-        verbose = False
-    ):
+        cut_off=None,
+        opt_P=None,
+        spectrum=None,
+        spectrum_path=None,
+        modifications={},
+        frag_type='cz',
+        distance_charges=5,
+        joint_probability_of_envelope=.999,
+        min_prob_of_envelope_in_picking=.7,
+        iso_masses=None,
+        iso_probs=None,
+        L1_x=.001,
+        L2_x=.001,
+        L1_alpha=.001,
+        L2_alpha=.001,
+        solver='sequential',
+        multiprocesses_No=None,
+        method='MSE',
+        max_times_solve=10,
+        for_plot=False,
+        highcharts=False,
+        raw_data=False,
+        analyze_raw_data=True,
+        output_csv_path=None,
+        output_deconvolution_threshold=0.0,
+        verbose=False):
     """Run a full session of MassTodon on your problem.
 
     Parameters
@@ -322,41 +305,51 @@ def MassTodonize(
         The charge of the precursor ion.
 
     mz_prec : float
-        The precision in the m/z domain: how far away [in Daltons] should we search for peaks from the theoretical mass.
+        The precision in the m/z domain: how far away [in Daltons] should
+        one search for peaks from the theoretical mass.
 
     cut_off : float
         The cut off value for peak intensity.
 
         Warning
         =======
-        You should provide either the path or the spectrum, not both simultaneously.
+        You should provide either the path or the spectrum,
+        not both simultaneously.
 
     opt_P :
         The percentage of the heighest peaks being used in the analysis.
 
         Warning
         =======
-        You should provide either the path or the spectrum, not both simultaneously.
+        You should provide either the path or the spectrum,
+        not both simultaneously.
 
     spectrum : tuple of numpy arrays
-        A mass spectrum that you prepared *30 minutes before the programme*, consisting of a tuple of numpy arrays. The first array corresponds to different **m/z** ratios, the other contains their respective intensity values.
+        A mass spectrum that you prepared *30 minutes before the programme*,
+        consisting of a tuple of numpy arrays.
+        The first array corresponds to different **m/z** ratios,
+        the other contains their respective intensity values.
 
         Warning
         =======
-        You should set either *spectrum* or *spectrum_path*, but not both simultaneously.
+        You should set either *spectrum* or *spectrum_path*,
+        but not both simultaneously.
 
     spectrum_path : str
         The path to spectrum in either mzXml or tsv format.
 
         Warning
         =======
-        You should set either *spectrum* or *spectrum_path*, but not both simultaneously.
+        You should set either *spectrum* or *spectrum_path*,
+        but not both simultaneously.
 
     modifications : dict
         A dictionary of modifications.
 
-        The key in the modifications' dictionary should with of form **<N|Calpha|C><amino acid No>**, e.g. C10.
-        The values contain dictionaries with diffs in elements, e.g. **{'H': 1, 'N': 1, 'O': -1}**.
+        The key in the modifications' dictionary should with of form
+        **<N|Calpha|C><amino acid No>**, e.g. C10.
+        The values contain dictionaries with diffs in elements,
+        e.g. **{'H': 1, 'N': 1, 'O': -1}**.
 
     frag_type : str
         The type of framgentation.
@@ -366,13 +359,17 @@ def MassTodonize(
         Only **cz** fragmentation supported.
 
     distance_charges : int
-        The minimal distance between charges on the protein. If set to 5, at least 4 amino acids must lay between consecutive *charged* amino acids.
+        The minimal distance between charges on the protein.
+        If set to 5, at least 4 amino acids must la
+        between consecutive *charged* amino acids.
 
     joint_probability_of_envelope : float
-        The joint probability threshold for generating theoretical isotopic envelopes.
+        The joint probability threshold for generating
+        theoretical isotopic envelopes.
 
     min_prob_of_envelope_in_picking : float
-        The minimal probability an envelope has to scoop to be included in the graph.
+        The minimal probability an envelope has to scoop
+        to be included in the deconvolution graph.
 
     iso_masses : dict
         The isotopic masses.
@@ -381,47 +378,66 @@ def MassTodonize(
         The isotopic frequencies.
 
     L1_x : float
-        The $L_1$ penalty for flows (intensities attributed to particular isotopologous and experimental groups) in the deconvolution problem.
+        The $L_1$ penalty for flows (intensities attributed to particular
+        isotopologous and experimental groups) in the deconvolution problem.
 
     L2_x : float
-        The $L_2$ penalty for flows (intensities attributed to particular isotopologous and experimental groups) in the deconvolution problem.
+        The $L_2$ penalty for flows (intensities attributed to particular
+        isotopologous and experimental groups) in the deconvolution problem.
 
     L1_alpha : float
-        The $L_1$ penalty for total intensities attributed to particular molecular species in the deconvolution problem.
+        The $L_1$ penalty for total intensities attributed to particular
+        molecular species in the deconvolution problem.
 
     L2_alpha : float
-        The $L_2$ penalty for total intensities attributed to particular molecular species in the deconvolution problem.
+        The $L_2$ penalty for total intensities attributed to particular
+        molecular species in the deconvolution problem.
 
     solver : str
-        Select the mode of solving the deconvolution tasks: either *sequential* or *multiprocessing*.
+        Select the mode of solving the deconvolution tasks:
+        either *sequential* or *multiprocessing*.
 
         Note
         ====
-        Despite the possibility to solve simultaneously deconvolution problems for different regions of the mass spectrum, the sequential solver is usually faster due to overheads on process comunication or my terrible coding skills.
+        Despite the possibility to solve simultaneously deconvolution problems
+        for different regions of the mass spectrum, the sequential solver is
+        usually faster due to overheads on process comunication or
+        my terrible coding skills.
 
         Warning
         =======
-        While implementing some multiprocessing routine of your own that could involve MassTodonPy, please use rather the sequential fitting. Altogether, making CVXOPT and multiprocessing work is a nightmare.
+        While implementing some multiprocessing routine of your own that could
+        involve MassTodonPy, please use rather the sequential fitting.
+        Altogether, making CVXOPT and multiprocessing work is a nightmare.
 
     multiprocesses_No : int
-        How many processes should be used during the deconvolution. Defaults to the number of cores.
+        How many processes should be used during the deconvolution.
+        Defaults to the number of cores.
 
     method : str
         What kind of optimization scheme should be used for deconvolution?
 
         Warning
         =======
-        Currently only accepts "MSE", which means that the deconvolution will be performed using the Means Square Error minimization, which leads to a quadratic programme with linear constraints.
+        Currently only accepts "MSE", which means that the deconvolution
+        will be performed using the Means Square Error minimization,
+        which leads to a quadratic programme with linear constraints.
 
     max_times_solve : int
-        How many times the CVXOPT solver should try to find the optimal deconvolution of the isotopic envelopes.
+        How many times the CVXOPT solver should try to find the optimal
+        deconvolution of the isotopic envelopes.
 
         Note
         ====
         CVXOPT sometimes does not meet its optimality criteria.
-        However, it uses underneath the OPENBLAS library and this baby has its own dynamic scheduling that might sometimes influence the output of the calculations. Here, we try to use it to our advantage, in order to help CVXOPT meets its optimisation criteria.
+        However, it uses underneath the OPENBLAS library and this baby has
+        its own dynamic scheduling that might sometimes influence the output
+        of the calculations.
+        Here, we try to use it to our advantage, in order to help CVXOPT
+        to meet its optimisation criteria.
 
-        This is clearly not the nice way to do it, but we will soon go bayesian anyway and use a different approach to perform the deconvolution.
+        This is clearly not the nice way to do it, but we will soon go bayesian
+        anyway and use a different approach to perform the deconvolution.
 
     for_plot : boolean
         Add data for plot to results.
@@ -433,13 +449,17 @@ def MassTodonize(
         Should we add the raw output (peak assignement) to the output?
 
     analyze_raw_data : boolean
-        Select **True** to pair the estimates of fragments and perform their analysis. Among the output, you will find probabilities of fragmentations and the ETnoD and PTR reactions, as well as their intensities.
+        Select **True** to pair the estimates of fragments and perform their
+        analysis.
+        Among the output, you will find probabilities of fragmentations and
+        the ETnoD and PTR reactions, as well as their intensities.
 
     output_csv_path : str
         Path to where you want to save the output, if you want to save it.
 
     output_deconvolution_threshold : float
-        Only results with estimates above this threshold will be shown in the final output.
+        Only results with estimates above this threshold will be shown
+        in the final output.
 
     verbose : boolean
         Do you want to check what MassTodon did undercover?
@@ -453,41 +473,39 @@ def MassTodonize(
 
     T0 = time()
 
-    M = MassTodon(  fasta = fasta,
-                    precursor_charge = precursor_charge,
-                    mz_prec = mz_prec,
-                    modifications = modifications,
-                    frag_type = frag_type,
-                    distance_charges = distance_charges,
-                    joint_probability_of_envelope = joint_probability_of_envelope,
-                    iso_masses = iso_masses,
-                    iso_probs = iso_probs,
-                    verbose = verbose )
+    M = MassTodon(fasta=fasta,
+                  precursor_charge=precursor_charge,
+                  mz_prec=mz_prec,
+                  modifications=modifications,
+                  frag_type=frag_type,
+                  distance_charges=distance_charges,
+                  joint_probability_of_envelope=joint_probability_of_envelope,
+                  iso_masses=iso_masses,
+                  iso_probs=iso_probs,
+                  verbose=verbose)
 
-    M.read_n_preprocess_spectrum(   spectrum_path,
-                                    spectrum,
-                                    cut_off,
-                                    opt_P   )
+    M.read_n_preprocess_spectrum(spectrum_path, spectrum,
+                                 cut_off, opt_P)
 
-    M.run(  solver = solver,
-            multiprocesses_No = multiprocesses_No,
-            method = method,
-            max_times_solve = max_times_solve,
-            min_prob_per_molecule = min_prob_of_envelope_in_picking,
-            for_plot  = for_plot,
-            L1_x      = L1_x,
-            L2_x      = L2_x,
-            L1_alpha  = L1_alpha,
-            L2_alpha  = L2_alpha,
-            verbose   = verbose    )
+    M.run(solver=solver,
+          multiprocesses_No=multiprocesses_No,
+          method=method,
+          max_times_solve=max_times_solve,
+          min_prob_per_molecule=min_prob_of_envelope_in_picking,
+          for_plot=for_plot,
+          L1_x=L1_x,
+          L2_x=L2_x,
+          L1_alpha=L1_alpha,
+          L2_alpha=L2_alpha,
+          verbose=verbose)
 
     results = {}
 
     if analyze_raw_data:
-        results['summary']              = M.summarize_results()
-        results['basic_analysis']       = M.analyze_reactions('basic')
-        results['intermediate_analysis']= M.analyze_reactions('intermediate')
-        results['advanced_analysis']    = M.analyze_reactions('advanced')
+        results['summary'] = M.summarize_results()
+        results['basic_analysis'] = M.analyze_reactions('basic')
+        results['intermediate_analysis'] = M.analyze_reactions('intermediate')
+        results['advanced_analysis'] = M.analyze_reactions('advanced')
 
     if verbose:
         print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
@@ -498,19 +516,17 @@ def MassTodonize(
         results['spectra'] = M.spectra
 
     if for_plot:
-        results['for_plot']= M.make_data_for_spectrum_plot()
+        results['for_plot'] = M.make_data_for_spectrum_plot()
 
     if highcharts:
-        algos = {   'basic_analysis':
-        results['basic_analysis'],
-                    'intermediate_analysis':    results['intermediate_analysis'],
-                    'advanced_analysis':        results['advanced_analysis']        }
+        algos = {'basic_analysis': results['basic_analysis'],
+                 'intermediate_analysis': results['intermediate_analysis'],
+                 'advanced_analysis': results['advanced_analysis']}
 
-        results['highcharts'] = make_highcharts(
-            fasta   = fasta,
-            Q       = precursor_charge,
-            raw_estimates = M.res,
-            algos   = algos)
+        results['highcharts'] = make_highcharts(fasta=fasta,
+                                                Q=precursor_charge,
+                                                raw_estimates=M.res,
+                                                algos=algos)
 
     T1 = time()
     results['summary']['total_time'] = T1-T0

@@ -68,11 +68,11 @@ def worker(worker_args):
 
 def solve(  problems,
             args,
-            solver              = 'sequential',
+            solver              ='sequential',
             multiprocesses_No   = None,
-            method              = 'MSE',
+            method              ='MSE',
             max_times_solve     = 5,
-            verbose             = False    ):
+            verbose             = False):
     stats = Counter()
 
     with cvxopt_wrapper():
@@ -80,8 +80,8 @@ def solve(  problems,
         if solver == 'sequential':
             results = [worker((SG, args, method, max_times_solve, verbose)) for SG in problems]
         elif solver == 'multiprocessing':
-            #Start solving bigger, i.e. graphs with more nodes, problems first
-            problems.sort(reverse=True, key=len) # len = len(SG) = #Nodes
+            # Start solving bigger, i.e. graphs with more nodes, problems first
+            problems.sort(reverse=True, key=len) # len(SG) = #Nodes
             pool_args = zip(problems,
                             repeat(args),
                             repeat(method),
