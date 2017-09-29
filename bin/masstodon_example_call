@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from MassTodonPy import MassTodonize, get_data
 
 if __name__ == '__main__':
