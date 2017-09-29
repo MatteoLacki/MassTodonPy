@@ -52,26 +52,24 @@ csv = True
 Using MassTodonPy in scripts is straight-forward: simply import the MassTodonize function from the MassTodonPy module. Then, provide the parameters. For instance:
 
 ```
-from MassTodonPy import MassTodonize
-from MassTodonPy.TestScripts.substanceP import substanceP
+from MassTodonPy import MassTodonize, get_data
 
-mol = substanceP.copy() # some data to compare
+substanceP = get_data('substanceP')
+mol = substanceP.copy()
 
-res = MassTodonize( fasta           = mol['fasta'],
-                    precursor_charge= mol['Q'],
-                    mz_prec         = .05,
-                    joint_probability_of_envelope = .999,
-                    modifications   = mol['modifications'],
-                    spectrum        = mol['spectrum'],
-                    opt_P           = .99,
-                    solver          = 'multiprocessing',
-                    multiprocesses_No = None,
-                    max_times_solve = 10,
-                    raw_data        = True,
-                    output_csv_path = '/Users/matteo/Documents/MassTodon/results/',
-                    highcharts      = False,
-                    verbose         = False )
-
+res = MassTodonize(fasta                           = mol['fasta'],
+                   precursor_charge                = mol['Q'],
+                   mz_prec                         = .05,
+                   joint_probability_of_envelope   = .999,
+                   modifications                   = mol['modifications'],
+                   spectrum                        = mol['spectrum'],
+                   opt_P                           = .99,
+                   solver                          = 'multiprocessing',
+                   multiprocesses_No               = None,
+                   distance_charges                = 5,
+                   max_times_solve                 = 10,
+                   raw_data                        = True,
+                   verbose                         = False )
 ```
 
 ### Web Service

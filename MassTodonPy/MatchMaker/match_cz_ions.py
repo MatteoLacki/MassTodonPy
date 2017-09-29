@@ -362,14 +362,6 @@ class czMatchMakerIntermediate(czMatchMaker):
 
 
 
-
-
-
-
-
-
-
-
 class czMatchMakerAdvanced(czMatchMakerIntermediate):
     def __init__(self, MassTodonResults, Q, fasta,
                  min_acceptEstimIntensity = 100.,

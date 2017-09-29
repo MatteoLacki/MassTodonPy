@@ -16,7 +16,6 @@ res = MassTodonize(fasta                           = mol['fasta'],
                    distance_charges                = 5,
                    max_times_solve                 = 10,
                    raw_data                        = True,
-                   output_csv_path                 = '/Users/matteo/Documents/MassTodon/results/',
                    verbose                         = False )
 
 res['summary']
