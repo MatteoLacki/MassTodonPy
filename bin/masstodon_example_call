@@ -1,19 +1,8 @@
 #!/usr/bin/env python
-from MassTodonPy import MassTodonize
-from time  import time
-import pkg_resources
-try:
-  import cPickle as pickle
-except:
-  import pickle
+from MassTodonPy import MassTodonize, get_data
 
 if __name__ == '__main__':
-    path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-
-    with open( path+'substanceP.example','r') as f:
-        substanceP = pickle.load(f)
-
-    mol = substanceP.copy()
+    mol = get_data('substanceP')
     res = MassTodonize( fasta           = mol['fasta'],
                         precursor_charge= mol['Q'],
                         mz_prec         = .05,
@@ -25,7 +14,5 @@ if __name__ == '__main__':
                         multiprocesses_No = None,
                         max_times_solve = 10,
                         raw_data        = False,
-                        highcharts      = True,
                         verbose         = True )
-
     print res

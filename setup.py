@@ -22,12 +22,12 @@ from setuptools import setup, find_packages
 setup(
     name          = 'MassTodonPy',
     packages      = find_packages(),
-    version       = '0.3.2',
+    version       = '0.3.3',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
     author        = 'Mateusz Krzysztof Lacki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.3.2.tar.gz',
+    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.3.3.tar.gz',
     keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
     classifiers   = [
         'Development Status :: 4 - Beta',
@@ -36,16 +36,13 @@ setup(
         'Topic :: Scientific/Engineering :: Chemistry',
         'Programming Language :: Python :: 2.7'],
     install_requires=[ 'linearCounter', 'numpy', 'pandas', 'pyteomics>=3.4.1', 'lxml',
-        'cvxopt', 'IsoSpecPy', 'scipy', 'networkx', 'intervaltree', 'pyinterval',
-        'python-highcharts'],
+        'cvxopt', 'IsoSpecPy', 'scipy', 'networkx', 'intervaltree', 'pyinterval'],
     scripts=['bin/masstodon', 'bin/masstodon_example_call'],
     include_package_data = True,
     package_data={
-        "Data": [   "Data/isotopes.txt",
-                    "Data/amino_acids.txt",
-                    "Data/substanceP.example",
-                    "Data/substancesP.example",
-                    "Data/substancesP_results.example",
-                    "Data/ubiquitin.example"        ],
+        "Data": ["Data/isotopes.txt",
+                 "Data/amino_acids.txt",
+                 "Data/substanceP.example",
+                 "Data/ubiquitin.example"],
     }
 )

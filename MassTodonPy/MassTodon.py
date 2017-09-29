@@ -79,8 +79,7 @@ from Outputting.export_outputs import OutputExporter
 from Outputting.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 from Solver.solver import solve
 from Summarator.summarator import summarize_results
-from Visualization.prepare_highcharts import make_highcharts
-
+# from Visualization.prepare_highcharts import make_highcharts
 
 class MassTodon():
     '''Make MassTodon somewhat less extinct...
@@ -288,7 +287,6 @@ def MassTodonize(
         method='MSE',
         max_times_solve=10,
         for_plot=False,
-        highcharts=False,
         raw_data=False,
         analyze_raw_data=True,
         output_csv_path=None,
@@ -442,9 +440,6 @@ def MassTodonize(
     for_plot : boolean
         Add data for plot to results.
 
-    highcharts : boolean
-        Generate options and series for highcharts.
-
     raw_data : boolean
         Should we add the raw output (peak assignement) to the output?
 
@@ -518,15 +513,15 @@ def MassTodonize(
     if for_plot:
         results['for_plot'] = M.make_data_for_spectrum_plot()
 
-    if highcharts:
-        algos = {'basic_analysis': results['basic_analysis'],
-                 'intermediate_analysis': results['intermediate_analysis'],
-                 'advanced_analysis': results['advanced_analysis']}
-
-        results['highcharts'] = make_highcharts(fasta=fasta,
-                                                Q=precursor_charge,
-                                                raw_estimates=M.res,
-                                                algos=algos)
+    # if highcharts:
+    #     algos = {'basic_analysis': results['basic_analysis'],
+    #              'intermediate_analysis': results['intermediate_analysis'],
+    #              'advanced_analysis': results['advanced_analysis']}
+    #
+    #     results['highcharts'] = make_highcharts(fasta=fasta,
+    #                                             Q=precursor_charge,
+    #                                             raw_estimates=M.res,
+    #                                             algos=algos)
 
     T1 = time()
     results['summary']['total_time'] = T1-T0

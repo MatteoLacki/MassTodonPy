@@ -16,7 +16,11 @@ install_mac:
 	virtualenv ../MassTodonVE
 	$(PIP) install -e .
 
-reinstall:   			## reinstall MassTodonPy
+reinstall: ## reinstall MassTodonPy
+	pip2 uninstall -y MassTodonPy
+	pip2 install -e .
+
+reinstall_ve: ## reinstall MassTodonPy in VE
 	$(PIP) uninstall -y MassTodonPy
 	$(PIP) install -e .
 

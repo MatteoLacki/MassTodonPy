@@ -18,7 +18,6 @@ Subpackages
     MassTodonPy.Solver
     MassTodonPy.Spectra
     MassTodonPy.Summarator
-    MassTodonPy.Visualization
 
 Submodules
 ----------
