@@ -1,4 +1,12 @@
 from MassTodonPy import MassTodonize
+
+import pkg_resources
+path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+import cPickle as pickle
+with open( path+'substanceP.example','r') as f:
+    substanceP = pickle.load(f)
+
+
 from MassTodonPy.TestScripts.substanceP import substanceP
 from MassTodonPy.TestScripts.ubiquitin  import ubiquitin
 from MassTodonPy.Outputing.to_etdetective import results_to_etdetective
