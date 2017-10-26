@@ -211,7 +211,7 @@ def protonate(Q,frag):
             yield (q,g)
 
 
-
+# TODO : semplify
 class CZformulator(Formulator):
     def __init__(   self,
                     fasta,
