@@ -187,12 +187,9 @@ def make_cz_fragments(fasta, modifications):
 #TODO It seems very strange to return these functions. Inspect it later on.
 
 class Formulator(object):
-    def __init__(   self,
-                    fasta,
-                    Q,
-                    distance_charges = 5,
-                    modifications    = {}
-        ):
+    def __init__(self, fasta, Q,
+                 distance_charges=5,
+                 modifications={}):
         self.Q = Q
         self.fasta = fasta
         self.d_charges = distance_charges
@@ -211,7 +208,7 @@ def protonate(Q,frag):
             yield (q,g)
 
 
-
+# TODO : semplify
 class CZformulator(Formulator):
     def __init__(   self,
                     fasta,

@@ -37,12 +37,9 @@ from MassTodonPy.Spectra.operations import cdata2numpyarray, aggregate, merge_ru
 class IsotopeCalculator:
     """A class for isotope calculations."""
 
-    def __init__(   self,
-                    jP = .999,
-                    prec_digits = 2,
-                    iso_masses = None,
-                    iso_probs  = None,
-                    verbose    = False     ):
+    def __init__(self, jP=.999, prec_digits=2,
+                 iso_masses=None, iso_probs=None,
+                 verbose=False):
         """Initiate class with information on isotopes. Calculates basic statistics of isotope frequencies: mean masses and their standard deviations."""
 
         if iso_masses==None or iso_probs==None:
@@ -54,7 +51,7 @@ class IsotopeCalculator:
         self.elementsMassMean = dict(
             (el, sum( pr*m for pr, m in zip(self.iso_probs[el], self.iso_masses[el]) ) )
             for el in self.iso_masses.keys() )
-        self.elementsMassVar  = dict(
+        self.elementsMassVar = dict(
             (el, sum( pr*m**2 for pr, m in zip(self.iso_probs[el], self.iso_masses[el])) - self.elementsMassMean[el]**2 )
             for el in self.iso_masses.keys() )
         self.isotopicEnvelopes = {}

@@ -7,3 +7,11 @@ Notes/
 
 #R
 .Rhistory
+.Rproj.user
+*.Rproj
+
+#Python
+build
+dist
+*.egg-info
+*.csv
