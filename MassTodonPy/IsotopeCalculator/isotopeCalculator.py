@@ -16,7 +16,6 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-import scipy.stats as ss
 import numpy as np
 import pkg_resources
 try:

@@ -303,4 +303,5 @@ def make_formulas(  fasta,
     formClass       = { 'cz':CZformulator,
                         'cz_qg_competition':CZformulator_qg_competition
     }[frag_type](fasta, Q, distance_charges, modifications)
+
     return formClass

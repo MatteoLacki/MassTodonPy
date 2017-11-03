@@ -16,7 +16,6 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-# from distutils.core import setup
 from setuptools import setup, find_packages
 
 setup(
@@ -28,7 +27,11 @@ setup(
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
     download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.3.3.tar.gz',
-    keywords      = ['Mass Spectrometry', 'ETD', 'Electron Transfer Dissociation', 'Fragmentation'],
+    keywords      = [
+        'Mass Spectrometry',
+        'ETD',
+        'Electron Transfer Dissociation',
+        'Fragmentation'],
     classifiers   = [
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: GNU Affero General Public License v3',
@@ -43,10 +46,8 @@ setup(
         'lxml',
         'cvxopt',
         'IsoSpecPy',
-        'scipy',
         'networkx',
-        'intervaltree',
-        'pyinterval' ],
+        'intervaltree'],
     scripts=[
         'bin/masstodon',
         'bin/masstodon_example_call'  ],

@@ -82,7 +82,7 @@ from Summarator.summarator import summarize_results
 # from Visualization.prepare_highcharts import make_highcharts
 
 class MassTodon():
-    '''Make MassTodon somewhat less extinct...
+    """Make MassTodons less extinct by giving to the World its instance.
 
     Parameters
     ----------
@@ -114,7 +114,7 @@ class MassTodon():
         The minimal distance between charges on the protein.
         If set to 5, at least 4 amino acids must lay between
         consecutive *charged* amino acids.
-    '''
+    """
 
     def __init__(self,
                  fasta,
@@ -138,9 +138,11 @@ class MassTodon():
         self.Q = precursor_charge
         self.verbose = verbose
 
-        self.Forms = make_formulas(
-            fasta=fasta, Q=self.Q, frag_type=frag_type,
-            distance_charges=distance_charges, modifications=modifications)
+        self.Forms = make_formulas(fasta=fasta,
+                                   Q=self.Q,
+                                   frag_type=frag_type,
+                                   distance_charges=distance_charges,
+                                   modifications=modifications)
 
         self.IsoCalc = IsotopeCalculator(
             jP=joint_probability_of_envelope, prec_digits=self.prec_digits,
