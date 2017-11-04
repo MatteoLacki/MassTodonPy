@@ -17,35 +17,12 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 import re
-import pkg_resources
-try:
-   import cPickle as pickle
-except:
-   import pickle
-
 from linearCounter.linearCounter import linearCounter as lCnt
-from itertools import chain
 from collections import defaultdict
 
-def countIsNegative(atomCnt):
-    """Check if any element of a dictionary is a negative number.
 
-    Parameters
-    ----------
-    atomCnt : Counter
-        The chemical formula counter.
-
-    Returns
-    -------
-    out : bool
-        True if any of the counts were negative.
-
-    Notes
-    -----
-    This function is useful to catch the cases when the user misspecified the modification diff.
-    """
-    return any( atomCnt[elem]<0 for elem in atomCnt )
-
+class NegativeAtomCount(Exception):
+    pass
 
 
 def atomCnt2string(atomCnt):
@@ -62,14 +39,12 @@ def atomCnt2string(atomCnt):
         A chemical formula string.
     """
     keys = atomCnt.keys()
-    keys.sort()
-    return "".join( el+str(atomCnt[el]) for el in keys )
+    return "".join(el+str(atomCnt[el]) for el in sorted(keys))
 
 
-
-
-def standardize(modifications):
-    """Standardize modifications so that they meet the internal nomenclature scheme.
+def standardize_modifications(modifications):
+    """Standardize modifications so that they meet
+    the internal nomenclature scheme.
 
     Parameters
     ----------
@@ -83,19 +58,21 @@ def standardize(modifications):
 
     Notes
     -----
-    It was easier for me to think of an amino acid as if it was composed out of three bricks: the left one, the center one, and the right one. The left one corresponds to the group with nitrogen, the center one - to the alpha carbon (including the side chain), and the right one - to the other carbon atom.
+    It was easier for me to think of an amino acid as if it was composed
+    out of three bricks: the left one, the center one, and the right one.
+    The left one corresponds to the group with nitrogen,
+    the center one - to the alpha carbon (including the side chain),
+    and the right one - to the other carbon atom.
     """
-    backboneAtom2aaNomen = {'N':'L', 'Calpha':'C', 'C':'R'}
-    R = defaultdict(lambda:defaultdict(lCnt))
+    backboneAtom2aaNomen = {'N': 'L', 'Calpha': 'C', 'C': 'R'}
+    R = defaultdict(lambda: defaultdict(lCnt))
     for tag, atomCnt in modifications.items():
         match = re.match(r"([a-z]+)([0-9]+)", tag, re.I)
         if match:
             aa, aa_idx = match.groups()
             aa_idx = int(aa_idx) - 1
-        R[aa_idx][ backboneAtom2aaNomen[aa] ] = lCnt(atomCnt)
+        R[aa_idx][backboneAtom2aaNomen[aa]] = lCnt(atomCnt)
     return R
-
-
 
 
 def prolineBlockedFragments(fasta):
@@ -114,168 +91,15 @@ def prolineBlockedFragments(fasta):
     """
     blocked = set('c0')
     for i, f in enumerate(fasta):
-        if f=='P':
-            blocked.add( 'c' + str(i) )
-            blocked.add( 'z' + str( len(fasta)-i ) )
+        if f == 'P':
+            blocked.add('c' + str(i))
+            blocked.add('z' + str(len(fasta)-i))
     return blocked
 
 
-
-
-def make_cz_fragments(fasta, modifications):
-    """Prepares the precursor and the c and z fragments atom counts.
-
-    Parameters
-    ----------
-    fasta : str
-        The fasta of the studied molecular species.
-
-    modifications : list
-        A list of modifications.
-
-    Returns
-    -------
-    out : tuple
-        A tuple with generators of precursors, c fragments, and z fragments.
-    """
-
-    data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-    # bricks = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
-
-    with open(data_path+"amino_acids.txt", "rb") as f:
-        bricks = pickle.load(f)
-
-
-    def getBrick(aaPart, aa):
-        brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]
-        if countIsNegative(brick):
-            print("Attention: your modification has an unexpected effect. Part of your molecule now has negative atom count. Bear that in mind while publishing your results.")
-        return brick
-
-    superAtoms = []
-    sA = lCnt()
-    for aaNo, aa in enumerate(fasta):
-        sA += getBrick('L', aa)
-        superAtoms.append( sA )
-        sA = getBrick('C', aa) + getBrick('R', aa)
-    sA += lCnt({'O':1,'H':1})
-    superAtoms.append(sA)
-    superAtoms[0] += lCnt({'H':1})
-    N = len(superAtoms)
-
-    def getPrecursor():
-        precursor = sum(superAtoms)
-        yield ('precursor', atomCnt2string(precursor), len(fasta) )
-
-    blockedFragments = prolineBlockedFragments(fasta)
-
-    def getCfrags():
-        cFrag = lCnt({'H':1}) # Adding one extra hydrogen to meet the definition of a c fragment.
-        for i in range(N-1):
-            cFrag += superAtoms[i]
-            cFrag_tmp = lCnt(cFrag)
-            frag_type = 'c'+str(i)
-            if not frag_type in blockedFragments and not i == 0:
-                yield (frag_type, atomCnt2string(cFrag_tmp), i)
-
-    def getZfrags():
-        zFrag = lCnt()
-        for i in range(1,N):
-            zFrag += superAtoms[N-i]
-            zFrag_tmp = lCnt(zFrag)
-            frag_type = 'z'+str(i)
-            if not frag_type in blockedFragments:
-                yield (frag_type, atomCnt2string(zFrag_tmp), i)
-
-    return getPrecursor, getCfrags, getZfrags
-#TODO It seems very strange to return these functions. Inspect it later on.
-
 class Formulator(object):
-    def __init__(self, fasta, Q,
-                 distance_charges=5,
-                 modifications={}):
-        self.Q = Q
-        self.fasta = fasta
-        self.d_charges = distance_charges
-        self.modifications = modifications
-
-
-
-def protonate(Q,frag):
-    a, b, c = {
-        'p' : (1,0,1),
-        'c' : (0,-1,0),
-        'z' : (0,0,1)
-    }[frag]
-    for q in range(1,Q+a):
-        for g in range(b,Q-q+c):
-            yield (q,g)
-
-
-# TODO : semplify
-class CZformulator(Formulator):
-    def __init__(   self,
-                    fasta,
-                    Q,
-                    distance_charges = 5,
-                    modifications={}
-        ):
-        "Initialize the class that generates chemical formulas."
-        super(CZformulator,self).__init__(fasta, Q, distance_charges, modifications)
-        self.precs, self.cfrags, self.zfrags = make_cz_fragments(fasta, modifications)
-
-
-    def makeMolecules(self):
-        """Generate possible molecules in c/z fragmentation.
-
-        Returns
-        -------
-        out : generator
-            Generator of Returns: tuples ( type_of_mol, mol_formula, amino_acids_no, charge, quenched_charge ).
-        """
-        for molType, atomCnt_str, sideChainsNo in chain( self.precs(), self.cfrags(), self.zfrags() ):
-            for q,g in protonate( self.Q, molType[0] ):
-                potentialChargesNo = sideChainsNo / self.d_charges
-                if sideChainsNo % self.d_charges > 0:
-                    potentialChargesNo += 1
-                    # +0000 +0000 00+  at most 3 charges
-                if potentialChargesNo >= q:
-                    yield molType, atomCnt_str, sideChainsNo, q, g
-
-
-
-
-class CZformulator_qg_competition(CZformulator):
-    def makeMolecules(self):
-        """Generate possible molecules in c/z fragmentation. Take into account that q and g charges compete for the bloody places.
-
-        Returns
-        -------
-        out : generator
-            Generates tuples ( type_of_mol, mol_formula, amino_acids_no, charge, quenched_charge ).
-        """
-        for molType, atomCnt_str, sideChainsNo in chain( self.precs(), self.cfrags(), self.zfrags() ):
-            for q,g in protonate( self.Q, molType[0] ):
-                if g >= 0:
-                    totalCharges = q+g
-                else:
-                    totalCharges = q
-                potentialChargesNo = sideChainsNo / self.d_charges
-                if sideChainsNo % self.d_charges > 0:
-                    potentialChargesNo += 1 # +0000 +0000 00+  at most 3 charges
-                if potentialChargesNo >= totalCharges:
-                    yield molType, atomCnt_str, sideChainsNo, q, g
-
-
-
-
-def make_formulas(  fasta,
-                    Q,
-                    frag_type ='cz',
-                    distance_charges = 5,
-                    modifications = {}
-    ):
-    """Generate fragments from the Roepstorff Scheme.
+    """A class for obtaining chemical formulas
+    generated by a given type of a molecules.
 
     Parameters
     ----------
@@ -285,14 +109,150 @@ def make_formulas(  fasta,
     Q : int
         The charge of the precursor ion.
 
-    frag_type : str
-        Type of fragmentation.
+    bricks : a dictionary of dictionaries of linearCounters
+        The atomic counts of different amino acids,
+        divided into different parts (left, center, right),
+        that correspond to backbone C, C_alpha, and N atoms
+        and atoms that neighbour them.
 
     distance_charges : int
-        The minimal distance between two charges on a molecule.
+        The minimal distance between charges on the protein.
+        If set to 5, at least 4 amino acids must lay between
+        consecutive *charged* amino acids.
 
     modifications : list
-        A list of modifications.
+        A dictionary of modifications.
+
+        The key in the modifications' dictionary should with of form
+        **<N|Calpha|C><amino acid No>**, e.g. C10.
+
+        The values contain dictionaries with diffs in elements,
+        e.g. **{'H': 1, 'N': 1, 'O': -1}**."""
+
+    def __init__(self, fasta, Q, bricks,
+                 distance_charges=5,
+                 modifications=lCnt()):
+        self.Q = Q
+        self.fasta = fasta
+        self.d_charges = distance_charges
+        self.modifications = standardize_modifications(modifications)
+        self.bricks = bricks
+
+    def getBrick(self, aaPart, aa, aaNo):
+        brick = self.bricks[aa][aaPart] + self.modifications[aaNo][aaPart]
+        if any(brick[elem] < 0 for elem in brick):
+            raise NegativeAtomCount("Attention: your modification had an unexpected effect.\
+            Part of your molecule now has negative atom count.\
+            Bear that in mind while publishing your results.")
+        return brick
+
+    def protonate(self, frag):
+        a, b, c = {'p': (1, 0, 1),
+                   'c': (0, -1, 0),
+                   'z': (0, 0, 1)}[frag]
+
+        for q in range(1, self.Q+a):
+            for g in range(b, self.Q-q+c):
+                yield (q, g)
+
+    def make_superatoms(self):
+        self.superAtoms = []
+        sA = lCnt()
+        for aaNo, aa in enumerate(self.fasta):
+            sA += self.getBrick('L', aa, aaNo)
+            self.superAtoms.append(sA)
+            sA = self.getBrick('C', aa, aaNo) + self.getBrick('R', aa, aaNo)
+        sA += lCnt({'O': 1, 'H': 1})
+        self.superAtoms.append(sA)
+        self.superAtoms[0] += lCnt({'H': 1})
+
+    def make_unprotonated_formulas(self):
+        N = len(self.superAtoms)
+        N_fasta = len(self.fasta)
+
+        # precursor molecule
+        precursor = ('precursor',
+                     atomCnt2string(sum(self.superAtoms)),
+                     N_fasta)
+        self.unprotonated_formulas = [precursor]
+
+        # exclude proline fragmented daughter ions
+        blockedFragments = prolineBlockedFragments(self.fasta)
+
+        # c fragments
+        # Adding one extra hydrogen to meet the definition of a c fragment.
+        cFrag = lCnt({'H': 1})
+        for i in range(N-1):
+            cFrag += self.superAtoms[i]
+            cFrag_tmp = lCnt(cFrag)
+            frag_type = 'c'+str(i)
+            if frag_type not in blockedFragments and not i == 0:
+                c_fragment = (frag_type, atomCnt2string(cFrag_tmp), i)
+                self.unprotonated_formulas.append(c_fragment)
+
+        # z fragments
+        zFrag = lCnt()
+        for i in range(1, N):
+            zFrag += self.superAtoms[N-i]
+            zFrag_tmp = lCnt(zFrag)
+            frag_type = 'z'+str(i)
+            if frag_type not in blockedFragments:
+                z_fragment = (frag_type, atomCnt2string(zFrag_tmp), i)
+                self.unprotonated_formulas.append(z_fragment)
+
+    def make_formulas(self):
+        # outcome variable
+        self.formulas = []
+
+        for molType, atomCnt_str, sideChainsNo in self.unprotonated_formulas:
+            for q, g in self.protonate(molType[0]):
+                potentialChargesNo = sideChainsNo // self.d_charges
+                if sideChainsNo % self.d_charges > 0:
+                    potentialChargesNo += 1
+                    # +0000 +0000 00+  at most 3 charges
+                if potentialChargesNo >= q:
+                    self.formulas.append((molType,
+                                          atomCnt_str,
+                                          sideChainsNo,
+                                          q,
+                                          g))
+
+    def get_formulas(self):
+        self.superAtoms = self.make_superatoms()
+        self.unprotonated_formulas = self.make_unprotonated_formulas()
+        self.formulas = self.make_formulas()
+        return self.formulas
+
+
+def get_formulas(fasta, Q, bricks, distance_charges=5, modifications={}):
+    """Generate fragments from the Roepstorff Scheme.
+    Parameters
+    ----------
+    fasta : str
+        The fasta of the studied molecular species.
+
+    Q : int
+        The charge of the precursor ion.
+
+    bricks : a dictionary of dictionaries of linearCounters
+        The atomic counts of different amino acids,
+        divided into different parts (left, center, right),
+        that correspond to backbone C, C_alpha, and N atoms
+        and atoms that neighbour them.
+
+    distance_charges : int
+        The minimal distance between charges on the protein.
+        If set to 5, at least 4 amino acids must lay between
+        consecutive *charged* amino acids.
+
+    modifications : list
+        A dictionary of modifications.
+
+        The key in the modifications' dictionary should with of form
+        **<N|Calpha|C><amino acid No>**, e.g. C10.
+
+        The values contain dictionaries with diffs in elements,
+        e.g. **{'H': 1, 'N': 1, 'O': -1}**.
 
     Returns
     -------
@@ -303,9 +263,13 @@ def make_formulas(  fasta,
     -------
         At present only the 'cz' fragmentation is supported.
     """
-    modifications   = standardize(modifications)
-    formClass       = { 'cz':CZformulator,
-                        'cz_qg_competition':CZformulator_qg_competition
-    }[frag_type](fasta, Q, distance_charges, modifications)
 
-    return formClass
+    F = Formulator(fasta=fasta,
+                   Q=Q,
+                   bricks=bricks,
+                   distance_charges=distance_charges,
+                   modifications=modifications)
+
+    formulas = F.get_formulas()
+
+    return formulas

@@ -1,9 +1,9 @@
 %load_ext autoreload
 %autoreload 2
 
-from MassTodonPy import get_data
+from MassTodonPy import get_dataset
 from MassTodonPy.Formulator.formulator import  make_formulas
-mol = get_data('substanceP')
+mol = get_dataset('substanceP')
 
 Forms = make_formulas(
     fasta=mol["fasta"],

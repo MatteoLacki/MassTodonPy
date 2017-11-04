@@ -19,13 +19,17 @@
 import numpy as np
 import os
 
-from pyteomics import mzxml # >= 3.41
+from pyteomics import mzxml  # >= 3.41
 
-from MassTodonPy.Spectra.operations import aggregate, merge_runs, trim_spectrum, round_spectrum, remove_lower_quantile
+from MassTodonPy.Spectra.operations import merge_runs,\
+                                           trim_spectrum,\
+                                           round_spectrum,\
+                                           remove_lower_quantile
 
 
 def get_mzxml(path, prec_digits=2):
-    """Generate a sequence of rounded and trimmed spectra from individual runs of the instrument.
+    """Generate a sequence of rounded and trimmed spectra from
+    individual runs of the instrument.
 
     Parameters
     ----------
@@ -37,7 +41,8 @@ def get_mzxml(path, prec_digits=2):
     Returns
     -------
     out : generator
-        Generates tuples of numpy arrays corresponding to different runs of the experimental spectrum.
+        Generates tuples of numpy arrays corresponding to different runs
+        of the experimental spectrum.
     """
     with mzxml.read(path) as reader:
         for spectrum in reader:
@@ -60,9 +65,10 @@ def read_mzxml(path, prec_digits=2):
     Returns
     -------
     out : generator
-        Generates tuples of numpy arrays corresponding to different runs of the experimental spectrum.
+        Generates tuples of numpy arrays corresponding to different runs
+        of the experimental spectrum.
     """
-    mz, intensity = reduce( merge_runs, get_mzxml(path, prec_digits) )
+    mz, intensity = reduce(merge_runs, get_mzxml(path, prec_digits))
     return mz, intensity
 
 
@@ -79,18 +85,19 @@ def read_txt(path, prec_digits=2):
     Returns
     -------
     out : generator
-        Generates tuples of numpy arrays corresponding to different runs of the experimental spectrum.
+        Generates tuples of numpy arrays corresponding to different runs
+        of the experimental spectrum.
     """
     mz = []
     intensity = []
     total_intensity = 0.0
     with open(path) as f:
-        for l in f:
-            l = l.split()
-            I = float(l[1])
-            total_intensity += I
-            mz.append(float(l[0]))
-            intensity.append(I)
+        for line in f:
+            line = line.split()
+            intensity = float(line[1])
+            total_intensity += intensity
+            mz.append(float(line[0]))
+            intensity.append(intensity)
     mz = np.array(mz)
     intensity = np.array(intensity)
     mz, intensity = round_spectrum(mz, intensity, prec_digits)
@@ -110,17 +117,18 @@ def parse_path(path):
     out : tuple
         Path of file, name of file, and file's extension.
     """
-    file_path, file_ext  = os.path.splitext(path)
+    file_path, file_ext = os.path.splitext(path)
     file_name = file_path.split('/')[-1]
     file_path = "/".join(file_path.split('/')[:-1]) + '/'
     return file_path, file_name, file_ext
 
 
-def read_n_preprocess_spectrum( path    = None,
-                                spectrum= None,
-                                prec_digits = 2,
-                                cut_off = None,
-                                opt_P   = None  ):
+def read_n_preprocess_spectrum(path=None,
+                               spectrum=None,
+                               prec_digits=2,
+                               cut_off=None,
+                               opt_P=None,
+                               verbose=False):
     """Read the spectrum, round it, apply intensity based thresholding of peaks.
 
     Parameters
@@ -128,7 +136,8 @@ def read_n_preprocess_spectrum( path    = None,
     path : str
         Path to spectrum.
     spectrum : tuple
-        The experimental spectrum, a tuple of m/z numpy array and intensities numpy array.
+        The experimental spectrum, a tuple of m/z numpy array
+        and intensities numpy array.
     prec_digits : float
         The number of digits after which the floats get rounded.
     cut_off : float
@@ -138,12 +147,14 @@ def read_n_preprocess_spectrum( path    = None,
 
     Warning
     -------
-    You should provide either the path or the spectrum, not both simultaneously.
+    You should provide either the path or the spectrum,
+    not both simultaneously.
 
     Returns
     -------
     spectra : dict
-        A dictionary containing the experimental spectrum split into several subspectra.
+        A dictionary containing the experimental spectrum
+        split into several subspectra.
 
     Notes
     -----
@@ -157,34 +168,58 @@ def read_n_preprocess_spectrum( path    = None,
 
     assert path or spectrum, "No path to mass spectrum or no mass spectrum."
 
-    assert not (path and spectrum), "Please decide if you pass the spectrum as the argument (provide spectrum argument for method read_spectrum) or you want MassTodon to read the spectrum from file following the provided path."
+    assert not (path and spectrum), "Please decide if you pass the spectrum as\
+    the argument (provide spectrum argument for method read_spectrum)\
+    or you want MassTodon to read the spectrum\
+    from file following the provided path."
 
-    assert not (cut_off and opt_P), "Please decide if you want to apply an intensity based cut-off or to choose the optimal P-set of experimental peaks, e.g. a representative of the class of the smallest sets of peaks with a probability at least P."
+    assert not (cut_off and opt_P), "Please decide if you want to apply\
+    an intensity based cut-off or to choose the optimal P-set\
+    of experimental peaks, e.g. a representative of the class\
+    of the smallest sets of peaks with a probability at least P."
 
     if not (cut_off or opt_P):
-        print '\nAttention! \nYou did not provide a cut-off value for noise intensities, nor did you provide how probable should optimal P-set be. Thus, we will use a default value of opt_P = .99. \n\n It means that we trim the spectrum so that the remaining peaks amount for at least 99 per cent of all intensity and so that these peaks are the heighest in the spectrum.'
+        print('\nAttention! \nYou did not provide a cut-off value for\
+        noise intensities, nor did you provide how probable should\
+        optimal P-set be. Thus, we will use a default value of opt_P = .99.\
+        \n\n It means that we trim the spectrum so that the remaining\
+        peaks amount for at least 99 per cent of all intensity\
+        and so that these peaks are the heighest in the spectrum.')
         opt_P = .99
+
     if path:
         file_path, file_name, file_ext = parse_path(path)
         file_ext = file_ext.lower()
-        reader = {  '':         read_txt,
-                    '.txt':     read_txt,
-                    '.mzxml':   read_mzxml
-        }[file_ext]
+        reader = {'': read_txt,
+                  '.txt': read_txt,
+                  '.mzxml': read_mzxml}[file_ext]
         spectrum = reader(path, prec_digits)
     else:
-        spectrum = round_spectrum( *spectrum, prec_digits=prec_digits)
+        spectrum = round_spectrum(*spectrum, prec_digits=prec_digits)
 
     spectra = {}
     spectra['original'] = spectrum
     spectra['original total intensity'] = sum(spectrum[1])
 
-    if opt_P: # cut_off == None
-        cut_off = remove_lower_quantile(*spectrum, retained_percentage = opt_P)
+    if opt_P:  # cut_off == None
+        cut_off = remove_lower_quantile(*spectrum, retained_percentage=opt_P)
 
-    spectra['trimmed'], spectra['left out'] = trim_spectrum( *spectrum, cut_off=cut_off)
+    spectra['trimmed'], spectra['left out'] = trim_spectrum(*spectrum,
+                                                            cut_off=cut_off)
     spectra['total intensity after trim'] = spectra['trimmed'][1].sum()
-    spectra['trimmed intensity'] = spectra['original total intensity'] - spectra['total intensity after trim']
+    spectra['trimmed intensity'] = \
+        spectra['original total intensity'] - \
+        spectra['total intensity after trim']
     spectra['cut_off'] = cut_off
+
+    if verbose:
+        print()
+        print('original total intensity',
+              spectra['original total intensity'])
+        print('total intensity after trim',
+              spectra['total intensity after trim'])
+        print('trimmed intensity',
+              spectra['trimmed intensity'])
+        print()
 
     return spectra

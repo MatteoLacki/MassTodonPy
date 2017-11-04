@@ -2,7 +2,7 @@
 from MassTodonPy import MassTodonize, get_data
 
 if __name__ == '__main__':
-    mol = get_data('substanceP')
+    mol = get_dataset('substanceP')
     res = MassTodonize( fasta           = mol['fasta'],
                         precursor_charge= mol['Q'],
                         mz_prec         = .05,

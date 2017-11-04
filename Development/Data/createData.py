@@ -1,7 +1,7 @@
 from MassTodonPy import MassTodonize, get_data
 
-substanceP = get_data('substanceP')
-ubiquitin  = get_data('ubiquitin')
+substanceP = get_dataset('substanceP')
+ubiquitin  = get_dataset('ubiquitin')
 
 
 def serialize(mol):

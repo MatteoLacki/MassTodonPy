@@ -1,3 +1,4 @@
+
 #
 # -*- coding: utf-8 -*-
 #   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
@@ -65,18 +66,15 @@
 # .7.......7...O....O...O... I.......Z.....Z....Z... $...O...O...$....O...O....Z..
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
-from MassTodonPy.Formulator.formulator import make_formulas
-
 try:
     from itertools import izip as zip
 except ImportError:
     pass
-
 from math import ceil, log10
 from time import time
+from Data.get_data import get_bricks
+from Formulator.formulator import get_formulas
 from IsotopeCalculator import IsotopeCalculator
-
-from Formulator.formulator import make_formulas
 from Parsers.spectrum_parser import read_n_preprocess_spectrum
 from PeakPicker.peakPicker import PeakPicker
 from MatchMaker.match_cz_ions import match_cz_ions
@@ -84,7 +82,7 @@ from Outputting.export_outputs import OutputExporter
 from Outputting.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 from Solver.solver import solve
 from Summarator.summarator import summarize_results
-# from Visualization.prepare_highcharts import make_highcharts
+
 
 class MassTodon():
     """Make MassTodons less extinct by giving to the World its instance.
@@ -97,9 +95,15 @@ class MassTodon():
     precursor_charge : int
         The charge of the precursor ion.
 
-    mz_prec : float
+    m_over_z_precision: float
         The precision in the m/z domain: how far away [in Daltons]
         should we search for peaks from the theoretical mass.
+
+        For instance, consider H20 and m_over_z_precision = 0.05 Da.
+        Then, the mass of the lightest isotopic variant equals
+        1.0078 x 2 + 15.9949 = 18.0105 Da.
+        Then, intensity within a range 18.0105 ± 0.05 Da will be considered
+        to potentially originate from the water molecules.
 
     modifications : dict
         A dictionary of modifications.
@@ -110,12 +114,7 @@ class MassTodon():
         The values contain dictionaries with diffs in elements,
         e.g. **{'H': 1, 'N': 1, 'O': -1}**.
 
-    frag_type : str
-        The type of framgentation.
-
-        Only **cz** fragmentation supported.
-
-    distance_charges : int
+    minimal_distance_between_charges : int
         The minimal distance between charges on the protein.
         If set to 5, at least 4 amino acids must lay between
         consecutive *charged* amino acids.
@@ -124,70 +123,34 @@ class MassTodon():
     def __init__(self,
                  fasta,
                  precursor_charge,
-                 mz_prec,
+                 m_over_z_precision,
                  modifications={},
-                 frag_type='cz',
-                 distance_charges=5,
-                 joint_probability_of_envelope=0.999,
-                 iso_masses=None,
-                 iso_probs=None,
+                 minimal_distance_between_charges=5,
+                 joint_probability_of_the_envelope=0.999,
+                 _isotope_masses=None,
+                 _isotope_probabilities=None,
                  verbose=False):
 
-        self.mz_prec = mz_prec
+        self.mz_prec = m_over_z_precision
         # precision one digit lower than the input precision of spectra, eg.
         # mz_prec = .05     -->     prec_digits = 3
         # mz_prec = .005    -->     prec_digits = 4
-        # self.prec_digits = int(ceil(-log10(mz_prec)))+1
-        self.prec_digits = int(ceil(-log10(mz_prec)))
+        self.prec_digits = int(ceil(-log10(self.mz_prec)))
         self.fasta = fasta
         self.Q = precursor_charge
-        self.frag_type = frag_type
-        self.verbose = verbose
-        self.data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-
-        self.formulas = make_formulas(fasta=self.fasta,
-                                   Q=self.Q,
-                                   data_path=self.data_path
-                                   frag_type=self.frag_type,
-                                   distance_charges=distance_charges,
-                                   modifications=modifications)
-
-        self.IsoCalc = IsotopeCalculator(
-            jP=joint_probability_of_envelope, prec_digits=self.prec_digits,
-            iso_masses=iso_masses, iso_probs=iso_probs, verbose=verbose)
-
-        self.peakPicker = PeakPicker(
-            _Forms=self.formulas, _IsoCalc=self.IsoCalc,
-            mz_prec=mz_prec, verbose=verbose)
-
-        self.ResPlotter = OutputExporter(mz_prec)
         self.modifications = modifications
-        self.spectra = {}
-        self.small_graphs_no_G = None
+        self.distance_charges = minimal_distance_between_charges
+        self.spectra = None
+        self.verbose = verbose
 
     def read_n_preprocess_spectrum(self,
                                    path=None,
                                    spectrum=None,
                                    cut_off=None,
                                    opt_P=None):
-        '''Read in a mass spectrum and round the masses to prec_digits digits after 0.
+        pass
 
-        Read either an individual text file or merge runs from an mzXml files.
-        In case of the mzXml file, the spectra are additionally merged.
-        '''
-
-        self.spectra = read_n_preprocess_spectrum(
-            path=path, spectrum=spectrum, prec_digits=self.prec_digits,
-            cut_off=cut_off, opt_P=opt_P)
-
-        if self.verbose:
-            print()
-            print('original total intensity', self.spectra['original total intensity'])
-            print('total intensity after trim', self.spectra['total intensity after trim'])
-            print('trimmed intensity', self.spectra['trimmed intensity'])
-            print()
-
-    # TODO is the thing below necessary?
+    #  TODO is the thing below necessary?
     def spectrum_iter(self, spectrum_type):
         assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
         for mz, intensity in zip(*self.spectra[spectrum_type]):
@@ -202,6 +165,32 @@ class MassTodon():
             for_plot=False,
             **args):
         '''Perform the deconvolution of problems.'''
+
+        self.spectra = read_n_preprocess_spectrum(path=path,
+                                                  spectrum=spectrum,
+                                                  prec_digits=self.prec_digits,
+                                                  cut_off=cut_off,
+                                                  opt_P=opt_P,
+                                                  verbose=self.verbose)
+
+        self.bricks = get_bricks()
+        self.formulas = get_formulas(fasta=self.fasta,
+                                     Q=self.Q,
+                                     bricks=self.bricks,
+                                     distance_charges=self.distance_charges,
+                                     modifications=self.modifications)
+
+        self.IsoCalc = IsotopeCalculator(jP=joint_probability_of_envelope,
+                                         prec_digits=self.prec_digits,
+                                         iso_masses=iso_masses,
+                                         iso_probs=iso_probs,
+                                         verbose=verbose)
+
+        self.peakPicker = PeakPicker(
+            _Forms=self.formulas, _IsoCalc=self.IsoCalc,
+            mz_prec=mz_prec, verbose=verbose)
+
+        self.ResPlotter = OutputExporter(mz_prec)
 
         self.problems = self.peakPicker.get_problems(
             spectrum=self.spectra['trimmed'],
