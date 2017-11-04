@@ -23,7 +23,7 @@ try:
 except:
    import pickle
 
-from linearCounter import linearCounter as lCnt
+from linearCounter.linearCounter import linearCounter as lCnt
 from itertools import chain
 from collections import defaultdict
 
@@ -140,7 +140,11 @@ def make_cz_fragments(fasta, modifications):
     """
 
     data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-    bricks = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
+    # bricks = pickle.load(open(data_path+'amino_acids.txt', 'rb'))
+
+    with open(data_path+"amino_acids.txt", "rb") as f:
+        bricks = pickle.load(f)
+
 
     def getBrick(aaPart, aa):
         brick = bricks[aa][aaPart] + modifications[aaNo][aaPart]

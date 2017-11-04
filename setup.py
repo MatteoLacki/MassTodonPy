@@ -23,7 +23,7 @@ setup(
     packages      = find_packages(),
     version       = '0.3.3',
     description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
-    author        = 'Mateusz Krzysztof Lacki',
+    author        = u'Mateusz Krzysztof Łącki',
     author_email  = 'matteo.lacki@gmail.com',
     url           = 'https://github.com/MatteoLacki/MassTodonPy',
     download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.3.3.tar.gz',

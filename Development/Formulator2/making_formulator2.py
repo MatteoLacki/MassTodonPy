@@ -1,23 +1,15 @@
-from MassTodonPy import MassTodonize, get_data
+%load_ext autoreload
+%autoreload 2
 
-substanceP = get_data('substanceP')
-ubiquitin  = get_data('ubiquitin')
-mol = substanceP.copy()
+from MassTodonPy import get_data
+from MassTodonPy.Formulator.formulator import  make_formulas
+mol = get_data('substanceP')
 
+Forms = make_formulas(
+    fasta=mol["fasta"],
+    Q=mol["Q"],
+    frag_type="cz",
+    distance_charges=5,
+    modifications=mol["modifications"])
 
-import cPickle as pickle
-
-
-
-
-from MassTodonPy.Formulator.formulator import make_formulas
-
-
-mol.viewkeys()
-
-
-molecules
-
-molecules2 = list(frags.makeMolecules())
-molecules2.append(10)
-molecules == molecules2
+list(Forms.makeMolecules())

@@ -65,8 +65,13 @@
 # .7.......7...O....O...O... I.......Z.....Z....Z... $...O...O...$....O...O....Z..
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
+from MassTodonPy.Formulator.formulator import make_formulas
 
-from itertools import izip
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
+
 from math import ceil, log10
 from time import time
 from IsotopeCalculator import IsotopeCalculator
@@ -136,11 +141,14 @@ class MassTodon():
         self.prec_digits = int(ceil(-log10(mz_prec)))
         self.fasta = fasta
         self.Q = precursor_charge
+        self.frag_type = frag_type
         self.verbose = verbose
+        self.data_path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
 
-        self.Forms = make_formulas(fasta=fasta,
+        self.formulas = make_formulas(fasta=self.fasta,
                                    Q=self.Q,
-                                   frag_type=frag_type,
+                                   data_path=self.data_path
+                                   frag_type=self.frag_type,
                                    distance_charges=distance_charges,
                                    modifications=modifications)
 
@@ -149,7 +157,7 @@ class MassTodon():
             iso_masses=iso_masses, iso_probs=iso_probs, verbose=verbose)
 
         self.peakPicker = PeakPicker(
-            _Forms=self.Forms, _IsoCalc=self.IsoCalc,
+            _Forms=self.formulas, _IsoCalc=self.IsoCalc,
             mz_prec=mz_prec, verbose=verbose)
 
         self.ResPlotter = OutputExporter(mz_prec)
@@ -182,7 +190,7 @@ class MassTodon():
     # TODO is the thing below necessary?
     def spectrum_iter(self, spectrum_type):
         assert spectrum_type in ['original', 'trimmed'], "No such kind of spectrum: %s." % spectrum_type
-        for mz, intensity in izip(*self.spectra[spectrum_type]):
+        for mz, intensity in zip(*self.spectra[spectrum_type]):
             yield {'mz': mz, 'intensity': intensity}
 
     def run(self,
@@ -211,9 +219,9 @@ class MassTodon():
                             verbose=self.verbose)
 
         if self.verbose:
-            print 'Solver stats:'
-            print self.solver_stats
-            print
+            print('Solver stats:')
+            print(self.solver_stats)
+            print()
 
         if for_plot:
             self.ResPlotter.add_mz_ranges_to_results(self.res)
@@ -228,7 +236,7 @@ class MassTodon():
                     mz, intensity, estimate = info['mz'], info['intensity'], info['estimate']
                     L, R = mz.begin, mz.end
                     yield {'L': L, 'R': R, 'I': intensity, 'E': estimate}
-        for mz, intensity in izip(*self.spectra['trimmed']):
+        for mz, intensity in zip(*self.spectra['trimmed']):
             prec = self.mz_prec
             yield {'L': mz-prec, 'R': mz+prec, 'I': intensity, 'E': .0}
 
@@ -246,7 +254,7 @@ class MassTodon():
              'mz_R': mz + self.mz_prec,
              'tot_estimate': 0.0,
              'tot_intensity': intensity}
-            for mz, intensity in izip(*self.spectra['original'])
+            for mz, intensity in zip(*self.spectra['original'])
             if not (mz, intensity) in self.peakPicker.Used_Exps]
         return data_4_plot
 
@@ -505,8 +513,8 @@ def MassTodonize(
         results['advanced_analysis'] = M.analyze_reactions('advanced')
 
     if verbose:
-        print 'L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance']
-        print
+        print('L1_error_value_error/intensity_within_tolerance', results['summary']['L1_error_value_error/intensity_within_tolerance'])
+        print()
 
     if raw_data:
         results['raw_estimates'] = M.res
@@ -534,6 +542,6 @@ def MassTodonize(
         write_summary_to_csv(results, output_csv_path)
 
     if verbose:
-        print 'Total analysis took', T1-T0
+        print('Total analysis took', T1-T0)
 
     return results
