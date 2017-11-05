@@ -19,20 +19,22 @@
 from setuptools import setup, find_packages
 
 setup(
-    name          = 'MassTodonPy',
-    packages      = find_packages(),
-    version       = '0.3.3',
-    description   = 'Estimate the products of Electron Transfer Dissociation in Mass Spectrometry for a given biological substance and the chemical reaction probabilities that lead to these products.',
-    author        = u'Mateusz Krzysztof Łącki',
-    author_email  = 'matteo.lacki@gmail.com',
-    url           = 'https://github.com/MatteoLacki/MassTodonPy',
-    download_url  = 'https://github.com/MatteoLacki/MassTodonPy/archive/0.3.3.tar.gz',
-    keywords      = [
+    name='MassTodonPy',
+    packages=find_packages(),
+    version='0.3.3',
+    description='Estimate the products of Electron Transfer Dissociation in \
+    Mass Spectrometry for a given biological substance and \
+    the chemical reaction probabilities that lead to these products.',
+    author=u'Mateusz Krzysztof Łącki',
+    author_email='matteo.lacki@gmail.com',
+    url='https://github.com/MatteoLacki/MassTodonPy',
+    download_url='https://github.com/MatteoLacki/MassTodonPy/archive/0.3.3.tar.gz',
+    keywords=[
         'Mass Spectrometry',
         'ETD',
         'Electron Transfer Dissociation',
         'Fragmentation'],
-    classifiers   = [
+    classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: GNU Affero General Public License v3',
         'Intended Audience :: Science/Research',
@@ -50,11 +52,11 @@ setup(
         'intervaltree'],
     scripts=[
         'bin/masstodon',
-        'bin/masstodon_example_call'  ],
-    include_package_data = True,
+        'bin/masstodon_example_call'],
+    include_package_data=True,
     package_data={
-        "Data": ["Data/isotopes.txt",
-                 "Data/amino_acids.txt",
+        "Data": ["Data/isotopes.pickle",
+                 "Data/amino_acids.pickle",
                  "Data/substanceP.example",
                  "Data/ubiquitin.example"],
     }

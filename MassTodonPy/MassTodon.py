@@ -1,5 +1,3 @@
-
-#
 # -*- coding: utf-8 -*-
 #   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
 #
