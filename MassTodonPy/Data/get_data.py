@@ -38,13 +38,14 @@ def get_dataset(dataset_name):
     """
     assert dataset_name in ['substanceP', 'ubiquitin']
     path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-    with open(path + dataset_name + ".json", "rb") as f:
-        data = json.load(f)
-    data["spectrum"] = tuple(np.array(d) for d in data["spectrum"])
-    return data
+    with open(path + dataset_name + '.json', 'rb') as f:
+        mol = json.load(f)
+    mol['spectrum'] = tuple(np.array(d) for d in mol['spectrum'])
+    mol['modifications'] = {int(k): v for k, v in mol['modifications'].items()}
+    return mol
 
 
-def get_bricks():
+def get_amino_acids():
     """
     Retrieve the information on amino acidic bricks.
 
@@ -61,8 +62,8 @@ def get_bricks():
     """
     path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
     with open(path+"amino_acids.pickle", "rb") as f:
-        bricks = pickle.load(f)
-    return bricks
+        amino_acids = pickle.load(f)
+    return amino_acids
 
 
 def get_isotopic_masses_and_probabilities():

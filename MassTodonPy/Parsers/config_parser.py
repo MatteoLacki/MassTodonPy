@@ -17,6 +17,7 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 import re
 
+
 def parse_single_modification(mod):
     modification = {}
     for elem_no in mod.split(','):
@@ -25,13 +26,17 @@ def parse_single_modification(mod):
         modification[elem] = no
     return modification
 
+
 def parse_true_false(key, value):
     value = value.lower()
     if value in ('true', 'false'):
         return value == 'true'
     else:
-        print('CONFIG FILE ERROR: value', value, 'not among possible logical value: True, False. This test is case-sensitive.')
-        raise ValueError
+        raise ValueError('CONFIG FILE ERROR: value',
+                         value,
+                         'not among possible logical value:\
+                         True, False. This test is case-sensitive.')
+
 
 def parse_plain_config_file(path):
     '''Parse a text file in a format similar to:
@@ -51,7 +56,7 @@ def parse_plain_config_file(path):
 
     with open(path, 'r') as f:
         for line in f:
-            key, value = re.sub('[\s+]|[\n]','',line).split('=')
+            key, value = re.sub('[\s+]|[\n]', '', line).split('=')
             config_tmp[key] = value
     config = {}
     modifs = {}

@@ -1,5 +1,6 @@
 # data
 include MassTodonPy/Data/isotopes.pickle
 include MassTodonPy/Data/amino_acids.pickle
+include MassTodonPy/Data/amino_acids2.pickle
 include MassTodonPy/Data/substanceP.json
 include MassTodonPy/Data/ubiquitin.json

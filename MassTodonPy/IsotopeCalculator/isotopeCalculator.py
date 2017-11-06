@@ -18,12 +18,13 @@
 
 import numpy as np
 
-from Data.get_data import get_isotopic_masses_and_probabilities
+
 from IsoSpecPy import IsoSpecPy
 from collections import Counter
 from numpy.random import multinomial, normal
 from time import time
 
+from MassTodonPy.Data.get_data import get_isotopic_masses_and_probabilities
 from MassTodonPy.Parsers.formula_parser import formulaParser
 from MassTodonPy.Spectra.operations import cdata2numpyarray,\
                                            aggregate,\
@@ -68,15 +69,18 @@ class IsotopeCalculator:
 
     def __getMonoisotopicMass(self, atomCnt):
         """Calculate monoisotopic mass of an atom count."""
-        return sum(self.iso_masses[el][0]*elCnt for el, elCnt in atomCnt)
+        return sum(self.iso_masses[el][0]*elCnt
+                   for el, elCnt in atomCnt.items())  # .items is pythonic!
 
     def __getMassMean(self, atomCnt):
         """Calculate average mass of an atom count."""
-        return sum(self.iso_means_vars[el][0]*elCnt for el, elCnt in atomCnt)
+        return sum(self.iso_means_vars[el][0]*elCnt
+                   for el, elCnt in atomCnt.items())
 
     def __getMassVar(self, atomCnt):
         """Calculate mass variance of an atom count."""
-        return sum(self.iso_means_vars[el][1]*elCnt for el, elCnt in atomCnt)
+        return sum(self.iso_means_vars[el][1]*elCnt
+                   for el, elCnt in atomCnt)
 
     def __getSummary(self, atomCnt_str):
         atomCnt = self.formParser.parse(atomCnt_str)

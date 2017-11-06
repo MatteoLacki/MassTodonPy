@@ -43,7 +43,6 @@ setup(
     install_requires=[
         'linearCounter',
         'numpy',
-        'pandas',
         'pyteomics>=3.4.1',
         'lxml',
         'cvxopt',
@@ -57,7 +56,8 @@ setup(
     package_data={
         "Data": ["Data/isotopes.pickle",
                  "Data/amino_acids.pickle",
-                 "Data/substanceP.example",
-                 "Data/ubiquitin.example"],
+                 "Data/amino_acids2.pickle",
+                 "Data/substanceP.json",
+                 "Data/ubiquitin.json"],
     }
 )

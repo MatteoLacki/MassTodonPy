@@ -1,5 +1,6 @@
 import numpy as np
 import json
+from collections import namedtuple
 
 try:
     import cPickle as pickle
@@ -16,6 +17,13 @@ with open(path+"amino_acids.pickle", "rb") as f:
 
 with open(path + "isotopes.pickle", "rb") as f:
     iso_masses, iso_probs = pickle.load(f)
+
+
+Brick = namedtuple("Brick", ["C", "L", "R"])
+Brick(**{"C": 10, "L": 13, "R": 10})
+
+bricks
+new_bricks = {el: Brick(**value) for el, value in bricks.items()}
 
 
 def get_mean_and_variance(X, weights):

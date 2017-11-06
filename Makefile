@@ -1,103 +1,42 @@
-PATH_VISUAL 	= ./Tests/visual
-PATH_INSILICO   = ./Tests/in_silico
-PYTHON   	= ../MassTodonVE/bin/python2
-PIP 		= ../MassTodonVE/bin/pip2
+PYTHON_2   	= ../MassTodonVEpy2/bin/python2
+PIP_2 		= ../MassTodonVEpy2/bin/pip2
 
-### Installing
-install_linux:
-	virtualenv -p /usr/bin/python2.7 ../MassTodonVE
-	$(PIP) install -e .
+PYTHON_3   	= ../MassTodonVEpy3/bin/python3
+PIP_3		= ../MassTodonVEpy3/bin/pip3
 
-install_quaqua:
-	virtualenv -p /usr/bin/python2.7 ../MassTodonVE
-	../MassTodonVE/bin/pip install -e .
+install_MassTodonPy_2: ## Install MassTodon virtual environment with python2
+	virtualenv -p python2 ../MassTodonVEpy2
+	$(PIP_2) install -e .
+	$(PIP_2) install ipykernel
 
-install_mac:
-	virtualenv ../MassTodonVE
-	$(PIP) install -e .
+install_MassTodonPy_3:
+	virtualenv -p python3 ../MassTodonVEpy3
+	$(PIP_3) install -e .
+	$(PIP_3) install ipykernel
 
-reinstall: ## reinstall MassTodonPy
-	pip2 uninstall -y MassTodonPy
+reinstall_2: ## reinstall MassTodonPy under python2
+	$(PIP2) uninstall -y MassTodonPy
 	pip2 install -e .
 
-reinstall_ve: ## reinstall MassTodonPy in VE
-	$(PIP) uninstall -y MassTodonPy
-	$(PIP) install -e .
+reinstall_3: ## reinstall MassTodonPy under python3
+	$(PIP3) uninstall -y MassTodonPy
+	pip3 install -e .
 
-check_installation:
-	$(PYTHON) Tests/calls/check_installation.py
+example_call_2: ## run an example session of the algorithm
+	$(PYTHON_2) ./bin/masstodon_example_call
 
-### Running
-example_call: 			## run an example session of the algorithm
-	$(PYTHON) ./bin/masstodon_example_call
+example_call_3: ## run an example session of the algorithm
+	$(PYTHON_3) ./bin/masstodon_example_call
 
-run_ubiquitins:			## run on all available ubiquitins
-	$(PYTHON) Tests/calls/run_ubiquitins.py
+clean_ve_2: ## remove virtual environment with python2
+	rm -rf ../MassTodonVEpy2
 
-run_ubiquitins_plots:			## run on all available ubiquitins for plots
-	$(PYTHON) Tests/calls/run_ubiquitins_plots.py
-
-run_substancesP_plots:			## run on all available substances P for plots
-	$(PYTHON) Tests/calls/run_substancesP_plots.py
-
-substancesP_ETDetective_input:	## make substances P for ETDetecitve
-	$(PYTHON) Tests/calls/run_substancesP_etdetective.py
-
-
-compare_spectra_plots:
-	$(PYTHON) $(PATH_VISUAL)/sub_P_plot_data.py
-	Rscript $(PATH_VISUAL)/spectrum_fitting.R
-
-run_bootstrap_substance_P: 	## run statistical bootstrap analysis on all substance P spectra
-	$(PYTHON) Tests/bootstrap/bootstrap_subP.py Tests/bootstrap/boot_subP_24_07_2017/
-	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_subP.py
-	# Rscript Tests/bootstrap/analyze_bootstrap_subP.R
-	# Rscript Tests/bootstrap/analyze_frag_probs_subP.R
-	# Rscript Tests/bootstrap/analyze_fit_error_subP.R
-
-
-run_bootstrap_ubiquitin: 	## run statistical bootstrap analysis on all ubiquitin spectra
-	$(PYTHON) Tests/bootstrap/bootstrap_ubi.py Tests/data/ubiquitins.example  Tests/bootstrap/ubi_14_07_2017_mzPrec-065/
-	# $(PYTHON) Tests/bootstrap/bootstrap_analysis_ubi.py
-	# Rscript Tests/bootstrap/analyze_bootstrap_ubi.R
-	# Rscript Tests/bootstrap/analyze_frag_probs_ubi.R
-	# Rscript Tests/bootstrap/analyze_fit_error_ubi.R
-
-SPECTRUM_PATH =
-test_CLI_mac:
-	node ./Tests/CLI_tests/test_input.js
-	masstodon ./Tests/data/FRL-010513-SUBP-WH000-WV300.txt  ./Tests/CLI_tests/config.json -o ./Tests/CLI_tests/
-
-# run_real_substance_P:
-# 	$(PYTHON) $(PATH_INSILICO)/real_subP.py
-
-# prepare_ciach_spectra:
-# 	mkdir $(PATH_INSILICO)/ready_spectra/
-# 	$(PYTHON) $(PATH_INSILICO)/prep_Ciach_data_4_sims.py
-# 	rm -rf $(PATH_INSILICO)/ready_spectra
-
-run_in_silico_analysis_mac:
-	nice -n -10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py /Users/matteo/Documents/MassTodon/MassTodonPy/Tests/in_silico 5
-
-run_in_silico_analysis_wloczykij:
-	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py /home/matteo/masstodon/deconvolution/MassTodonPy/Tests/in_silico 65
-
-run_in_silico_analysis_czczmiel:
-	nice -n 10 $(PYTHON) $(PATH_INSILICO)/deconvolution.py  /home/matteo/masstodon/MassTodonPy/Tests/in_silico 25
-
-### Tests
-test_terminal_masstodon:  	## Test MassTodon's CLI.
-	../MassTodonVE/bin/masstodon /Users/matteo/Documents/MassTodon/transport/subP_spectrum.txt /Users/matteo/Documents/MassTodon/transport/example_config_plain_text.txt -o /Users/matteo/Documents/MassTodon/transport/output
-
-
-### Cleaning
-clean_ve: 			## remove the python virtual environment
-	rm -rf ../MassTodonVE
+clean_ve_3: ## remove virtual environment with python2
+	rm -rf ../MassTodonVEpy3
 
 
 
-### Mikolaj Stuff :D
-### Trolololo!!!!
+
 
 projectName = masstodon
 
