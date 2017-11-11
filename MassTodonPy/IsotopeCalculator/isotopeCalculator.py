@@ -18,17 +18,14 @@
 
 import numpy as np
 
-
 from IsoSpecPy import IsoSpecPy
 from collections import Counter
-from numpy.random import multinomial, normal
 from time import time
 
 from MassTodonPy.Data.get_data import get_isotopic_masses_and_probabilities
 from MassTodonPy.Parsers.formula_parser import formulaParser
 from MassTodonPy.Spectra.operations import cdata2numpyarray,\
                                            aggregate,\
-                                           merge_runs,\
                                            aggregate_envelopes
 
 
@@ -46,7 +43,6 @@ class IsotopeCalculator:
     """A class for isotope calculations."""
 
     def __init__(self,
-                 jP=.999,
                  prec_digits=2,
                  iso_masses=None,
                  iso_probs=None,
@@ -57,11 +53,12 @@ class IsotopeCalculator:
             self.iso_masses, self.iso_probs = \
                 get_isotopic_masses_and_probabilities()
 
-        self.iso_means_vars = {el: get_mean_and_variance(self.iso_masses[el],
-                                                         self.iso_probs[el])
-                               for el in self.iso_probs}
-        self.jP = jP
-        self.isotopicEnvelopes = {}
+        self.iso_means_vars = {
+            el: get_mean_and_variance(self.iso_masses[el],
+                                      self.iso_probs[el])
+            for el in self.iso_probs}
+
+        self.isotope_DB = {}
         self.prec_digits = prec_digits
         self.formParser = formulaParser()
         self.verbose = verbose
@@ -89,38 +86,42 @@ class IsotopeCalculator:
                 self._getMassVar(atomCnt))
 
     def __getOldEnvelope(self, atomCnt_str, jP, prec_digits):
-        masses, probs = self.isotopicEnvelopes[(atomCnt_str, jP, prec_digits)]
+        masses, probs = self.isotope_DB[(atomCnt_str, jP, prec_digits)]
         return masses.copy(), probs.copy()
 
-    def __getNewEnvelope(self, atomCnt_str, jP, prec_digits):
+    def __make_envelope(self, formula, joint_probability):
         T0 = time()
         counts = []
         isotope_masses = []
         isotope_probs = []
-        atomCnt = self.formParser.parse(atomCnt_str)
+        atomCnt = self.formParser.parse(formula.formula)
+
         for el, cnt in atomCnt.items():
             counts.append(cnt)
             isotope_masses.append(self.iso_masses[el])
             isotope_probs.append(self.iso_probs[el])
-        envelope = IsoSpecPy.IsoSpec(counts, isotope_masses, isotope_probs, jP)
+
+        envelope = IsoSpecPy.IsoSpec(counts,
+                                     isotope_masses,
+                                     isotope_probs,
+                                     joint_probability)
+
         masses, logprobs, _ = envelope.getConfsRaw()
         masses = cdata2numpyarray(masses)
         probs = np.exp(cdata2numpyarray(logprobs))
-        masses, probs = aggregate_envelopes(masses, probs, prec_digits)
-        # memoization#TODO get rid of it when IsoSpec using stats convolution
-        self.isotopicEnvelopes[(atomCnt_str, jP, prec_digits)] = (masses, probs)
+        masses, probs = aggregate_envelopes(masses, probs, self.prec_digits)
+
+        # memoization
+        # TODO get rid of it when IsoSpec using stats convolution
+        self.isotope_DB[(formula.formula, joint_probability)] = (masses, probs)
         T1 = time()
+
         self.stats['Envelopes Generation Total T'] += T1-T0
         return masses.copy(), probs.copy()
 
-    def __getEnvelope(self, atomCnt_str, jP, prec_digits):
-        if (atomCnt_str, jP, prec_digits) in self.isotopicEnvelopes:
-            masses, probs = self.__getOldEnvelope(atomCnt_str, jP, prec_digits)
-        else:
-            masses, probs = self.__getNewEnvelope(atomCnt_str, jP, prec_digits)
-        return masses, probs
-
-    def isoEnvelope(self, atomCnt_str, jP=None, q=0, g=0, prec_digits=None):
+    def get_envelope(self,
+                     formula,
+                     joint_probability):
         """Get an isotopic envelope consisting of a numpy array
         of masses and numpy array of probabilities.
 
@@ -128,14 +129,10 @@ class IsotopeCalculator:
         ----------
         atomCnt_str : str
             The chemical formula of a molecular species.
-        jP : float
+        formula : a namedtuple
+            e.g. Formula(name='precursor', formula='C63H98N18O13S1', q=3, g=0)
+        joint_probability : float
             The joint probability of the theoretical isotopic envelope.
-        q : int
-            The charge-state of the molecular species.
-        g : int
-            The quenched charge of teh molecular species.
-        prec_digits : float
-            The number of digits after which the floats get rounded.
 
         Returns
         -------
@@ -143,70 +140,19 @@ class IsotopeCalculator:
             A tuple containing the theoretical spectrum:
             mass over charge values and intensities, both numpy arrays.
         """
-        if jP is None:
-            jP = self.jP
-        if prec_digits is None:
-            prec_digits = self.prec_digits
-        masses, probs = self.__getEnvelope(atomCnt_str, jP, prec_digits)
-        if q is not 0:
-            masses = np.around((masses + g + q)/q, decimals=prec_digits)
+        try:
+            masses, probs = self.isotope_DB[(formula.formula,
+                                             joint_probability)]
+
+            masses, probs = masses.copy(), probs.copy()
+        except KeyError:
+            masses, probs = self.__make_envelope(formula,
+                                                 joint_probability)
+
+        if formula.q is not 0:
+            # TODO get proper mass of a hydrogen!
+            masses = np.around(
+                (masses + formula.g + formula.q)/formula.q,
+                decimals=self.prec_digits)
         masses, probs = aggregate(masses, probs)
         return masses, probs
-
-    def makeRandomSpectrum(self,
-                           mols,
-                           quants,
-                           sigma,
-                           jP=None,
-                           prec_digits=None):
-        """Simulate a mixture of isotopic envelopes.
-
-        Parameters
-        ----------
-        mols : list
-            A list of molecular species: tuples containing
-            (id, chemical formula string, something, charge, quenched charge)
-        quants : list
-            A list of total intensities of each molecular species.
-        sigma : float
-            The standard deviation of the masses of isotopologues -
-            theoretical equivalent of the mass resolution.
-        jP : float
-            The joint probability of the theoretical isotopic envelope.
-        prec_digits : float
-            The number of digits after which the floats get rounded.
-
-        Returns
-        -------
-        spectrum : tuple
-            A tuple containing the theoretical spectrum:
-            mass over charge values and intensities.
-        """
-        x0 = sum(quants)
-        if not prec_digits:
-            prec_digits = self.prec_digits
-        if not jP:
-            jP = self.jP
-
-        def get_intensity_measure(mols, quants):
-            for mol, quant in zip(mols, quants):
-                _, atomCnt_str, _, q, g = mol
-                ave_mz, ave_intensity = self.isoEnvelope(atomCnt_str=atomCnt_str, jP=jP, q=q, g=g, prec_digits=2)
-                ave_intensity = quant * ave_intensity
-                yield ave_mz, ave_intensity
-
-        mz_average, intensity = reduce(merge_runs, get_intensity_measure(mols, quants))
-        probs   = intensity/sum(intensity)
-        counts  = np.array( multinomial(x0, probs), dtype='int')
-
-        if sigma>0.0:
-            spectrum = Counter()
-            for m_average,cnt in zip(mz_average, counts):
-                if cnt > 0:
-                    m_over_z = np.round(normal(loc=m_average, scale=sigma, size=cnt), prec_digits)
-                    spectrum.update(m_over_z)
-
-            spectrum = np.array(spectrum.keys()), np.array([ float(spectrum[k]) for k in spectrum ])
-        else:
-            spectrum = (mz_average, counts)
-        return spectrum

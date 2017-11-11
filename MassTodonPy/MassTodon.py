@@ -69,7 +69,7 @@ try:
 except ImportError:
     pass
 from math import ceil, log10
-from time import time
+# from time import time
 from MassTodonPy.Formulator.formulator import get_formulas
 
 # from IsotopeCalculator import IsotopeCalculator

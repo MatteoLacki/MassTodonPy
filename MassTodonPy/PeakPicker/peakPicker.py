@@ -60,22 +60,20 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
 
 class PeakPicker(object):
     '''Class for peak picking.'''
-    def __init__(   self,
-                    _Forms,
-                    _IsoCalc,
-                    mz_prec = 0.05,
-                    verbose = False
-        ):
+    def __init__(self,
+                 _Forms,
+                 _IsoCalc,
+                 mz_prec=0.05,
+                 verbose=False):
         '''Initialize peak picker.'''
-        self.Forms  = _Forms
-        self.IsoCalc= _IsoCalc
-        self.mz_prec= mz_prec
-        self.cnts   = MultiCounter() # TODO finish it.
-        self.verbose= verbose
-        self.stats  = Counter()
+        self.Forms = _Forms
+        self.IsoCalc = _IsoCalc
+        self.mz_prec = mz_prec
+        self.cnts = MultiCounter()  # TODO finish it.
+        self.verbose = verbose
+        self.stats = Counter()
         self.Used_Exps = set()
-        self.G_stats= []
-
+        self.G_stats = []  # TODO Replace by a logger in devel mode!
 
     def represent_as_Graph(self, spectrum):
         '''Prepare the Graph based on mass spectrum and the formulas.
@@ -83,7 +81,8 @@ class PeakPicker(object):
         Parameters
         ----------
         spectrum : tuple
-            The experimental spectrum, a tuple of m/z numpy array and intensities numpy array.
+            The experimental spectrum, a tuple consisting of
+            a m/z numpy array and an intensities numpy array.
 
         Returns
         -------
@@ -91,24 +90,34 @@ class PeakPicker(object):
             The deconvolution graph.
         '''
         prec = self.mz_prec
-        Exps = IntervalTree( II( mz-prec, mz+prec, (mz, intensity) ) for mz, intensity in izip(*spectrum) )
+        Exps = IntervalTree(II(mz - prec, mz + prec, (mz, intensity))
+                            for mz, intensity in izip(*spectrum))
+        # TODO eliminate the above using binary search solo
 
-            #TODO eliminate the above using binary search solo
         Graph = nx.Graph()
         no_exp_per_iso = Counter()
 
-        if self.verbose:
-            print
-            print 'Representing problem as a graph.'
+        if self.verbose:  # TODO logger...
+            print('Representing problem as a graph.')
 
         T0 = time()
 
         for M_type, M_formula, _, M_q, M_g in self.Forms.makeMolecules():
-            I_mzs, I_intensities = self.IsoCalc.isoEnvelope(atomCnt_str=M_formula, q=M_q, g=M_g)
+            I_mzs, I_intensities = self.IsoCalc.isoEnvelope(
+                atomCnt_str=M_formula, q=M_q, g=M_g)
 
             self.stats['I No'] += len(I_mzs)
             M = self.cnts('M')
 
+            # Why do we make a node before establishing if it should be there?
+            # Because it's nice to know, that the formula was somewhere there?
+            # But it's among the formulas list anyway...
+            # But it's more elegant not to store the list, but make a generator
+            # that will populate the networkx graph.
+            # Follow the logic of a memory efficient problem representation.
+
+            # Maybe subclass networkx graph to get additional functions?
+            # Like DeconvolutionGraph.add_formula(Formula).
             Graph.add_node( M,
                             formula  = M_formula,
                             type     ='M',
@@ -118,16 +127,27 @@ class PeakPicker(object):
 
             for I_mz, I_intensity in izip(I_mzs, I_intensities):
                 I = self.cnts('I')
+
+                # Should the DeconvolutionGraph contain all isotopologues?
+                # Like why? If they are unnecessary then better simply to keep
+                # the molecule.
+                # Also, add some dictionary to the graph's molecule nodes.
                 Graph.add_node(I,  mz   = I_mz,
                                    intensity = I_intensity,
                                    type = 'I'   )
                 Graph.add_edge(M, I)
                 for E_interval in Exps[I_mz]:
+                    # TODO this calls for a logger
                     no_exp_per_iso[len(Exps[I_mz])] += 1
-                    E_mz, E_intensity = E_interval.data
-                    self.Used_Exps.add( E_interval.data )
 
-                    if not E_mz in Graph:
+                    # Better to collect peaks
+                    E_mz, E_intensity = E_interval.data
+
+                    # This is another shit thing:
+                    # unused peaks are all experimental with zero degree
+                    self.Used_Exps.add(E_interval.data)
+
+                    if E_mz not in Graph:
                         Graph.add_node( E_mz,
                                         intensity   = E_intensity,
                                         type        = 'E'  )
@@ -135,9 +155,14 @@ class PeakPicker(object):
                     self.stats['E-I No'] += 1
             self.stats['M No'] += 1
 
+        # TODO Logger...
         T1 = time()
+
+        # TODO Make one object for collecting these informations:
+        # a global singleton stats. It might be possible that logger can do it.
         self.stats['graph construction T'] = T1 - T0
 
+        # TODO Logger...
         if self.verbose:
             print '\tFinished graph representation in', self.stats['graph construction T']
             print '\tIsotopologues number was', self.stats['I No']

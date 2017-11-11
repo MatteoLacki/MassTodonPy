@@ -81,22 +81,31 @@ class Formulator(object):
         self.block_fragments()
 
         # turning modifications into linear counters
-        self.modifications = defaultdict(lambda: defaultdict(lCnt),
-                                         {k: {name: lCnt(atomCnt)
-                                              for name, atomCnt in v.items()}
-                                          for k, v in modifications.items()})
+        self.modifications = defaultdict(
+            lambda: defaultdict(lambda: lCnt()),
+            {k - 1: defaultdict(lambda: lCnt(),
+                                {name: lCnt(atomCnt)
+                                 for name, atomCnt in v.items()})
+             for k, v in modifications.items()})
 
     def block_fragments(self):
         self.blockedFragments = set()
 
     def get_amino_acid(self, amino_acid_group, amino_acid_tag, amino_acid_No):
-        amino_acid = self.amino_acids[amino_acid_tag][amino_acid_group] + \
-                     self.modifications[amino_acid_No][amino_acid_group]
+        try:
+            amino_acid = self.amino_acids[amino_acid_tag][amino_acid_group] + self.modifications[amino_acid_No][amino_acid_group]
+        except KeyError:
+            print(amino_acid_No, amino_acid_tag, amino_acid_group)
+            # print(self.modifications)
+            print(self.amino_acids[amino_acid_tag][amino_acid_group])
 
-        if any(count < 0 for element, count in amino_acid.items()):
-            raise NegativeAtomCount("Attention: your modification had an unexpected effect.\
-            Part of your molecule now has negative atom count.\
-            Bear that in mind while publishing your results.")
+        try:
+            if any(count < 0 for element, count in amino_acid.items()):
+                raise NegativeAtomCount("Attention: your modification had an unexpected effect.\
+                Part of your molecule now has negative atom count.\
+                Bear that in mind while publishing your results.")
+        except UnboundLocalError:
+            amino_acid = lCnt()
         return amino_acid
 
     def make_superatoms(self):
@@ -126,7 +135,7 @@ class Formulator(object):
         for i in range(N-1):
             cFrag += self.superAtoms[i]
             cFrag_tmp = lCnt(cFrag)
-            frag_type = 'c'+str(i)
+            frag_type = 'c' + str(i)
             if frag_type not in self.blockedFragments and not i == 0:
                 c_fragment = (frag_type, atomCnt2string(cFrag_tmp), i)
                 self.unprotonated_formulas.append(c_fragment)
@@ -171,7 +180,9 @@ class CzFormulator(Formulator):
         self.superAtoms = []
         sA = lCnt()
         for amino_acid_No, amino_acid_tag in enumerate(self.fasta):
-            sA += self.get_amino_acid('N', amino_acid_tag, amino_acid_No)
+            sA += self.get_amino_acid('N',
+                                      amino_acid_tag,
+                                      amino_acid_No)
             self.superAtoms.append(sA)
             sA = self.get_amino_acid('C_alpha',
                                      amino_acid_tag,
@@ -179,7 +190,6 @@ class CzFormulator(Formulator):
                 self.get_amino_acid('C_carbo',
                                     amino_acid_tag,
                                     amino_acid_No)
-
         sA += lCnt({'O': 1, 'H': 1})
         self.superAtoms.append(sA)
         self.superAtoms[0] += lCnt({'H': 1})
@@ -223,7 +233,7 @@ def get_formulas(fasta, Q,
     Returns
     -------
     out : class
-        The formulator class... Who the hell encoded that?
+        A list of formulas.
 
     Warning
     -------

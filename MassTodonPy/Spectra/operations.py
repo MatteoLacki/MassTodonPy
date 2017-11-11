@@ -20,7 +20,11 @@ import numpy as np
 
 from math import fsum
 from collections import defaultdict
-from itertools import izip
+try:
+    from itertools import izip as zip
+    range = xrange
+except ImportError:
+    pass
 from operator import itemgetter
 
 
@@ -37,12 +41,12 @@ def cdata2numpyarray(x):
         A numpy array of numbers.
     """
     res = np.empty(len(x))
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         res[i] = x[i]
     return res
 
 
-def aggregate( keys, values=None ):
+def aggregate(keys, values=None):
     """Aggregate values with the same keys.
 
     Parameters
@@ -57,8 +61,8 @@ def aggregate( keys, values=None ):
     out : tuple
         A tuple containing unique keys and aggregated values.
     """
-    uniqueKeys, indices = np.unique( keys, return_inverse=True)
-    return uniqueKeys, np.bincount( indices, weights=values )
+    uniqueKeys, indices = np.unique(keys, return_inverse=True)
+    return uniqueKeys, np.bincount(indices, weights=values)
 
 
 def merge_runs(spec1, spec2):
@@ -67,15 +71,17 @@ def merge_runs(spec1, spec2):
     Parameters
     ----------
     spec1 : tuple of two numpy arrays
-        A mass spectrum: an array of m/z ratios and an array of corresponding intensities.
+        A mass spectrum:
+        an array of m/z ratios and an array of corresponding intensities.
     spec2 : tuple of two numpy arrays
-        A mass spectrum: an array of m/z ratios and an array of corresponding intensities.
+        A mass spectrum:
+        an array of m/z ratios and an array of corresponding intensities.
     """
-    mz = np.concatenate((spec1[0], spec2[0]))
-    I  = np.concatenate((spec1[1], spec2[1]))
-    return aggregate(mz, I)
+    masses_over_charge = np.concatenate((spec1[0], spec2[0]))
+    intensities = np.concatenate((spec1[1], spec2[1]))
+    return aggregate(masses_over_charge, intensities)
 
-
+# WHAT THE HELL IS THIS?
 def aggregate_envelopes(masses, probs, digits=2):
     """Aggregate theoretical envelopes.
 
@@ -86,7 +92,8 @@ def aggregate_envelopes(masses, probs, digits=2):
     probs : array
         An array of isotopologues' probabilities.
     digits : int
-        The number of significant digits used while rounding the masses of isotopologues.
+        The number of significant digits used
+        while rounding the masses of isotopologues.
 
     Returns
     ----------
@@ -97,9 +104,10 @@ def aggregate_envelopes(masses, probs, digits=2):
     lists = defaultdict(list)
     for mass, prob in zip(masses.round(digits), probs):
         lists[mass].append(prob)
-    newMasses = np.array(lists.keys())
-    newProbs  = np.empty(len(newMasses))
-    for prob, mass in zip(np.nditer(newProbs, op_flags=['readwrite'] ), newMasses):
+    newMasses = np.array([k for k in lists])
+    newProbs = np.empty(len(newMasses))
+    for prob, mass in zip(np.nditer(newProbs, op_flags=['readwrite']),
+                          newMasses):
         prob[...] = fsum(lists[mass])
     return newMasses, newProbs
 
@@ -119,9 +127,11 @@ def trim_spectrum(mz, intensity, cut_off=100):
     Returns
     -------
     out : tuple
-        A tuple containing the binned experimental spectrum: mass over charge values and intensities, both numpy arrays.
+        A tuple containing the binned experimental spectrum:
+        mass over charge values and intensities, both numpy arrays.
     """
-    return ( mz[intensity >= cut_off], intensity[intensity >= cut_off] ), ( mz[intensity < cut_off], intensity[intensity < cut_off] )
+    return ((mz[intensity >= cut_off], intensity[intensity >= cut_off]),
+            (mz[intensity < cut_off], intensity[intensity < cut_off]))
 
 
 def round_spectrum(mz, intensity, prec_digits=2):
@@ -139,15 +149,17 @@ def round_spectrum(mz, intensity, prec_digits=2):
     Returns
     -------
     out : tuple
-        A tuple containing the binned experimental spectrum: mass over charge values and intensities, both numpy arrays.
+        A tuple containing the binned experimental spectrum:
+        mass over charge values and intensities, both numpy arrays.
     """
     mz = np.round(mz, prec_digits)
     mz, intensity = aggregate(mz, intensity)
     return mz, intensity
 
 
-def remove_lower_quantile(mz, intensities, retained_percentage = .95):
-    """Remove a portion of the smallest peaks that cover 1-retained_percentage of the total ion current.
+def remove_lower_quantile(mz, intensities, retained_percentage=.95):
+    """Remove a portion of the smallest peaks that cover
+    1-retained_percentage of the total ion current.
 
     Parameters
     ----------
@@ -156,14 +168,18 @@ def remove_lower_quantile(mz, intensities, retained_percentage = .95):
     intensity : array
         The intensities to bin.
     retained_percentage : float
-        The percentage of the original total ion current to be retained after trimming.
+        The percentage of the original total ion current
+        to be retained after trimming.
 
     Returns
     -------
     effective_cut_off : float
         The minimal peak height.
     """
-    mz_res, intensities_res = tuple( np.array(x) for x in izip(*sorted(izip(mz, intensities), key=itemgetter(1))) )
+    mz_res, intensities_res = tuple(
+        np.array(x) for x in
+        zip(*sorted(zip(mz, intensities), key=itemgetter(1))))
+
     i = 0
     S = 0.0
     total = intensities_res.sum()
