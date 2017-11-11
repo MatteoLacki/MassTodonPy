@@ -3,25 +3,35 @@
 
 import numpy as np
 from collections import defaultdict
-from MassTodonPy.Formulator.formulator import get_formulas
+from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
 from MassTodonPy.Data.get_data import get_dataset, get_amino_acids
 from MassTodonPy.IsotopeCalculator.isotopeCalculator import IsotopeCalculator
-from MassTodonPy.Parsers.formula_parser import formulaParser
+from MassTodonPy.Parsers.formula_parser import parse_formula
 from MassTodonPy.Data.get_data import get_isotopic_masses_and_probabilities
 from MassTodonPy.Spectra.operations import cdata2numpyarray,\
                                            aggregate_envelopes
 
 from IsoSpecPy import IsoSpecPy
 
-mol = get_dataset("substanceP")
-mol['fasta']
-amino_acids = get_amino_acids()
-mol['modifications']
 
-formulas = get_formulas(fasta=mol['fasta'],
-                        Q=mol['Q'],
-                        what_fragments="cz",
-                        modifications=mol['modifications'])
+iso_masses, iso_probs = get_isotopic_masses_and_probabilities()
+iso_probs['H']
+iso_masses['H']
+
+mol = get_dataset("substanceP")
+amino_acids = get_amino_acids()
+molecules = get_molecules(fasta=mol['fasta'],
+                          Q=mol['Q'],
+                          what_fragments="cz",
+                          modifications=mol['modifications'])
+
+# parse_formula(molecules[0].formula)
+
+iso_calc = IsotopeCalculator()
+iso_calc.get_envelope(molecules[0], .999)
+iso_calc.get_monoisotopic_mz(molecules[0])
+iso_calc.get_mean_mz(molecules[0])
+iso_calc.get_mz_sd(molecules[0])
 
 atomCnt_str = "C100H200N10"
 iso_masses, iso_probs = get_isotopic_masses_and_probabilities()
@@ -56,13 +66,10 @@ digits = 2
 lists = defaultdict(list)
 for mass, prob in zip(masses.round(digits), probs):
     lists[mass].append(prob)
-help(lists)
+
 from math import fsum
 newMasses = np.array([k for k in lists])
 newProbs = np.empty(len(newMasses))
 for prob, mass in zip(np.nditer(newProbs, op_flags=['readwrite']),
                       newMasses):
     prob[...] = fsum(lists[mass])
-
-iso_calc = IsotopeCalculator()
-iso_calc.get_envelope(formulas[0], .999)

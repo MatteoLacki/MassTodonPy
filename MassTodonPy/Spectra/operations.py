@@ -20,11 +20,7 @@ import numpy as np
 
 from math import fsum
 from collections import defaultdict
-try:
-    from itertools import izip as zip
-    range = xrange
-except ImportError:
-    pass
+from six.moves import range, zip
 from operator import itemgetter
 
 

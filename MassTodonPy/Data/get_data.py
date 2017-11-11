@@ -7,6 +7,17 @@ except ImportError:
     import pickle
 
 
+element_tags = {
+    "O", "Xe", "Cs", "Hg", "S", "Ru", "H", "Zn", "Sr", "Al", "Sm",
+    "Zr", "Ho", "Ta", "Pb", "Te", "He", "Ti", "As", "Ge", "Pr", "U",
+    "Tl", "Ir", "Tm", "Fe", "Si", "Cl", "Eu", "Tb", "W", "Er", "P",
+    "Os", "K", "Dy", "Lu", "Bi", "Ga", "Pt", "La", "Be", "F", "Yb",
+    "Kr", "Cd", "Mn", "Ar", "Cr", "Se", "Sb", "Hf", "Sc", "Ca", "Ba",
+    "Rb", "Sn", "Co", "Cu", "Ne", "Pd", "In", "N", "Au", "Y", "Ni",
+    "Rh", "C", "Li", "Th", "B", "Mg", "Na", "Pa", "V", "Re", "Nd",
+    "Br", "Ce", "I", "Ag", "Gd", "Nb", "Mo"}
+
+
 def get_dataset(dataset_name):
     """
     Retrieve examplary spectra informations.

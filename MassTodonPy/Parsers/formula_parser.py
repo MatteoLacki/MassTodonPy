@@ -17,31 +17,24 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 import re
 from collections import Counter
+from MassTodonPy.Data.get_data import element_tags
 
 
-class formulaParser(object):
-    '''A parser of chemical formulas.'''
+def get_formula_parser(pattern='([A-Z][a-z]?)([0-9]*)'):
+    """Set up the formula.
 
-    def __init__(self, pattern='([A-Z][a-z]?)([0-9]*)'):
-        """Set up the formula.
+    Parameters
+    ----------
+    pattern : str
+        A regular expression that describes elements.
 
-        Parameters
-        ----------
-        pattern : str
-            A regular expression that describes elements.
-        """
-        self.elementTags = {
-            "O", "Xe", "Cs", "Hg", "S", "Ru", "H", "Zn", "Sr", "Al", "Sm",
-            "Zr", "Ho", "Ta", "Pb", "Te", "He", "Ti", "As", "Ge", "Pr", "U",
-            "Tl", "Ir", "Tm", "Fe", "Si", "Cl", "Eu", "Tb", "W", "Er", "P",
-            "Os", "K", "Dy", "Lu", "Bi", "Ga", "Pt", "La", "Be", "F", "Yb",
-            "Kr", "Cd", "Mn", "Ar", "Cr", "Se", "Sb", "Hf", "Sc", "Ca", "Ba",
-            "Rb", "Sn", "Co", "Cu", "Ne", "Pd", "In", "N", "Au", "Y", "Ni",
-            "Rh", "C", "Li", "Th", "B", "Mg", "Na", "Pa", "V", "Re", "Nd",
-            "Br", "Ce", "I", "Ag", "Gd", "Nb", "Mo"}
-        self.pattern = re.compile(pattern)
+    Returns : function
+        A formula parser.
+    """
 
-    def parse(self, atomCnt_str):
+    pattern = re.compile(pattern)
+
+    def parse(atomCnt_str):
         """Parses chemical formula based on the class pattern definition.
 
         Parameters
@@ -57,12 +50,12 @@ class formulaParser(object):
         Examples
         --------
             >>> FP = formulaParser()
-            >>> FP.parse('C100H202')
+            >>> FP('C100H202')
             Counter({'C': 100, 'H': 202})
         """
         atomCnt = Counter()
-        for elemTag, cnt in re.findall(self.pattern, atomCnt_str):
-            if elemTag in self.elementTags:
+        for elemTag, cnt in re.findall(pattern, atomCnt_str):
+            if elemTag in element_tags:
                 if cnt == '':
                     cnt = 1
                 else:
@@ -71,3 +64,25 @@ class formulaParser(object):
             else:
                 raise AttributeError
         return atomCnt
+
+    return parse
+
+
+parse_formula = get_formula_parser()
+
+
+def atomCnt2string(atomCnt):
+    """Translate a dictionary of atom counts into a uniquely defined string.
+
+    Parameters
+    ----------
+    atomCnt : Counter
+        The chemical formula counter.
+
+    Returns
+    -------
+    out : str
+        A chemical formula string.
+    """
+    keys = atomCnt.keys()
+    return "".join(el+str(atomCnt[el]) for el in sorted(keys))

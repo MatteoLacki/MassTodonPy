@@ -15,15 +15,15 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
+from __future__ import division
 import numpy as np
-
-from IsoSpecPy import IsoSpecPy
 from collections import Counter
 from time import time
+from math import sqrt
+from IsoSpecPy import IsoSpecPy
 
 from MassTodonPy.Data.get_data import get_isotopic_masses_and_probabilities
-from MassTodonPy.Parsers.formula_parser import formulaParser
+from MassTodonPy.Parsers.formula_parser import parse_formula
 from MassTodonPy.Spectra.operations import cdata2numpyarray,\
                                            aggregate,\
                                            aggregate_envelopes
@@ -53,48 +53,48 @@ class IsotopeCalculator:
             self.iso_masses, self.iso_probs = \
                 get_isotopic_masses_and_probabilities()
 
-        self.iso_means_vars = {
-            el: get_mean_and_variance(self.iso_masses[el],
+        self.mean_mass = {}
+        self.mean_variance = {}
+        for el in self.iso_probs:
+            self.mean_mass[el], self.mean_variance[el] = \
+                get_mean_and_variance(self.iso_masses[el],
                                       self.iso_probs[el])
-            for el in self.iso_probs}
 
         self.isotope_DB = {}
         self.prec_digits = prec_digits
-        self.formParser = formulaParser()
         self.verbose = verbose
         self.stats = Counter()
 
-    def __getMonoisotopicMass(self, atomCnt):
-        """Calculate monoisotopic mass of an atom count."""
-        return sum(self.iso_masses[el][0]*elCnt
-                   for el, elCnt in atomCnt.items())  # .items is pythonic!
-
-    def __getMassMean(self, atomCnt):
-        """Calculate average mass of an atom count."""
-        return sum(self.iso_means_vars[el][0]*elCnt
+    def get_monoisotopic_mz(self, molecule):
+        """Calculate monoisotopic mass of a molecule."""
+        atomCnt = parse_formula(molecule.formula)
+        mass = sum(self.iso_masses[el][0]*elCnt
                    for el, elCnt in atomCnt.items())
+        hydrogen_mass = self.iso_masses['H'][0]
+        mz = (mass + (molecule.q + molecule.g)*hydrogen_mass)/molecule.q
+        return mz
 
-    def __getMassVar(self, atomCnt):
-        """Calculate mass variance of an atom count."""
-        return sum(self.iso_means_vars[el][1]*elCnt
-                   for el, elCnt in atomCnt)
+    def get_mean_mz(self, molecule):
+        """Calculate average mass of a molecule."""
+        atomCnt = parse_formula(molecule.formula)
+        mass = sum(self.mean_mass[el]*elCnt for el, elCnt in atomCnt.items())
+        hydrogen_mass = self.mean_mass['H']
+        mz = (mass + (molecule.q + molecule.g)*hydrogen_mass)/molecule.q
+        return mz
 
-    def __getSummary(self, atomCnt_str):
-        atomCnt = self.formParser.parse(atomCnt_str)
-        return (self._getMonoisotopicMass(atomCnt),
-                self._getMassMean(atomCnt),
-                self._getMassVar(atomCnt))
-
-    def __getOldEnvelope(self, atomCnt_str, jP, prec_digits):
-        masses, probs = self.isotope_DB[(atomCnt_str, jP, prec_digits)]
-        return masses.copy(), probs.copy()
+    def get_mz_sd(self, molecule):
+        """Calculate m/z standard deviation of a molecule."""
+        atomCnt = parse_formula(molecule.formula)
+        sd = sqrt(sum(self.mean_variance[el]*elCnt
+                      for el, elCnt in atomCnt.items()))
+        return sd/molecule.q
 
     def __make_envelope(self, formula, joint_probability):
         T0 = time()
         counts = []
         isotope_masses = []
         isotope_probs = []
-        atomCnt = self.formParser.parse(formula.formula)
+        atomCnt = parse_formula(formula)
 
         for el, cnt in atomCnt.items():
             counts.append(cnt)
@@ -113,14 +113,14 @@ class IsotopeCalculator:
 
         # memoization
         # TODO get rid of it when IsoSpec using stats convolution
-        self.isotope_DB[(formula.formula, joint_probability)] = (masses, probs)
+        self.isotope_DB[(formula, joint_probability)] = (masses, probs)
         T1 = time()
 
         self.stats['Envelopes Generation Total T'] += T1-T0
         return masses.copy(), probs.copy()
 
     def get_envelope(self,
-                     formula,
+                     molecule,
                      joint_probability):
         """Get an isotopic envelope consisting of a numpy array
         of masses and numpy array of probabilities.
@@ -129,8 +129,8 @@ class IsotopeCalculator:
         ----------
         atomCnt_str : str
             The chemical formula of a molecular species.
-        formula : a namedtuple
-            e.g. Formula(name='precursor', formula='C63H98N18O13S1', q=3, g=0)
+        molecule : a namedtuple
+            e.g. Molecule(name='precursor', formula='C63H98N18O13S1', q=3, g=0)
         joint_probability : float
             The joint probability of the theoretical isotopic envelope.
 
@@ -141,18 +141,19 @@ class IsotopeCalculator:
             mass over charge values and intensities, both numpy arrays.
         """
         try:
-            masses, probs = self.isotope_DB[(formula.formula,
+            masses, probs = self.isotope_DB[(molecule.formula,
                                              joint_probability)]
 
             masses, probs = masses.copy(), probs.copy()
         except KeyError:
-            masses, probs = self.__make_envelope(formula,
+            masses, probs = self.__make_envelope(molecule.formula,
                                                  joint_probability)
 
-        if formula.q is not 0:
+        if molecule.q is not 0:
             # TODO get proper mass of a hydrogen!
+            hydrogen_mass = self.mean_mass['H']
             masses = np.around(
-                (masses + formula.g + formula.q)/formula.q,
+                (masses + (molecule.g + molecule.q)*hydrogen_mass)/molecule.q,
                 decimals=self.prec_digits)
         masses, probs = aggregate(masses, probs)
         return masses, probs

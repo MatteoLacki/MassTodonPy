@@ -64,13 +64,12 @@
 # .7.......7...O....O...O... I.......Z.....Z....Z... $...O...O...$....O...O....Z..
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
-try:
-    from itertools import izip as zip
-except ImportError:
-    pass
+from six.moves import zip
 from math import ceil, log10
+
 # from time import time
-from MassTodonPy.Formulator.formulator import get_formulas
+from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
+
 
 # from IsotopeCalculator import IsotopeCalculator
 # from Parsers.spectrum_parser import read_n_preprocess_spectrum
@@ -80,6 +79,8 @@ from MassTodonPy.Formulator.formulator import get_formulas
 # from Outputting.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
 # from Solver.solver import solve
 # from Summarator.summarator import summarize_results
+
+# this is a pointer to the module object instance itself.
 
 
 class MassTodon():
