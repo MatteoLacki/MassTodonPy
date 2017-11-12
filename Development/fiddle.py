@@ -19,11 +19,28 @@ iso_probs['H']
 iso_masses['H']
 
 mol = get_dataset("substanceP")
+get_dataset("ubiquitin")
+
+mol.spectrum
+mol.precursor
+mol.precursor.name
+mol.precursor.q
+
 amino_acids = get_amino_acids()
+
+
 molecules = get_molecules(fasta=mol['fasta'],
                           Q=mol['Q'],
                           what_fragments="cz",
                           modifications=mol['modifications'])
+
+
+molecules2 = [
+    get_molecules(fasta=fasta,
+                  Q=mol['Q'],
+                  what_fragments="cz",
+                  modifications=mol['modifications'])
+    for fasta in [mol['fasta'], mol['fasta'], mol['fasta']]]
 
 # parse_formula(molecules[0].formula)
 
@@ -73,3 +90,6 @@ newProbs = np.empty(len(newMasses))
 for prob, mass in zip(np.nditer(newProbs, op_flags=['readwrite']),
                       newMasses):
     prob[...] = fsum(lists[mass])
+
+def f(*args):
+    for a in args:

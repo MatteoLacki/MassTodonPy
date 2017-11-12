@@ -16,7 +16,7 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from linearCounter.linearCounter import linearCounter as lCnt
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from MassTodonPy.Data.get_data import get_amino_acids
 from MassTodonPy.Parsers.formula_parser import atomCnt2string
 
@@ -25,7 +25,7 @@ class NegativeAtomCount(Exception):
     pass
 
 
-Molecule = namedtuple("Molecule", ("name", "formula", "q", "g"))
+Molecule = namedtuple("Molecule", ("name", "source", "formula", "q", "g"))
 
 
 class MoleculeMaker(object):
@@ -34,53 +34,27 @@ class MoleculeMaker(object):
 
     Parameters
     ----------
-    fasta : str
-        The fasta of the studied molecular species.
+    precusor : Precursor
+        An instance of the precursor class.
+    """
 
-    Q : int
-        The charge of the precursor ion.
-
-    distance_charges : int
-        The minimal distance between charges on the protein.
-        If set to 5, at least 4 amino acids must lay between
-        consecutive *charged* amino acids.
-
-    modifications : dictionary
-        A dictionary of modifications of amino acids.
-
-        Key: amino acid number in fasta sequence
-             (beginning with N terminus, fininshing with C terminus).
-
-        Value: a dictionary with group modifications.
-            Keys : C_carbo, C_alpha, or N.
-            Value: atom count in form of a linearCounter."""
-
-    def __init__(self, fasta, Q,
-                 distance_charges=5,
-                 modifications=lCnt()):
-        self.Q = Q
-        self.fasta = fasta
-        self.d_charges = distance_charges
+    def __init__(self, precusor):
+        self.precusor = precusor
         self.amino_acids = get_amino_acids()
         self.block_fragments()
-
-        # turning modifications into linear counters
-        self.modifications = defaultdict(
-            lambda: defaultdict(lambda: lCnt()),
-            {k - 1: defaultdict(lambda: lCnt(),
-                                {name: lCnt(atomCnt)
-                                 for name, atomCnt in v.items()})
-             for k, v in modifications.items()})
+        self.make_superatoms()
+        self.make_unprotonated_molecules()
 
     def block_fragments(self):
         self.blockedFragments = set()
 
     def get_amino_acid(self, amino_acid_group, amino_acid_tag, amino_acid_No):
         try:
-            amino_acid = self.amino_acids[amino_acid_tag][amino_acid_group] + self.modifications[amino_acid_No][amino_acid_group]
+            amino_acid = \
+                self.amino_acids[amino_acid_tag][amino_acid_group] +\
+                self.precusor.modifications[amino_acid_No][amino_acid_group]
         except KeyError:
             print(amino_acid_No, amino_acid_tag, amino_acid_group)
-            # print(self.modifications)
             print(self.amino_acids[amino_acid_tag][amino_acid_group])
 
         try:
@@ -99,18 +73,17 @@ class MoleculeMaker(object):
         a, b, c = {'p': (1, 0, 1),
                    'c': (0, -1, 0),
                    'z': (0, 0, 1)}[frag]
-        for q in range(1, self.Q+a):
-            for g in range(b, self.Q-q+c):
+        for q in range(1, self.precusor.q + a):
+            for g in range(b, self.precusor.q - q + c):
                 yield (q, g)
 
     def make_unprotonated_molecules(self):
         N = len(self.superAtoms)
-        N_fasta = len(self.fasta)
 
-        # precursor molecule
+        # I don't use Precursor here, because this is my kingdom object.
         precursor = ('precursor',
                      atomCnt2string(sum(self.superAtoms)),
-                     N_fasta)
+                     len(self.precursor.fasta))
         self.unprotonated_molecules = [precursor]
 
         # c fragments
@@ -134,15 +107,14 @@ class MoleculeMaker(object):
                 z_fragment = (frag_type, atomCnt2string(zFrag_tmp), i)
                 self.unprotonated_molecules.append(z_fragment)
 
-    def make_molecules(self):
-        # outcome variable
-
+    def __iter__(self):
         self.molecules = []
 
         for molType, atomCnt_str, sideChainsNo in self.unprotonated_molecules:
             for q, g in self.protonate(molType[0]):
-                potentialChargesNo = sideChainsNo // self.d_charges
-                if sideChainsNo % self.d_charges > 0:
+                potentialChargesNo = \
+                    sideChainsNo // self.precusor.distance_charges
+                if sideChainsNo % self.precusor.distance_charges > 0:
                     potentialChargesNo += 1
                     # +0000 +0000 00+  at most 3 charges
                 if potentialChargesNo >= q:
@@ -155,15 +127,16 @@ class CzMoleculeMaker(MoleculeMaker):
 
     def block_fragments(self):
         self.blockedFragments = set('c0')
-        for i, f in enumerate(self.fasta):
+        for i, f in enumerate(self.precusor.fasta):
             if f == 'P':
                 self.blockedFragments.add('c' + str(i))
-                self.blockedFragments.add('z' + str(len(self.fasta)-i))
+                z_frag_No = len(self.precusor.fasta) - i
+                self.blockedFragments.add('z' + str(z_frag_No))
 
     def make_superatoms(self):
         self.superAtoms = []
         sA = lCnt()
-        for amino_acid_No, amino_acid_tag in enumerate(self.fasta):
+        for amino_acid_No, amino_acid_tag in enumerate(self.precursor.fasta):
             sA += self.get_amino_acid('N',
                                       amino_acid_tag,
                                       amino_acid_No)
@@ -180,40 +153,12 @@ class CzMoleculeMaker(MoleculeMaker):
 
 
 # TODO: add other fragmentation schemes
-def get_molecules(fasta,
-                  Q,
-                  what_fragments="cz",
-                  distance_charges=5,
-                  modifications={}):
+def get_molecules(precursors):
     """Generate molecules from the Roepstorff Scheme.
     Parameters
     ----------
-    fasta : str
-        The fasta of the studied molecular species.
-
-    Q : int
-        The charge of the precursor ion.
-
-    what_fragments : str
-        Which fragmentation scheme to use.
-
-        Warning
-        =======
-            Only "cz" acceptable.
-
-    distance_charges : int
-        The minimal distance between charges on the protein.
-        If set to 5, at least 4 amino acids must lay between
-        consecutive *charged* amino acids.
-
-    modifications : list
-        A dictionary of modifications.
-
-        The key in the modifications' dictionary should with of form
-        **<N|Calpha|C><amino acid No>**, e.g. C10.
-
-        The values contain dictionaries with diffs in elements,
-        e.g. **{'H': 1, 'N': 1, 'O': -1}**.
+    precursors
+        An iterable full of Precursor objects.
 
     Returns
     -------
@@ -225,13 +170,6 @@ def get_molecules(fasta,
         At present only the 'cz' fragmentation is supported.
     """
 
-    F = CzMoleculeMaker(fasta=fasta,
-                        Q=Q,
-                        distance_charges=distance_charges,
-                        modifications=modifications)
-
-    F.make_superatoms()
-    F.make_unprotonated_molecules()
-    F.make_molecules()
+    F = [ mol for mole in CzMoleculeMaker(precusor) for precusor in precursors]
 
     return F.molecules

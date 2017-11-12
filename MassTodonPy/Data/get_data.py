@@ -5,6 +5,9 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
+from collections import namedtuple
+
+from MassTodonPy.MoleculeMaker.Precursor import Precursor
 
 
 element_tags = {
@@ -16,6 +19,9 @@ element_tags = {
     "Rb", "Sn", "Co", "Cu", "Ne", "Pd", "In", "N", "Au", "Y", "Ni",
     "Rh", "C", "Li", "Th", "B", "Mg", "Na", "Pa", "V", "Re", "Nd",
     "Br", "Ce", "I", "Ag", "Gd", "Nb", "Mo"}
+
+
+Dataset = namedtuple('Dataset', 'precursor spectrum instrument')
 
 
 def get_dataset(dataset_name):
@@ -51,9 +57,27 @@ def get_dataset(dataset_name):
     path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
     with open(path + dataset_name + '.json', 'rb') as f:
         mol = json.load(f)
-    mol['spectrum'] = tuple(np.array(d) for d in mol['spectrum'])
-    mol['modifications'] = {int(k): v for k, v in mol['modifications'].items()}
-    return mol
+    spectrum = tuple(np.array(d) for d in mol['spectrum'])
+    modifications = {int(k): v for k, v in mol['modifications'].items()}
+    precursor = Precursor(name=mol['name'],
+                          fasta=mol['fasta'],
+                          q=mol['Q'],
+                          fragmentation_type="cz",
+                          distance_charges=5,
+                          modifications=modifications)
+
+    instrument = {}
+    if dataset_name is 'substanceP':
+        instrument['name'] = 'synapt'
+        instrument['wave height'] = 0
+        instrument['wave velocity'] = 300
+    elif dataset_name is 'ubiquitin':
+        instrument['name'] = 'orbitrap'
+        instrument['acquisition time'] = '10 ms'
+
+    return Dataset(precursor=precursor,
+                   spectrum=spectrum,
+                   instrument=instrument)
 
 
 def get_amino_acids():
