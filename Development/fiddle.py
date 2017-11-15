@@ -13,21 +13,7 @@ from MassTodonPy.Spectra.operations import cdata2numpyarray,\
 
 from IsoSpecPy import IsoSpecPy
 
-
-iso_masses, iso_probs = get_isotopic_masses_and_probabilities()
-iso_probs['H']
-iso_masses['H']
-
 mol = get_dataset("substanceP")
-get_dataset("ubiquitin")
-
-mol.spectrum
-mol.precursor
-mol.precursor.name
-mol.precursor.q
-
-amino_acids = get_amino_acids()
-
 
 molecules = get_molecules(fasta=mol['fasta'],
                           Q=mol['Q'],

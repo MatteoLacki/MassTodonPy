@@ -54,9 +54,8 @@ setup(
         'bin/masstodon_example_call'],
     include_package_data=True,
     package_data={
-        "Data": ["Data/isotopes.pickle",
-                 "Data/amino_acids.pickle",
-                 "Data/amino_acids2.pickle",
+        "Data": ["Data/isotopes.json",
+                 "Data/amino_acids.json",
                  "Data/substanceP.json",
                  "Data/ubiquitin.json"],
     }

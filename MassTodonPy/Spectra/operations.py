@@ -77,6 +77,7 @@ def merge_runs(spec1, spec2):
     intensities = np.concatenate((spec1[1], spec2[1]))
     return aggregate(masses_over_charge, intensities)
 
+
 # WHAT THE HELL IS THIS?
 def aggregate_envelopes(masses, probs, digits=2):
     """Aggregate theoretical envelopes.

@@ -68,7 +68,7 @@ from six.moves import zip
 from math import ceil, log10
 
 # from time import time
-from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
+# from MassTodonPy.MoleculeMaker.MoleculeMaker import make_molecules
 
 
 # from IsotopeCalculator import IsotopeCalculator
@@ -157,63 +157,63 @@ class MassTodon():
     #     for mz, intensity in zip(*self.spectra[spectrum_type]):
     #         yield {'mz': mz, 'intensity': intensity}
 
-    def run(self,
-            solver='sequential',
-            multiprocesses_No=None,
-            method='MSE',
-            max_times_solve=5,
-            min_prob_per_molecule=.75,
-            for_plot=False,
-            **args):
-        '''Perform the deconvolution of problems.'''
+    # def run(self,
+    #         solver='sequential',
+    #         multiprocesses_No=None,
+    #         method='MSE',
+    #         max_times_solve=5,
+    #         min_prob_per_molecule=.75,
+    #         for_plot=False,
+    #         **args):
+    #     '''Perform the deconvolution of problems.'''
+    #
+    #     self.spectra = read_n_preprocess_spectrum(path=path,
+    #                                               spectrum=spectrum,
+    #                                               prec_digits=self.prec_digits,
+    #                                               cut_off=cut_off,
+    #                                               opt_P=opt_P,
+    #                                               verbose=self.verbose)
 
-        self.spectra = read_n_preprocess_spectrum(path=path,
-                                                  spectrum=spectrum,
-                                                  prec_digits=self.prec_digits,
-                                                  cut_off=cut_off,
-                                                  opt_P=opt_P,
-                                                  verbose=self.verbose)
-
-        self.formulas = get_formulas(fasta=self.fasta,
-                                     Q=self.Q,
-                                     amino_acids=self.amino_acids,
-                                     distance_charges=self.distance_charges,
-                                     modifications=self.modifications)
-
-        self.IsoCalc = IsotopeCalculator(jP=joint_probability_of_envelope,
-                                         prec_digits=self.prec_digits,
-                                         iso_masses=iso_masses,
-                                         iso_probs=iso_probs,
-                                         verbose=verbose)
-
-        self.peakPicker = PeakPicker(
-            _Forms=self.formulas, _IsoCalc=self.IsoCalc,
-            mz_prec=mz_prec, verbose=verbose)
-
-        self.ResPlotter = OutputExporter(mz_prec)
-
-        self.problems = self.peakPicker.get_problems(
-            spectrum=self.spectra['trimmed'],
-            min_prob_per_molecule=min_prob_per_molecule)
-
-        self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
-
-        self.res, self.solver_stats = solve(
-                            problems=self.problems,
-                            args=args,
-                            solver=solver,
-                            multiprocesses_No=multiprocesses_No,
-                            method=method,
-                            max_times_solve=max_times_solve,
-                            verbose=self.verbose)
-
-        if self.verbose:
-            print('Solver stats:')
-            print(self.solver_stats)
-            print()
-
-        if for_plot:
-            self.ResPlotter.add_mz_ranges_to_results(self.res)
+        # self.molecules = make_molecules(fasta=self.fasta,
+        #                              Q=self.Q,
+        #                              amino_acids=self.amino_acids,
+        #                              distance_charges=self.distance_charges,
+        #                              modifications=self.modifications)
+        #
+        # self.IsoCalc = IsotopeCalculator(jP=joint_probability_of_envelope,
+        #                                  prec_digits=self.prec_digits,
+        #                                  iso_masses=iso_masses,
+        #                                  iso_probs=iso_probs,
+        #                                  verbose=verbose)
+        #
+        # self.peakPicker = PeakPicker(
+        #     _Forms=self.formulas, _IsoCalc=self.IsoCalc,
+        #     mz_prec=mz_prec, verbose=verbose)
+        #
+        # self.ResPlotter = OutputExporter(mz_prec)
+        #
+        # self.problems = self.peakPicker.get_problems(
+        #     spectrum=self.spectra['trimmed'],
+        #     min_prob_per_molecule=min_prob_per_molecule)
+        #
+        # self.spectra['intensity of peaks paired with isotopologues'] = self.peakPicker.stats['total intensity of experimental peaks paired with isotopologues']
+        #
+        # self.res, self.solver_stats = solve(
+        #                     problems=self.problems,
+        #                     args=args,
+        #                     solver=solver,
+        #                     multiprocesses_No=multiprocesses_No,
+        #                     method=method,
+        #                     max_times_solve=max_times_solve,
+        #                     verbose=self.verbose)
+        #
+        # if self.verbose:
+        #     print('Solver stats:')
+        #     print(self.solver_stats)
+        #     print()
+        #
+        # if for_plot:
+        #     self.ResPlotter.add_mz_ranges_to_results(self.res)
 
     # # TODO is the thing below necessary?
     # def results_iter(self):

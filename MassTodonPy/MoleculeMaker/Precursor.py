@@ -15,8 +15,14 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-from collections import defaultdict, namedtuple
+
+from collections import defaultdict
 from linearCounter.linearCounter import linearCounter as lCnt
+from MassTodonPy.Data.get_amino_acids import get_amino_acids
+
+
+class NegativeAtomCount(Exception):
+    pass
 
 
 class Precursor(object):
@@ -46,7 +52,10 @@ class Precursor(object):
     __slots__ = ("name", "fasta", "q",
                  "fragmentation_type",
                  "distance_charges",
-                 "modifications")
+                 "modifications",
+                 "modifications2")
+
+    amino_acids = get_amino_acids()
 
     def __init__(self, name, fasta, q,
                  fragmentation_type="cz",
@@ -59,9 +68,32 @@ class Precursor(object):
         self.distance_charges = distance_charges
 
         # turning modifications into linear counters
-        self.modifications = defaultdict(
+        self.modifications2 = defaultdict(
             lambda: defaultdict(lambda: lCnt()),
             {k - 1: defaultdict(lambda: lCnt(),
                                 {name: lCnt(atomCnt)
                                  for name, atomCnt in v.items()})
              for k, v in modifications.items()})
+
+        self.modifications = {(k - 1, name): lCnt(atomCnt)
+                              for k, v in modifications.items()
+                              for name, atomCnt in v.items()}
+
+    def __getitem__(self, amino_acid_group, amino_acid_tag, amino_acid_No):
+        try:
+            amino_acid = \
+                self.amino_acids[amino_acid_tag][amino_acid_group] +\
+                self.precursor.modifications[amino_acid_No][amino_acid_group]
+            print(self.precursor.modifications)
+
+        except KeyError:
+            print(amino_acid_No, amino_acid_tag, amino_acid_group)
+            print(self.amino_acids[amino_acid_tag][amino_acid_group])
+        try:
+            if any(count < 0 for element, count in amino_acid.items()):
+                raise NegativeAtomCount("Attention: your modification had an unexpected effect.\
+                Part of your molecule now has negative atom count.\
+                Bear that in mind while publishing your results.")
+        except UnboundLocalError:
+            amino_acid = lCnt()
+        return amino_acid

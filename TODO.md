@@ -5,10 +5,15 @@
 * Update the IsoSpecPy module usage
 * Get rid of the Pandas dependency for csv saving (sic!)
 * Get rid of highcharts -> turn it into Bokeh
-* Isotopic calculator should accept a namedtuple Formula.
+* exception for the same precursor tags in make_molecules
+    * Rationale: otherwise we will not be able to trace the origin of a fragment
+    * Problem: what if two substances point to the same formula?
 
 # elegant
-* Formula should be developed more so as to contain a method for calculating the number of the amino acids (initialize with the fasta lenght!)
+* Get rid of the superatoms list. Should be a generator.
+* replace make_superatoms with amino_acids(left or right)
+* Precursor should supply the get_super_atoms method.
+    * Two iterators actually: left to right and right to left
+* Change the storage of amino acid bricks.
 
 # Less important
-* Change spectrum from tuple to namedtuple with mass and intensity

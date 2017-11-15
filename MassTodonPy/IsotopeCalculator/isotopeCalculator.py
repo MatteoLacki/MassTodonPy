@@ -49,6 +49,7 @@ class IsotopeCalculator:
                  verbose=False):
         """Instantiate the isotopic calculator."""
 
+        # This should go to class.
         if iso_masses is None or iso_probs is None:
             self.iso_masses, self.iso_probs = \
                 get_isotopic_masses_and_probabilities()
