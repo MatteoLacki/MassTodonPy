@@ -12,12 +12,6 @@
 
 
 # elegant
-* Get rid of the superatoms list. Should be a generator.
-* replace make_superatoms with amino_acids(left or right)
-* Precursor should supply the get_super_atoms method.
-    * Two iterators actually: left to right and right to left
-* Change the storage of amino acid bricks.
-* The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()
 * Import linearCounter into the project and rename it as atom_cnt.
     * add __str__ method (replacement for atom_cnt_2_string)
     * add monoisotopic mass
@@ -25,3 +19,9 @@
     * add possibility to by-pass memoization in IsotopeCalculator
 
 # Less important
+
+
+# Don't forget
+* The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()
+* The +1H makes part of the c-fragment definition
+    * think about the possible products.

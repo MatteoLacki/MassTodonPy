@@ -24,6 +24,7 @@ from IsoSpecPy import IsoSpecPy
 
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 from MassTodonPy.Parsers.formula_parser import parse_formula
+from MassTodonPy.Spectra.Spectrum import TheoreticalSpectrum
 from MassTodonPy.Spectra.operations import cdata2numpyarray,\
                                            aggregate,\
                                            aggregate_envelopes
@@ -36,6 +37,11 @@ def get_mean_and_variance(X, weights):
     average = np.dot(X, probs)
     variance = np.dot((X-average)**2, probs)
     return average, variance
+
+
+def check_charges(q, g):
+    assert isinstance(q, int) and q > 0, "q must be a positive integer."
+    assert isinstance(g, int) and g >= 0, "g must be a non-negative integer."
 
 
 # TODO: convolute spectra with diffs spectra instead of Dirac deltas.
@@ -54,45 +60,45 @@ class IsotopeCalculator:
         if iso_masses is not None and iso_probs is not None:
             self.iso_masses = iso_masses
             self.iso_probs = iso_probs
-
         self.mean_mass = {}
         self.mean_variance = {}
-
         for el in self.iso_probs:
             self.mean_mass[el], self.mean_variance[el] = \
                 get_mean_and_variance(self.iso_masses[el],
                                       self.iso_probs[el])
-
-        self.isotope_DB = {}
+        self.isotope_DB = {}  # TODO replace with the IsoSpec generator.
         self.prec_digits = prec_digits
         self.verbose = verbose
-        self.stats = Counter()
+        self.stats = Counter()  # TODO replace with logger
 
-    def get_monoisotopic_mz(self, molecule):
+    def get_monoisotopic_mz(self, formula, q, g=0):
         """Calculate monoisotopic mass of a molecule."""
-        atomCnt = parse_formula(molecule.formula)
+        check_charges(q, g)
+        atomCnt = parse_formula(formula)
         mass = sum(self.iso_masses[el][0]*elCnt
                    for el, elCnt in atomCnt.items())
         hydrogen_mass = self.iso_masses['H'][0]
-        mz = (mass + (molecule.q + molecule.g)*hydrogen_mass)/molecule.q
+        mz = (mass + (q + g)*hydrogen_mass) / q
         return mz
 
-    def get_mean_mz(self, molecule):
+    def get_mean_mz(self, formula, q, g=0):
         """Calculate average mass of a molecule."""
-        atomCnt = parse_formula(molecule.formula)
+        check_charges(q, g)
+        atomCnt = parse_formula(formula)
         mass = sum(self.mean_mass[el]*elCnt for el, elCnt in atomCnt.items())
         hydrogen_mass = self.mean_mass['H']
-        mz = (mass + (molecule.q + molecule.g)*hydrogen_mass)/molecule.q
+        mz = (mass + (q + g)*hydrogen_mass)/q
         return mz
 
-    def get_mz_sd(self, molecule):
+    def get_mz_sd(self, formula, q, g=0):
         """Calculate m/z standard deviation of a molecule."""
-        atomCnt = parse_formula(molecule.formula)
+        check_charges(q, g)
+        atomCnt = parse_formula(formula)
         sd = sqrt(sum(self.mean_variance[el]*elCnt
                       for el, elCnt in atomCnt.items()))
-        return sd/molecule.q
+        return sd/q
 
-    def __make_envelope(self, formula, joint_probability):
+    def __make_envelope(self, formula, joint_probability, memoize=False):
         T0 = time()
         counts = []
         isotope_masses = []
@@ -114,28 +120,40 @@ class IsotopeCalculator:
         probs = np.exp(cdata2numpyarray(logprobs))
         masses, probs = aggregate_envelopes(masses, probs, self.prec_digits)
 
-        # memoization
-        # TODO get rid of it when IsoSpec using stats convolution
-        self.isotope_DB[(formula, joint_probability)] = (masses, probs)
-        T1 = time()
+        if memoize:
+            # TODO get rid of it when IsoSpec will be fastest possible.
+            self.isotope_DB[(formula, joint_probability)] = (masses, probs)
 
+        T1 = time()
         self.stats['Envelopes Generation Total T'] += T1-T0
         return masses.copy(), probs.copy()
 
     def get_envelope(self,
-                     molecule,
-                     joint_probability):
+                     joint_probability,
+                     formula,
+                     q=0,
+                     g=0,
+                     memoize=False):
         """Get an isotopic envelope consisting of a numpy array
         of masses and numpy array of probabilities.
 
         Parameters
         ----------
-        atomCnt_str : str
-            The chemical formula of a molecular species.
-        molecule : a namedtuple
-            e.g. Molecule(name='precursor', formula='C63H98N18O13S1', q=3, g=0)
+        formula : str
+            E.g. 'C63H98N18O13S1'
+
         joint_probability : float
             The joint probability of the theoretical isotopic envelope.
+
+        q : int
+            The charge state of the molecule.
+
+        g : int
+            Additional hydrogen atoms:
+            referred to as quenched charge in the MassTodon paper.
+
+        memoize : bool
+            Should the call be memoized: by default no.
 
         Returns
         -------
@@ -143,20 +161,19 @@ class IsotopeCalculator:
             A tuple containing the theoretical spectrum:
             mass over charge values and intensities, both numpy arrays.
         """
-        try:
-            masses, probs = self.isotope_DB[(molecule.formula,
-                                             joint_probability)]
+        check_charges(q, g)
 
+        try:
+            masses, probs = self.isotope_DB[(formula, joint_probability)]
             masses, probs = masses.copy(), probs.copy()
         except KeyError:
-            masses, probs = self.__make_envelope(molecule.formula,
-                                                 joint_probability)
+            masses, probs = self.__make_envelope(formula,
+                                                 joint_probability,
+                                                 memoize)
 
-        if molecule.q is not 0:
-            # TODO get proper mass of a hydrogen!
-            hydrogen_mass = self.mean_mass['H']
-            masses = np.around(
-                (masses + (molecule.g + molecule.q)*hydrogen_mass)/molecule.q,
-                decimals=self.prec_digits)
+        hydrogen_mass = self.mean_mass['H']
+        masses = np.around((masses + (g + q)*hydrogen_mass)/q,
+                           decimals=self.prec_digits)
+
         masses, probs = aggregate(masses, probs)
-        return masses, probs
+        return TheoreticalSpectrum(mass=masses, probability=probs)

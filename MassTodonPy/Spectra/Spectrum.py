@@ -18,3 +18,4 @@
 from collections import namedtuple
 
 Spectrum = namedtuple('Spectrum', 'mass intensity')
+TheoreticalSpectrum = namedtuple('TheoreticalSpectrum', 'mass probability')

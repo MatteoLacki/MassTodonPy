@@ -99,17 +99,3 @@ class Precursor(object):
     def __getitem__(self, aa_no):
         return sum(self.get_AA(aa_no, aa_g)
                    for aa_g in ('N', 'C_alpha', 'C_carbo'))
-
-    # def N_2_C(self):
-    #     for aa_cnt in range(len(self.fasta)):
-    #         for aa_group in ('N', 'C_alpha', 'C_carbo'):
-    #             aa_tag = self.fasta[aa_cnt]
-    #             atom_cnt = self.get_AA(aa_cnt, aa_group)
-    #             yield (aa_tag, aa_group, atom_cnt)
-    #
-    # def C_2_N(self):
-    #     for aa_cnt in range(len(self.fasta) - 1, -1, -1):
-    #         for aa_group in ('C_carbo', 'C_alpha', 'N'):
-    #             aa_tag = self.fasta[aa_cnt]
-    #             atom_cnt = self.get_AA(aa_cnt, aa_group)
-    #             yield (aa_tag, aa_group, atom_cnt)

@@ -28,6 +28,11 @@ example_call_2: ## run an example session of the algorithm
 example_call_3: ## run an example session of the algorithm
 	$(PYTHON_3) ./bin/masstodon_example_call
 
+run_tests:  ## run all possible tests.
+	echo test_MoleculeMaker on Python2
+	$(PYTHON_2) -m unittest MassTodon/MoleculeMaker/test_MoleculeMaker
+	$(PYTHON_2) -m unittest MassTodon/MoleculeMaker/test_MoleculeMaker
+
 clean_ve_2: ## remove virtual environment with python2
 	rm -rf ../MassTodonVEpy2
 
