@@ -52,8 +52,6 @@ def get_dataset(dataset_name):
     precursor = Precursor(name=mol['name'],
                           fasta=mol['fasta'],
                           q=mol['Q'],
-                          fragmentation_type="cz",
-                          distance_charges=5,
                           modifications=modifications)
 
     instrument = {}

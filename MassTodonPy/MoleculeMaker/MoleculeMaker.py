@@ -15,9 +15,10 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+from six.moves import range
 from linearCounter.linearCounter import linearCounter as lCnt
 from collections import namedtuple
-from MassTodonPy.Parsers.formula_parser import atomCnt2string
+from MassTodonPy.Parsers.formula_parser import atom_cnt_2_string
 
 
 Molecule = namedtuple("Molecule",
@@ -25,80 +26,24 @@ Molecule = namedtuple("Molecule",
 
 
 class MoleculeMaker(object):
-    """A class for obtaining chemical molecules
-    that appear in the reaction graph.
-
-    Parameters
-    ----------
-    precursor : Precursor
-        An instance of the precursor class.
     """
-
-    def __init__(self, precursor, blockedFragments=set()):
+    A class for obtaining chemical molecules
+    that appear in the reaction graph.
+    """
+    def __init__(self,
+                 precursor,
+                 blockedFragments=set(['c0']),
+                 fragmentation_type="cz",
+                 distance_charges=5):
         self.precursor = precursor
-        print(precursor.modifications)
-        self.block_fragments(blockedFragments)
-        self.make_superatoms()
-
-    def block_fragments(self, blockedFragments):
-        self.blockedFragments = set('c0') | blockedFragments
+        self.blockedFragments = blockedFragments
+        self.fragmentation_type = fragmentation_type
+        self.distance_charges = distance_charges
         for i, f in enumerate(self.precursor.fasta):
             if f == 'P':
                 self.blockedFragments.add('c' + str(i))
                 z_frag_No = len(self.precursor.fasta) - i
                 self.blockedFragments.add('z' + str(z_frag_No))
-
-    def __get_AA(self, amino_acid_group, amino_acid_tag, amino_acid_No):
-        try:
-            amino_acid = \
-                self.amino_acids[amino_acid_tag][amino_acid_group] +\
-                self.precursor.modifications[amino_acid_No][amino_acid_group]
-            print(self.precursor.modifications)
-
-        except KeyError:
-            print(amino_acid_No, amino_acid_tag, amino_acid_group)
-            print(self.amino_acids[amino_acid_tag][amino_acid_group])
-        try:
-            if any(count < 0 for element, count in amino_acid.items()):
-                raise NegativeAtomCount("Attention: your modification had an unexpected effect.\
-                Part of your molecule now has negative atom count.\
-                Bear that in mind while publishing your results.")
-        except UnboundLocalError:
-            amino_acid = lCnt()
-        return amino_acid
-
-    def get_amino_acids(self, direction):
-        if direction == "N -> C":
-            print('N -> C')
-            sA = lCnt({'H': 1})
-            for AA_No, AA_tag in enumerate(self.precursor.fasta):
-                sA += self.__get_AA('N', AA_tag, AA_No)
-                yield sA
-                sA = self.__get_AA('C_alpha', AA_tag, AA_No) +\
-                    self.__get_AA('C_carbo', AA_tag, AA_No)
-            yield sA + lCnt({'O': 1, 'H': 1})
-        else:
-            N = len(self.precursor.fasta)
-            print('C -> N')
-            sA = lCnt({'O': 1, 'H': 1})
-            for AA_No, AA_tag in enumerate(reversed(self.precursor.fasta)):
-                sA += self.__get_AA('C_carbo', AA_tag, AA_No) +\
-                      self.__get_AA('C_alpha', AA_tag, N-AA_No)
-                yield sA
-                sA = self.__get_AA('N', AA_tag, AA_No)
-            yield sA + lCnt({'H': 1})
-
-    def make_superatoms(self):
-        self.superAtoms = []
-        sA = lCnt()
-        for AA_No, AA_tag in enumerate(self.precursor.fasta):
-            sA += self.__get_AA('N', AA_tag, AA_No)
-            self.superAtoms.append(sA)
-            sA = self.__get_AA('C_alpha', AA_tag, AA_No) + \
-                 self.__get_AA('C_carbo', AA_tag, AA_No)
-        sA += lCnt({'O': 1, 'H': 1})
-        self.superAtoms.append(sA)
-        self.superAtoms[0] += lCnt({'H': 1})
 
     def protonate(self, frag):
         a, b, c = {'p': (1, 0, 1),
@@ -108,51 +53,72 @@ class MoleculeMaker(object):
             for g in range(b, self.precursor.q - q + c):
                 yield (q, g)
 
-    def unprotonated_molecules(self):
-        N = len(self.superAtoms)
+    def c_fragments(self):
+        """Generate c fragments."""
+        # extra hydrogen to meet
+        # the definition of a c fragment.
+        # not as H on the N terminus!
+        # H on the N terminus is added
+        # in the precursor __getitem__ method
+        atom_cnt = lCnt({'H': 1})
+        for aa_cnt in range(len(self.precursor.fasta)):
+            atom_cnt += self.precursor.get_AA(aa_cnt, 'N')
+            name = 'c' + str(aa_cnt)
+            if name not in self.blockedFragments:
+                yield (name, atom_cnt_2_string(atom_cnt))
+            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_alpha')
+            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_carbo')
 
-        yield ('precursor',
-               atomCnt2string(sum(self.superAtoms)),
-               len(self.precursor.fasta))
+    def z_fragments(self):
+        """Generate z fragments."""
+        atom_cnt = lCnt()
+        for aa_cnt in range(len(self.precursor.fasta) - 1, -1, -1):
+            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_carbo')
+            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_alpha')
+            side_chain_len = len(self.precursor.fasta) - aa_cnt
+            name = 'z' + str(side_chain_len)
+            if name not in self.blockedFragments:
+                yield (name, atom_cnt_2_string(atom_cnt))
+            atom_cnt += self.precursor.get_AA(aa_cnt, 'N')
 
-        # Adding one extra hydrogen to meet the definition of a c fragment.
-        if 'c' in self.precursor.fragmentation_type:
-            cFrag = lCnt({'H': 1})
-            for i in range(N-1):
-                cFrag += self.superAtoms[i]
-                cFrag_tmp = lCnt(cFrag)
-                frag_type = 'c' + str(i)
-                if frag_type not in self.blockedFragments and not i == 0:
-                    yield (frag_type, atomCnt2string(cFrag_tmp), i)
+    def uncharged_molecules(self):
+        """Generate uncharged molecules."""
+        yield ('precursor',  # name
+               atom_cnt_2_string(self.precursor.atom_cnt))
+        if 'c' in self.fragmentation_type:
+            for c_frags in self.c_fragments():
+                yield c_frags
+        if 'z' in self.fragmentation_type:
+            for z_frags in self.z_fragments():
+                yield z_frags
 
-        if 'z' in self.precursor.fragmentation_type:
-            zFrag = lCnt()
-            for i in range(1, N):
-                zFrag += self.superAtoms[N-i]
-                zFrag_tmp = lCnt(zFrag)
-                frag_type = 'z'+str(i)
-                if frag_type not in self.blockedFragments:
-                    yield (frag_type, atomCnt2string(zFrag_tmp), i)
-
-    def __iter__(self):
-        for molType, formula, sideChainsNo in self.unprotonated_molecules():
-            p_c_z = molType[0]
+    def charged_molecules(self):
+        """Generate charged molecules."""
+        for name, atom_cnt in self.uncharged_molecules():
+            p_c_z = name[0]
+            if p_c_z is not 'p':
+                side_chain_len = int(name[1:])
+            else:
+                side_chain_len = len(self.precursor.fasta)
             for q, g in self.protonate(p_c_z):
-                potentialChargesNo = \
-                    sideChainsNo // self.precursor.distance_charges
-
-                if sideChainsNo % self.precursor.distance_charges > 0:
-                    potentialChargesNo += 1
+                potential_charges_cnt = \
+                    side_chain_len // self.distance_charges
+                if side_chain_len % self.distance_charges > 0:
+                    potential_charges_cnt += 1
                     # +0000 +0000 00+  at most 3 charges
-
-                if potentialChargesNo >= q:
-                    yield Molecule(molType,
+                if potential_charges_cnt >= q:
+                    yield Molecule(name,
                                    self.precursor.name,
-                                   formula, q, g)
+                                   atom_cnt, q, g)
 
 
-def make_molecules(precursors):
-    """Generate molecules from the Roepstorff Scheme.
+def molecules(precursors,
+              blockedFragments=set(['c0']),
+              fragmentation_type="cz",
+              distance_charges=5):
+    """
+    Generate molecules from the Roepstorff Scheme.
+
     Parameters
     ----------
     precursors
@@ -164,5 +130,10 @@ def make_molecules(precursors):
         An iterator over Molecules generated by the list of precursors.
     """
     for prec in precursors:
-        for mol in MoleculeMaker(prec):
+        mol_maker = MoleculeMaker(prec,
+                                  blockedFragments,
+                                  fragmentation_type,
+                                  distance_charges)
+
+        for mol in mol_maker.charged_molecules():
             yield mol

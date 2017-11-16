@@ -17,7 +17,7 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 import re
 from collections import Counter
-from MassTodonPy.Data.get_data import element_tags
+from MassTodonPy.Data.get_isotopes import get_elements
 
 
 def get_formula_parser(pattern='([A-Z][a-z]?)([0-9]*)'):
@@ -55,7 +55,7 @@ def get_formula_parser(pattern='([A-Z][a-z]?)([0-9]*)'):
         """
         atomCnt = Counter()
         for elemTag, cnt in re.findall(pattern, atomCnt_str):
-            if elemTag in element_tags:
+            if elemTag in get_elements():
                 if cnt == '':
                     cnt = 1
                 else:
@@ -71,7 +71,7 @@ def get_formula_parser(pattern='([A-Z][a-z]?)([0-9]*)'):
 parse_formula = get_formula_parser()
 
 
-def atomCnt2string(atomCnt):
+def atom_cnt_2_string(atomCnt):
     """Translate a dictionary of atom counts into a uniquely defined string.
 
     Parameters

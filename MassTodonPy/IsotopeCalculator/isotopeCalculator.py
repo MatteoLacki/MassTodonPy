@@ -22,7 +22,7 @@ from time import time
 from math import sqrt
 from IsoSpecPy import IsoSpecPy
 
-from MassTodonPy.Data.get_data import get_isotopic_masses_and_probabilities
+from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 from MassTodonPy.Parsers.formula_parser import parse_formula
 from MassTodonPy.Spectra.operations import cdata2numpyarray,\
                                            aggregate,\
@@ -42,6 +42,8 @@ def get_mean_and_variance(X, weights):
 class IsotopeCalculator:
     """A class for isotope calculations."""
 
+    iso_masses, iso_probs = get_isotopic_masses_and_probabilities()
+
     def __init__(self,
                  prec_digits=2,
                  iso_masses=None,
@@ -49,13 +51,13 @@ class IsotopeCalculator:
                  verbose=False):
         """Instantiate the isotopic calculator."""
 
-        # This should go to class.
-        if iso_masses is None or iso_probs is None:
-            self.iso_masses, self.iso_probs = \
-                get_isotopic_masses_and_probabilities()
+        if iso_masses is not None and iso_probs is not None:
+            self.iso_masses = iso_masses
+            self.iso_probs = iso_probs
 
         self.mean_mass = {}
         self.mean_variance = {}
+
         for el in self.iso_probs:
             self.mean_mass[el], self.mean_variance[el] = \
                 get_mean_and_variance(self.iso_masses[el],
