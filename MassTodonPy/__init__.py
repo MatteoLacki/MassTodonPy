@@ -23,5 +23,5 @@ import os
 os.environ['OMP_NUM_THREADS'] = "1"
 
 # from .MassTodon import MassTodon, MassTodonize
-from MassTodonPy.MassTodon import MassTodon
+from MassTodonPy.MassTodon import MassTodonize
 # from MassTodonPy.Data.get_data import get_dataset

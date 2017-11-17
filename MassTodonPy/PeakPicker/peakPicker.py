@@ -16,24 +16,22 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from    intervaltree    import Interval as II, IntervalTree
-import  networkx        as     nx
-from    math            import sqrt
-import  numpy           as     np
-from    collections     import Counter, defaultdict
-from    itertools       import izip, ifilter
-from    time            import time
+from intervaltree import Interval as II, IntervalTree
+import networkx as nx
+from math import sqrt
+import numpy as np
+from collections import Counter, defaultdict
+from itertools import izip, ifilter
+from time import time
 
 inf = float('inf')
 
+
 class MultiCounter(Counter):
-    '''A callable Counter, for special field operations.
+    '''
+    A callable Counter.
 
     This is a sort of counter.
-
-    Notes
-    -----
-    All you functional purist - simply go away, please. Big Boys are playing now.
     '''
     def __call__(self, key):
         val = self[key]
@@ -42,7 +40,14 @@ class MultiCounter(Counter):
 
 
 def trim_unlikely_molecules(cc, minimal_prob=0.7):
-    '''Trim molecules whose isotopic envelopes cover potentially less than the minimal_prob threshold.'''
+    '''
+    Trim theoretic molecules that are unlikely to be in real spectrum.
+
+    More precisely, if the joint probability of their theoretical peaks is
+    less than minimal_prob, then do not assume that they are in the spectrum.
+
+    This is highly conservative!
+    '''
     nodes_to_remove = []
     for M in cc:
         if cc.node[M]['type'] == 'M':  # we are looking at a molecule node

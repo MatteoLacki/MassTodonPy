@@ -1,7 +1,7 @@
 from collections import Counter
 
-def summarize_results(  spectra,
-                        raw_masstodon_res   ):
+def summarize_results(spectra,
+                      raw_masstodon_res):
     '''Summarize the results of MassTodon.
 
     Parameters
@@ -32,16 +32,17 @@ def summarize_results(  spectra,
         if r['status'] == 'ValueError':
             summary['L1_error_value_error'] += r['L1_error']
         else:
-            summary['underestimates']+= r['underestimates']
+            summary['underestimates'] += r['underestimates']
             summary['overestimates'] += r['overestimates']
 
         if r['status'] != 'optimal':
             summary['L1_error_nonoptimal'] += r['L1_error']
-            summary['underestimates_nonoptimal']+= r['underestimates']
+            summary['underestimates_nonoptimal'] += r['underestimates']
             summary['overestimates_nonoptimal'] += r['overestimates']
 
     if spectra['original total intensity'] > 0.0:
-        summary['L1_fit_error_and_unused_intensity/original_total_intensity']= (summary['L1_error']+unused_E_total_intensity)/spectra['original total intensity']
+        summary['L1_fit_error_and_unused_intensity/original_total_intensity'] =
+        (summary['L1_error']+unused_E_total_intensity)/spectra['original total intensity']
         summary['L1_error_value_error/original_total_intensity'] = summary['L1_error_value_error']/spectra['original total intensity']
 
     if used_E_total_intensity > 0.0:

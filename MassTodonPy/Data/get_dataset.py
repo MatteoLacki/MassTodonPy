@@ -4,7 +4,7 @@ import numpy as np
 from collections import namedtuple
 
 from MassTodonPy.MoleculeMaker.Precursor import Precursor
-from MassTodonPy.Spectra.Spectrum import Spectrum
+from MassTodonPy.Spectra.Spectra import Spectrum
 
 
 Dataset = namedtuple('Dataset', 'precursor spectrum instrument')

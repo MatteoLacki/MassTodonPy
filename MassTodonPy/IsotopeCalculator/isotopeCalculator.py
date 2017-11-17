@@ -17,17 +17,66 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from __future__ import division
 import numpy as np
-from collections import Counter
+from collections import Counter, defaultdict
 from time import time
 from math import sqrt
+from math import fsum
 from IsoSpecPy import IsoSpecPy
+from six.moves import range
 
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 from MassTodonPy.Parsers.formula_parser import parse_formula
 from MassTodonPy.Spectra.Spectrum import TheoreticalSpectrum
-from MassTodonPy.Spectra.operations import cdata2numpyarray,\
-                                           aggregate,\
-                                           aggregate_envelopes
+from MassTodonPy.Spectra.Spectra import aggregate
+
+
+def cdata2numpyarray(x):
+    """Turn c-data into a numpy array.
+    Parameters
+    ----------
+    x : cdata table
+        A table of cdata from cffi.
+
+    Returns
+    -------
+    res : array
+        A numpy array of numbers.
+    """
+    res = np.empty(len(x))
+    for i in range(len(x)):
+        res[i] = x[i]
+    return res
+
+
+# This is used by the IsotopeCalculator.
+# TODO : get rid of this when IsoSpec 2.0 is in place
+def aggregate_envelopes(masses, probs, digits=2):
+    """Aggregate theoretical envelopes.
+
+    Parameters
+    ----------
+    masses : array
+        An array of isotopologues' masses.
+    probs : array
+        An array of isotopologues' probabilities.
+    digits : int
+        The number of significant digits used
+        while rounding the masses of isotopologues.
+
+    Returns
+    ----------
+    out : tuple
+        A theoretical spectrum of a given resolution.
+    """
+    lists = defaultdict(list)
+    for mass, prob in zip(masses.round(digits), probs):
+        lists[mass].append(prob)
+    newMasses = np.array([k for k in lists])
+    newProbs = np.empty(len(newMasses))
+    for prob, mass in zip(np.nditer(newProbs, op_flags=['readwrite']),
+                          newMasses):
+        prob[...] = fsum(lists[mass])
+    return newMasses, newProbs
 
 
 def get_mean_and_variance(X, weights):
@@ -118,6 +167,8 @@ class IsotopeCalculator:
         masses, logprobs, _ = envelope.getConfsRaw()
         masses = cdata2numpyarray(masses)
         probs = np.exp(cdata2numpyarray(logprobs))
+
+        # TODO : get rid of this when IsoSpec 2.0 is in place
         masses, probs = aggregate_envelopes(masses, probs, self.prec_digits)
 
         if memoize:
@@ -176,4 +227,4 @@ class IsotopeCalculator:
                            decimals=self.prec_digits)
 
         masses, probs = aggregate(masses, probs)
-        return TheoreticalSpectrum(mass=masses, probability=probs)
+        return TheoreticalSpectrum(mz=masses, probability=probs)

@@ -18,7 +18,7 @@
 from six.moves import range
 from linearCounter.linearCounter import linearCounter as lCnt
 from collections import namedtuple
-from MassTodonPy.Parsers.formula_parser import atom_cnt_2_string
+from MassTodonPy.MoleculeMaker.formula_parser import atom_cnt_2_string
 
 
 Molecule = namedtuple("Molecule",
@@ -112,10 +112,10 @@ class MoleculeMaker(object):
                                    atom_cnt, q, g)
 
 
-def molecules(precursors,
-              blockedFragments=set(['c0']),
-              fragmentation_type="cz",
-              distance_charges=5):
+def get_molecules(precursors,
+                  blockedFragments=set(['c0']),
+                  fragmentation_type="cz",
+                  distance_charges=5):
     """
     Generate molecules from the Roepstorff Scheme.
 

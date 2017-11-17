@@ -64,92 +64,260 @@
 # .7.......7...O....O...O... I.......Z.....Z....Z... $...O...O...$....O...O....Z..
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
-from six.moves import zip
+
+# from six.moves import zip
 from math import ceil, log10
-
 # from time import time
+
+from MassTodonPy.MoleculeMaker.Precursor import Precursor
+from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
+from MassTodonPy.Spectra.SpectrumParser import read_n_preprocess_spectrum
+
 # from MassTodonPy.MoleculeMaker.MoleculeMaker import make_molecules
-
-
 # from IsotopeCalculator import IsotopeCalculator
-# from Parsers.spectrum_parser import read_n_preprocess_spectrum
+
 # from PeakPicker.peakPicker import PeakPicker
 # from MatchMaker.match_cz_ions import match_cz_ions
 # from Outputting.export_outputs import OutputExporter
-# from Outputting.write_to_csv import write_raw_to_csv, write_counts_n_probs_to_csv, write_summary_to_csv
+# from Outputting.write_to_csv import write_raw_to_csv,
+# write_counts_n_probs_to_csv, write_summary_to_csv
 # from Solver.solver import solve
 # from Summarator.summarator import summarize_results
 
-# this is a pointer to the module object instance itself.
 
-
-class MassTodon():
-    """Make MassTodons less extinct by giving to the World its instance.
-
-    Parameters
-    ----------
-    fasta : str
-        The fasta of the studied molecular species.
-
-    precursor_charge : int
-        The charge of the precursor ion.
-
-    m_over_z_precision: float
-        The precision in the m/z domain: how far away [in Daltons]
-        should we search for peaks from the theoretical mass.
-
-        For instance, consider H20 and m_over_z_precision = 0.05 Da.
-        Then, the mass of the lightest isotopic variant equals
-        1.0078 x 2 + 15.9949 = 18.0105 Da.
-        Then, intensity within a range 18.0105 ± 0.05 Da will be considered
-        to potentially originate from the water molecules.
-
-    modifications : dict
-        A dictionary of modifications.
-
-        The key in the modifications' dictionary should with of form
-        **<N|Calpha|C><amino acid No>**, e.g. C10.
-
-        The values contain dictionaries with diffs in elements,
-        e.g. **{'H': 1, 'N': 1, 'O': -1}**.
-
-    minimal_distance_between_charges : int
-        The minimal distance between charges on the protein.
-        If set to 5, at least 4 amino acids must lay between
-        consecutive *charged* amino acids.
-    """
-
-    def __init__(self,
-                 fasta,
+def MassTodonize(precursor_name,
+                 precursor_fasta,
                  precursor_charge,
-                 m_over_z_precision,
-                 modifications={},
+                 precursor_modifications={},
+                 m_over_z_precision=0.05,
+                 fragmentation_type='cz',
+                 blockedFragments=set(['c0']),
                  minimal_distance_between_charges=5,
                  joint_probability_of_the_envelope=0.999,
+                 min_prob_of_envelope_in_picking=.7,
+                 spectrum='',
+                 spectral_intensity_cut_off=0.0,
+                 percentage_of_heighest_peaks_used=1.0,
+                 processes_no=1,
+                 _max_times_solve=10,
                  _isotope_masses=None,
                  _isotope_probabilities=None,
-                 _amino_acids=None,
-                 verbose=False):
+                 _fitting_criterion='MSE',
+                 _L1_x=.001,
+                 _L2_x=.001,
+                 _L1_alpha=.001,
+                 _L2_alpha=.001,
+                 _verbose=False):
+    """Run a full session of MassTodon on your problem.
 
-        self.mz_prec = m_over_z_precision
-        # precision one digit lower than the input precision of spectra, eg.
-        # mz_prec = .05     -->     prec_digits = 3
-        # mz_prec = .005    -->     prec_digits = 4
-        self.prec_digits = int(ceil(-log10(self.mz_prec)))
-        self.fasta = fasta
-        self.Q = precursor_charge
-        self.modifications = modifications
-        self.distance_charges = minimal_distance_between_charges
-        self.spectra = None
-        self._amino_acids = _amino_acids
-        self.verbose = verbose
+    Parameters
+    ==========
+    precursor_name : str
+        The name of the input substance.
 
-    def read_n_preprocess_spectrum(self,
-                                   path=None,
-                                   spectrum=None,
-                                   cut_off=None,
-                                   opt_P=None):
-        pass
+    precursor_fasta : str
+        The fasta of the input substance.
+
+    precursor_charge : int
+        The charge of the input substance.
+
+    precursor_modifications :
+        The key in the modifications' dictionary should with of form
+        **<N|Calpha|C><amino acid No>**, e.g. C10.
+        The values contain dictionaries with diffs in elements,
+        e.g. **{'H': 1, 'N': 1, 'O': -1}**. TODO: check it.
+
+    m_over_z_precision : float
+        The precision in the m/z domain: how far away [in Daltons] should
+        one search for peaks from the theoretical mass.
+
+    fragmentation_type : str
+        Types of fragments you want to find.
+        Warning
+        =======
+        Supports c and z fragmentations. So you can input "cz", "c", or "z".
+
+    blockedFragments : set of strings
+        Which fragments should not appear. Defaults to 'c0'.
+        MoleculeMaker adds to this all proline-blocked fragments.
+
+    minimal_distance_between_charges: int
+        The minimal distance between charges on the protein.
+        If set to 5, at least 4 amino acids must la
+        between consecutive *charged* amino acids.
+
+    joint_probability_of_envelope : float
+        The joint probability threshold for generating
+        theoretical isotopic envelopes.
+
+    min_prob_of_envelope_in_picking : float
+        The minimal probability an envelope has to scoop
+        to be included in the deconvolution graph.
+
+    spectrum : path string or a tuple of numpy arrays (masses, intensities).
+
+    spectral_intensity_cut_off : float
+        Experimental peaks with height lower than that will be trimmed.
+
+    percentage_of_heighest_peaks_used : float
+        The percentage of the heighest experimental peaks used in the analysis.
+
+    processes_no : int
+        How much processes should we use to perform the fitting?
+        One process is the same as sequential calculations.
+
+    _max_times_solve : int
+        How many times the CVXOPT solver should try to find the optimal
+        deconvolution of the isotopic envelopes.
+
+        Note
+        ====
+        CVXOPT sometimes does not meet its optimality criteria.
+        However, it uses underneath the OPENBLAS library and this baby has
+        its own dynamic scheduling that might sometimes influence the output
+        of the calculations.
+        Here, we try to use it to our advantage, in order to help CVXOPT
+        to meet its optimisation criteria.
+
+        This is clearly not the nice way to do it, but we will soon go bayesian
+        anyway and use a different approach to perform the deconvolution.
+
+    _isotope_masses : dict
+        The isotopic masses, e.g. from IUPAC.
+
+    _isotope_probabilities : dict
+        The isotopic frequencies, e.g. from IUPAC.
+
+    _fitting_criterion : str
+        The minimization criterion used.
+        Warning
+        =======
+            For now, only mean square error (MSE) considered.
+
+    _L1_x : float
+        The $L_1$ penalty for flows (intensities attributed to particular
+        isotopologous and experimental groups) in the deconvolution problem.
+
+    _L2_x : float
+        The $L_2$ penalty for flows (intensities attributed to particular
+        isotopologous and experimental groups) in the deconvolution problem.
+
+    _L1_alpha : float
+        The $L_1$ penalty for total intensities attributed to particular
+        molecular species in the deconvolution problem.
+
+    _L2_alpha : float
+        The $L_2$ penalty for total intensities attributed to particular
+        molecular species in the deconvolution problem.
+
+    _verbose : boolean
+        Do you want to check what MassTodon did undercover?
+
+    Returns
+    =======
+    out : a results object
+    """
+    assert isinstance(m_over_z_precision, float) and m_over_z_precision >= 0.0
+
+    # precision one digit lower than the input precision of spectra, eg.
+    # m_over_z_precision = .05     -->     prec_digits = 3
+    # m_over_z_precision = .005    -->     prec_digits = 4
+    precision_digits = int(ceil(-log10(m_over_z_precision)))
+
+    precursor = Precursor(name=precursor_name,
+                          fasta=precursor_fasta,
+                          q=precursor_charge,
+                          modifications=precursor_modifications)
+
+    molecules = get_molecules([precursor],
+                              blockedFragments,
+                              fragmentation_type,
+                              minimal_distance_between_charges)
+
+    spectra = read_n_preprocess_spectrum(spectrum,
+                                         spectral_intensity_cut_off,
+                                         percentage_of_heighest_peaks_used,
+                                         precision_digits,
+                                         _verbose)
+    pass
+
+#
+#
+# class MassTodon():
+#     """Make MassTodons less extinct by giving to the World its instance.
+#
+#     Parameters
+#     ----------
+#     fasta : str
+#         The fasta of the studied molecular species.
+#
+#     precursor_charge : int
+#         The charge of the precursor ion.
+#
+#     m_over_z_precision: float
+#         The precision in the m/z domain: how far away [in Daltons]
+#         should we search for peaks from the theoretical mass.
+#
+#         For instance, consider H20 and m_over_z_precision = 0.05 Da.
+#         Then, the mass of the lightest isotopic variant equals
+#         1.0078 x 2 + 15.9949 = 18.0105 Da.
+#         Then, intensity within a range 18.0105 ± 0.05 Da will be considered
+#         to potentially originate from the water molecules.
+#
+#     modifications : dict
+#         A dictionary of modifications.
+#
+#         The key in the modifications' dictionary should with of form
+#         **<N|Calpha|C><amino acid No>**, e.g. C10.
+#
+#         The values contain dictionaries with diffs in elements,
+#         e.g. **{'H': 1, 'N': 1, 'O': -1}**.
+#
+#     minimal_distance_between_charges : int
+#         The minimal distance between charges on the protein.
+#         If set to 5, at least 4 amino acids must lay between
+#         consecutive *charged* amino acids.
+#     """
+#
+#     def __init__(self,
+#                  precursor_name,
+#                  precursor_fasta,
+#                  precursor_charge,
+#                  precursor_modifications={},
+#                  m_over_z_precision=0.05,
+#                  fragmentation_type='cz',
+#                  blockedFragments=set(['c0']),
+#                  minimal_distance_between_charges=5,
+#                  joint_probability_of_the_envelope=0.999,
+#                  _isotope_masses=None,
+#                  _isotope_probabilities=None,
+#                  _amino_acids=None,
+#                  _verbose=False):
+#         self.mz_prec = m_over_z_precision
+#         # precision one digit lower than the input precision of spectra, eg.
+#         # mz_prec = .05     -->     prec_digits = 3
+#         # mz_prec = .005    -->     prec_digits = 4
+#         self.prec_digits = int(ceil(-log10(self.mz_prec)))
+#
+#         self.precursor = Precursor(name=precursor_name,
+#                                    fasta=precursor_fasta,
+#                                    q=precursor_charge,
+#                                    modifications=precursor_modifications)
+#
+#         self.molecules = molecules([self.precursor],
+#                                    blockedFragments,
+#                                    fragmentation_type,
+#                                    minimal_distance_between_charges)
+#
+#         self.spectra = None
+#         self.verbose = _verbose
+#
+#     def read_n_preprocess_spectrum(self,
+#                                    path=None,
+#                                    spectrum=None,
+#                                    cut_off=None,
+#                                    opt_P=None):
+#         pass
 
     # #  TODO is the thing below necessary?
     # def spectrum_iter(self, spectrum_type):
