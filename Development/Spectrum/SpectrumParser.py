@@ -18,3 +18,39 @@ spectrum_from_txt = read_n_preprocess_spectrum(spectrum_txt,
 spectrum_mzxml = spectrum_path + 'FRL_220715_ubi_952_ETD_40ms_01.mzXML'
 spectrum_from_mzxml = read_n_preprocess_spectrum(spectrum_mzxml,
                                                  100., 1.0, 2)
+
+sum(spectrum_from_mzxml.intensity)
+
+def remove_lower_quantile(mz, intensities, retained_percentage=.95):
+    """
+    Remove a portion of the smallest peaks that cover
+    1-retained_percentage of the total ion current.
+    Parameters
+    ----------
+    mz : array
+        The m/z values.
+    intensity : array
+        The intensities to bin.
+    retained_percentage : float
+        The percentage of the original total ion current
+        to be retained after trimming.
+    Returns
+    -------
+    effective_cut_off : float
+        The minimal peak height.
+    """
+    mz_res, intensities_res = tuple(
+        np.array(x) for x in
+        zip(*sorted(zip(mz, intensities), key=itemgetter(1))))
+
+    i = 0
+    S = 0.0
+    total = intensities_res.sum()
+    while True:
+        S += intensities_res[i]/total
+        if S < 1.0-retained_percentage:
+            i += 1
+        else:
+            break
+    effective_cut_off = intensities_res[i]
+    return effective_cut_off

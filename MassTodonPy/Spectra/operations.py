@@ -15,14 +15,17 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
 import numpy as np
 from six.moves import zip
 from operator import itemgetter
 
 
-def remove_lower_quantile(mz, intensities, retained_percentage=.95):
-    """Remove a portion of the smallest peaks that cover
-    1-retained_percentage of the total ion current.
+def retained_intensity(mzs, intensities, retained_percentage=.95):
+    """
+    Get the intensity threshold that retains a given percentage of
+    the joint intensity of the given spectrum.
+
     Parameters
     ----------
     mz : array
@@ -39,7 +42,7 @@ def remove_lower_quantile(mz, intensities, retained_percentage=.95):
     """
     mz_res, intensities_res = tuple(
         np.array(x) for x in
-        zip(*sorted(zip(mz, intensities), key=itemgetter(1))))
+        zip(*sorted(zip(mzs, intensities), key=itemgetter(1))))
 
     i = 0
     S = 0.0

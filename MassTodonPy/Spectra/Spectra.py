@@ -84,8 +84,9 @@ def get_distributions_from_mzxml(path,
     with mzxml.read(path) as reader:
         for spectrum in reader:
             mzs = spectrum['m/z array']
-
             intensities = spectrum['intensity array']
+
+            print(mzs, intensities)
 
             mzs = mzs[intensities >=
                       spectral_intensity_cut_off]

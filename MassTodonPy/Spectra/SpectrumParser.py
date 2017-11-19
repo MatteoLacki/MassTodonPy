@@ -19,10 +19,13 @@
 # from MassTodonPy.Spectra.operations import trim_spectrum,\
 #                                            remove_lower_quantile
 import os
+
 from MassTodonPy.Spectra.Spectra import Spectrum,\
     read_spectrum_from_txt,\
     read_spectrum_from_mzxml,\
     threshold_n_round_n_aggregate
+
+from MassTodonPy.Spectra.operations import retained_intensity
 
 
 def parse_path(path):
@@ -122,7 +125,16 @@ def read_n_preprocess_spectrum(
             spectral_intensity_cut_off,
             precision_digits)
 
-    return spectrum
+    effective_cut_off = retained_intensity(
+        *spectrum,
+        percentage_of_heighest_peaks_used)
+
+    mz, intensity = spectrum
+    mz = mz[intensity >= effective_cut_off]
+    intensity = intensity[intensity >= effective_cut_off]
+
+    return Spectrum(mz=mz, intensity=intensity)
+
     # spectra = {}
     # spectra['original'] = spectrum
     # spectra['original total intensity'] = sum(spectrum[1])

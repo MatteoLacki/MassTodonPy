@@ -10,6 +10,7 @@
     * Problem: what if two substances point to the same formula?
 * set up one standard for modifications
 * check different modes of isotopic calculations under IsoSpec2.0
+* apply the joint probability thresholding to real spectrum.
 
 # elegant
 * Import linearCounter into the project and rename it as atom_cnt.
