@@ -124,6 +124,6 @@ def read_txt_spectrum(path,
 def stack_spectra(spec_info_1, spec_info_2):
     spectrum_1, total_ion_current_1 = spec_info_1
     spectrum_2, total_ion_current_2 = spec_info_2
-    spectrum = stack_measures(spectrum_1, spectrum_2)
+    spectrum = ExpSpec(*stack_measures(spectrum_1, spectrum_2))
     total_ion_current = total_ion_current_1 + total_ion_current_2
     return spectrum, total_ion_current

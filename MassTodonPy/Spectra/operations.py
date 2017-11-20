@@ -17,8 +17,27 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 import numpy as np
+import os
 from six.moves import zip
 from operator import itemgetter
+
+
+def parse_path(path):
+    """
+    Parse path to the file.
+    Parameters
+    ----------
+    path : str
+        Any path.
+    Returns
+    -------
+    out : tuple
+        Path of file, name of file, and file's extension.
+    """
+    file_path, file_ext = os.path.splitext(path)
+    file_name = file_path.split('/')[-1]
+    file_path = "/".join(file_path.split('/')[:-1]) + '/'
+    return file_path, file_name, file_ext
 
 
 def aggregate(keys, values=None):

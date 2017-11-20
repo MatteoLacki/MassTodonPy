@@ -18,32 +18,16 @@
 
 # from MassTodonPy.Spectra.operations import trim_spectrum,\
 #                                            remove_lower_quantile
-import os
-
-from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec,\
-    read_spectrum_from_txt,\
-    read_spectrum_from_mzxml,\
-    threshold_n_round_n_aggregate
-
-from MassTodonPy.Spectra.operations import retained_intensity
-
-
-def parse_path(path):
-    """
-    Parse path to the file.
-    Parameters
-    ----------
-    path : str
-        Any path.
-    Returns
-    -------
-    out : tuple
-        Path of file, name of file, and file's extension.
-    """
-    file_path, file_ext = os.path.splitext(path)
-    file_name = file_path.split('/')[-1]
-    file_path = "/".join(file_path.split('/')[:-1]) + '/'
-    return file_path, file_name, file_ext
+# import os
+#
+# from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec,\
+#     read_spectrum_from_txt,\
+#     read_spectrum_from_mzxml,\
+#     threshold_n_round_n_aggregate
+#
+# from MassTodonPy.Spectra.operations import retained_intensity
+#
+#
 
 
 # def read_n_preprocess_spectrum(

@@ -234,11 +234,10 @@ def MassTodonize(precursor_name,
                               fragmentation_type,
                               minimal_distance_between_charges)
 
-    spectra = read_n_preprocess_spectrum(spectrum,
-                                         spectral_intensity_cut_off,
-                                         percentage_of_heighest_peaks_used,
-                                         precision_digits,
-                                         _verbose)
+    spectrum = read_n_preprocess_spectrum(spectrum,
+                                          spectral_intensity_cut_off,
+                                          percentage_of_heighest_peaks_used,
+                                          precision_digits)
     pass
 
 #
