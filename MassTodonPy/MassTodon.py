@@ -71,7 +71,9 @@ from math import ceil, log10
 
 from MassTodonPy.MoleculeMaker.Precursor import Precursor
 from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
-from MassTodonPy.Spectra.SpectrumParser import read_n_preprocess_spectrum
+from MassTodonPy.Spectra.Spectrum import Spectrum
+from MassTodonPy.Data.Constants import eps
+
 
 # from MassTodonPy.MoleculeMaker.MoleculeMaker import make_molecules
 # from IsotopeCalculator import IsotopeCalculator
@@ -96,9 +98,10 @@ def MassTodonize(precursor_name,
                  joint_probability_of_the_envelope=0.999,
                  min_prob_of_envelope_in_picking=.7,
                  spectrum='',
-                 spectral_intensity_cut_off=0.0,
-                 percentage_of_heighest_peaks_used=1.0,
+                 spectrum_minimal_intensity=eps,
+                 spectrum_percent_top_peaks=1.0,
                  processes_no=1,
+                 _faster_mzxml=False,
                  _max_times_solve=10,
                  _isotope_masses=None,
                  _isotope_probabilities=None,
@@ -156,10 +159,10 @@ def MassTodonize(precursor_name,
 
     spectrum : path string or a tuple of numpy arrays (masses, intensities).
 
-    spectral_intensity_cut_off : float
-        Experimental peaks with height lower than that will be trimmed.
+    spectrum_minimal_intensity : float
+        Experimental peaks with lower height will be trimmed.
 
-    percentage_of_heighest_peaks_used : float
+    spectrum_percent_top_peaks : float
         The percentage of the heighest experimental peaks used in the analysis.
 
     processes_no : int
@@ -222,7 +225,7 @@ def MassTodonize(precursor_name,
     # precision one digit lower than the input precision of spectra, eg.
     # m_over_z_precision = .05     -->     prec_digits = 3
     # m_over_z_precision = .005    -->     prec_digits = 4
-    precision_digits = int(ceil(-log10(m_over_z_precision)))
+    mz_precision_digits = int(ceil(-log10(m_over_z_precision)))
 
     precursor = Precursor(name=precursor_name,
                           fasta=precursor_fasta,
@@ -234,10 +237,11 @@ def MassTodonize(precursor_name,
                               fragmentation_type,
                               minimal_distance_between_charges)
 
-    spectrum = read_n_preprocess_spectrum(spectrum,
-                                          spectral_intensity_cut_off,
-                                          percentage_of_heighest_peaks_used,
-                                          precision_digits)
+    spectrum = Spectrum(spectrum,
+                        mz_precision_digits,
+                        spectrum_minimal_intensity,
+                        spectrum_percent_top_peaks,
+                        _faster_mzxml)
     pass
 
 #

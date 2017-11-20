@@ -21,6 +21,9 @@ import os
 from six.moves import zip
 from operator import itemgetter
 
+from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec
+from MassTodonPy.Data.Constants import eps
+
 
 def parse_path(path):
     """
@@ -76,7 +79,7 @@ def stack_measures(measure1, measure2):
 def round_n_trim(support,
                  values,
                  support_precision=2,
-                 value_cut_off=0.0):
+                 value_cut_off=eps):
     """
     Round the measure's support to a given precision
     and trim the values lower than cut off value.
@@ -96,12 +99,12 @@ def round_n_trim(support,
     out : a measure tuple
     """
     support = support[values >= value_cut_off]
-    support = np.round(support, support_precision)
+    support = np.around(support, support_precision)
     values = values[values >= value_cut_off]
     return support, values
 
 
-def retained_intensity(mzs, intensities, retained_percentage=.95):
+def get_minimal_intensity(mzs, intensities, retained_percentage=.95):
     """
     Get the intensity threshold that retains a given percentage of
     the joint intensity of the given spectrum.
@@ -123,7 +126,6 @@ def retained_intensity(mzs, intensities, retained_percentage=.95):
     mz_res, intensities_res = tuple(
         np.array(x) for x in
         zip(*sorted(zip(mzs, intensities), key=itemgetter(1))))
-
     i = 0
     S = 0.0
     total = intensities_res.sum()
@@ -135,3 +137,11 @@ def retained_intensity(mzs, intensities, retained_percentage=.95):
             break
     effective_cut_off = intensities_res[i]
     return effective_cut_off
+
+
+def stack_spectra(spec_info_1, spec_info_2):
+    spectrum_1, total_ion_current_1 = spec_info_1
+    spectrum_2, total_ion_current_2 = spec_info_2
+    spectrum = ExpSpec(*stack_measures(spectrum_1, spectrum_2))
+    total_ion_current = total_ion_current_1 + total_ion_current_2
+    return spectrum, total_ion_current

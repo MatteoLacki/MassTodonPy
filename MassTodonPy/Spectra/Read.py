@@ -3,8 +3,7 @@ from pyteomics import mzxml  # >= 3.41
 from lxml import etree
 
 from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec
-from MassTodonPy.Spectra.operations import stack_measures,\
-                                           round_n_trim
+from MassTodonPy.Spectra.operations import round_n_trim
 
 
 # TODO add assertions
@@ -36,9 +35,10 @@ def read_mzxml_spectrum(path,
             spectrum = ExpSpec(mz=spectrum['m/z array'],
                                intensity=spectrum['intensity array'])
             total_intensity = spectrum.intensity.sum()
-            spectrum = ExpSpec(*round_n_trim(*spectrum,
-                                             mz_precision,
-                                             intensity_cut_off))
+            spectrum = ExpSpec(*round_n_trim(
+                *spectrum,
+                support_precision=mz_precision,
+                value_cut_off=intensity_cut_off))
             if not sum_intensity:
                 yield spectrum
             else:
@@ -78,9 +78,10 @@ def read_mzxml_spectrum_faster(path,
             spectrum = ExpSpec(mz=spectrum['m/z array'],
                                intensity=spectrum['intensity array'])
             total_intensity = spectrum.intensity.sum()
-            spectrum = ExpSpec(*round_n_trim(*spectrum,
-                                             mz_precision,
-                                             intensity_cut_off))
+            spectrum = ExpSpec(*round_n_trim(
+                *spectrum,
+                support_precision=mz_precision,
+                value_cut_off=intensity_cut_off))
             if not sum_intensity:
                 yield spectrum
             else:
@@ -119,11 +120,3 @@ def read_txt_spectrum(path,
         return spectrum
     else:
         return (spectrum, total_intensity)
-
-
-def stack_spectra(spec_info_1, spec_info_2):
-    spectrum_1, total_ion_current_1 = spec_info_1
-    spectrum_2, total_ion_current_2 = spec_info_2
-    spectrum = ExpSpec(*stack_measures(spectrum_1, spectrum_2))
-    total_ion_current = total_ion_current_1 + total_ion_current_2
-    return spectrum, total_ion_current

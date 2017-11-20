@@ -8,11 +8,11 @@
 * exception for the same precursor tags in make_molecules
     * Rationale: otherwise we will not be able to trace the origin of a fragment
     * Problem: what if two substances point to the same formula?
-* set up one standard for modifications
 * check different modes of isotopic calculations under IsoSpec2.0
 * apply the joint probability thresholding to real spectrum.
 * add csv input spectrum
 * add assertions to read_mzxml_spectrum
+* compare the new spectra with the older ones.
 
 # elegant
 * Import linearCounter into the project and rename it as atom_cnt.

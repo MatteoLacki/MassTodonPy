@@ -8,6 +8,4 @@ spectrum_path = '/Users/matteo/Documents/MassTodon/Data/'
 spectrum_txt = spectrum_path + 'subP_spectrum.txt'
 
 
-
-
 read_txt_spectrum(spectrum_txt, 2, 100.0, True)
