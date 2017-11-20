@@ -3,7 +3,7 @@ from pyteomics import mzxml  # >= 3.41
 from lxml import etree
 
 from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec
-from MassTodonPy.Spectra.operations import round_n_trim
+from MassTodonPy.Spectra.Operations import round_n_trim
 
 
 # TODO add assertions

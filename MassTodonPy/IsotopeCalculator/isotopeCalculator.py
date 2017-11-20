@@ -26,8 +26,8 @@ from six.moves import range
 
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 from MassTodonPy.Parsers.formula_parser import parse_formula
-from MassTodonPy.Spectra.Spectrum import TheoreticalSpectrum
-from MassTodonPy.Spectra.Spectra import aggregate
+from MassTodonPy.Spectra.Spectra import TheoreticalSpectrum
+from MassTodonPy.Spectra.Operations import aggregate
 
 
 def cdata2numpyarray(x):

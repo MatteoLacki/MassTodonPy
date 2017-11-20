@@ -1,5 +1,5 @@
 from six.moves import reduce
-from MassTodonPy.Spectra.operations import parse_path,\
+from MassTodonPy.Spectra.Operations import parse_path,\
                                            round_n_trim,\
                                            stack_spectra,\
                                            get_minimal_intensity
