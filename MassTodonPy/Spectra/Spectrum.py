@@ -54,7 +54,8 @@ class Spectrum(object):
             self.minimal_intensity = get_minimal_intensity(
                 *self.spectrum,
                 retained_percentage=percent_top_peaks)
-        self.intensity_after_trim = sum(self.high_spectrum())
+        self.intensity_after_trim = sum(intensity for mz, intensity in
+                                        self.high_spectrum())
 
     def read_and_summarize_spectrum(self, minimal_intensity):
         file_path, file_name, file_ext = parse_path(self.spectrum)

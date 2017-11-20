@@ -111,8 +111,8 @@ def MassTodonize(precursor_name,
                  _L1_alpha=.001,
                  _L2_alpha=.001,
                  _verbose=False):
-    """Run a full session of MassTodon on your problem.
-
+    """
+    Run a full session of MassTodon on your problem.
     Parameters
     ==========
     precursor_name : str

@@ -9,4 +9,8 @@ precursor = subP.precursor
 
 MM = MoleculeMaker(precursor)
 
-list(MM.charged_molecules())
+mols = list(MM.charged_molecules())
+
+
+
+mols

@@ -13,6 +13,8 @@
 * add csv input spectrum
 * add assertions to read_mzxml_spectrum
 * compare the new spectra with the older ones.
+* Replace the some arguments for MassTodonize with dictionaries.
+    * e.g. solver_args, deconvolutor_args
 
 # elegant
 * Import linearCounter into the project and rename it as atom_cnt.

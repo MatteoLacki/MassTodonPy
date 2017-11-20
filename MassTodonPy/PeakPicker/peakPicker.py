@@ -43,10 +43,11 @@ def trim_unlikely_molecules(cc, minimal_prob=0.7):
     '''
     Trim theoretic molecules that are unlikely to be in real spectrum.
 
-    More precisely, if the joint probability of their theoretical peaks is
-    less than minimal_prob, then do not assume that they are in the spectrum.
+    If the joint probability of their theoretical peaks close to some
+    experimental peaks is less than minimal_prob,
+    then do not assume that they are in the spectrum.
 
-    This is highly conservative!
+    This is highly conservative for such an evil leftist like me.
     '''
     nodes_to_remove = []
     for M in cc:
