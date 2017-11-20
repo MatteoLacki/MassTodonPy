@@ -25,8 +25,8 @@ from IsoSpecPy import IsoSpecPy
 from six.moves import range
 
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
-from MassTodonPy.Parsers.formula_parser import parse_formula
-from MassTodonPy.Spectra.Spectra import TheoreticalSpectrum
+from MassTodonPy.MoleculeMaker.formula_parser import parse_formula
+from MassTodonPy.Spectra.Spectra import TheoreticalSpectrum as TheoSpec
 from MassTodonPy.Spectra.Operations import aggregate
 
 
@@ -227,4 +227,4 @@ class IsotopeCalculator:
                            decimals=self.prec_digits)
 
         masses, probs = aggregate(masses, probs)
-        return TheoreticalSpectrum(mz=masses, probability=probs)
+        return TheoSpec(mz=masses, probability=probs)

@@ -2,27 +2,21 @@
 %autoreload 2
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.MoleculeMaker.MoleculeMaker import molecules
+from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
 from MassTodonPy.IsotopeCalculator.isotopeCalculator import IsotopeCalculator
 
 subP = get_dataset('substanceP')
 precursor = subP.precursor
-mols = molecules(precursors=[precursor])
-
-subP.spectrum.mass
-subP.spectrum.intensity
+mols = get_molecules(precursors=[precursor])
 
 for mol in mols:
     print(mol)
 
-prec = mol
+z11 = mol
 
 iso_calc = IsotopeCalculator()
-spectrum = iso_calc.get_envelope(.99, prec.formula, prec.q, prec.g)
+spectrum = iso_calc.get_envelope(.99, z11.formula, z11.q, z11.g)
 
 
-spectrum.mass
+spectrum.mz
 spectrum.probability
-
-x = ""
-assert x is not ""
