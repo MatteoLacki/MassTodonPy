@@ -18,16 +18,23 @@
 #
 import os
 import sys
+from recommonmark.parser import CommonMarkParser
+from mock import Mock as MagicMock
+
+
 sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
 
 
-from mock import Mock as MagicMock
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
             return MagicMock()
 
-MOCK_MODULES = [ 'numpy', 'numpy.random', 'matplotlib', 'matplotlib.pyplot', 'linearCounter', 'lxml', 'cvxopt', 'IsoSpecPy', 'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree','python-highcharts', 'pandas', 'pyteomics']
+
+MOCK_MODULES = ['numpy', 'numpy.random', 'matplotlib.pyplot',
+                'linearCounter', 'lxml', 'cvxopt', 'IsoSpecPy',
+                'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree',
+                'pyteomics']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
@@ -40,12 +47,11 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [  'sphinx.ext.autodoc',
-                'sphinx.ext.mathjax',
-                'sphinx.ext.viewcode',
-                'sphinx.ext.napoleon'   ]
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.mathjax',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.napoleon']
 
-from recommonmark.parser import CommonMarkParser
 
 source_parsers = {'.md': CommonMarkParser}
 
@@ -62,9 +68,9 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project     = u'MassTodonPy'
-copyright   = u'2017, Mateusz Krzysztof Lacki'
-author      = u'Mateusz Krzysztof Łącki'
+project = u'MassTodonPy'
+copyright = u'2017, Mateusz Krzysztof Lacki'
+author = u'Mateusz Krzysztof Łącki'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

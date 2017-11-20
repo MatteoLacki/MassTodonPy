@@ -5,7 +5,7 @@ spectrum_path = '/Users/matteo/Documents/MassTodon/Data/'
 path = spectrum_path + 'FRL_220715_ubi_952_ETD_40ms_01.mzXML'
 
 entries = defaultdict(Counter)
-
+ion_currents = []
 with mzxml.read(path) as reader:
     for spectrum in reader:
         mzs = spectrum['m/z array']
@@ -15,4 +15,11 @@ with mzxml.read(path) as reader:
         entries['precursorMz'][precursorMz['precursorMz']] += 1
         entries['windowWideness'][precursorMz['windowWideness']] += 1
         entries['centroided'][spectrum['centroided']] += 1
+        ion_currents.append((spectrum['totIonCurrent'], intensities.sum()))
+
+# ion_currents
+# for a,b in ion_currents:
+#     print(b/a)
+
+entries
 spectrum

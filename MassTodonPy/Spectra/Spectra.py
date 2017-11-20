@@ -17,141 +17,10 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 import numpy as np
 from collections import namedtuple, Counter
-from six.moves import reduce
-from pyteomics import mzxml  # >= 3.41
+from MassTodonPy.Spectra.operations import aggregate
 
-Spectrum = namedtuple('Spectrum', 'mz intensity')
 TheoreticalSpectrum = namedtuple('TheoreticalSpectrum', 'mz probability')
-
-
-def aggregate(keys, values=None):
-    """Aggregate values with the same keys.
-
-    Parameters
-    ----------
-    keys : array
-        Keys, usually m/z values.
-    values : array
-        Values to aggregate, usually intensities.
-
-    Returns
-    -------
-    out : tuple
-        A tuple containing unique keys and aggregated values.
-    """
-    uniqueKeys, indices = np.unique(keys, return_inverse=True)
-    return uniqueKeys, np.bincount(indices, weights=values)
-
-
-def stack_spectra(spec1, spec2):
-    """Merge two spectra into one, aggregating out the common m/z values.
-
-    Parameters
-    ----------
-    spec1 : tuple of two numpy arrays
-        A mass spectrum:
-        an array of m/z ratios and an array of corresponding intensities.
-    spec2 : tuple of two numpy arrays
-        A mass spectrum:
-        an array of m/z ratios and an array of corresponding intensities.
-    """
-    masses_over_charge = np.concatenate((spec1[0], spec2[0]))
-    intensities = np.concatenate((spec1[1], spec2[1]))
-    return aggregate(masses_over_charge, intensities)
-
-
-def get_distributions_from_mzxml(path,
-                                 spectral_intensity_cut_off=0.0,
-                                 precision_digits=2):
-    """
-    Generate a sequence of rounded and trimmed spectra from
-    individual runs of the instrument.
-
-    Parameters
-    ----------
-    path : str
-        Path to the mzXml file containing the mass spectrum.
-    spectral_intensity_cut_off : float
-        The cut off value for peak intensity.
-    precision_digits : float
-        The number of digits after which the floats get rounded.
-    Returns
-    -------
-    out : generator
-        Generates tuples of numpy arrays corresponding to different runs
-        of the experimental spectrum.
-    """
-    with mzxml.read(path) as reader:
-        for spectrum in reader:
-            mzs = spectrum['m/z array']
-            intensities = spectrum['intensity array']
-
-            print(mzs, intensities)
-
-            mzs = mzs[intensities >=
-                      spectral_intensity_cut_off]
-
-            mzs = np.round(mzs, precision_digits)
-            intensities = intensities[intensities >=
-                                      spectral_intensity_cut_off]
-            yield mzs, intensities
-
-
-def read_spectrum_from_mzxml(path,
-                             spectral_intensity_cut_off=0.0,
-                             precision_digits=2):
-    """
-    Read spectrum form an mzXml and merge runs of the instrument.
-    Parameters
-    ----------
-    path : str
-        Path to the mzXml file containing the mass spectrum.
-    spectral_intensity_cut_off : float
-        The cut off value for peak intensity.
-    precision_digits : float
-        The number of digits after which the floats get rounded.
-    Returns
-    -------
-    out : Spectrum
-    """
-    mz, intensity = reduce(
-        stack_spectra,
-        get_distributions_from_mzxml(path,
-                                     spectral_intensity_cut_off,
-                                     precision_digits))
-    return Spectrum(mz=mz, intensity=intensity)
-
-
-def read_spectrum_from_txt(path,
-                           spectral_intensity_cut_off=0.0,
-                           precision_digits=2):
-    """
-    Read spectrum from a text file.
-    Parameters
-    ----------
-    path : str
-        Path to the *.txt text file containing the mass spectrum.
-    spectral_intensity_cut_off : float
-        The cut off value for peak intensity.
-    precision_digits : float
-        The number of digits after which the floats get rounded.
-    Returns
-    -------
-    out : Spectrum
-    """
-    mzs = []
-    intensities = []
-    with open(path) as f:
-        for line in f:
-            line = line.split()
-            intensity = float(line[1])
-            if intensity >= spectral_intensity_cut_off:
-                mzs.append(float(line[0]))
-                intensities.append(intensity)
-    mzs = np.round(np.array(mzs), precision_digits)
-    intensities = np.array(intensities)
-    mzs, intensities = aggregate(mzs, intensities)
-    return Spectrum(mz=mzs, intensity=intensities)
+ExperimentalSpectrum = namedtuple('ExperimentalSpectrum', 'mz intensity')
 
 
 def threshold_n_round_n_aggregate(spectrum,
@@ -181,8 +50,7 @@ def threshold_n_round_n_aggregate(spectrum,
 
     mzs = np.round(mzs, precision_digits)
     mzs, intensities = aggregate(mzs, intensities)
-
-    return Spectrum(mz=mzs, intensity=intensities)
+    return ExperimentalSpectrum(mz=mzs, intensity=intensities)
 
 
 def threshold_round_and_aggregate_peaks(peaks,
@@ -210,5 +78,40 @@ def threshold_round_and_aggregate_peaks(peaks,
     for mz, intensity in peaks:
         if intensity >= spectral_intensity_cut_off:
             nice_spectrum[round(mz, precision_digits)] += intensity
-    return Spectrum(mass=np.array(list(nice_spectrum.keys())),
-                    intensity=np.array(list(nice_spectrum.values())))
+    return ExperimentalSpectrum(
+            mass=np.array(list(nice_spectrum.keys())),
+            intensity=np.array(list(nice_spectrum.values())))
+
+
+#
+# def read_spectrum_from_mzxml(path,
+#                              spectral_intensity_cut_off=0.0,
+#                              precision_digits=2,
+#                              spectra_reader=get_data_from_mzxml_faster):
+#     """
+#     Read spectrum form an mzXml and merge runs of the instrument.
+#     Parameters
+#     ----------
+#     path : str
+#         Path to the mzXml file containing the mass spectrum.
+#     spectral_intensity_cut_off : float
+#         The cut off value for peak intensity.
+#     precision_digits : float
+#         The number of digits after which the floats get rounded.
+#     Returns
+#     -------
+#     out : Spectrum
+#     """
+#     assert isinstance(spectral_intensity_cut_off, (int, float)) and\
+#         spectral_intensity_cut_off >= 0,\
+#         'Intensity cut off should be nonnegative.'
+#
+#     assert isinstance(precision_digits, int) and precision_digits >= 0,\
+#         'Precision digits should be a natural number or zero.'
+#
+#     mz, intensity = reduce(
+#         stack_measures,
+#         spectra_reader(path,
+#                        spectral_intensity_cut_off,
+#                        precision_digits))
+#     return Spectrum(mz=mz, intensity=intensity)

@@ -20,7 +20,7 @@
 #                                            remove_lower_quantile
 import os
 
-from MassTodonPy.Spectra.Spectra import Spectrum,\
+from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec,\
     read_spectrum_from_txt,\
     read_spectrum_from_mzxml,\
     threshold_n_round_n_aggregate
@@ -29,13 +29,12 @@ from MassTodonPy.Spectra.operations import retained_intensity
 
 
 def parse_path(path):
-    """Parse path to the file.
-
+    """
+    Parse path to the file.
     Parameters
     ----------
     path : str
         Any path.
-
     Returns
     -------
     out : tuple
@@ -47,93 +46,86 @@ def parse_path(path):
     return file_path, file_name, file_ext
 
 
-def read_n_preprocess_spectrum(
-        spectrum='',
-        spectral_intensity_cut_off=0.0,
-        percentage_of_heighest_peaks_used=1.0,
-        precision_digits=2,
-        _verbose=False):
-    """Read the spectrum, round it, apply intensity based thresholding of peaks.
-
-    Parameters
-    ----------
-    spectrum : path string or tuple
-        Either the path to the spectrum or the experimental spectrum itself,
-        in form of a tuple of m/z numpy array and intensities numpy array.
-        The path can end up with extension:
-            *.txt, for spectra saved in tab separated format.
-            *.mzXml, for spectra saved with mxXml format.
-
-    spectral_intensity_cut_off : float
-        The cut off value for peak intensity.
-
-    percentage_of_heighest_peaks_used : float
-        The percentage of the heighest peaks being used in the analysis.
-
-    precision_digits : float or int
-        The number of digits after which the floats get rounded.
-        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
-
-    Returns
-    -------
-    spectra : dict
-        A dictionary containing the experimental spectrum
-        split into several subspectra.
-
-    Notes
-    -----
-    **spectra** contains
-        * the original experimental spectrum
-        * its total intensity
-        * spectrum after trimming, *trimmed*
-        * total intensity after trim
-        * the effective peak height cut off
-    """
-
-    assert spectrum is not "", "Provide a spectrum to analyze!"
-
-    assert isinstance(spectrum, (tuple, str, Spectrum)),\
-        "spectrum is not a string nor a tuple."
-
-    assert isinstance(spectral_intensity_cut_off, (int, float)) and\
-        spectral_intensity_cut_off >= 0,\
-        'Intensity cut off should be nonnegative.'
-
-    assert isinstance(percentage_of_heighest_peaks_used, float) and\
-        0.0 <= percentage_of_heighest_peaks_used <= 1.0,\
-        'Percentage cut off should take values between 0 and 1.'
-
-    assert isinstance(precision_digits, int) and precision_digits >= 0,\
-        'Precision digits should be a natural number or zero.'
-
-    if isinstance(spectrum, str):
-        file_path, file_name, file_ext = parse_path(spectrum)
-        file_ext = file_ext.lower()
-        try:
-            reader = {'': read_spectrum_from_txt,
-                      '.txt': read_spectrum_from_txt,
-                      '.mzxml': read_spectrum_from_mzxml}[file_ext]
-        except KeyError:
-            raise KeyError("Unsupported extension")
-
-        spectrum = reader(spectrum,
-                          spectral_intensity_cut_off,
-                          precision_digits)
-    else:
-        spectrum = threshold_n_round_n_aggregate(
-            spectrum,
-            spectral_intensity_cut_off,
-            precision_digits)
-
-    effective_cut_off = retained_intensity(
-        *spectrum,
-        percentage_of_heighest_peaks_used)
-
-    mz, intensity = spectrum
-    mz = mz[intensity >= effective_cut_off]
-    intensity = intensity[intensity >= effective_cut_off]
-
-    return Spectrum(mz=mz, intensity=intensity)
+# def read_n_preprocess_spectrum(
+#         spectrum='',
+#         spectral_intensity_cut_off=0.0,
+#         percentage_of_heighest_peaks_used=1.0,
+#         precision_digits=2,
+#         _verbose=False):
+#     """Read the spectrum, round it, apply intensity based thresholding of peaks.
+#
+#     Parameters
+#     ----------
+#     spectrum : path string or tuple
+#         Either the path to the spectrum or the experimental spectrum itself,
+#         in form of a tuple of m/z numpy array and intensities numpy array.
+#         The path can end up with extension:
+#             *.txt, for spectra saved in tab separated format.
+#             *.mzXml, for spectra saved with mxXml format.
+#
+#     spectral_intensity_cut_off : float
+#         The cut off value for peak intensity.
+#
+#     percentage_of_heighest_peaks_used : float
+#         The percentage of the heighest peaks being used in the analysis.
+#
+#     precision_digits : float or int
+#         The number of digits after which the floats get rounded.
+#         E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
+#
+#     Returns
+#     -------
+#     spectra : dict
+#         A dictionary containing the experimental spectrum
+#         split into several subspectra.
+#
+#     Notes
+#     -----
+#     **spectra** contains
+#         * the original experimental spectrum
+#         * its total intensity
+#         * spectrum after trimming, *trimmed*
+#         * total intensity after trim
+#         * the effective peak height cut off
+#     """
+#
+#     assert spectrum is not "", "Provide a spectrum to analyze!"
+#
+#     assert isinstance(percentage_of_heighest_peaks_used, float) and\
+#         0.0 <= percentage_of_heighest_peaks_used <= 1.0,\
+#         'Percentage cut off should take values between 0 and 1.'
+#
+#     assert isinstance(spectrum, (tuple, str, Spectrum)),\
+#         "spectrum is not a string nor a tuple."
+#
+#     if isinstance(spectrum, str):
+#         file_path, file_name, file_ext = parse_path(spectrum)
+#         file_ext = file_ext.lower()
+#         try:
+#             reader = {'': read_spectrum_from_txt,
+#                       '.txt': read_spectrum_from_txt,
+#                       '.mzxml': read_spectrum_from_mzxml}[file_ext]
+#         except KeyError:
+#             raise KeyError("Unsupported extension")
+#
+#         spectrum = reader(spectrum,
+#                           spectral_intensity_cut_off,
+#                           precision_digits)
+#     else:
+#         spectrum = threshold_n_round_n_aggregate(
+#             spectrum,
+#             spectral_intensity_cut_off,
+#             precision_digits)
+#
+#     effective_cut_off = retained_intensity(
+#         *spectrum,
+#         percentage_of_heighest_peaks_used)
+#
+#     mz, intensity = spectrum
+#     mz = mz[intensity >= effective_cut_off]
+#     intensity = intensity[intensity >= effective_cut_off]
+#
+#     return Spectrum(mz=mz, intensity=intensity)
 
     # spectra = {}
     # spectra['original'] = spectrum

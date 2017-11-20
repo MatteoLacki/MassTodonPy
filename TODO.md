@@ -11,6 +11,8 @@
 * set up one standard for modifications
 * check different modes of isotopic calculations under IsoSpec2.0
 * apply the joint probability thresholding to real spectrum.
+* add csv input spectrum
+* add assertions to read_mzxml_spectrum
 
 # elegant
 * Import linearCounter into the project and rename it as atom_cnt.
