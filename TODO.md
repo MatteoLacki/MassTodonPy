@@ -17,6 +17,7 @@
     * e.g. solver_args, deconvolutor_args
 * Replace the current ubiquitin dataset with one that is not corrupted
     * this one has an ever growing intensity, for some reason.
+* Check if adding works well in the LinearCounter and iclude it as a module.
 
 # elegant
 * Import linearCounter into the project and rename it as atom_cnt.

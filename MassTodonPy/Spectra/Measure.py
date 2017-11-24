@@ -1,19 +1,33 @@
+from bisect import bisect_left
 import numpy as np
 from operator import itemgetter
 from six.moves import zip
 
-class Measure(object):
-    """Store a discrete finite measure with support in R."""
+from MassTodonPy.Misc.strings import repr_long_list
 
-    def __init__(self, support=np.array(), values=np.array()):
+class Measure(object):
+    """Store a discrete finite measure with atoms in R."""
+
+    def __init__(self, atoms=np.array([]), masses=np.array([])):
         """Initialize a measure.
 
         Parameters
         ----------
-        support : a numpy array
+        atoms : numpy array
+            The atoms upon which the measure holds the mass.
+        masses : numpy array
+            The masses on atoms.
+
         """
-        self.__support = np.array(support)
-        self.__values = np.array(values)
+        self.atoms = np.array(atoms)
+        self.masses = np.array(masses)
+
+    def __has_type_of(self, other):
+        """Assert that 'self' and 'other' have the same type."""
+        assert self.__class__.__name__ is other.__class__.__name__,\
+             "\tIllegal to add class {0} to class {1}.\n".format(
+                other.__class__.__name__,\
+                self.__class__.__name__)
 
     def __add__(self, other):
         """Add two measures.
@@ -24,54 +38,86 @@ class Measure(object):
             A measure we want to stack on top of this one.
 
         """
-        self.__support = np.concatenate((self.__support, other.__support))
-        self.__values = np.concatenate((self.__values, other.__values))
+        atoms = np.concatenate((self.atoms, other.atoms))
+        masses = np.concatenate((self.masses, other.masses))
+        self.__has_type_of(other)
+        new_measure = self.__class__(atoms, masses)
+        new_measure.__aggregate()
+        return new_measure
+
+    def __radd__(self, other):
+        """Add two measures.
+
+        Parameters
+        ----------
+        other : Measure
+            A measure we want to stack on top of this one.
+
+        """
+        if other is 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def __iadd__(self, other):
+        """Add two measures.
+
+        Parameters
+        ----------
+        other : Measure
+            A measure we want to stack on top of this one.
+
+        """
+        self.__has_type_of(other)
+        self.atoms = np.concatenate((self.atoms, other.atoms))
+        self.masses = np.concatenate((self.masses, other.masses))
         self.__aggregate()
+        return self
 
     def __aggregate(self):
-        """Aggregate values with the same support."""
-        self.__support, indices = np.unique(self.__support, return_inverse=True)
-        self.__values = np.bincount(indices, weights=self.__values)
+        """Aggregate masses with the same atoms."""
+        self.atoms, indices = np.unique(self.atoms, return_inverse=True)
+        self.masses = np.bincount(indices, weights=self.masses)
 
-    def round_support(self, precision):
-        """Round the support of the measure to a given precision.
+    def round_atoms(self, precision):
+        """Round the atoms of the measure to a given precision.
 
         Parameters
         ----------
         precision : integer
-            The number of digits after which the support values get rounded.
+            The number of digits after which the atoms' masses get rounded.
             E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
 
         """
-        self.__support = np.around(self.__support, precision)
+        self.atoms = np.around(self.atoms, precision)
         self.__aggregate()
 
     def trim(self, cut_off):
-        """Trim values below the provided cut off.
+        """Trim masses below the provided cut off.
 
         Parameters
         ----------
         cut_off : float
 
         """
-        self.__support = self.__support[self.__values >= cut_off]
-        self.__values = self.__values[self.__values >= cut_off]
+        self.atoms = self.atoms[self.masses >= cut_off]
+        self.masses = self.masses[self.masses >= cut_off]
 
     def split_measure(self, cut_off):
-        """Split measure into two according to the cut off on values.
+        """Split measure into two according to the cut off on masses.
 
-        Retain the measure with values greater or equal to the cut off.
+        Retain the measure with masses greater or equal to the cut off.
         Parameters
         ----------
         cut_off : float
         Returns
         ----------
         other : Measure
-            A measure with values strictly below the cut off.
+            A measure with masses strictly below the cut off.
 
         """
-        other = Measure(support=self.__support[self.__values < cut_off],
-                        values=self.__values[self.__values < cut_off])
+        other = self.__class__(self.atoms[self.masses < cut_off],
+                               self.masses[self.masses < cut_off])
         self.trim(cut_off)
         return other
 
@@ -82,14 +128,14 @@ class Measure(object):
         ----------
         P : float
             The percentage of the initial total value that the new measure
-            will contain. The new measure contains only support with
-            heighest values.
+            will contain. The new measure contains only atoms with
+            heighest masses.
         """
         assert 0.0 <= P <= 1.0, "Wrong P for P-optimal set."
-        total_value = self.__values.sum()
+        total_value = self.masses.sum()
         i = 0
         S = 0.0
-        for intensity in sorted(self.__values):
+        for intensity in sorted(self.masses):
             S += intensity/total_value
             if S < P:
                 break
@@ -97,26 +143,52 @@ class Measure(object):
 
     def __repr__(self):
         """Represent the measure."""
-        pass
+        return "{0}:\n\t* {1}\n\t* {2}\n".format(self.__class__.__name__,
+                                                 repr_long_list(self.atoms),
+                                                 repr_long_list(self.masses))
+
+    def __len__(self):
+        """Get size of the measure: the number of atoms."""
+        return len(self.atoms)
+
+    def __iter__(self):
+        """Iterate over pairs (atom, mass)."""
+        return zip(self.atoms, self.masses)
+
+    def __getitem__(self, L_R):
+        """Filter atoms between 'L' and 'R', where 'L_R=(L, R)'.
+        """
+        try:
+            L, R = L_R
+            idx = bisect_left(self.atoms, L)
+            while self.atoms[idx] <= R:
+                yield self.atoms[idx], self.masses[idx]
+                idx += 1
+        except IndexError:
+            return
 
 
 class ExperimentalSpectrum(Measure):
     """Store an experimental spectrum."""
     @property
     def mz(self):
-        return self.__support
+        """Get mass over charge ratios"""
+        return self.atoms
 
     @property
     def intensity(self):
-        return self.__values
+        """Get intensities."""
+        return self.masses
 
 
 class IsotopicDistribution(Measure):
     """Store an isotopic distribution."""
     @property
     def mz(self):
-        return self.__support
+        """Get mass over charge ratios"""
+        return self.atoms
 
     @property
     def probability(self):
-        return self.__values
+        """Get probabilities."""
+        return self.masses
