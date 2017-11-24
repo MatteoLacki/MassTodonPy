@@ -16,27 +16,28 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from __future__ import division
-import numpy as np
-from collections import Counter, defaultdict
-from time import time
-from math import sqrt
-from math import fsum
+from collections import Counter
+from collections import defaultdict
 from IsoSpecPy import IsoSpecPy
+from math import fsum
+from math import sqrt
+import numpy as np
 from six.moves import range
+from time import time
 
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 from MassTodonPy.MoleculeMaker.formula_parser import parse_formula
-from MassTodonPy.Spectra.Spectra import TheoreticalSpectrum as TheoSpec
 from MassTodonPy.Spectra.Operations import aggregate
+from MassTodonPy.Spectra.Spectra import TheoreticalSpectrum as TheoSpec
 
 
 def cdata2numpyarray(x):
     """Turn c-data into a numpy array.
+
     Parameters
     ----------
     x : cdata table
         A table of cdata from cffi.
-
     Returns
     -------
     res : array
@@ -49,7 +50,7 @@ def cdata2numpyarray(x):
 
 
 # This is used by the IsotopeCalculator.
-# TODO : get rid of this when IsoSpec 2.0 is in place
+# get rid of this when IsoSpec 2.0 is in place
 def aggregate_envelopes(masses, probs, digits=2):
     """Aggregate theoretical envelopes.
 
@@ -80,72 +81,86 @@ def aggregate_envelopes(masses, probs, digits=2):
 
 
 def get_mean_and_variance(X, weights):
+    """Get mean and variance of X."""
     X = np.array(X)
     probs = np.array(weights)
-    probs = probs/sum(probs)
+    probs = probs / sum(probs)
     average = np.dot(X, probs)
-    variance = np.dot((X-average)**2, probs)
+    variance = np.dot((X - average) ** 2, probs)
     return average, variance
 
 
 def check_charges(q, g):
+    """Assert q and g are integers, q is positive, g nonnegative."""
     assert isinstance(q, int) and q > 0, "q must be a positive integer."
     assert isinstance(g, int) and g >= 0, "g must be a non-negative integer."
 
 
-# TODO: convolute spectra with diffs spectra instead of Dirac deltas.
-class IsotopeCalculator:
-    """A class for isotope calculations."""
+# convolute spectra with diffs spectra instead of Dirac deltas.
+class IsotopeCalculator(object):
+    """Perform isotope calculations.
 
-    iso_masses, iso_probs = get_isotopic_masses_and_probabilities()
+    Parameters
+    ==========
+    _isotope_masses : dict
+        The isotopic masses, e.g. from IUPAC.
+
+    _isotope_probabilities : dict
+        The isotopic frequencies, e.g. from IUPAC.
+    """
+
+    _isotope_masses, _isotope_probabilities =\
+        get_isotopic_masses_and_probabilities()
 
     def __init__(self,
-                 prec_digits=2,
-                 iso_masses=None,
-                 iso_probs=None,
-                 verbose=False):
-        """Instantiate the isotopic calculator."""
-
-        if iso_masses is not None and iso_probs is not None:
-            self.iso_masses = iso_masses
-            self.iso_probs = iso_probs
+                 mz_precision_digits=2,
+                 joint_probability=.999,
+                 _isotope_masses=None,
+                 _isotope_probabilities=None,
+                 _verbose=False):
+        """Initialize the isotopic calculator."""
+        if _isotope_masses is not None:
+            self._isotope_masses = _isotope_masses
+        if _isotope_probabilities is not None:
+            self._isotope_probabilities = _isotope_probabilities
         self.mean_mass = {}
         self.mean_variance = {}
-        for el in self.iso_probs:
+        for el in self._isotope_probabilities:
             self.mean_mass[el], self.mean_variance[el] = \
-                get_mean_and_variance(self.iso_masses[el],
-                                      self.iso_probs[el])
-        self.isotope_DB = {}  # TODO replace with the IsoSpec generator.
-        self.prec_digits = prec_digits
-        self.verbose = verbose
-        self.stats = Counter()  # TODO replace with logger
+                get_mean_and_variance(self._isotope_masses[el],
+                                      self._isotope_probabilities[el])
+        self.isotope_DB = {}  # replace with the IsoSpec generator.
+        self.mz_precision_digits = mz_precision_digits
+        self._verbose = _verbose
+        self.joint_probability = joint_probability
+        self.stats = Counter()  # logger
 
     def get_monoisotopic_mz(self, formula, q, g=0):
         """Calculate monoisotopic mass of a molecule."""
         check_charges(q, g)
         atomCnt = parse_formula(formula)
-        mass = sum(self.iso_masses[el][0]*elCnt
+        mass = sum(self._isotope_masses[el][0] * elCnt
                    for el, elCnt in atomCnt.items())
-        hydrogen_mass = self.iso_masses['H'][0]
-        mz = (mass + (q + g)*hydrogen_mass) / q
+        hydrogen_mass = self._isotope_masses['H'][0]
+        mz = (mass + (q + g) * hydrogen_mass) / q
         return mz
 
     def get_mean_mz(self, formula, q, g=0):
         """Calculate average mass of a molecule."""
         check_charges(q, g)
         atomCnt = parse_formula(formula)
-        mass = sum(self.mean_mass[el]*elCnt for el, elCnt in atomCnt.items())
+        mass = sum(self.mean_mass[el] * elCnt for el, elCnt in atomCnt.items())
         hydrogen_mass = self.mean_mass['H']
-        mz = (mass + (q + g)*hydrogen_mass)/q
+        mz = (mass + (q + g) * hydrogen_mass) / q
         return mz
 
     def get_mz_sd(self, formula, q, g=0):
         """Calculate m/z standard deviation of a molecule."""
         check_charges(q, g)
         atomCnt = parse_formula(formula)
-        sd = sqrt(sum(self.mean_variance[el]*elCnt
+        sd = sqrt(sum(self.mean_variance[el] * elCnt
                       for el, elCnt in atomCnt.items()))
-        return sd/q
+        return sd / q
 
     def __make_envelope(self, formula, joint_probability, memoize=False):
         T0 = time()
@@ -156,8 +171,8 @@ class IsotopeCalculator:
 
         for el, cnt in atomCnt.items():
             counts.append(cnt)
-            isotope_masses.append(self.iso_masses[el])
-            isotope_probs.append(self.iso_probs[el])
+            isotope_masses.append(self._isotope_masses[el])
+            isotope_probs.append(self._isotope_probabilities[el])
 
         envelope = IsoSpecPy.IsoSpec(counts,
                                      isotope_masses,
@@ -169,43 +184,39 @@ class IsotopeCalculator:
         probs = np.exp(cdata2numpyarray(logprobs))
 
         # TODO : get rid of this when IsoSpec 2.0 is in place
-        masses, probs = aggregate_envelopes(masses, probs, self.prec_digits)
+        masses, probs = aggregate_envelopes(masses,
+                                            probs,
+                                            self.mz_precision_digits)
 
         if memoize:
             # TODO get rid of it when IsoSpec will be fastest possible.
             self.isotope_DB[(formula, joint_probability)] = (masses, probs)
 
         T1 = time()
-        self.stats['Envelopes Generation Total T'] += T1-T0
+        self.stats['Envelopes Generation Total T'] += T1 - T0
         return masses.copy(), probs.copy()
 
     def get_envelope(self,
-                     joint_probability,
                      formula,
+                     joint_probability=None,
                      q=0,
                      g=0,
                      memoize=False):
-        """Get an isotopic envelope consisting of a numpy array
-        of masses and numpy array of probabilities.
+        """Get an isotopic envelope.
 
         Parameters
         ----------
         formula : str
             E.g. 'C63H98N18O13S1'
-
         joint_probability : float
             The joint probability of the theoretical isotopic envelope.
-
         q : int
             The charge state of the molecule.
-
         g : int
             Additional hydrogen atoms:
             referred to as quenched charge in the MassTodon paper.
-
         memoize : bool
             Should the call be memoized: by default no.
-
         Returns
         -------
         out : tuple
@@ -222,9 +233,12 @@ class IsotopeCalculator:
                                                  joint_probability,
                                                  memoize)
 
+        if joint_probability is None:
+            joint_probability = self.joint_probability
+
         hydrogen_mass = self.mean_mass['H']
-        masses = np.around((masses + (g + q)*hydrogen_mass)/q,
-                           decimals=self.prec_digits)
+        masses = np.around((masses + (g + q) * hydrogen_mass) / q,
+                           decimals=self.mz_precision_digits)
 
         masses, probs = aggregate(masses, probs)
         return TheoSpec(mz=masses, probability=probs)

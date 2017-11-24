@@ -15,6 +15,8 @@
 * compare the new spectra with the older ones.
 * Replace the some arguments for MassTodonize with dictionaries.
     * e.g. solver_args, deconvolutor_args
+* Replace the current ubiquitin dataset with one that is not corrupted
+    * this one has an ever growing intensity, for some reason.
 
 # elegant
 * Import linearCounter into the project and rename it as atom_cnt.

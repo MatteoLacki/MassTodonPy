@@ -95,7 +95,7 @@ def MassTodonize(precursor_name,
                  fragmentation_type='cz',
                  blockedFragments=set(['c0']),
                  minimal_distance_between_charges=5,
-                 joint_probability_of_the_envelope=0.999,
+                 isotopologues_joint_probability=0.999,
                  min_prob_of_envelope_in_picking=.7,
                  spectrum='',
                  spectrum_minimal_intensity=eps,
@@ -111,8 +111,8 @@ def MassTodonize(precursor_name,
                  _L1_alpha=.001,
                  _L2_alpha=.001,
                  _verbose=False):
-    """
-    Run a full session of MassTodon on your problem.
+    """Run a full session of MassTodon on your problem.
+
     Parameters
     ==========
     precursor_name : str
@@ -149,9 +149,9 @@ def MassTodonize(precursor_name,
         If set to 5, at least 4 amino acids must la
         between consecutive *charged* amino acids.
 
-    joint_probability_of_envelope : float
+    isotopologues_joint_probability : float
         The joint probability threshold for generating
-        theoretical isotopic envelopes.
+        theoretical isotopic distributions.
 
     min_prob_of_envelope_in_picking : float
         The minimal probability an envelope has to scoop
