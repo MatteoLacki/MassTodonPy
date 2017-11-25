@@ -4,7 +4,7 @@ import numpy as np
 from collections import namedtuple
 
 from MassTodonPy.MoleculeMaker.Precursor import Precursor
-from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec
+from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 
 Dataset = namedtuple('Dataset', 'precursor spectrum instrument')
@@ -44,7 +44,8 @@ def get_dataset(dataset_name):
     with open(path + dataset_name + '.json', 'rb') as f:
         mol = json.load(f)
 
-    spectrum = ExpSpec(*tuple(np.array(d) for d in mol['spectrum']))
+    spectrum = ExperimentalSpectrum(mz=mol['spectrum'][0],
+                                    intensity=mol['spectrum'][1])
 
     modifications = {int(k): v for k, v in
                      mol['modifications'].items()}

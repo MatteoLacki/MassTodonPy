@@ -1,180 +1,64 @@
 import numpy as np
 from pyteomics import mzml  # >= 3.41
 from pyteomics import mzxml  # >= 3.41
-from lxml import etree
 
-from MassTodonPy.Spectra.Spectra import ExperimentalSpectrum as ExpSpec
-from MassTodonPy.Spectra.Operations import round_n_trim
-
+from MassTodonPy.Data.Constants import infinity
+from MassTodonPy.Data.Constants import eps
+from MassTodonPy.Parsers.Paths import parse_path
+from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 # TODO add checks about the MS number
-def _read_mz(path,
-             mz_precision=10,
-             format='mzxml',
-             intensity_cut_off=0.0,
-             sum_intensity=False):
-    """Read a spectra.
+def read_mz_file(path,
+                 mz_precision=10,
+                 intensity_cut_off=eps,
+                 format='mzxml'):
+    """Read mzXML spectra.
 
     Generate a sequence of rounded and trimmed spectra from
     individual runs of the instrument.
     Parameters
     ----------
     path : str
-        Path to the mzXml file containing the mass spectrum.
+        Path to the mass spectrum file (*.mzxml, *.mzml, *.txt).
     mz_precision : integer
         The number of digits after which the support values get rounded.
         E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
     intensity_cut_off : float
         The cut off value for peak intensity.
-    sum_intensity : bool
-        Report the total ion current.
+    format : str
+        Either 'mzxml' or 'mzml'.
     Returns
     -------
-    out : generator
-        Generates Spectra alone or together with their total ion counts.
-
+    out : ExperimentalSpectrum
     """
+    format = format.lower()
     reader = {'mzxml': mzxml, 'mzml': mzml}[format]
     with reader.read(path) as info:
         for spectrum in info:
-            spectrum = ExpSpec(mz=spectrum['m/z array'],
-                               intensity=spectrum['intensity array'])
-            total_intensity = spectrum.intensity.sum()
-            spectrum = ExpSpec(*round_n_trim(
-                *spectrum,
-                support_precision=mz_precision,
-                value_cut_off=intensity_cut_off))
-            if not sum_intensity:
-                yield spectrum
-            else:
-                yield (spectrum, total_intensity)
-
-def read_mzxml_spectrum(path,
-                        mz_precision=10,
-                        intensity_cut_off=0.0,
-                        sum_intensity=False):
-    """Read mzXML spectra.
-
-    Generate a sequence of rounded and trimmed spectra from
-    individual runs of the instrument.
-    Parameters
-    ----------
-    path : str
-        Path to the mzXml file containing the mass spectrum.
-    mz_precision : integer
-        The number of digits after which the support values get rounded.
-        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
-    intensity_cut_off : float
-        The cut off value for peak intensity.
-    sum_intensity : bool
-        Report the total ion current.
-    Returns
-    -------
-    out : generator
-        Generates Spectra alone or together with their total ion counts.
-
-    """
-    return _read_mz(path,
-                    mz_precision,
-                    'mzxml',
-                    intensity_cut_off,
-                    sum_intensity)
+            spectrum = ExperimentalSpectrum(spectrum['m/z array'],
+                                            spectrum['intensity array'])
+            spectrum.trim_intensity(intensity_cut_off)
+            spectrum.round_masses(mz_precision)
+            yield spectrum
 
 
-def read_mzml_spectrum(path,
-                       mz_precision=10,
-                       intensity_cut_off=0.0,
-                       sum_intensity=False):
-    """Read mzML spectra.
-
-    Generate a sequence of rounded and trimmed spectra from
-    individual runs of the instrument.
-    Parameters
-    ----------
-    path : str
-        Path to the mzXml file containing the mass spectrum.
-    mz_precision : integer
-        The number of digits after which the support values get rounded.
-        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
-    intensity_cut_off : float
-        The cut off value for peak intensity.
-    sum_intensity : bool
-        Report the total ion current.
-    Returns
-    -------
-    out : generator
-        Generates Spectra alone or together with their total ion counts.
-
-    """
-    return _read_mz(path,
-                    mz_precision,
-                    'mzml',
-                    intensity_cut_off,
-                    sum_intensity)
-
-
-def read_mzxml_spectrum_faster(path,
-                               mz_precision=10,
-                               intensity_cut_off=0.0,
-                               sum_intensity=False):
-    """Read mzXML spectra.
-
-    Generate a sequence of rounded and trimmed spectra from
-    individual runs of the instrument. A little bit faster.
-    Parameters
-    ----------
-    path : str
-        Path to the mzXml file containing the mass spectrum.
-    mz_precision : integer
-        The number of digits after which the support values get rounded.
-        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
-    intensity_cut_off : float
-        The cut off value for peak intensity.
-    sum_intensity : bool
-        Report the total ion current.
-    Returns
-    -------
-    out : generator
-        Generates Spectra alone or together with their total ion counts.
-    Remarks
-    -------
-        This code would not exist without the help of Joshua Klein.
-        Thanks, Joshua!
-
-    """
-    for event, tag in etree.iterparse(path):
-        if tag.tag.endswith("peaks"):
-            spectrum = mzxml._decode_peaks(tag.attrib, tag.text)
-            spectrum = ExpSpec(mz=spectrum['m/z array'],
-                               intensity=spectrum['intensity array'])
-            total_intensity = spectrum.intensity.sum()
-            spectrum = ExpSpec(*round_n_trim(
-                *spectrum,
-                support_precision=mz_precision,
-                value_cut_off=intensity_cut_off))
-            if not sum_intensity:
-                yield spectrum
-            else:
-                yield (spectrum, total_intensity)
-
-
-def read_txt_spectrum(path,
-                      mz_precision=10,
-                      intensity_cut_off=0.0,
-                      sum_intensity=False):
+def read_txt_file(path,
+                  mz_precision=10,
+                  intensity_cut_off=eps):
     """Read spectrum from a text file.
 
     Parameters
     ----------
     path : str
-        Path to the *.txt text file containing the mass spectrum.
-    sum_intensity : bool
-        Report the total ion current.
+        Path to the mass spectrum file (*.mzxml, *.mzml, *.txt).
+    mz_precision : integer
+        The number of digits after which the support values get rounded.
+        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
+    intensity_cut_off : float
+        The cut off value for peak intensity.
     Returns
     -------
-    out : Spectrum
-        A nice spectrum object.
-
+    out : ExperimentalSpectrum
     """
     mzs = []
     intensities = []
@@ -183,12 +67,44 @@ def read_txt_spectrum(path,
             line = line.split()
             mzs.append(float(line[0]))
             intensities.append(float(line[1]))
-    total_intensity = sum(intensities)
-    spectrum = ExpSpec(*round_n_trim(np.array(mzs),
-                                     np.array(intensities),
-                                     mz_precision,
-                                     intensity_cut_off))
-    if not sum_intensity:
-        return spectrum
+    spectrum = ExperimentalSpectrum(mzs, intensities)
+    spectrum.trim_intensity(intensity_cut_off)
+    spectrum.round_masses(mz_precision)
+    return spectrum
+
+
+def read_spectrum(path='',
+                  mz_precision=10,
+                  intensity_cut_off=eps):
+    """Read mzXML spectra.
+
+    Parameters
+    ----------
+    path : str
+        Path to the mass spectrum file (*.mzxml, *.mzml, *.txt).
+    mz_precision : integer
+        The number of digits after which the support values get rounded.
+        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
+    intensity_cut_off : float
+        The cut off value for peak intensity.
+    Returns
+    -------
+    out : ExperimentalSpectrum
+
+    """
+    assert path is not '', "Provide a spectrum to analyze!"
+    file_path, file_name, file_ext = parse_path(path)
+    file_ext = file_ext.lower()
+    if file_ext in ('.txt', ''):
+        spectrum = read_txt_file(path,
+                                 mz_precision,
+                                 intensity_cut_off)
+    elif file_ext in ('.mzml', '.mzxml'):
+        spectra = read_mz_file(path,
+                               mz_precision,
+                               intensity_cut_off,
+                               file_ext[1:])
+        spectrum = sum(spectra)
     else:
-        return (spectrum, total_intensity)
+        raise NotImplementedError
+    return spectrum

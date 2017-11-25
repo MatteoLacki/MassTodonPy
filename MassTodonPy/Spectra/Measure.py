@@ -3,6 +3,7 @@ import numpy as np
 from operator import itemgetter
 from six.moves import zip
 
+from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Misc.strings import repr_long_list
 
 class Measure(object):
@@ -79,7 +80,7 @@ class Measure(object):
         self.atoms, indices = np.unique(self.atoms, return_inverse=True)
         self.masses = np.bincount(indices, weights=self.masses)
 
-    def round_atoms(self, precision):
+    def round_atoms(self, precision=infinity):
         """Round the atoms of the measure to a given precision.
 
         Parameters
@@ -87,10 +88,12 @@ class Measure(object):
         precision : integer
             The number of digits after which the atoms' masses get rounded.
             E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
+            Defaults to 'inf', which prevents any rounding.
 
         """
-        self.atoms = np.around(self.atoms, precision)
-        self.__aggregate()
+        if precision is not infinity:
+            self.atoms = np.around(self.atoms, precision)
+            self.__aggregate()
 
     def trim(self, cut_off):
         """Trim masses below the provided cut off.
@@ -100,8 +103,9 @@ class Measure(object):
         cut_off : float
 
         """
-        self.atoms = self.atoms[self.masses >= cut_off]
-        self.masses = self.masses[self.masses >= cut_off]
+        if cut_off > 0:
+            self.atoms = self.atoms[self.masses >= cut_off]
+            self.masses = self.masses[self.masses >= cut_off]
 
     def split_measure(self, cut_off):
         """Split measure into two according to the cut off on masses.
@@ -121,7 +125,7 @@ class Measure(object):
         self.trim(cut_off)
         return other
 
-    def get_cut_off_value(self, P=.99):
+    def get_P_set_cut_off(self, P=.99):
         """Get the cut off resulting in optimal P-set.
 
         Parameters
@@ -167,28 +171,5 @@ class Measure(object):
         except IndexError:
             return
 
-
-class ExperimentalSpectrum(Measure):
-    """Store an experimental spectrum."""
-    @property
-    def mz(self):
-        """Get mass over charge ratios"""
-        return self.atoms
-
-    @property
-    def intensity(self):
-        """Get intensities."""
-        return self.masses
-
-
-class IsotopicDistribution(Measure):
-    """Store an isotopic distribution."""
-    @property
-    def mz(self):
-        """Get mass over charge ratios"""
-        return self.atoms
-
-    @property
-    def probability(self):
-        """Get probabilities."""
-        return self.masses
+    def total_mass(self):
+        return self.masses.sum()
