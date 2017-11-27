@@ -9,7 +9,6 @@
     * Rationale: otherwise we will not be able to trace the origin of a fragment
     * Problem: what if two substances point to the same formula?
 * check different modes of isotopic calculations under IsoSpec2.0
-* apply the joint probability thresholding to real spectrum.
 * add csv input spectrum
 * add assertions to read_mzxml_spectrum
 * compare the new spectra with the older ones.
@@ -18,13 +17,15 @@
 * Replace the current ubiquitin dataset with one that is not corrupted
     * this one has an ever growing intensity, for some reason.
 * Check if adding works well in the LinearCounter and iclude it as a module.
+* Get rid of spurious dependencies in setup.py
+* The regular expression needs to cope with C100H-200 just in case.
 
 # elegant
-* Import linearCounter into the project and rename it as atom_cnt.
-    * add __str__ method (replacement for atom_cnt_2_string)
+* subclass linearCounter into the project and rename it as atom_cnt.
     * add monoisotopic mass
-    * add IsotopeCalculator as a subroutine here.
-    * add possibility to by-pass memoization in IsotopeCalculator
+    * add IsotopeCalculator as a subroutine here: not bad! This can be a class field.
+        * The Formula class should initiate a field called isotopic generator.
+
 
 # Less important
 

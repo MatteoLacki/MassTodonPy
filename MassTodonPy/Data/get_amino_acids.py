@@ -1,6 +1,7 @@
 import pkg_resources
 import json
-from linearCounter.linearCounter import linearCounter as lCnt
+
+from MassTodonPy.Formula.Formula import Formula
 
 
 def get_amino_acids_raw():
@@ -29,7 +30,7 @@ def get_amino_acids():
     """
     amino_acids_raw = get_amino_acids_raw()
     amino_acids = {
-        (aa_name, brick): lCnt({a: c for a, c in atom_cnt})
+        (aa_name, brick): Formula({a: c for a, c in atom_cnt})
         for aa_name, bricks in amino_acids_raw
         for brick, atom_cnt in bricks}
     return amino_acids

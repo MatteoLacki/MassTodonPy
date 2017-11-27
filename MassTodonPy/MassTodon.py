@@ -69,8 +69,7 @@
 from math import ceil, log10
 # from time import time
 
-from MassTodonPy.MoleculeMaker.Precursor import Precursor
-from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
+from MassTodonPy.Precursor.Precursor import Precursor
 from MassTodonPy.Spectra.Spectrum import Spectrum
 from MassTodonPy.Data.Constants import eps
 
@@ -225,23 +224,23 @@ def MassTodonize(precursor_name,
     # precision one digit lower than the input precision of spectra, eg.
     # m_over_z_precision = .05     -->     prec_digits = 3
     # m_over_z_precision = .005    -->     prec_digits = 4
-    mz_precision_digits = int(ceil(-log10(m_over_z_precision)))
-
-    precursor = Precursor(name=precursor_name,
-                          fasta=precursor_fasta,
-                          q=precursor_charge,
-                          modifications=precursor_modifications)
-
-    molecules = get_molecules([precursor],
-                              blockedFragments,
-                              fragmentation_type,
-                              minimal_distance_between_charges)
-
-    spectrum = Spectrum(spectrum,
-                        mz_precision_digits,
-                        spectrum_minimal_intensity,
-                        spectrum_percent_top_peaks,
-                        _faster_mzxml)
+    # mz_precision_digits = int(ceil(-log10(m_over_z_precision)))
+    #
+    # precursor = Precursor(name=precursor_name,
+    #                       fasta=precursor_fasta,
+    #                       q=precursor_charge,
+    #                       modifications=precursor_modifications)
+    #
+    # molecules = get_molecules([precursor],
+    #                           blockedFragments,
+    #                           fragmentation_type,
+    #                           minimal_distance_between_charges)
+    #
+    # spectrum = Spectrum(spectrum,
+    #                     mz_precision_digits,
+    #                     spectrum_minimal_intensity,
+    #                     spectrum_percent_top_peaks,
+    #                     _faster_mzxml)
     pass
 
 #

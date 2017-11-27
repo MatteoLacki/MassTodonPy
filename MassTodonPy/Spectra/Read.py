@@ -4,7 +4,7 @@ from pyteomics import mzxml  # >= 3.41
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.Constants import eps
-from MassTodonPy.Parsers.Paths import parse_path
+# from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 # TODO add checks about the MS number
