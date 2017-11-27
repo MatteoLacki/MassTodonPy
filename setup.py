@@ -41,13 +41,13 @@ setup(
         'Topic :: Scientific/Engineering :: Chemistry',
         'Programming Language :: Python :: 2.7'],
     install_requires=[
-        'linearCounter',
         'numpy',
         'pyteomics>=3.4.1',
         'lxml',
         'cvxopt',
         'IsoSpecPy',
         'networkx',
+        'future',
         'intervaltree'],
     scripts=[
         'bin/masstodon',

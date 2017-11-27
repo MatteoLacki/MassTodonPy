@@ -39,3 +39,9 @@ ms.spectrum
 #               minimal_intensity=100.0, percent_top_peaks=.95)
 #
 # list(ms.high_spectrum())
+
+
+if None:
+    print('Ha')
+else:
+    print('Be')

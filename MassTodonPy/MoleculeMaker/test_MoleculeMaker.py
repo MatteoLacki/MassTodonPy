@@ -1,7 +1,7 @@
 """Testing test_formulator."""
 
 import unittest
-from MassTodonPy.MoleculeMaker.MoleculeMaker import molecules
+from MassTodonPy.MoleculeMaker.MoleculeMaker import get_molecules
 from MassTodonPy.Data.get_dataset import get_dataset
 
 

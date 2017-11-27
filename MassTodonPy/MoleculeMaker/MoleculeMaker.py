@@ -15,10 +15,10 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
 from six.moves import range
-from linearCounter.linearCounter import linearCounter as lCnt
+from MassTodonPy.Formula.Formula import Formula
 from collections import namedtuple
-from MassTodonPy.MoleculeMaker.formula_parser import atom_cnt_2_string
 
 
 Molecule = namedtuple("Molecule",
@@ -32,18 +32,18 @@ class MoleculeMaker(object):
     """
     def __init__(self,
                  precursor,
-                 blockedFragments=set(['c0']),
+                 blocked_fragments=set(['c0']),
                  fragmentation_type="cz",
                  distance_charges=5):
         self.precursor = precursor
-        self.blockedFragments = blockedFragments
+        self.blocked_fragments = blocked_fragments
         self.fragmentation_type = fragmentation_type
         self.distance_charges = distance_charges
         for i, f in enumerate(self.precursor.fasta):
             if f == 'P':
-                self.blockedFragments.add('c' + str(i))
+                self.blocked_fragments.add('c' + str(i))
                 z_frag_No = len(self.precursor.fasta) - i
-                self.blockedFragments.add('z' + str(z_frag_No))
+                self.blocked_fragments.add('z' + str(z_frag_No))
 
     def protonate(self, frag):
         a, b, c = {'p': (1, 0, 1),
@@ -60,31 +60,31 @@ class MoleculeMaker(object):
         # not as H on the N terminus!
         # H on the N terminus is added
         # in the precursor __getitem__ method
-        atom_cnt = lCnt({'H': 1})
+        atom_cnt = Formula('H1')
         for aa_cnt in range(len(self.precursor.fasta)):
-            atom_cnt += self.precursor.get_AA(aa_cnt, 'N')
+            atom_cnt += self.precursor[aa_cnt, 'N']
             name = 'c' + str(aa_cnt)
-            if name not in self.blockedFragments:
-                yield (name, atom_cnt_2_string(atom_cnt))
-            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_alpha')
-            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_carbo')
+            if name not in self.blocked_fragments:
+                yield (name, str(atom_cnt))
+            atom_cnt += self.precursor[aa_cnt, 'C_alpha']
+            atom_cnt += self.precursor[aa_cnt, 'C_carbo']
 
     def z_fragments(self):
         """Generate z fragments."""
-        atom_cnt = lCnt()
+        atom_cnt = Formula()
         for aa_cnt in range(len(self.precursor.fasta) - 1, -1, -1):
-            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_carbo')
-            atom_cnt += self.precursor.get_AA(aa_cnt, 'C_alpha')
+            atom_cnt += self.precursor[aa_cnt, 'C_carbo']
+            atom_cnt += self.precursor[aa_cnt, 'C_alpha']
             side_chain_len = len(self.precursor.fasta) - aa_cnt
             name = 'z' + str(side_chain_len)
-            if name not in self.blockedFragments:
-                yield (name, atom_cnt_2_string(atom_cnt))
-            atom_cnt += self.precursor.get_AA(aa_cnt, 'N')
+            if name not in self.blocked_fragments:
+                yield (name, str(atom_cnt))
+            atom_cnt += self.precursor[aa_cnt, 'N']
 
     def uncharged_molecules(self):
         """Generate uncharged molecules."""
         yield ('precursor',  # name
-               atom_cnt_2_string(self.precursor.atom_cnt))
+               str(self.precursor.formula))
         if 'c' in self.fragmentation_type:
             for c_frags in self.c_fragments():
                 yield c_frags
@@ -113,7 +113,7 @@ class MoleculeMaker(object):
 
 
 def get_molecules(precursors,
-                  blockedFragments=set(['c0']),
+                  blocked_fragments=set(['c0']),
                   fragmentation_type="cz",
                   distance_charges=5):
     """
@@ -131,7 +131,7 @@ def get_molecules(precursors,
     """
     for prec in precursors:
         mol_maker = MoleculeMaker(prec,
-                                  blockedFragments,
+                                  blocked_fragments,
                                   fragmentation_type,
                                   distance_charges)
 

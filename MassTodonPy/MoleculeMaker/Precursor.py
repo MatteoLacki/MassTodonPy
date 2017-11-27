@@ -15,8 +15,9 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-from linearCounter.linearCounter import linearCounter as lCnt
+
 from MassTodonPy.Data.get_amino_acids import get_amino_acids
+from MassTodonPy.Formula.Formula import Formula
 
 
 class NegativeAtomCount(Exception):
@@ -25,18 +26,12 @@ class NegativeAtomCount(Exception):
 
 class Precursor(object):
     """A class for storing information on precursors.
-
+    name : str
+        The name of the precursor molecule.
     fasta : str
         The fasta of the studied molecular species.
-
-    Q : int
+    q : int
         The charge of the precursor ion.
-
-    distance_charges : int
-        The minimal distance between charges on the protein.
-        If set to 5, at least 4 amino acids must lay between
-        consecutive *charged* amino acids.
-
     modifications : dictionary
         A dictionary of modifications of amino acids.
 
@@ -47,55 +42,64 @@ class Precursor(object):
             Keys : C_carbo, C_alpha, or N.
             Value: atom count in form of a linearCounter.
     """
-    __slots__ = ("name", "fasta", "q", "modifications", "atom_cnt")
-
     amino_acids = get_amino_acids()
-    empty_count = lCnt()
 
     def __init__(self, name, fasta, q, modifications={}):
         self.name = name
         self.fasta = fasta
         self.q = q
-        self.modifications = {
-            (aa_no - 1, group_name): lCnt(atom_cnt)
-            for aa_no, mods in modifications.items()
-            for group_name, atom_cnt in mods.items()}
-        self.atom_cnt = sum(self.get_AA(i, g)
-                            for i in range(len(fasta))
-                            for g in ('N', 'C_alpha', 'C_carbo'))
+        self.groups = ('N', 'C_alpha', 'C_carbo')
+        self.modifications = {(number - 1, group): Formula(atom_cnt)
+                              for number, mods in modifications.items()
+                              for group, atom_cnt in mods.items()}
+        self.formula = sum(self[number, group]
+                           for number in range(len(fasta))
+                           for group in self.groups)
 
-    def get_AA(self, amino_acid_No, amino_acid_group):
-        assert amino_acid_group in ('N', 'C_alpha', 'C_carbo'),\
-            "The required group is not in ('N', 'C_alpha', 'C_carbo')"
-
-        assert isinstance(amino_acid_No, int) and \
-            0 <= amino_acid_No <= len(self.fasta),\
-            "The required amino acid number is invalid."
-
-        amino_acid = self.fasta[amino_acid_No]
-        atom_cnt = \
-            self.amino_acids[(amino_acid, amino_acid_group)] +\
-            self.modifications.get((amino_acid_No,
-                                    amino_acid_group),
-                                   self.empty_count)
-
+    def _get_amino_acid(self, number, group):
+        """Get amino acid of the precursor."""
+        amino_acid = self.fasta[number]
+        formula = self.amino_acids[(amino_acid, group)] +\
+                  self.modifications.get((number, group), 0)
         # self.amino_acids contains only amino acid's residues.
         # these need to be modified on the C and N termini
         # Ref.: Kaltashov O. Eyles S.J., Mass Spectrometry in Biophysics
-        if amino_acid_No == 0 and amino_acid_group == 'N':
-            atom_cnt['H'] += 1  # the additional H for N terminus
-        if amino_acid_No == len(self.fasta) - 1 and\
-           amino_acid_group == 'C_carbo':
-            atom_cnt['O'] += 1  # the additional 0H
-            atom_cnt['H'] += 1  # for the C terminus
-
-        if any(count < 0 for element, count in atom_cnt.items()):
+        if number is 0 and group is 'N':
+            formula['H'] += 1  # the additional H for N terminus
+        if number is len(self.fasta)-1 and group is 'C_carbo':
+            formula['O'] += 1  # the additional 0H
+            formula['H'] += 1  # for the C terminus
+        if any(count < 0 for element, count in formula.items()):
             raise NegativeAtomCount("Attention: your modification had an unexpected effect.\
             Part of your molecule now has negative atom count.\
             Good wishes on trying to publish your results.")
+        return formula
 
-        return atom_cnt
+    def __getitem__(self, key):
+        """Get amino acid of the precursor.
 
-    def __getitem__(self, aa_no):
-        return sum(self.get_AA(aa_no, aa_g)
-                   for aa_g in ('N', 'C_alpha', 'C_carbo'))
+        Parameters
+        ==========
+        key : int or tuple(int, str)
+            The string should be C_carbo, C_alpha, or N.
+            The int describes the number of the amino acid, starting from
+            zero, counting from N terminus to C terminus.
+        Returns
+        =======
+        out : Formula
+        """
+        try:
+            return self._get_amino_acid(*key)
+        except TypeError:
+            return sum(self._get_amino_acid(key, group)
+                       for group in self.groups)
+        except ValueError:
+            raise KeyError("Supply '(number, group)' or just 'group'.")
+
+    def __repr__(self):
+        out = "Precursor:\n\tname:\t{}\n".format(self.name)
+        out += "\tfasta:\t{}\n".format(self.fasta)
+        out += "\t{}\n".format(self.formula.__repr__())
+        out += "\tcharge:\t{}\n".format(self.q)
+        out += "\tmodifications:\t{}".format(self.modifications.__repr__())
+        return out

@@ -1,14 +1,25 @@
 import pkg_resources
 import json
 import numpy as np
-from collections import namedtuple
 
 from MassTodonPy.MoleculeMaker.Precursor import Precursor
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 
-Dataset = namedtuple('Dataset', 'precursor spectrum instrument')
+# Dataset = namedtuple('Dataset', 'precursor spectrum instrument')
 
+class Dataset(object):
+    def __init__(self, precursor, spectrum, instrument):
+        self.precursor = precursor
+        self.spectrum = spectrum
+        self.instrument = instrument
+
+    def __repr__(self):
+        out = "---- Dataset ----\n{}\n".format(self.precursor.__repr__())
+        out += "{}Instrument{}\n".format(self.spectrum.__repr__(),
+                                         self.instrument.__repr__())
+        out += "----------------"
+        return out
 
 def get_dataset(dataset_name):
     """
@@ -39,7 +50,9 @@ def get_dataset(dataset_name):
     spectrum:
         A list of lists of floats corresponding to masses and intensities.
     """
-    assert dataset_name in ['substanceP', 'ubiquitin']
+    assert dataset_name in ['substanceP',]
+    # ['substanceP', 'ubiquitin'] # TODO fix ubiquitin example
+
     path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
     with open(path + dataset_name + '.json', 'rb') as f:
         mol = json.load(f)
