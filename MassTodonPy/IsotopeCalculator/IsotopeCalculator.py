@@ -23,12 +23,13 @@ from math import sqrt
 import numpy as np
 
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
+# Formula needed for modularity of the class
+#   need to parse a string formula
 from MassTodonPy.Formula.Formula import Formula
 from MassTodonPy.IsotopeCalculator.Misc import cdata2numpyarray
 from MassTodonPy.IsotopeCalculator.Misc import get_mean_and_variance
 from MassTodonPy.IsotopeCalculator.Misc import check_charges
-from MassTodonPy.MoleculeMaker.formula_parser import get_formula_parser
-from MassTodonPy.Spectra.IsotopicDistribution import IsotopicDistribution
+from MassTodonPy.IsotopeCalculator.IsotopeDistribution import IsotopeDistribution as IsoDistr
 
 # This is used by the IsotopeCalculator.
 # get rid of this when IsoSpec 2.0 is in place
@@ -130,10 +131,10 @@ class IsotopeCalculator(object):
                       for el, elCnt in Formula(formula).items()))
         return sd / q
 
-    def __make_envelope(self,
-                        formula,
-                        joint_probability,
-                        memoize=False):
+    def _make_envelope(self,
+                       formula,
+                       joint_probability,
+                       memoize):
         counts = []
         isotope_masses = []
         isotope_probs = []
@@ -145,23 +146,22 @@ class IsotopeCalculator(object):
                                      isotope_masses,
                                      isotope_probs,
                                      joint_probability)
-        masses, logprobs, _ = envelope.getConfsRaw()
-        masses = cdata2numpyarray(masses)  # TODO IsoSpec 2.0
-        probs = np.exp(cdata2numpyarray(logprobs))
+        mass, logprobability, _ = envelope.getConfsRaw()
+        mass = cdata2numpyarray(mass)  # TODO IsoSpec 2.0
+        probability = np.exp(cdata2numpyarray(logprobability))
+
         # TODO : get rid of this when IsoSpec 2.0 is in place
-        masses, probs = aggregate_envelopes(masses,
-                                            probs,
-                                            self.mz_precision)
         if memoize:
-            # TODO get rid of it when IsoSpec will be fastest possible.
-            self._isotope_DB[(str(formula), joint_probability)] = (masses, probs)
-        return masses.copy(), probs.copy()
+            key = (str(formula), joint_probability)
+            self._isotope_DB[key] = (mass, probability)
+        return mass.copy(), probability.copy()
 
     def get_envelope(self,
                      formula,
                      joint_probability=None,
                      q=0,
                      g=0,
+                     mz_precision=None,
                      memoize=False):
         """Get an isotopic envelope.
 
@@ -185,22 +185,21 @@ class IsotopeCalculator(object):
             mass over charge values and intensities, both numpy arrays.
         """
         check_charges(q, g)
+        if not joint_probability:
+            joint_probability = self.joint_probability
+        if not mz_precision:
+            mz_precision = self.mz_precision
 
         try:
-            masses, probs = self._isotope_DB[(str(formula),
+            mass, probability = self._isotope_DB[(str(formula),
                                               joint_probability)]
-            masses, probs = masses.copy(), probs.copy()
+            mass, probability = mass.copy(), probability.copy()
         except KeyError:
-            masses, probs = self.__make_envelope(formula,
-                                                 joint_probability,
-                                                 memoize)
-
-        if joint_probability is None:
-            joint_probability = self.joint_probability
-
+            mass, probability = self._make_envelope(formula,
+                                                    joint_probability,
+                                                    memoize)
         hydrogen_mass = self.mean_mass['H']
-        masses = np.around((masses + (g + q) * hydrogen_mass) / q,
-                           decimals=self.mz_precision)
-
-        masses, probs = aggregate(masses, probs)
-        return IsotopicDistribution(mz=masses, probability=probs)
+        iso_distr = IsoDistr(mz=(mass + (g + q) * hydrogen_mass) / q,
+                             probability=probability)
+        iso_distr.round_mz(mz_precision)
+        return iso_distr

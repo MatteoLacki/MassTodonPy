@@ -9,3 +9,6 @@ subP = get_dataset('substanceP')
 precursor = subP.precursor
 MM = precursor.molecules()
 mols = list(MM)
+
+mols[0].formula
+mols[0]

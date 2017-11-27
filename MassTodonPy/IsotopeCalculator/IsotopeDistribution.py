@@ -21,7 +21,7 @@ import numpy as np
 from MassTodonPy.Spectra.Measure import Measure
 
 
-class IsotopicDistribution(Measure):
+class IsotopeDistribution(Measure):
     """Store an isotopic distribution."""
 
     def __init__(self, mz=np.array([]), probability=np.array([])):
@@ -58,8 +58,8 @@ class IsotopicDistribution(Measure):
         """Set probabilities."""
         self.masses = probability
 
-    def round_masses(self, precision):
-        """Round the atoms of the measure to a given precision.
+    def round_mz(self, precision):
+        """Round the mass to charge ratios to a given precision.
 
         Parameters
         ----------
