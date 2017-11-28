@@ -4,6 +4,9 @@ PIP_2 		= ../MassTodonVEpy2/bin/pip2
 PYTHON_3   	= ../MassTodonVEpy3/bin/python3
 PIP_3		= ../MassTodonVEpy3/bin/pip3
 
+NOSE_2 		= ../MassTodonVEpy2/bin/nosetests
+NOSE_3 		= ../MassTodonVEpy3/bin/nosetests
+
 install_MassTodonPy_2: ## Install MassTodon virtual environment with python2
 	virtualenv -p python2 ../MassTodonVEpy2
 	$(PIP_2) install -e .
@@ -29,9 +32,8 @@ example_call_3: ## run an example session of the algorithm
 	$(PYTHON_3) ./bin/masstodon_example_call
 
 run_tests:  ## run all possible tests.
-	echo test_MoleculeMaker on Python2
-	$(PYTHON_2) -m unittest MassTodon/MoleculeMaker/test_MoleculeMaker
-	$(PYTHON_2) -m unittest MassTodon/MoleculeMaker/test_MoleculeMaker
+	$(NOSE_2) MassTodonPy
+	$(NOSE_3) MassTodonPy
 
 clean_ve_2: ## remove virtual environment with python2
 	rm -rf ../MassTodonVEpy2

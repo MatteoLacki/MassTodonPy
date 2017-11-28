@@ -19,49 +19,39 @@ import re
 from MassTodonPy.Data.get_isotopes import get_elements
 
 
-def get_formula_parser(pattern='([A-Z][a-z]?)([0-9]*)'):
-    """A factory to set up formula parsers.
+def get_pattern(pattern='([A-Z][a-z]?)([0-9]*)'):
+    return re.compile(pattern)
+
+
+def parse(formula, pattern):
+    """Parses chemical formula based on the class pattern definition.
 
     Parameters
     ----------
+    formula : str
+        The chemical formula string.
     pattern : str
-        A regular expression that describes elements.
+        The 'compiled' pattern for parsing chemical formulas.
 
-    Returns : function
-        A formula parser.
+    Returns
+    -------
+    atomCnt : Counter
+        A counter with elements for keys and atom counts for values.
+
+    Examples
+    --------
+        >>> FP = formulaParser()
+        >>> FP('C100H202')
+        Counter({'C': 100, 'H': 202})
     """
-
-    pattern = re.compile(pattern)
-
-    def parse(formula):
-        """Parses chemical formula based on the class pattern definition.
-
-        Parameters
-        ----------
-        formula : str
-            The chemical formula string.
-
-        Returns
-        -------
-        atomCnt : Counter
-            A counter with elements for keys and atom counts for values.
-
-        Examples
-        --------
-            >>> FP = formulaParser()
-            >>> FP('C100H202')
-            Counter({'C': 100, 'H': 202})
-        """
-        atomCnt = {}
-        for elemTag, cnt in re.findall(pattern, formula):
-            if elemTag in get_elements():
-                if cnt == '':
-                    cnt = 1
-                else:
-                    cnt = int(cnt)
-                atomCnt[elemTag] = cnt
+    atomCnt = {}
+    for elemTag, cnt in re.findall(pattern, formula):
+        if elemTag in get_elements():
+            if cnt == '':
+                cnt = 1
             else:
-                raise AttributeError
-        return atomCnt
-
-    return parse
+                cnt = int(cnt)
+            atomCnt[elemTag] = cnt
+        else:
+            raise AttributeError
+    return atomCnt

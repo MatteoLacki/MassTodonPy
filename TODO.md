@@ -41,3 +41,6 @@
 
 # IsoSpec:
 * Get a version that does not need string parsing.
+* no need to be wrapped in 'cdata2numpyarray'.
+* rounded m/z to some precision.
+* with probabilities not logprobabilities.

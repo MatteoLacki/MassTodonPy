@@ -18,7 +18,13 @@
 from MassTodonPy.IsotopeCalculator.IsotopeCalculator import IsotopeCalculator
 
 class Molecule(object):
-    isotope_calculator = IsotopeCalculator()
+    iso_calc = IsotopeCalculator(mz_precision=3,
+                                 joint_probability=.999)
+
+    @classmethod
+    def reset_isotope_calculator(cls, **args):
+        """Reset the IsotopeCalculator with its usual initial arguments."""
+        cls.iso_calc = IsotopeCalculator(**args)
 
     def __init__(self, name, source, formula, q=0, g=0):
         self.name = name
@@ -27,19 +33,28 @@ class Molecule(object):
         self.q = q
         self.g = g
 
-    def reset_isotope_calculator(self):
-        pass
-
     @property
     def monoisotopic_mz(self):
-        pass
+        return self.iso_calc.get_monoisotopic_mz(self.formula,
+                                                 self.q,
+                                                 self.g)
 
     @property
     def mean_mz(self):
-        pass
+        return self.iso_calc.get_mean_mz(self.formula,
+                                         self.q,
+                                         self.g)
 
-    def isotopologues(self):
-        pass
+    @property
+    def isotopologues(self,
+                      joint_probability=.999,
+                      mz_precision=3):
+        return self.iso_calc.get_envelope(self.formula,
+                                          joint_probability,
+                                          self.q,
+                                          self.g,
+                                          mz_precision,
+                                          memoize=True)
 
     def __repr__(self):
         out = "Molecule {name} out of {source}:\n".format(**self.__dict__)

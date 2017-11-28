@@ -19,7 +19,7 @@
 from __future__ import absolute_import, division, print_function
 from future.builtins import super
 
-from MassTodonPy.Formula.Parse import get_formula_parser
+from MassTodonPy.Formula.Parse import get_pattern, parse
 from MassTodonPy.Formula.LinearDict import LinearDict
 
 
@@ -28,14 +28,15 @@ class NegativeAtomCount(Exception):
 
 
 class Formula(LinearDict):
-    parse = get_formula_parser()
+    pattern = get_pattern('([A-Z][a-z]?)([0-9]*)')
 
-    def reset_parser(self, pattern='([A-Z][a-z]?)([0-9]*)'):
-        self.__class__.parse = get_formula_parser(pattern)
+    @classmethod
+    def recompile_pattern(cls, pattern='([A-Z][a-z]?)([0-9]*)'):
+        cls.pattern = get_pattern(pattern)
 
     def __init__(self, formula={}):
         if isinstance(formula, str):
-            formula = self.__class__.parse(formula)
+            formula = parse(formula, self.pattern)
         super().__init__(formula)
 
     def __str__(self):

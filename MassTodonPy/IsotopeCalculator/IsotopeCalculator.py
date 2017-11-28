@@ -16,9 +16,7 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from __future__ import absolute_import, division, print_function
-from collections import defaultdict
 from IsoSpecPy import IsoSpecPy
-from math import fsum
 from math import sqrt
 import numpy as np
 
@@ -26,40 +24,10 @@ from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 # Formula needed for modularity of the class
 #   need to parse a string formula
 from MassTodonPy.Formula.Formula import Formula
-from MassTodonPy.IsotopeCalculator.Misc import cdata2numpyarray
+from MassTodonPy.IsotopeCalculator.Misc import cdata2numpyarray  # TODO IsoSpec 2.0
 from MassTodonPy.IsotopeCalculator.Misc import get_mean_and_variance
 from MassTodonPy.IsotopeCalculator.Misc import check_charges
 from MassTodonPy.IsotopeCalculator.IsotopeDistribution import IsotopeDistribution as IsoDistr
-
-# This is used by the IsotopeCalculator.
-# get rid of this when IsoSpec 2.0 is in place
-def aggregate_envelopes(masses, probs, digits=2):
-    """Aggregate theoretical envelopes.
-
-    Parameters
-    ----------
-    masses : array
-        An array of isotopologues' masses.
-    probs : array
-        An array of isotopologues' probabilities.
-    digits : int
-        The number of significant digits used
-        while rounding the masses of isotopologues.
-    Returns
-    ----------
-    out : tuple
-        A theoretical spectrum of a given resolution.
-
-    """
-    lists = defaultdict(list)
-    for mass, prob in zip(masses.round(digits), probs):
-        lists[mass].append(prob)
-    newMasses = np.array([k for k in lists])
-    newProbs = np.empty(len(newMasses))
-    for prob, mass in zip(np.nditer(newProbs, op_flags=['readwrite']),
-                          newMasses):
-        prob[...] = fsum(lists[mass])
-    return newMasses, newProbs
 
 
 # convolute spectra with diffs spectra instead of Dirac deltas.
@@ -82,7 +50,17 @@ class IsotopeCalculator(object):
     """
     _isotope_masses, _isotope_probabilities =\
         get_isotopic_masses_and_probabilities()
-    _isotope_DB = {}  # replace with the IsoSpec generator.
+    _isotope_DB = {}  # IsoSpec 2.0 much faster -> stop memoizing
+
+    @classmethod
+    def reset_isotopes(cls,
+                       _isotope_masses=None,
+                       _isotope_probabilities=None):
+        """Reset isotope masses and probabilities for the whole class."""
+        if _isotope_masses:
+            cls._isotope_masses = _isotope_masses
+        if _isotope_probabilities:
+            cls._isotope_probabilities = _isotope_probabilities
 
     def __init__(self,
                  mz_precision=2,

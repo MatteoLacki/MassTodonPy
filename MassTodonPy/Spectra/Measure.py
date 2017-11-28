@@ -134,6 +134,7 @@ class Measure(object):
             The percentage of the initial total value that the new measure
             will contain. The new measure contains only atoms with
             heighest masses.
+
         """
         assert 0.0 <= P <= 1.0, "Wrong P for P-optimal set."
         total_value = self.masses.sum()
@@ -160,8 +161,7 @@ class Measure(object):
         return zip(self.atoms, self.masses)
 
     def __getitem__(self, L_R):
-        """Filter atoms between 'L' and 'R', where 'L_R=(L, R)'.
-        """
+        """Filter atoms between 'L' and 'R', where 'L_R=(L, R)'."""
         try:
             L, R = L_R
             idx = bisect_left(self.atoms, L)
