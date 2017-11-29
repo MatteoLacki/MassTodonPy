@@ -1,5 +1,6 @@
 """Testing the setting up of the deconvolution problems."""
 from __future__ import absolute_import, division, print_function
+from collections import Counter
 import unittest
 
 from MassTodonPy.Data.get_dataset import get_dataset
@@ -32,12 +33,12 @@ class TestPeakPicker2(unittest.TestCase):
 
         DGs = get_deconvolution_problems(precursors,
                                          spectrum,
-                                         mz_tol=.5,
+                                         mz_tol=.05,
                                          mz_precision=2)
 
         expected_stats = [Counter(N[0] for N in DG) for DG in DGs ]
         expected_stats = set([(s['M'], s['I'], s['G'])
-                              for s in stats])
+                              for s in expected_stats])
 
         self.assertEqual(real_stats, expected_stats)
 

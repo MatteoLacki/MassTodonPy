@@ -16,243 +16,101 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
+
 from collections import Counter
 from collections import defaultdict
-from intervaltree import Interval as II
-from intervaltree import IntervalTree
 import networkx as nx
-from six.moves import zip
-from time import time
+from networkx import connected_component_subgraphs
 
-inf = float('inf')
+from MassTodonPy.Data.Constants import infinity
 
+def get_deconvolution_problems(molecules,
+                               spectrum,
+                               mz_tol=.05,
+                               min_prob_per_molecule=.7,
+                               joint_probability=.999,
+                               mz_precision=3):
+    """Get the sequence of deconvolution problems."""
+    graph = nx.Graph()
+    I_cnt = 0
+    for M_cnt, mol in enumerate(molecules):
+        M = 'M' + str(M_cnt)
+        # the tree might be included in the graph
+        tree = nx.Graph()
+        tree.add_node(M, molecule=mol)
+        # this is the reverse mapping between molecules and the graph
+        mol.graph_tag = M
+        for mz_I, prob in mol.isotopologues(joint_probability,
+                                            mz_precision):
+            I = 'I' + str(I_cnt)
+            I_cnt += 1
+            tree.add_node(I, mz=mz_I, probability=prob)
+            tree.add_edge(M, I)
+            for E_cnt, mz_E, intensity in spectrum[mz_I - mz_tol,
+                                                   mz_I + mz_tol,
+                                                   True]:
+                E = 'E' + str(E_cnt)
+                tree.add_node(E, mz=mz_E, intensity=intensity)
+                tree.add_edge(I, E)
+        # total probability of isotopologues around experimental peaks
+        total_prob = sum(d['probability']
+                         for n, d in tree.nodes(data=True)
+                         if n[0] is 'I' and tree.degree[n] > 1)
 
-def trim_unlikely_molecules(cc, minimal_prob=0.7):
-    """Trim theoretic molecules that are unlikely to be in real spectrum.
+        if total_prob >= min_prob_per_molecule: # update Deconvolution Graph
+            graph.add_nodes_from(tree.nodes(data=True))
+            graph.add_edges_from(tree.edges(data=True))
 
-    If the joint probability of their theoretical peaks close to some
-    experimental peaks is less than minimal_prob,
-    then do not assume that they are in the spectrum.
-    This is highly conservative for such an evil leftist like me.
-    """
-    nodes_to_remove = []
-    for M in cc:
-        if cc.node[M]['type'] == 'M':  # we are looking at a molecule node
-            total_prob = 0.0
-            for I in cc[M]:
-                if len(cc[I]) > 1:
-                    total_prob += cc.node[I]['intensity']
-            if total_prob < minimal_prob:  # gonna remove some stupid nodes.
-                for I in cc[M]:
-                    nodes_to_remove.append(I)
-                nodes_to_remove.append(M)
-    cc.remove_nodes_from(nodes_to_remove)
-    return cc
+    # prepare for G nodes
+    G_intensity = Counter()
+    G_min_mz = defaultdict(lambda: infinity)
+    G_max_mz = defaultdict(lambda: 0.0)
 
+    for E, E_data in graph.nodes(data=True):
+        if E[0] is 'E':
+            isotopologues = frozenset(graph[E]) # unmutable!
+            G_intensity[isotopologues] += E_data['intensity']
+            G_min_mz[isotopologues] = min(G_min_mz[isotopologues], E_data['mz'])
+            G_max_mz[isotopologues] = max(G_max_mz[isotopologues], E_data['mz'])
 
-class PeakPicker(object):
-    """Class for peak picking."""
+    # removing experimental peaks 'E'
+    graph.remove_nodes_from([E for E in graph.nodes() if E[0] is 'E'])
 
-    def __init__(self,
-                 molecules,
-                 isotopic_calculator,
-                 mz_precision_digits=0.05,
-                 _verbose=False):
-        """Initialize peak picker."""
-        self.molecules = molecules
-        self.isotopic_calculator = isotopic_calculator
-        self.mz_precision_digits = mz_precision_digits
-        self.M = 0  # the number of molecule nodes
-        self.I = 0  # the number of isotopologue nodes
-        self._verbose = _verbose
-        self.stats = Counter()
-        self.Used_Exps = set()
-        self.G_stats = []  # logger
+    # add G nodes with positive intensity
+    G_cnt = 0
+    for isotopologues in G_intensity:
+        G = 'G' + str(G_cnt)
+        G_cnt += 1
+        graph.add_node(G,
+                       intensity=G_intensity[isotopologues],
+                       min_mz=G_min_mz[isotopologues],
+                       max_mz=G_max_mz[isotopologues])
+        for I in isotopologues:
+            graph.add_edge(I, G)
 
-    def represent_as_Graph(self, spectrum):
-        """Prepare the Graph based on mass spectrum and the formulas.
+    # add G nodes with zero intensity: without the experimental support
+    new_nodes = []  # to avoid changing dict size during iteration
+    new_edges = []  # explicitly construct lists of nodes and edges
+    for I in graph.nodes():
+        if I[0] is 'I' and graph.degree[I] is 1: # no experimental support
+            G = 'G' + str(G_cnt)
+            G_cnt += 1
+            new_nodes.append((G, {'mz': graph.node[I]['mz'],
+                                  'intensity': 0.0}))
+            new_edges.append((I, G))
+    graph.add_nodes_from(new_nodes)
+    graph.add_edges_from(new_edges)
+    return connected_component_subgraphs(graph)
 
-        Parameters
-        ----------
-        spectrum : tuple
-            The experimental spectrum, a tuple consisting of
-            a m/z numpy array and an intensities numpy array.
-        Returns
-        -------
-        Graph : graph
-            The deconvolution graph.
-
-        """
-        prec = self.mz_precision_digits
-        Exps = IntervalTree(II(mz - prec, mz + prec, (mz, intensity))
-                            for mz, intensity in spectrum)
-        # TODO eliminate the above using binary search solo
-
-        Graph = nx.Graph()
-        no_exp_per_iso = Counter()
-
-        if self._verbose:  # logger...
-            print('Representing problem as a graph.')
-
-        T0 = time()
-
-        for mol in self.molecules:
-            I_mzs, I_intensities =\
-                self.isotopic_calculator.get_envelope(formula=mol.formula,
-                                                      q=mol.q,
-                                                      g=mol.g,
-                                                      memoize=True)
-
-            # Why do we make a node before establishing if it should be there?
-            # Because it's nice to know, that the formula was somewhere there?
-            # But it's among the formulas list anyway...
-            # But it's more elegant not to store the list, but make a generator
-            # that will populate the networkx graph.
-            # Follow the logic of a memory efficient problem representation.
-
-            # Maybe subclass networkx graph to get additional functions?
-            # Like DeconvolutionGraph.add_formula(Formula).
-            Graph.add_node(self.M,
-                           formula=M_formula,
-                           type='M',
-                           q=M_q,
-                           g=M_g,
-                           molType=M_type)
-
-            self.I += len(I_mzs)
-            self.M += 1
-
-            for I_mz, I_intensity in zip(I_mzs, I_intensities):
-                I = self.cnts('I')
-
-                # Should the DeconvolutionGraph contain all isotopologues?
-                # Like why? If they are unnecessary then better simply to keep
-                # the molecule.
-                # Also, add some dictionary to the graph's molecule nodes.
-
-                # We can trim them later. It's easier to add them initially.
-                Graph.add_node(I,
-                               mz=I_mz,
-                               intensity=I_intensity,
-                               type='I')
-
-                Graph.add_edge(M, I)
-                for E_interval in Exps[I_mz]:
-                    # logger
-                    no_exp_per_iso[len(Exps[I_mz])] += 1
-
-                    # Better to collect peaks
-                    E_mz, E_intensity = E_interval.data
-
-                    # This is another shit thing:
-                    # unused peaks are all experimental with zero degree
-                    self.Used_Exps.add(E_interval.data)
-
-                    if E_mz not in Graph:
-                        Graph.add_node(E_mz,
-                                       intensity=E_intensity,
-                                       type='E')
-                    Graph.add_edge(I, E_mz)
-                    self.stats['E-I No'] += 1
-            self.stats['M No'] += 1
-
-        # Logger
-        T1 = time()
-
-        # Make one object for collecting these informations:
-        # a global singleton stats. It might be possible that logger can do it.
-        self.stats['graph construction T'] = T1 - T0
-
-        # Logger
-        if self._verbose:
-            print('\tFinished graph representation in',
-                  self.stats['graph construction T'])
-            print('\tIsotopologues number was', self.stats['I No'])
-            print('\tEnvelopes number was', self.stats['M No'])
-            print()
-
-        return Graph
-
-    def get_problems(self,
-                     spectrum,
-                     min_prob_per_molecule=.7):
-        """Enumerate deconvolution problems.
-
-        Parameters
-        ----------
-        spectrum : tuple
-            The experimental spectrum.
-        min_prob_per_molecule :
-            The minimal probability an envelope has to scoop
-            to be included in the graph.
-
-        """
-        Graph = self.represent_as_Graph(spectrum)
-        problems = []
-
-        for cc in nx.connected_component_subgraphs(Graph):
-            # less M and I, not E
-            reduced_cc = trim_unlikely_molecules(cc, min_prob_per_molecule)
-
-            for SG in nx.connected_component_subgraphs(reduced_cc):
-                if len(SG) > 1:
-                    problems.append(self.__add_G_nodes(SG))
-                else:
-                    mz, data = SG.nodes(data=True)[0]
-                    if data['type'] == 'E':
-                        self.Used_Exps.remove((mz, data['intensity']))
-                        # these peaks do not get used
-
-        self.stats['total intensity of experimental peaks paired with isotopologues'] = sum(SG.node[G]['intensity'] for SG in problems for G in SG if SG.node[G]['type'] == 'G')
-
-        return problems
-
-
-    def __add_G_nodes(self, small_graph):
-        '''Collect experimental peaks into groups of experimental data G.'''
-        T0 = time()
-
-        E_to_remove = []
-        Gs_intensity = Counter()
-        Gs_min_mz = defaultdict(lambda: inf)
-        Gs_max_mz = defaultdict(lambda: 0.0)
-        prec = self.mz_precision_digits
-
-        for E in small_graph:
-            if small_graph.node[E]['type'] == 'E':
-                I_of_G = frozenset(small_graph[E])
-                Gs_intensity[I_of_G] += small_graph.node[E]['intensity']
-                Gs_min_mz[I_of_G] = min(Gs_min_mz[I_of_G], E)
-                Gs_max_mz[I_of_G] = max(Gs_max_mz[I_of_G], E)
-                E_to_remove.append(E)
-
-        small_graph.remove_nodes_from(E_to_remove)
-
-        for I_of_G in Gs_intensity:
-            G = self.cnts('G')
-            small_graph.add_node(G, intensity=Gs_intensity[I_of_G],
-                                    type        = 'G',
-                                    min_mz      = Gs_min_mz[I_of_G],
-                                    max_mz      = Gs_max_mz[I_of_G]     )
-            for I in I_of_G:
-                small_graph.add_edge(I, G)
-
-        # zero intensity G nodes
-        newGnodes = []
-        newGIedges= []
-        for I in small_graph:
-            if small_graph.node[I]['type'] == 'I':
-                if len(small_graph[I]) == 1: # only the molecule node in the neighbourhood
-                    G = self.cnts('G')
-                    mz = small_graph.node[I]['mz']
-                    # newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz-self.mz_precision_digits, 'max_mz':mz+self.mz_precision_digits }) )
-                    ## Two E peaks can get together ....
-                    newGnodes.append( (G,{'intensity':0.0, 'type':'G', 'min_mz':mz, 'max_mz':mz}) )
-                    newGIedges.append( (G,I) )
-        small_graph.add_nodes_from(newGnodes)
-        small_graph.add_edges_from(newGIedges)
-        T1 = time()
-
-        self.G_stats.append(T1-T0)
-
-        return small_graph
+def add_numbers(graph):
+    cnts = Counter()
+    for N in graph:
+        Ntype = graph.node[N]['type']
+        graph.node[N[0]]['cnt'] = cnts[Ntype]
+        cnts[[0]] += 1
+        # number edges
+        if Ntype == 'G':
+            for I in SG.edge[N]:
+                SG.edge[N][I]['cnt'] = cnts['GI']
+                cnts['GI'] += 1
+    return cnts
