@@ -15,6 +15,8 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
+
 from    math        import sqrt
 from    collections import Counter
 from    random      import randint
@@ -46,10 +48,12 @@ def normalize_rows(M):
 def number_graph(SG):
     '''Add numbers to graph nodes and GI edges and return the counts thereof.'''
     cnts = Counter()
-    for N in SG: # ordering some of the SG graph nodes and edges
+    for N in SG:
+        # number nodes
         Ntype = SG.node[N]['type']
         SG.node[N]['cnt'] = cnts[Ntype]
         cnts[Ntype] += 1
+        # number edges
         if Ntype == 'G':
             for I in SG.edge[N]:
                 SG.edge[N][I]['cnt'] = cnts['GI']
@@ -57,11 +61,15 @@ def number_graph(SG):
     return cnts
 
 
-def get_P_q(SG, M_No, var_No, L1_x=0.001, L2_x=0.001, L1_alpha=0.001, L2_alpha=0.001):
-    '''
-    Prepare cost function
+def get_P_q(SG, M_No, var_No,
+            L1_x=0.001,
+            L2_x=0.001,
+            L1_alpha=0.001,
+            L2_alpha=0.001):
+    """Prepare the cost function.
+
     0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
-    '''
+    """
     q_list = []
     P_list = []
     for G_name in SG:
@@ -101,7 +109,7 @@ def get_A_b(SG, M_No, I_No, GI_No):
             M_cnt = SG.node[M]['cnt']
             for I in SG[M]:
                 i_cnt = SG.node[I]['cnt']
-                A_x.append(-SG.node[I]['intensity'])# probability
+                A_x.append(-SG.node[I]['intensity'])  #TODO 'probability'
                 A_i.append( i_cnt )
                 A_j.append( M_cnt + GI_No )
                 for G in SG[I]:
@@ -124,14 +132,8 @@ class Deconvolutor(object):
         solvers.options['show_progress'] = False
         solvers.options['maxiters'] = 1000
 
-
     def iSG(self, node_type):
-        '''Iterate over all nodes of a given type in the small graph **SG**.
-
-        node_type - either
-        '''
-        assert node_type in ('G','I','M'), "specified wrong type of node. Was %s. Should be G, I, M" % node_type
-
+        '''Iterate over all nodes of a given type in the small graph.'''
         for N in self.SG:
             N = self.SG.node[N]
             if N['type'] == node_type:
@@ -166,7 +168,12 @@ class Deconvolutor(object):
         return float(L1_sign)
 
 class Deconvolutor_Min_Sum_Squares(Deconvolutor):
-    def run(self, L1_x=.001, L2_x=.001, L1_alpha=.001, L2_alpha=.001, verbose=False):
+    def run(self,
+            L1_x=.001,
+            L2_x=.001,
+            L1_alpha=.001,
+            L2_alpha=.001,
+            verbose=False):
         '''Perform deconvolution that minimizes the mean square error.'''
 
 

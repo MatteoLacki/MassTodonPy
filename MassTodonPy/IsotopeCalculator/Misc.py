@@ -33,4 +33,4 @@ def get_mean_and_variance(X, weights):
 def check_charges(q, g):
     """Assert q and g are integers, q is positive, g nonnegative."""
     assert isinstance(q, int) and q > 0, "q must be a positive integer."
-    assert isinstance(g, int) and g >= 0, "g must be a non-negative integer."
+    assert isinstance(g, int) and g >= -1, "g must be greater than -1."

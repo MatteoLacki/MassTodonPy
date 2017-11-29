@@ -7,7 +7,7 @@ class LinearDict(MutableMapping):
         self._storage = dict(*args, **kwds)
 
     def __getitem__(self, key):
-        return self._storage[key]
+        return self._storage.get(key, 0)
 
     def __setitem__(self, key, value):
         self._storage[key] = value

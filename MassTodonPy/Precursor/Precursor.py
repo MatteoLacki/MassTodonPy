@@ -71,13 +71,12 @@ class Precursor(object):
 
     def _get_amino_acid(self, number, group):
         """Get amino acid of the precursor."""
-        amino_acid = self.fasta[number]
-        formula = self.amino_acids[(amino_acid, group)] +\
+        formula = self.amino_acids[(self.fasta[number], group)] +\
                   self.modifications.get((number, group), 0)
         # Modifying termini: Kaltashov O., Mass Spectrometry in Biophysics
         if number is 0 and group is 'N':
             formula['H'] += 1  #  H for N terminus
-        if number is len(self.fasta)-1 and group is 'C_carbo':
+        if number is len(self)-1 and group is 'C_carbo':
             formula['O'] += 1  # additional H and O
             formula['H'] += 1  # for the C terminus
         formula.check_positivity()

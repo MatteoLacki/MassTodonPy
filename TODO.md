@@ -38,7 +38,6 @@
 * The +1H makes part of the c-fragment definition
     * think about the possible products.
 
-
 # IsoSpec:
 * Get a version that does not need string parsing.
 * no need to be wrapped in 'cdata2numpyarray'.

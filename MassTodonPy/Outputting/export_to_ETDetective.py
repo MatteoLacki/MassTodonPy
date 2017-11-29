@@ -30,7 +30,7 @@ def get_subsequence(fasta, name, modifications):
         return '*' + fasta[ 0:int(name[1:]) ]
 
 
-def results_to_etdetective( masstodon_results, fasta, Q, modifications={}, threshold = 0.0 ):
+def results_to_etdetective(masstodon_results, fasta, Q, modifications={}, threshold = 0.0 ):
     '''Reorganize results of MassTodonPy to fit ETDetective format.
 
     Parameters

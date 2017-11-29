@@ -78,7 +78,8 @@ def solve(  problems,
     with cvxopt_wrapper():
         T0 = time()
         if solver == 'sequential':
-            results = [worker((SG, args, method, max_times_solve, verbose)) for SG in problems]
+            results = [worker((SG, args, method, max_times_solve, verbose))
+                       for SG in problems]
         elif solver == 'multiprocessing':
             # Start solving bigger, i.e. graphs with more nodes, problems first
             problems.sort(reverse=True, key=len) # len(SG) = #Nodes

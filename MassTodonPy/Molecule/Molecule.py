@@ -45,7 +45,6 @@ class Molecule(object):
                                          self.q,
                                          self.g)
 
-    @property
     def isotopologues(self,
                       joint_probability=.999,
                       mz_precision=3):
@@ -61,3 +60,11 @@ class Molecule(object):
         out += "\t{}\n".format(self.formula.__repr__())
         out += "\tCharge = {q}\n\tQuenched charge = {g}\n".format(**self.__dict__)
         return out
+
+    def __hash__(self):
+        return hash((self.name,
+                     self.source,
+                     str(self.formula),
+                     self.q,
+                     self.g))
+# Python 3 does not use cmp anymore.
