@@ -29,21 +29,15 @@ class Error_in_update_scaling(Exception):
 
 def worker(worker_args):
     SG, args, method, max_times_solve, verbose = worker_args
-    T0 = time()
     solved = False
     try:
         i = 0
         stop = False
         while not stop:
             i += 1
-            T00 = time()
             res = deconvolve(   SG      = SG,
                                 args    = args,
                                 method  = method )
-
-            T01 = time()
-            if verbose:
-                print 'CVXOPT call lasted', T01-T00
             if res['status'] == 'optimal':
                 stop    = True
                 solved  = True
@@ -57,12 +51,11 @@ def worker(worker_args):
                 print 'Deconvolution proved non optimal', max_times_solve, 'times'
     except Error_in_update_scaling as e:
         pass
-    T1 = time()
     if verbose:
         if solved:
-            print 'Solved problem in' , T1-T0, 'It was big as', len(SG)
+            print 'Solved problem. It was big as', len(SG)
         else:
-            print 'Problem not solved in' , T1-T0, 'It was big as', len(SG)
+            print 'Problem not solved. It was big as', len(SG)
     return res
 
 

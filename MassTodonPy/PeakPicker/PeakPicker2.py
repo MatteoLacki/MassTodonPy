@@ -20,7 +20,7 @@
 from collections import Counter
 from collections import defaultdict
 import networkx as nx
-from networkx import connected_component_subgraphs as components
+from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
 
@@ -31,50 +31,37 @@ def get_deconvolution_problems(molecules,
                                joint_probability=.999,
                                mz_precision=3):
     """Get the sequence of deconvolution problems."""
-    deconvolution_graph = nx.Graph()
-
-    M_cnt = 0
+    graph = nx.Graph()
     I_cnt = 0
-    E_cnt = 0
-
-    for mol in molecules:
+    for M_cnt, mol in enumerate(molecules):
         M = 'M' + str(M_cnt)
-        M_cnt += 1
-
-        # this graph might be included in the deconvolution graph
-        graph = nx.Graph()
-        graph.add_node(M, molecule=mol)
+        # the tree might be included in the graph
+        tree = nx.Graph()
+        tree.add_node(M, molecule=mol)
+        # this is the reverse mapping between molecules and the graph
         mol.graph_tag = M
-
         for mz_I, prob in mol.isotopologues(joint_probability,
                                             mz_precision):
             I = 'I' + str(I_cnt)
             I_cnt += 1
-            graph.add_node(I, mz=mz_I, probability=prob)
-            graph.add_edge(M, I)
-
-            for mz_E, intensity in spectrum[mz_I - mz_tol, mz_I + mz_tol]:
+            tree.add_node(I, mz=mz_I, probability=prob)
+            tree.add_edge(M, I)
+            for E_cnt, mz_E, intensity in spectrum[mz_I - mz_tol,
+                                                   mz_I + mz_tol,
+                                                   True]:
                 E = 'E' + str(E_cnt)
-                E_cnt += 1
-                graph.add_node(E, mz=mz_E, intensity=intensity)
-                graph.add_edge(I, E)
-
-        # total probability of isotopologues next to experimental peaks
+                tree.add_node(E, mz=mz_E, intensity=intensity)
+                tree.add_edge(I, E)
+        # total probability of isotopologues around experimental peaks
         total_prob = sum(d['probability']
-                         for n, d in graph.nodes(data=True)
-                         if n[0] is 'I' and graph.degree[n] > 1)
+                         for n, d in tree.nodes(data=True)
+                         if n[0] is 'I' and tree.degree[n] > 1)
 
         if total_prob >= min_prob_per_molecule: # update Deconvolution Graph
-            deconvolution_graph.add_nodes_from(graph.nodes(data=True))
-            deconvolution_graph.add_edges_from(graph.edges(data=True))
+            graph.add_nodes_from(tree.nodes(data=True))
+            graph.add_edges_from(tree.edges(data=True))
 
-    for problem in components(deconvolution_graph):
-        yield add_G_nodes(problem)
-
-
-def add_G_nodes(graph):
-    """Aggregate experimental nodes and remove experimental nodes."""
-    # key - a frozenset of neighbouring isotopologues
+    # prepare for G nodes
     G_intensity = Counter()
     G_min_mz = defaultdict(lambda: infinity)
     G_max_mz = defaultdict(lambda: 0.0)
@@ -86,7 +73,7 @@ def add_G_nodes(graph):
             G_min_mz[isotopologues] = min(G_min_mz[isotopologues], E_data['mz'])
             G_max_mz[isotopologues] = max(G_max_mz[isotopologues], E_data['mz'])
 
-    # removing experimental peaks entirely
+    # removing experimental peaks 'E'
     graph.remove_nodes_from([E for E in graph.nodes() if E[0] is 'E'])
 
     # add G nodes with positive intensity
@@ -105,13 +92,25 @@ def add_G_nodes(graph):
     new_nodes = []  # to avoid changing dict size during iteration
     new_edges = []  # explicitly construct lists of nodes and edges
     for I in graph.nodes():
-        if I[0] is 'I':
-            if graph.degree[I] is 1: # no experimental support
-                G = 'G' + str(G_cnt)
-                G_cnt += 1
-                new_nodes.append((G, {'mz': graph.node[I]['mz'],
-                                      'intensity': 0.0}))
-                new_edges.append((I, G))
+        if I[0] is 'I' and graph.degree[I] is 1: # no experimental support
+            G = 'G' + str(G_cnt)
+            G_cnt += 1
+            new_nodes.append((G, {'mz': graph.node[I]['mz'],
+                                  'intensity': 0.0}))
+            new_edges.append((I, G))
     graph.add_nodes_from(new_nodes)
     graph.add_edges_from(new_edges)
-    return graph
+    return connected_component_subgraphs(graph)
+
+def add_numbers(graph):
+    cnts = Counter()
+    for N in graph:
+        Ntype = graph.node[N]['type']
+        graph.node[N[0]]['cnt'] = cnts[Ntype]
+        cnts[[0]] += 1
+        # number edges
+        if Ntype == 'G':
+            for I in SG.edge[N]:
+                SG.edge[N][I]['cnt'] = cnts['GI']
+                cnts['GI'] += 1
+    return cnts

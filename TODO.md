@@ -19,6 +19,9 @@
 * Check if adding works well in the LinearCounter and iclude it as a module.
 * Get rid of spurious dependencies in setup.py
 * The regular expression needs to cope with C100H-200 just in case.
+* Add drawing procedures for:
+    * spectra
+    * deconvoluted problems
 
 # elegant
 * subclass linearCounter into the project and rename it as atom_cnt.

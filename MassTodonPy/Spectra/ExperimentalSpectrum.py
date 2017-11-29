@@ -59,7 +59,7 @@ class ExperimentalSpectrum(Measure):
         """Set intensities."""
         self.masses = intensity
 
-    def round_masses(self, precision=infinity):
+    def round_mz(self, precision=infinity):
         """Round the atoms of the measure to a given precision.
 
         Parameters

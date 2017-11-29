@@ -75,6 +75,33 @@ class Measure(object):
         self.__aggregate()
         return self
 
+    def copy(self):
+        """Make a deep copy of me."""
+        out = self.__class__(self.atoms, self.masses)
+        return out
+
+    def __mul__(self, scalar):
+        """Multiply by a scalar."""
+        if scalar is 0:
+            return self.__class__()
+        elif scalar is 1:
+            return self.copy()
+        else:
+            return self.__class__(self.atoms, scalar * self.masses)
+
+    def __rmul__(self, scalar):
+        """Multiply by a scalar."""
+        if scalar is 1:
+            return self
+        else:
+            return self.__mul__(scalar)
+
+    def __imul__(self, scalar):
+        """Multiply by a scalar."""
+        if scalar is not 1:
+            self.masses = self.masses * scalar
+        return self
+
     def __aggregate(self):
         """Aggregate masses with the same atoms."""
         self.atoms, indices = np.unique(self.atoms, return_inverse=True)
@@ -160,13 +187,35 @@ class Measure(object):
         """Iterate over pairs (atom, mass)."""
         return zip(self.atoms, self.masses)
 
-    def __getitem__(self, L_R):
-        """Filter atoms between 'L' and 'R', where 'L_R=(L, R)'."""
+    def __getitem__(self, key):
+        """Filter atoms between 'L' and 'R'.
+
+        Parameters
+        ==========
+        key : tuple
+            Either (left_mz, right_mz) or
+            (left_mz, right_mz, provide_idx),
+            where 'provide_idx' is boolean.
+        Returns
+        =======
+        out : generator
+            Generate tuples '(mz, intensity)'
+            or '(idx, mz, intensity)',
+            where 'idx' is the unique ID of the atom.
+
+        """
         try:
-            L, R = L_R
+            if len(key) is 2:
+                L, R = key
+                provide_idx = False
+            elif len(key) is 3:
+                L, R, provide_idx = key
             idx = bisect_left(self.atoms, L)
             while self.atoms[idx] <= R:
-                yield self.atoms[idx], self.masses[idx]
+                if not provide_idx:
+                    yield self.atoms[idx], self.masses[idx]
+                else:
+                    yield idx, self.atoms[idx], self.masses[idx]
                 idx += 1
         except IndexError:
             return
