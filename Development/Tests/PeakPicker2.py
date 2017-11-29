@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.PeakPicker.PeakPicker2 import get_deconvolution_problems
+from MassTodonPy.PeakPicker.PeakPicker import get_deconvolution_problems
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 options = {'node_color': 'black',
