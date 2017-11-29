@@ -19,7 +19,6 @@ class Dataset(object):
         out += "----------------"
         return out
 
-
 def get_dataset(dataset_name):
     """
     Retrieve examplary spectra informations.

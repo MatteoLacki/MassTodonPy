@@ -28,10 +28,7 @@
     * add monoisotopic mass
     * add IsotopeCalculator as a subroutine here: not bad! This can be a class field.
         * The Formula class should initiate a field called isotopic generator.
-* Formula __repr__:
-    * Return something like Formula(C=10 H=200).
-    * Or LaTeX if fancy :)
-        * You must be kidding me... PyLaTeX... Who invented such stuff. Why?
+
 
 # Less important
 

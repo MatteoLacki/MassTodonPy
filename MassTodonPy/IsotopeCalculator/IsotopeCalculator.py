@@ -112,7 +112,7 @@ class IsotopeCalculator(object):
     def _make_envelope(self,
                        formula,
                        joint_probability,
-                       memoize):
+                       memoize=False):
         counts = []
         isotope_masses = []
         isotope_probs = []

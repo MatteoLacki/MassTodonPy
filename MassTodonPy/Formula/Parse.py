@@ -20,6 +20,16 @@ from MassTodonPy.Data.get_isotopes import get_elements
 
 
 def get_pattern(pattern='([A-Z][a-z]?)([0-9]*)'):
+    """A factory to set up formula parsers.
+
+    Parameters
+    ----------
+    pattern : str
+        A regular expression that describes elements.
+
+    Returns : function
+        A formula parser.
+    """
     return re.compile(pattern)
 
 
@@ -30,8 +40,6 @@ def parse(formula, pattern):
     ----------
     formula : str
         The chemical formula string.
-    pattern : str
-        The 'compiled' pattern for parsing chemical formulas.
 
     Returns
     -------
