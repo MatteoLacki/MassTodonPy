@@ -28,7 +28,7 @@ from MassTodonPy.IsotopeCalculator.Misc import cdata2numpyarray  # TODO IsoSpec 
 from MassTodonPy.IsotopeCalculator.Misc import get_mean_and_variance
 from MassTodonPy.IsotopeCalculator.Misc import check_charges
 from MassTodonPy.IsotopeCalculator.IsotopeDistribution import IsotopeDistribution as IsoDistr
-
+from MassTodonPy.Spectra.Measure import Measure
 
 # convolute spectra with diffs spectra instead of Dirac deltas.
 class IsotopeCalculator(object):
@@ -162,7 +162,7 @@ class IsotopeCalculator(object):
             A tuple containing the theoretical spectrum:
             mass over charge values and intensities, both numpy arrays.
         """
-        check_charges(q, g)
+
         if not joint_probability:
             joint_probability = self.joint_probability
         if not mz_precision:
@@ -176,8 +176,14 @@ class IsotopeCalculator(object):
             mass, probability = self._make_envelope(formula,
                                                     joint_probability,
                                                     memoize)
-        hydrogen_mass = self.mean_mass['H']
-        iso_distr = IsoDistr(mz=(mass + (g + q) * hydrogen_mass) / q,
-                             probability=probability)
-        iso_distr.round_mz(mz_precision)
-        return iso_distr
+        if q is 0:
+            measure = Measure(atoms=mass, masses=probability)
+            measure.round_atoms(mz_precision)
+            return measure
+        else:
+            check_charges(q, g)
+            hydrogen_mass = self.mean_mass['H']
+            iso_distr = IsoDistr(mz=(mass + (g + q) * hydrogen_mass) / q,
+                                 probability=probability)
+            iso_distr.round_mz(mz_precision)
+            return iso_distr

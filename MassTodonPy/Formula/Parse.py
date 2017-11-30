@@ -54,12 +54,11 @@ def parse(formula, pattern):
     """
     atomCnt = {}
     for elemTag, cnt in re.findall(pattern, formula):
-        if elemTag in get_elements():
-            if cnt == '':
-                cnt = 1
-            else:
-                cnt = int(cnt)
-            atomCnt[elemTag] = cnt
+        if not elemTag in get_elements():
+            print("WARNING! Element tag {} ain't recognized.".format(elemTag))
+        if cnt == '':
+            cnt = 1
         else:
-            raise AttributeError
+            cnt = int(cnt)
+        atomCnt[elemTag] = cnt
     return atomCnt

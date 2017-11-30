@@ -8,7 +8,7 @@ from MassTodonPy.PeakPicker.PeakPicker import get_deconvolution_problems
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 
-class TestPeakPicker2(unittest.TestCase):
+class TestPeakPicker(unittest.TestCase):
     def setUp(self):
         """Set up a method."""
         pass
