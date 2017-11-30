@@ -29,6 +29,7 @@ class TestPeakPicker(unittest.TestCase):
 
         self.assertTrue(all(expected_atoms == distribution.atoms))
 
+        # bin(n, k) p**k q**(N-k) = bin(n, k) 0.5**10
         expected_masses = np.array([binomial(10,i) for i in range(11)]) / 2**10
         masses_comparison = list(np.abs(expected_masses - distribution.masses))
 

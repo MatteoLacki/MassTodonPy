@@ -28,7 +28,7 @@
     * add monoisotopic mass
     * add IsotopeCalculator as a subroutine here: not bad! This can be a class field.
         * The Formula class should initiate a field called isotopic generator.
-
+* Automate the setting up of the devel version.
 
 # Less important
 
@@ -43,3 +43,11 @@
 * no need to be wrapped in 'cdata2numpyarray'.
 * rounded m/z to some precision.
 * with probabilities not logprobabilities.
+
+
+
+# Done:
+* Both:
+    * D = Deconvolutor(molecules, spectrum, L1_x=0.002, L2_x=0.002, L1_alpha=0.002, L2_alpha=0.002)
+    * D = Deconvolutor(molecules, spectrum)
+    * work

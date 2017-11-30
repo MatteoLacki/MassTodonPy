@@ -141,7 +141,7 @@ class Deconvolutor(object):
 
     def set_names(self, cnts):
         self.var_No = cnts['GI'] + cnts['M']
-        self.M_No   = cnts['M']
+        self.M_No   = cnts['M']\
         self.GI_No  = cnts['GI']
         self.I_No   = cnts['I']
         self.G_No   = cnts['G']

@@ -24,12 +24,13 @@ from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
 
-def get_deconvolution_problems(molecules,
-                               spectrum,
-                               mz_tol=.05,
-                               min_prob_per_molecule=.7,
-                               joint_probability=.999,
-                               mz_precision=3):
+
+def get_deconvolution_graphs(molecules,
+                             spectrum,
+                             mz_tol=.05,
+                             min_prob_per_molecule=.7,
+                             joint_probability=.999,
+                             mz_precision=3):
     """Get the sequence of deconvolution problems."""
     graph = nx.Graph()
     I_cnt = 0
@@ -89,7 +90,7 @@ def get_deconvolution_problems(molecules,
             graph.add_edge(I, G)
 
     # add G nodes with zero intensity: without the experimental support
-    new_nodes = []  # to avoid changing dict size during iteration
+    new_nodes = []  # to avoid "changing dict size" during iteration
     new_edges = []  # explicitly construct lists of nodes and edges
     for I in graph.nodes():
         if I[0] is 'I' and graph.degree[I] is 1: # no experimental support
@@ -100,17 +101,5 @@ def get_deconvolution_problems(molecules,
             new_edges.append((I, G))
     graph.add_nodes_from(new_nodes)
     graph.add_edges_from(new_edges)
-    return connected_component_subgraphs(graph)
 
-def add_numbers(graph):
-    cnts = Counter()
-    for N in graph:
-        Ntype = graph.node[N]['type']
-        graph.node[N[0]]['cnt'] = cnts[Ntype]
-        cnts[[0]] += 1
-        # number edges
-        if Ntype == 'G':
-            for I in SG.edge[N]:
-                SG.edge[N][I]['cnt'] = cnts['GI']
-                cnts['GI'] += 1
-    return cnts
+    return connected_component_subgraphs(graph)

@@ -4,7 +4,7 @@ from collections import Counter
 import unittest
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.PeakPicker.PeakPicker import get_deconvolution_problems
+from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_graphs
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 
@@ -17,8 +17,8 @@ class TestPeakPicker(unittest.TestCase):
         """Tear down a method."""
         pass
 
-    def test_get_deconvolution_problems(self):
-        print("Testing the get_deconvolution_problems function.")
+    def test_get_deconvolution_graphs(self):
+        print("Testing the get_deconvolution_graphs function.")
 
         real_stats = {(1, 11, 7), (2, 27, 8), (3, 54, 9)}
 
@@ -31,10 +31,10 @@ class TestPeakPicker(unittest.TestCase):
                                         intensity=100000 * spectrum.probability)
         spectrum.round_mz(precision=2)
 
-        DGs = get_deconvolution_problems(precursors,
-                                         spectrum,
-                                         mz_tol=.05,
-                                         mz_precision=2)
+        DGs = get_deconvolution_graphs(precursors,
+                                       spectrum,
+                                       mz_tol=.05,
+                                       mz_precision=2)
 
         expected_stats = [Counter(N[0] for N in DG) for DG in DGs ]
         expected_stats = set([(s['M'], s['I'], s['G'])
