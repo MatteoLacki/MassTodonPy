@@ -50,21 +50,30 @@ class DeconvolutionProblem(nx.Graph):
 
     def count_nodes_and_edges(self):
         """Add numbers to graph nodes and edges."""
-        self.cnts = Counter()
+        cnts = Counter()
         for N in self:
-            self.node[N]['cnt'] = self.cnts[N[0]]
-            self.cnts[N[0]] += 1
+            self.node[N]['cnt'] = cnts[N[0]]
+            cnts[N[0]] += 1
             if N[0] is not 'I':  # number edges
                 for I in self[N]:
-                    self[N][I]['cnt'] = self.cnts[N[0]+I[0]]
-                    self.cnts[N[0]+I[0]] += 1
-        self.cnts['vars'] = self.cnts['GI'] + self.cnts['M']
+                    self[N][I]['cnt'] = cnts[N[0]+I[0]]
+                    cnts[N[0]+I[0]] += 1
+        cnts['var'] = cnts['GI'] + cnts['M']
+        self.__dict__.update({k + str('_no'): v
+                              for k, v in cnts.items()})
 
-    def node_iter(self, node_type):
+    def node_iter(self, node_type, *args):
         """Iterate over the nodes of a given type."""
-        for N in self:
-            if N[0] is node_type:
-                yield N
+        if args:
+            for N, N_data in self.nodes(data=True):
+                if N[0] is node_type:
+                    out = [N]
+                    out.extend(N_data.get(a, None) for a in args)
+                    yield tuple(out)
+        else:
+            for N in self:
+                if N[0] is node_type:
+                    yield N
 
     def get_P_q(self):
         """Get the cost function parameters: matrix P and vector q.
@@ -75,8 +84,7 @@ class DeconvolutionProblem(nx.Graph):
         """
         q_list = []
         P_list = []
-        for G in self.node_iter('G'):
-            intensity = self.node[G]['intensity']
+        for G, intensity in self.node_iter('G', 'intensity'):
             degree = self.degree(G)
                                             # L1 penalty for x
             q_list.append(matrix(-intensity + self.L1_x,
@@ -86,58 +94,65 @@ class DeconvolutionProblem(nx.Graph):
             P_g  = ones * ones.T + diag(self.L2_x, degree)
             P_list.append(P_g)
                            # L1 penalty for alphas
-        q_list.append(matrix(self.L1_alpha, (self.cnts['M'], 1)))
+        q_list.append(matrix(self.L1_alpha, (self.M_no, 1)))
         self.q = matrix(q_list)
                          # L2 penalty for alphas
-        P_list.append(diag(self.L2_alpha, self.cnts['M']))
+        P_list.append(diag(self.L2_alpha, self.M_no))
         self.P = spdiag(P_list)
 
     def get_initvals(self):
-        '''Initial values of flows.'''
+        """Initial values of flows."""
         self.initvals= {}
-        self.initvals['x'] = matrix( 0.0, (self.cnts['vars'], 1)  )
+        self.initvals['x'] = matrix(0.0, (self.var_no, 1))
 
     def get_G_h(self):
-        '''Prepare for conditions Gx <= h'''
-        self.G = diag(-1.0, self.cnts['vars'])
-        self.h = matrix(0.0, size=(self.cnts['vars'], 1))
+        """Prepare for conditions Gx <= h"""
+        self.G = diag(-1.0, self.var_no)
+        self.h = matrix(0.0, size=(self.var_no, 1))
 
     def get_A_b(self):
         """Prepare for conditions Ax = b."""
         A_x=[]; A_i=[]; A_j=[]
-        for M in self.node_iter('M'):
-            M_cnt = self.node[M]['cnt']
+        for M, M_cnt in self.node_iter('M','cnt'):
             for I in self[M]:
                 I_cnt = self.node[I]['cnt']
                 A_x.append(-self.node[I]['probability'])
                 A_i.append(I_cnt)
-                A_j.append(M_cnt + self.cnts['GI'])
+                A_j.append(M_cnt + self.GI_no)
                 for G in self[I]:
                     if not G == M:
                         A_x.append(1.0)
                         A_i.append(I_cnt)
                         A_j.append(self[G][I]['cnt'])
-        self.A = spmatrix(A_x, A_i, A_j, size=(self.cnts['I'],
-                                               self.cnts['vars']))
+        self.A = spmatrix(A_x, A_i, A_j, size=(self.I_no, self.var_no))
         self.A = normalize_rows(self.A)
-        self.b = matrix(0.0, (self.cnts['I'], 1))
+        self.b = matrix(0.0, (self.I_no, 1))
 
     def get_L1_error(self):
-        return sum(abs(self.node[G]['estimate'] - self.node[G]['intensity'])
-                   for G in self.node_iter('G'))
+        """Get the L1 error.
+
+        The sum of absolute values of differences between estimates and real intensities."""
+        return sum(abs(i - e) for G, i, e in
+                   self.node_iter('G', 'intensity', 'estimate'))
 
     def get_L2_error(self):
-        return sqrt(sum((self.node[G]['estimate']-self.node[G]['intensity'])**2
-                        for G in self.node_iter('G')))
+        """Get the L2 error.
+
+        Get the Euclidean distance between estimates and real intensities."""
+        return sqrt(sum((i - e)**2 for G, i, e in
+                    self.node_iter('G', 'intensity', 'estimate')))
 
     def get_L1_signed_error(self, sign=1.0):
-        return sum(max(sign*(self.node[G]['intensity'] -
-                             self.node[G]['estimate']),
-                       0) for G in self.node_iter('G'))
+        """Get the L1 signed error.
+
+        If sign=1, returns how much estimates are above real values.
+        If sign=-1, returns how much estimates are below real values."""
+        return sum(max(sign*(e - i), 0) for G, i, e in
+                   self.node_iter('G', 'intensity', 'estimate'))
 
     def sum_intensities(self):
-        return sum(self.node[G]['intensity']
-                   for G in self.node_iter('G'))
+        """Sum real intensities in a graph."""
+        return sum(i for G, i in self.node_iter('G', 'intensity'))
 
     def solve(self):
         """Solve the given deconvolution problem."""
@@ -145,7 +160,7 @@ class DeconvolutionProblem(nx.Graph):
         solved = False
         iteration = 1
         while not stop or iteration is self.max_times:
-            setseed(randint(0,1000000))
+            setseed(randint(0, 1000000))
             self.solution = solvers.qp(self.P, self.q, self.G,
                                        self.h, self.A, self.b,
                                        initvals=self.initvals)
@@ -159,9 +174,8 @@ class DeconvolutionProblem(nx.Graph):
         # filling up the graph
         X = self.solution['x']
         self.alphas = []
-        for M in self.node_iter('M'):
-            self.node[M]['estimate'] = X[self.cnts['GI'] +
-                                         self.node[M]['cnt']]
+        for M, M_cnt in self.node_iter('M', 'cnt'):
+            self.node[M]['estimate'] = X[self.GI_no + M_cnt]
             self.alphas.append(self.node[M])
         for G in self.node_iter('G'):
             self.node[G]['estimate'] = 0.0

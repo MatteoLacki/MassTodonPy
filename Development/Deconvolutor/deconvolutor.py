@@ -2,11 +2,17 @@
 %autoreload 2
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.Deconvolutor.Deconvolutor import Deconvolutor
+from MassTodonPy.Deconvolutor.Deconvolutor import deconvolve
+from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 
+%%time
 mol = get_dataset('substanceP') # adjust the spectrum
 mols = list(mol.precursor.molecules())
-D = Deconvolutor(mols, mol.spectrum)
+D = list(deconvolve(mols, mol.spectrum))
 
-for d in D.problems:
-    print(d.report()['status'])
+
+# TODO play with multiprocessing later on.
+# %%time
+# mol = get_dataset('substanceP') # adjust the spectrum
+# mols = list(mol.precursor.molecules())
+# D, runtime = deconvolve(mols, mol.spectrum, processes=3)

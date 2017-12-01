@@ -31,7 +31,7 @@
 * Automate the setting up of the devel version.
 
 # Less important
-
+* add **multiprocessing** to the deconvolve function.
 
 # Don't forget
 * The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()
