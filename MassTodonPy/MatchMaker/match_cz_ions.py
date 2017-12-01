@@ -16,127 +16,125 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from    collections     import  Counter
-import  networkx        as      nx
-from    cvxopt          import  matrix, spmatrix, sparse, spdiag, solvers
+from __future__ import absolute_import, division, print_function
+from collections import Counter
+from future.builtins import super
+import networkx as nx
+from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
+
+
+def make_prob(cnt1, cnt2, ):
+    pass
+
+
+def __get_probs(counts, Probs, tag1, tag2, name1=None, name2=None):
+    """Make two probabilities out of counts and name them properly."""
+    if not name1:
+        name1 = tag1
+    if not name2:
+        name2 = tag2
+    total = counts[tag1]+counts[tag2]
+    if total > 0.0:
+        Probs[name1] = float(counts[tag1])/total
+        Probs[name2] = 1.0 - Probs[name1]
+    return Probs
 
 
 class czMatchMaker(object):
     """Virtual class of all matchmakers.
 
     Parameters
-    ----------
-    MassTodonResults : list
+    ==========
+    results : list
         A list of raw results of **MassTodon.run()**.
-    Q : int
-        The charge of the precursor ion.
-    fasta : str
-        The fasta of the studied molecular species.
-    min_acceptEstimIntensity : float
-        The minimal probability an envelope must potentially find in the spectrum to get included into the deconvolution graph.
+    precursor : Precursor
+        A precursor for the matching problem.
+    minimal_intensity : float
+        The minimal intenstity of experimental peaks in the deconvolution graph.
 
-    Notes
-    ------
-        We simply check, how many theoretical peaks have some data around. If their total probability exceeds the **min_acceptEstimIntensity**, then it is more likely that this molecular species really is in the spectrum.
     """
-    def __init__(   self,
-                    MassTodonResults,
-                    Q,
-                    fasta,
-                    min_acceptEstimIntensity= 100.,
-                    verbose = False):
-        self.MassTodonResults = MassTodonResults
-        self.Q = Q
-        self.fasta = fasta
+    def __init__(self,
+                 results,
+                 precursor,
+                 minimal_intensity=100.0,
+                 verbose=False):
+        self.results = results
+        self.precursor = precursor
         self.verbose = verbose
-        self.min_acceptEstimIntensity = min_acceptEstimIntensity
+        self.minimal_intensity = minimal_intensity
+        self.intensity = Counter()
+        self.get_graph()
 
     def define_fragment(self, molecule):
         """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
-    def add_edges(self, graph):
+    def add_edges_to_graph(self):
         """Defines what should be considered a node in the c-z matching graphs."""
         raise NotImplementedError
 
-    def get_graph_analyze_precursor(self):
-        """Generate the graph of pairings, find its connected components, find the number of PTR and ETnoD reactions on precursors.
+    def get_graph(self):
+        """Analyze results.
 
         Returns
-        -------
-            out : tuple
-                The graph of pairings, the intensity of ETnoD on precursors, the intensity of PTR on precursors, the intensity of the unreacted precursors.
+        =======
+        out : tuple
+            The graph of pairings,
+            the total intensity of precursors that went through the ETnoD,
+            the total intensity of precursors that went through the PTR,
+            the total intensity of the unreacted precursors.
         """
-        if self.verbose:
-            print('Building up a c-z fragment graph.')
-            print('')
-        unreacted_precursors = ETnoDs_on_precursors = PTRs_on_precursors = 0.0
-        graph = nx.Graph()
-        Q = self.Q
-        for res in self.MassTodonResults:
-            if res['status'] != 'ValueError':
+        Q = self.precursor.q
+        self.graph = nx.Graph()
+        for res in self.results:
+            if res['status'] is not 'ValueError':
                 for mol in res['alphas']:
-                    estimate = mol['estimate']
-                    if estimate > self.min_acceptEstimIntensity:
-                        if mol['molType']=='precursor':
-                            q, g = mol['q'], mol['g']
-                            if q==Q and g==0:
-                                unreacted_precursors = int(estimate)
+                    estimate = int(mol['estimate'])
+                    if estimate > self.minimal_intensity:
+                        mol = mol['molecule']
+                        if mol.name is 'precursor':
+                            q = mol.q
+                            g = mol.g
+                            if q is Q and g is 0:
+                                self.intensity['unreacted'] = estimate
                             else:
-                                ETnoDs_on_precursors += g * estimate
-                                PTRs_on_precursors   += (Q-q-g) * estimate
+                                self.intensity['ETnoD_precursors'] += g * estimate
+                                self.intensity['PTR_precursors'] += (Q-q-g) * estimate
                         else:
                             frag = self.define_fragment(mol)
-                            if not frag in graph:
-                                graph.add_node( frag, intensity=0 )
-                            graph.node[frag]['intensity'] += int(estimate)
-        ETnoDs_on_precursors = int(ETnoDs_on_precursors)
-        PTRs_on_precursors   = int(PTRs_on_precursors)
-        graph = self.add_edges(graph)
-        return graph, ETnoDs_on_precursors, PTRs_on_precursors, unreacted_precursors
+                            if not frag in self.graph:
+                                self.graph.add_node(frag, intensity=0)
+                            self.graph.node[frag]['intensity'] += estimate
+        self.add_edges_to_graph()
 
-    def optimize(self):
+    def optimize(self, G):
         """Perform the optimal pairing of c and z fragments."""
         raise NotImplementedError
 
-    def __get_probs(self, Counts, Probs, tag1, tag2, name1=None, name2=None):
-        """Make two probabilities out of counts and name them properly."""
-        if not name1:
-            name1 = tag1
-        if not name2:
-            name2 = tag2
-        total = Counts[tag1]+Counts[tag2]
-        if total > 0.0:
-            Probs[name1] = float(Counts[tag1])/total
-            Probs[name2] = 1.0 - Probs[name1]
-        return Probs
-
     def __get_etnod_ptr_probs(self, Counts, Probs):
-        Probs = self.__get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
-        Probs = self.__get_probs(Counts,Probs,'ETnoD','PTR')
+        Probs = get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
+        Probs = get_probs(Counts,Probs,'ETnoD','PTR')
         return Probs
 
-    def __analyze_counts(self, Counts):
-        """Calculate probabilities based on counts.
-
-        Parameters
-        ----------
-        Counts : Counter
-            A counter of different intensities.
+    def __analyze_counts(self):
+        """Calculate probabilities based on fragment intensities.
 
         Returns
-        -------
+        =======
         out : tuple
             Probabilities and intensities of reactions.
         """
-        Counts['total_frags'] = float(sum(Counts[k] for k in Counts if isinstance(k,(int,long))))
-        Probs = Counter()
-        if Counts['total_frags'] > 0.0:
+        self.intensity['total_frags'] = sum(v for k, v in self.intensity.items()
+                                            if isinstance(k, (int, long)))
+        probs = Counter()
+        if self.intensity['total_frags'] > 0.0:
             for k in Counts:
                 if isinstance(k, (int,long)):
                     Probs[k] = float(Counts[k])/Counts['total_frags']
+
+
         Counts['total_reactions'] = sum(Counts[k] for k in Counts if k != 'unreacted_precursors')
-        Probs = self.__get_probs( Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' ) # TODO: proportion of untouched precursor
+        Probs = get_probs(Counts, Probs, 'unreacted_precursors', 'total_reactions', 'anion_did_not_approach_cation', 'anion_approached_cation' ) # TODO: proportion of untouched precursor
         if Counts['total_reactions'] > 0.0:
             Probs['fragmentation'] = float(Counts['total_frags'])/Counts['total_reactions']
             Probs['no fragmentation'] = 1.0 - Probs['fragmentation']
@@ -145,97 +143,85 @@ class czMatchMaker(object):
         Probs = self.__get_etnod_ptr_probs(Counts,Probs)
         return Probs, Counts
 
-
     def match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities.
 
         Returns
-        -------
+        =======
         out : tuple
             Probabilities and intensities of reactions.
         """
-        Counts = Counter()
-
-        graph, Counts['ETnoD_precursor'], Counts['PTR_precursor'], Counts['unreacted_precursors'] = self.get_graph_analyze_precursor()
-
         OptimInfo = []
-        for G in nx.connected_component_subgraphs(graph):
+        for G in nx.connected_component_subgraphs(self.graph):
             if self.verbose:
                 cnt, info = self.optimize(G)
-                Counts += cnt
+                self.intensity += cnt
                 OptimInfo.append(info)
             else:
-                Counts += self.optimize(G)
-
+                self.intensity += self.optimize(G)
         Probs, Counts = self.__analyze_counts(Counts)
-
         if self.verbose:
             return Probs, Counts, OptimInfo
         else:
             return Probs, Counts
 
 
-##################################################################################################
-
-
-
-
 class czMatchMakerBasic(czMatchMaker):
     def define_fragment(self, molecule):
-        return molecule['molType'], molecule['q']
+        return molecule.name, molecule.q
 
-
-    def add_edges(self, graph):
-        for C, qC in graph: # adding edges between c and z fragments
-            if C[0]=='c':
-                for Z, qZ in graph:
-                    if Z[0]=='z':
+    def add_edges_to_graph(self):
+        """Add edges between c and z fragments."""
+        for C, qC in self.graph:
+            if C[0] is 'c':
+                for Z, qZ in self.graph:
+                    if Z[0] is 'z':
                         bpC = int(C[1:])
-                        bpZ = len(self.fasta) - int(Z[1:])
-                        if bpC==bpZ and qC + qZ < self.Q-1:
-                            graph.add_edge((C,qC),(Z,qZ))
-        return graph
+                        bpZ = len(self.precursor.fasta) - int(Z[1:])
+                        if bpC == bpZ and qC + qZ + 1 < self.precursor.q:
+                            self.graph.add_edge((C, qC), (Z, qZ))
 
     def optimize(self, G):
         """Finds the minimal number of reactions necessary to explain the MassTodon results.
 
         Uses the max flow algorithm in all but trivial cases.
         """
-        no_edges_reactions_cnt = sum( (self.Q-1-N[1])*G.node[N]['intensity'] for N in G)
+        Q = self.precursor.q
+        no_edges_reactions_cnt = sum((Q - 1 - q) * I for (_, q), I in
+                                     G.nodes.data('intensity'))
         Counts = Counter()
-        if len(G)>1:
+        if len(G) > 1:  # not trivial
             FG = nx.DiGraph()
             FG.add_node('S') # start
             FG.add_node('T') # terminus/sink
             for C in G:
-                if C[0][0]=='c':
+                if C[0][0] is 'c':
                     Cintensity = G.node[C]['intensity']
                     FG.add_node(C)
-                    FG.add_edge( 'S', C, capacity=Cintensity )
+                    FG.add_edge('S', C, capacity=Cintensity)
                     for Z in G[C]:
                         Zintensity = G.node[Z]['intensity']
                         FG.add_node(Z)
-                        FG.add_edge(C,Z)
-                        FG.add_edge( Z, 'T', capacity=Zintensity )
-            flow_val, flows = nx.maximum_flow(FG,'S','T')
-            Counts['reactions'] = no_edges_reactions_cnt - (self.Q-1)*flow_val
+                        FG.add_edge(C, Z)
+                        FG.add_edge(Z, 'T', capacity=Zintensity)
+            flow_val, flows = nx.maximum_flow(FG, 'S', 'T')
+            Counts['reactions'] = no_edges_reactions_cnt - (Q - 1) * flow_val
             for N in G:
-                G.add_edge(N,N)
+                G.add_edge(N, N)
             for N in flows:
                 for M in flows[N]:
-                    if N=='S': # M is a C fragment
+                    if N is 'S': # M is a C fragment
                         G.edge[M][M]['flow'] = G.node[M]['intensity']-flows[N][M]
-                    elif M=='T': # N is a Z fragment
+                    elif M is 'T': # N is a Z fragment
                         G.edge[N][N]['flow'] = G.node[N]['intensity']-flows[N][M]
                     else: # N is a C and M a Z fragment
                         G.edge[N][M]['flow'] = flows[N][M]
-        else:
+        else:  # trivial
             Counts['reactions'] = no_edges_reactions_cnt
             G.nodes(data=True)
             N = G.nodes()[0]
-            G.add_edge( N, N, flow=G.node[N]['intensity'] )
+            G.add_edge(N, N, flow=G.node[N]['intensity'])
             flow_val= flows = None
-
         for N in G:
             for M in G[N]:
                 if M[0][0]=='z':
@@ -243,41 +229,27 @@ class czMatchMakerBasic(czMatchMaker):
                 else:
                     fragmented_AA = int(M[0][1:])
                 Counts[ fragmented_AA ] += G[N][M]['flow']
-
         if self.verbose:
             return Counts, (flow_val, flows)
         else:
             return Counts
 
 
-
-
-
-
-
 class czMatchMakerIntermediate(czMatchMaker):
     def define_fragment(self, molecule):
-        molG = molecule['g']
-        molQ = molecule['q']
-
-        if self.verbose:
-            print 'molG =', molG
-            print 'molQ =', molQ
-
-        if molG == - 1:           # HTR product
+        molG = molecule.g
+        molQ = molecule.q
+        mol_name = molecule.name
+        if molG == - 1:  # HTR product
             molG += 1
-        if molG + molQ == self.Q: # HTR product
+        if molG + molQ == self.precursor.q:  # HTR product
             molG -= 1
-
-        if self.verbose:
-            print molecule['molType'], molQ, molG
-            print
-        return molecule['molType'], molQ, molG
+        return mol_name, molQ, molG
 
     def etnod_ptr_on_c_z_pairing(self, q0, g0, q1, g1):
         """Get the number of ETnoD and PTR reactions on a regular edge."""
         Netnod  = g0 + g1
-        Nptr    = self.Q - 1 - g0 - g1 - q0 - q1
+        Nptr    = self.precursor.q - 1 - g0 - g1 - q0 - q1
         return Netnod, Nptr
 
     def get_break_point(self, nType ):
@@ -285,22 +257,22 @@ class czMatchMakerIntermediate(czMatchMaker):
         if nType[0] == 'c':
             bP = int(nType[1:])
         else:
-            bP = len(self.fasta) - int(nType[1:])
+            bP = len(self.precursor.fasta) - int(nType[1:])
         return bP
 
-    def add_edges(self, graph):
-        for Ctype, qC, gC in graph: # adding edges between c and z fragments
+    def add_edges_to_graph(self):
+        Q = self.precursor.q
+        for Ctype, qC, gC in self.graph: # add c-z edges
                 if Ctype[0]=='c':
-                    for Ztype, qZ, gZ in graph:
+                    for Ztype, qZ, gZ in self.graph:
                         if Ztype[0]=='z':
                             bpC = self.get_break_point(Ctype)
                             bpZ = self.get_break_point(Ztype)
-                            if bpC==bpZ and qC + qZ + gC + gZ <= self.Q-1:
+                            if bpC==bpZ and qC + qZ + gC + gZ <= Q - 1:
                                 ETnoD_cnt, PTR_cnt = self.etnod_ptr_on_c_z_pairing( qC, gC, qZ, gZ )
-                                graph.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
-        return graph
+                                self.graph.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
 
-    def optimize(self, G):
+    def optimize(self):
         if len(G) > 1:
             Jsum = sum( G.node[N]['intensity'] for N in G)
             bP = self.get_break_point( next(G.nodes_iter())[0])
@@ -311,12 +283,12 @@ class czMatchMakerIntermediate(czMatchMaker):
                 if C[0][0]=='c':
                     Cintensity = G.node[C]['intensity']
                     FG.add_node(C)
-                    FG.add_edge( 'S', C, capacity=Cintensity )
+                    FG.add_edge('S', C, capacity=Cintensity)
                     for Z in G[C]:
                         Zintensity = G.node[Z]['intensity']
                         FG.add_node(Z)
-                        FG.add_edge(C,Z)
-                        FG.add_edge( Z, 'T', capacity=Zintensity )
+                        FG.add_edge(C, Z)
+                        FG.add_edge(Z, 'T', capacity=Zintensity)
             flow_val, flows = nx.maximum_flow(FG,'S','T')
             TotalFrags  = Jsum - flow_val
             TotalETnoD  = 0
@@ -347,65 +319,49 @@ class czMatchMakerIntermediate(czMatchMaker):
 
         Counts = Counter({'ETnoD_frag':TotalETnoD, 'PTR_frag':TotalPTR, bP: TotalFrags})
         if self.verbose:
-            print(G.nodes(data=True))
-            print(G.edges(data=True))
-            print('')
             return Counts, (flow_val, flows)
         else:
             return Counts
 
     def __get_etnod_ptr_probs(self, Counts, Probs):
-        Probs = self.__get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
-        Probs = self.__get_probs(Counts,Probs,'ETnoD','PTR')
-        Probs = self.__get_probs(Counts,Probs,'ETnoD_frag','PTR_frag')
+        Probs = get_probs(Counts,Probs,'ETnoD_precursor','PTR_precursor')
+        Probs = get_probs(Counts,Probs,'ETnoD','PTR')
+        Probs = get_probs(Counts,Probs,'ETnoD_frag','PTR_frag')
         return Probs
 
 
-
-
-
-
-
-
-
-
-
 class czMatchMakerAdvanced(czMatchMakerIntermediate):
-    def __init__(self, MassTodonResults, Q, fasta,
-                 min_acceptEstimIntensity = 100.,
-                 verbose = False,
-                 L1 = 0.0, L2 = 0.01
-        ):
+    """Advanced intensity matching."""
+
+    def __init__(self,
+                 results,
+                 precursor,
+                 minimal_intensity=100.,
+                 verbose=False,
+                 L1=0.0,
+                 L2=0.01):
         solvers.options['show_progress'] = False
-        self.MassTodonResults = MassTodonResults
-        self.Q = Q
-        self.fasta = fasta
-        self.min_acceptEstimIntensity = min_acceptEstimIntensity
         self.L1 = L1
         self.L2 = L2
-        self.verbose = verbose
+        super().__init__(results, precursor, minimal_intensity, verbose)
 
-
-    def add_edges(self, graph):
-        for Ctype, qC, gC in graph: # adding edges between c and z fragments
+    def add_edges_to_graph(self):
+        for Ctype, qC, gC in self.graph: # adding edges between c and z fragments
                 # add self loops
             N = (Ctype, qC, gC)
-            graph.add_edge( N, N, ETnoD_PTR_cnt=self.Q-1-qC)
+            self.graph.add_edge( N, N, ETnoD_PTR_cnt=self.Q-1-qC)
             if Ctype[0]=='c':
-                for Ztype, qZ, gZ in graph:
+                for Ztype, qZ, gZ in self.graph:
                     if Ztype[0]=='z':
                         bpC = self.get_break_point(Ctype)
                         bpZ = self.get_break_point(Ztype)
                         if bpC==bpZ and qC + qZ + gC + gZ <= self.Q-1:
                             ETnoD_cnt, PTR_cnt = self.etnod_ptr_on_c_z_pairing(qC, gC, qZ, gZ)
-                            graph.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD_PTR_cnt=self.Q-1-qC-qZ, ETnoD=ETnoD_cnt, PTR=PTR_cnt )
-        return graph
-
+                            self.graph.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD_PTR_cnt=self.Q-1-qC-qZ, ETnoD=ETnoD_cnt, PTR=PTR_cnt)
 
     def diag(self, val, dim):
         """Make a sparse identity matrix multiplied by a scalar val."""
         return spdiag([spmatrix(val,[0],[0]) for i in xrange(dim)])
-
 
     def incidence_matrix(self, G, Jdim, Idim):
         """Make a sparse incidence matrix of the graph G."""
@@ -416,8 +372,7 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
             L[NodesNo[N1],j] = 1
         return L
 
-
-    def optimize(self, G):
+    def optimize(self):
         """Find regularized max flow."""
         if len(G) > 1:
             bP= self.get_break_point(next(G.nodes_iter())[0])
@@ -455,33 +410,28 @@ class czMatchMakerAdvanced(czMatchMakerIntermediate):
             return res
 
 
-
-
-
-def match_cz_ions(  results_to_pair,
-                    Q,
-                    fasta,
-                    advanced_args,
-                    min_acceptEstimIntensity = 0.0,
-                    analyzer = 'intermediate',
-                    verbose = False    ):
+def match_cz_ions(results_to_pair,
+                  Q,
+                  fasta,
+                  advanced_args,
+                  minimal_intensity=0.0,
+                  analyzer='intermediate',
+                  verbose=False):
 
     if analyzer != 'advanced':
-        chosen_analyzer = {
-            'basic':            czMatchMakerBasic,
-            'intermediate':     czMatchMakerIntermediate,
+        chosen_analyzer = {'basic': czMatchMakerBasic,
+                           'intermediate': czMatchMakerIntermediate
         }[analyzer](results_to_pair,
                     Q,
                     fasta,
-                    min_acceptEstimIntensity,
-                    verbose     )
+                    minimal_intensity,
+                    verbose)
     else:
-        chosen_analyzer = czMatchMakerAdvanced(
-                    results_to_pair,
-                    Q,
-                    fasta,
-                    min_acceptEstimIntensity,
-                    verbose,
-                    **advanced_args )
+        chosen_analyzer = czMatchMakerAdvanced(results_to_pair,
+                                               Q,
+                                               fasta,
+                                               minimal_intensity,
+                                               verbose,
+                                               **advanced_args )
 
     return chosen_analyzer.match()
