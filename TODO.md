@@ -22,6 +22,8 @@
 * Add drawing procedures for:
     * spectra
     * deconvoluted problems
+* Check if the **if bpC == bpZ and qC + qZ < self.precursor.q:** there should
+    * not be -1 on the RHS
 
 # elegant
 * subclass linearCounter into the project and rename it as atom_cnt.

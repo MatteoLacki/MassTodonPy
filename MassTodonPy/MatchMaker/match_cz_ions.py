@@ -99,7 +99,7 @@ class czMatchMaker(object):
                                 self.intensity['unreacted'] = estimate
                             else:
                                 self.intensity['ETnoD_precursors'] += g * estimate
-                                self.intensity['PTR_precursors'] += (Q-q-g) * estimate
+                                self.intensity['PTR_precursors'] += (Q - q - g) * estimate
                         else:
                             frag = self.define_fragment(mol)
                             if not frag in self.graph:
@@ -178,7 +178,7 @@ class czMatchMakerBasic(czMatchMaker):
                     if Z[0] is 'z':
                         bpC = int(C[1:])
                         bpZ = len(self.precursor.fasta) - int(Z[1:])
-                        if bpC == bpZ and qC + qZ + 1 < self.precursor.q:
+                        if bpC == bpZ and qC + qZ < self.precursor.q:
                             self.graph.add_edge((C, qC), (Z, qZ))
 
     def optimize(self, G):
@@ -268,7 +268,7 @@ class czMatchMakerIntermediate(czMatchMaker):
                         if Ztype[0]=='z':
                             bpC = self.get_break_point(Ctype)
                             bpZ = self.get_break_point(Ztype)
-                            if bpC==bpZ and qC + qZ + gC + gZ <= Q - 1:
+                            if bpC==bpZ and qC + qZ + gC + gZ < Q:
                                 ETnoD_cnt, PTR_cnt = self.etnod_ptr_on_c_z_pairing( qC, gC, qZ, gZ )
                                 self.graph.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
 
