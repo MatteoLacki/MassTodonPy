@@ -1,44 +1,29 @@
 ### MassTodon todo list
 
 # important
-* Update the networkx module usage while retaining backward compatibility
-* Update the IsoSpecPy module usage
+* Update to IsoSpec 2.0
 * Get rid of the Pandas dependency for csv saving (sic!)
 * Get rid of highcharts -> turn it into Bokeh
-* exception for the same precursor tags in make_molecules
-    * Rationale: otherwise we will not be able to trace the origin of a fragment
-    * Problem: what if two substances point to the same formula?
 * check different modes of isotopic calculations under IsoSpec2.0
 * add csv input spectrum
 * add assertions to read_mzxml_spectrum
-* compare the new spectra with the older ones.
 * Replace the some arguments for MassTodonize with dictionaries.
     * e.g. solver_args, deconvolutor_args
 * Replace the current ubiquitin dataset with one that is not corrupted
     * this one has an ever growing intensity, for some reason.
-* Check if adding works well in the LinearCounter and iclude it as a module.
-* Get rid of spurious dependencies in setup.py
 * The regular expression needs to cope with C100H-200 just in case.
 * Add drawing procedures for:
     * spectra
     * deconvoluted problems
-* Check if the **if bpC == bpZ and qC + qZ < self.precursor.q:** there should
-    * not be -1 on the RHS
 
 # elegant
-* subclass linearCounter into the project and rename it as atom_cnt.
-    * add monoisotopic mass
-    * add IsotopeCalculator as a subroutine here: not bad! This can be a class field.
-        * The Formula class should initiate a field called isotopic generator.
 * Automate the setting up of the devel version.
-
-# Less important
-* add **multiprocessing** to the deconvolve function.
 
 # Don't forget
 * The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()
 * The +1H makes part of the c-fragment definition
     * think about the possible products.
+* Get rid of spurious dependencies in setup.py
 
 # IsoSpec:
 * Get a version that does not need string parsing.
@@ -48,8 +33,22 @@
 
 
 
+# Some long term stuff:
+* when more than one precursor
+    * exception for the same precursor tags in make_molecules
+        * Rationale: otherwise we will not be able to trace the origin of a fragment
+        * Problem: what if two substances point to the same formula?
+            * check hashes
+
+
+
+============================================================================
 # Done:
 * Both:
     * D = Deconvolutor(molecules, spectrum, L1_x=0.002, L2_x=0.002, L1_alpha=0.002, L2_alpha=0.002)
     * D = Deconvolutor(molecules, spectrum)
     * work
+* subclass linearCounter into the project and rename it as atom_cnt.
+    * add monoisotopic mass
+    * add IsotopeCalculator as a subroutine here: not bad! This can be a class field.
+        * The Formula class should initiate a field called isotopic generator.

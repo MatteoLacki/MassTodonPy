@@ -1,5 +1,7 @@
 from collections import Counter
 
+
+# To do: better make a class that will take the slots and represent them nicely...
 def summarize_results(spectra,
                       raw_masstodon_res):
     '''Summarize the results of MassTodon.

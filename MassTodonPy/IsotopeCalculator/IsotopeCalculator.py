@@ -42,54 +42,54 @@ class IsotopeCalculator(object):
     joint_probability : float
         The joint probability threshold for generating
         theoretical isotopic distributions.
-    _isotope_masses : dict
+    _masses : dict
         The isotopic masses, e.g. from IUPAC.
-    _isotope_probabilities : dict
+    _probabilities : dict
         The isotopic frequencies, e.g. from IUPAC.
 
     """
-    _isotope_masses, _isotope_probabilities =\
+    _masses, _probabilities =\
         get_isotopic_masses_and_probabilities()
     _isotope_DB = {}  # IsoSpec 2.0 much faster -> stop memoizing
 
     @classmethod
     def reset_isotopes(cls,
-                       _isotope_masses=None,
-                       _isotope_probabilities=None):
+                       _masses=None,
+                       _probabilities=None):
         """Reset isotope masses and probabilities for the whole class."""
-        if _isotope_masses:
-            cls._isotope_masses = _isotope_masses
-        if _isotope_probabilities:
-            cls._isotope_probabilities = _isotope_probabilities
+        if _masses:
+            cls._masses = _masses
+        if _probabilities:
+            cls._probabilities = _probabilities
 
     def __init__(self,
                  mz_precision=2,
                  joint_probability=.999,
-                 _isotope_masses=None,
-                 _isotope_probabilities=None,
+                 _masses=None,
+                 _probabilities=None,
                  _isotope_DB=None):
         """Initialize the isotopic calculator."""
-        if _isotope_masses:
-            self._isotope_masses = _isotope_masses
-        if _isotope_probabilities:
-            self._isotope_probabilities = _isotope_probabilities
+        if _masses:
+            self._masses = _masses
+        if _probabilities:
+            self._probabilities = _probabilities
         if _isotope_DB:
             self._isotope_DB = _isotope_DB
         self.mean_mass = {}
         self.mean_variance = {}
-        for el in self._isotope_probabilities:
+        for el in self._probabilities:
             self.mean_mass[el], self.mean_variance[el] = \
-                get_mean_and_variance(self._isotope_masses[el],
-                                      self._isotope_probabilities[el])
+                get_mean_and_variance(self._masses[el],
+                                      self._probabilities[el])
         self.mz_precision = mz_precision
         self.joint_probability = joint_probability
 
     def get_monoisotopic_mz(self, formula, q, g=0):
         """Calculate monoisotopic mass of a molecule."""
         check_charges(q, g)
-        mass = sum(self._isotope_masses[el][0] * count
+        mass = sum(self._masses[el][0] * count
                    for el, count in Formula(formula).items())
-        hydrogen_mass = self._isotope_masses['H'][0]
+        hydrogen_mass = self._masses['H'][0]
         mz = (mass + (q + g) * hydrogen_mass) / q
         return mz
 
@@ -114,21 +114,20 @@ class IsotopeCalculator(object):
                        joint_probability,
                        memoize=False):
         counts = []
-        isotope_masses = []
-        isotope_probs = []
+        masses = []
+        probs = []
         for el, cnt in Formula(formula).items():
             counts.append(cnt)
-            isotope_masses.append(self._isotope_masses[el])
-            isotope_probs.append(self._isotope_probabilities[el])
+            masses.append(self._masses[el])
+            probs.append(self._probabilities[el])
         envelope = IsoSpecPy.IsoSpec(counts,
-                                     isotope_masses,
-                                     isotope_probs,
+                                     masses,
+                                     probs,
                                      joint_probability)
         mass, logprobability, _ = envelope.getConfsRaw()
-        mass = cdata2numpyarray(mass)  # TODO IsoSpec 2.0
-        probability = np.exp(cdata2numpyarray(logprobability))
-
         # TODO : get rid of this when IsoSpec 2.0 is in place
+        mass = cdata2numpyarray(mass)
+        probability = np.exp(cdata2numpyarray(logprobability))
         if memoize:
             key = (str(formula), joint_probability)
             self._isotope_DB[key] = (mass, probability)

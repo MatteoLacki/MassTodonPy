@@ -8,39 +8,26 @@ from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_graphs
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 
-class TestPeakPicker(unittest.TestCase):
-    def setUp(self):
-        """Set up a method."""
-        pass
-
-    def tearDown(self):
-        """Tear down a method."""
-        pass
-
+class TestPeakPicking(unittest.TestCase):
     def test_get_deconvolution_graphs(self):
         print("Testing the get_deconvolution_graphs function.")
-
-        real_stats = {(1, 11, 7), (2, 27, 8), (3, 54, 9)}
-
+        # R_ = real
+        R_stats = {(1, 11, 7), (2, 27, 8), (3, 54, 9)}
         subP = get_dataset('substanceP')
         precursors = list(mol for mol in subP.precursor.molecules()
                           if mol.name is 'precursor')
-
         spectrum = sum(mol.isotopologues() for mol in precursors)
         spectrum = ExperimentalSpectrum(mz=spectrum.mz,
                                         intensity=100000 * spectrum.probability)
         spectrum.round_mz(precision=2)
-
         DGs = get_deconvolution_graphs(precursors,
                                        spectrum,
                                        mz_tol=.05,
                                        mz_precision=2)
-
-        expected_stats = [Counter(N[0] for N in DG) for DG in DGs ]
-        expected_stats = set([(s['M'], s['I'], s['G'])
-                              for s in expected_stats])
-
-        self.assertEqual(real_stats, expected_stats)
+        # E_ = expected
+        E_stats = [Counter(N[0] for N in DG) for DG in DGs ]
+        E_stats = set([(s['M'], s['I'], s['G']) for s in E_stats])
+        self.assertEqual(R_stats, E_stats)
 
 
 if __name__ == "__main__":

@@ -211,21 +211,20 @@ class czMatchMakerBasic(czMatchMaker):
             for N in flows:
                 for M in flows[N]:
                     if N is 'S': # M is a C fragment
-                        G.edge[M][M]['flow'] = G.node[M]['intensity']-flows[N][M]
+                        G[M][M]['flow'] = G.node[M]['intensity']-flows[N][M]
                     elif M is 'T': # N is a Z fragment
-                        G.edge[N][N]['flow'] = G.node[N]['intensity']-flows[N][M]
+                        G[N][N]['flow'] = G.node[N]['intensity']-flows[N][M]
                     else: # N is a C and M a Z fragment
-                        G.edge[N][M]['flow'] = flows[N][M]
+                        G[N][M]['flow'] = flows[N][M]
         else:  # trivial
             Counts['reactions'] = no_edges_reactions_cnt
-            G.nodes(data=True)
-            N = G.nodes()[0]
-            G.add_edge(N, N, flow=G.node[N]['intensity'])
-            flow_val= flows = None
+            N, N_intensity = list(G.nodes.data('intensity'))[0]
+            G.add_edge(N, N, flow=N_intensity)
+            flow_val = flows = None
         for N in G:
             for M in G[N]:
                 if M[0][0]=='z':
-                    fragmented_AA = len(self.fasta) - int(M[0][1:])
+                    fragmented_AA = len(self.precursor.fasta) - int(M[0][1:])
                 else:
                     fragmented_AA = int(M[0][1:])
                 Counts[ fragmented_AA ] += G[N][M]['flow']

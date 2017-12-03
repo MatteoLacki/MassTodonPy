@@ -35,15 +35,11 @@ class Molecule(object):
 
     @property
     def monoisotopic_mz(self):
-        return self.iso_calc.get_monoisotopic_mz(self.formula,
-                                                 self.q,
-                                                 self.g)
+        return self.iso_calc.get_monoisotopic_mz(self.formula, self.q, self.g)
 
     @property
     def mean_mz(self):
-        return self.iso_calc.get_mean_mz(self.formula,
-                                         self.q,
-                                         self.g)
+        return self.iso_calc.get_mean_mz(self.formula, self.q, self.g)
 
     def isotopologues(self,
                       joint_probability=.999,

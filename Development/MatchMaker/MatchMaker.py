@@ -20,7 +20,7 @@ res = results[0]
 M = res['alphas'][0]
 
 matches = czMatchMakerBasic(results, mol.precursor)
-
+matches.match()
 
 options = {'node_color': 'black',
            'node_size': 2,
@@ -29,7 +29,7 @@ options = {'node_color': 'black',
            'font_size': 10}
 nx.draw(matches.graph)
 plt.show()
-matches.match()
+
 matches.graph.edges
 
 
