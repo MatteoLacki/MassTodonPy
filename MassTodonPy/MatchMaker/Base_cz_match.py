@@ -26,8 +26,8 @@ from networkx import connected_component_subgraphs as connected_components
 
 BaseNode = namedtuple('N', ['type', 'no', 'bp', 'q'])
 
-
-class Base_cz_match(object):
+# TODO: instantiate all reported variables in the class init
+class Base_cz_match(Counter):
     """Base class for matching c and z ions' intensities.
 
     Parameters
@@ -47,9 +47,17 @@ class Base_cz_match(object):
         self.results = results
         self.precursor = precursor
         self.minimal_intensity = minimal_intensity
+        # I_ = Intensity
+        self.I_ETD_bond = Counter()
+        self.I_ETD = 0
+        self.I_ETnoD = 0
+        self.I_PTR = 0
+        self.I_ETnoD_PTR_precursor = Counter()  # len(ETnoD), len(PTR) -> Intensity
+        self.I_ETnoD_PTR_fragments = 0
+        self.I_lavish = 0
         self._get_graph()
         self._match()
-        self._analyze_intensities()
+        self._make_info()
 
     def _iter_results(self):
         for res in self.results:
@@ -83,18 +91,11 @@ class Base_cz_match(object):
         """Prepare the matching graph."""
         Q = self.precursor.q
         self.graph = nx.Graph()
-        self.not_reacted = 0
-        self.ETnoD = 0
-        self.PTR = 0
         for mol, estimate in self._iter_results():
             if mol.name is 'precursor':
-                q = mol.q
-                g = mol.g
-                if q is Q and g is 0:
-                    self.not_reacted = estimate
-                else:
-                    self.ETnoD += g * estimate
-                    self.PTR += (Q - q - g) * estimate
+                self.I_ETnoD += mol.g * estimate
+                self.I_PTR += (Q - mol.q - mol.g) * estimate
+                self.I_ETnoD_PTR_precursor[mol.g, Q - mol.q - mol.g] = estimate
             else:
                 frag = self._get_node(mol)
                 if not frag in self.graph:
@@ -105,13 +106,10 @@ class Base_cz_match(object):
     def _optimize(self, G):
         """Match the intensities in a cluster."""
         Q = self.precursor.q
-        
-        # The intensity of the lavish case:
-        #   all fragments lost their cofragments
+        # lavish: all fragments lose cofragments
         lavish = sum((Q - 1 - N.q) * I for N, I in
                      G.nodes.data('intensity'))
-        self.lavish += lavish
-        
+        self.I_lavish += lavish
         if len(G) > 1:  # not trivial
             FG = nx.DiGraph()
             FG.add_node('S')  # start
@@ -126,37 +124,54 @@ class Base_cz_match(object):
                         FG.add_edge(C, Z)
                         FG.add_edge(Z, 'T', capacity=Z_intensity)
             total_flow, flows = nx.maximum_flow(FG, 'S', 'T')
-            self.ETnoD_PTR_fragments += lavish - (Q - 1) * total_flow
-            self.ETD += total_flow
+            self.I_ETnoD_PTR_fragments += lavish - (Q - 1) * total_flow
             for N in G:
                 G.add_edge(N, N)
+            # no double count: flows = { start: {end: {value}, .. }, .. }
             for N in flows:
                 for M in flows[N]:
                     if N is 'S':  # M is a C fragment
                         G[M][M]['flow'] = G.node[M]['intensity'] - flows[N][M]
-                    elif M is 'T':  # N -> Z
+                    elif M is 'T':  # N is a Z fragment
                         G[N][N]['flow'] = G.node[N]['intensity'] - flows[N][M]
-                    else:  # N -> C and M -> Z
+                    else:  # N is a C and M a Z fragment
                         G[N][M]['flow'] = flows[N][M]
-        else:  # trivial
-            self.ETnoD_PTR_fragments += lavish
+        else:  # trivial case
+            self.I_ETnoD_PTR_fragments += lavish
             N, N_intensity = list(G.nodes.data('intensity'))[0]
             G.add_edge(N, N, flow=N_intensity)
-
+            flows = None
         for N, M, intensity in G.edges.data('flow'):
-            self.broken_bond[M.bp] += intensity
+            self.I_ETD_bond[M.bp] += intensity
+        return flows
 
-    def _analyze_intensities(self):
-        total_broken_bonds = sum(v for k, v in self.broken_bond.items())
-        self.f_probs = {k: v/total_broken_bonds
-                        for k, v in self.broken_bond.items()}
+    def _make_info(self):
+        """Prepare the information on matches."""
+        assert self.I_ETnoD_PTR_fragments >= 0,\
+            "The total intensity of ETnoD and PTR on fragments should be non-negative.\
+            But it equals {}".format(self.I_ETnoD_PTR_fragments)
 
+        self.I_ETD = sum(v for k, v in self.I_ETD_bond.items())
+        self.I_reactions = self.I_ETnoD + self.I_PTR + self.I_ETD
+        self.I_unreacted_precursor = self.I_ETnoD_PTR_precursor[0,0]
+        self.I_ETD_ETnoD_PTR = self.I_ETnoD + self.I_PTR + self.I_ETD
+        # P_ = Probability
+        self.P_bond = {k: v/self.I_ETD for k, v in self.I_ETD_bond.items()}
+        self.P_reaction = self.I_reactions / (self.I_reactions + self.I_unreacted_precursor)
+        self.P_fragmentation = self.I_ETD / self.I_reactions
+        self.P_ETD = self.I_ETD / self.I_ETD_ETnoD_PTR
+        self.P_ETnoD = self.I_ETnoD / self.I_ETD_ETnoD_PTR
+        self.P_PTR = self.I_PTR / self.I_ETD_ETnoD_PTR
+
+    def get_probabilities(self):
+        return {k[2:]: v for k, v in self.__dict__.items() if k[0:2] == 'P_'}
+
+    def get_intensities(self):
+        return {k[2:]: v for k, v in self.__dict__.items() if k[0:2] == 'I_'}
 
     def _match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""
-        self.lavish = 0  # total intensity of all lavish pairings
-        self.ETD = 0     # total intensity of ETD
-        self.ETnoD_PTR_fragments = 0 # total intensity of reactions on fragments
-        self.broken_bond = Counter()
+        self.flows = []
         for G in connected_components(self.graph):
-            self._optimize(G)
+            self.flows.append(self._optimize(G))
+

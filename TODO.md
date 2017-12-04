@@ -9,15 +9,16 @@
 * add assertions to read_mzxml_spectrum
 * Replace the some arguments for MassTodonize with dictionaries.
     * e.g. solver_args, deconvolutor_args
-* Replace the current ubiquitin dataset with one that is not corrupted
-    * this one has an ever growing intensity, for some reason.
-* The regular expression needs to cope with C100H-200 just in case.
-* Add drawing procedures for:
+* Replace ubiquitin dataset
+    * now, the intensity if monotonically increasing
+* RE must parse H-200 -> {'H': -200}
+* Drawing of
     * spectra
-    * deconvoluted problems
+    * deconvolion
 
 # elegant
-* Automate the setting up of the devel version.
+* Automate devel set up
+* Get lavish estimates
 
 # Don't forget
 * The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()
