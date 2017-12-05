@@ -4,7 +4,7 @@ from pyteomics import mzxml  # >= 3.41
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.Constants import eps
-# from MassTodonPy.Parsers.Paths import parse_path
+from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
 
 # TODO add checks about the MS number
@@ -38,7 +38,7 @@ def read_mz_file(path,
             spectrum = ExperimentalSpectrum(spectrum['m/z array'],
                                             spectrum['intensity array'])
             spectrum.trim_intensity(intensity_cut_off)
-            spectrum.round_masses(mz_precision)
+            spectrum.round_mz(mz_precision)
             yield spectrum
 
 
@@ -69,7 +69,7 @@ def read_txt_file(path,
             intensities.append(float(line[1]))
     spectrum = ExperimentalSpectrum(mzs, intensities)
     spectrum.trim_intensity(intensity_cut_off)
-    spectrum.round_masses(mz_precision)
+    spectrum.round_mz(mz_precision)
     return spectrum
 
 

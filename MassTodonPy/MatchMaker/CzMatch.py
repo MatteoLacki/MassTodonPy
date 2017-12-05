@@ -42,5 +42,5 @@ class CzMatch(SimpleCzMatch):
 
     def _optimize(self, G):
         if len(G) > 1:
-            pass            
+            passycon            
 
