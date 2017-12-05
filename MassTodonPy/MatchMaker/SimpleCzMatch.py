@@ -1,34 +1,14 @@
-# -*- coding: utf-8 -*-
-#
-#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
-#
-#   This file is part of MassTodon.
-#
-#   MassTodon is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
-#   Version 3.
-#
-#   MassTodon is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-#
-#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
-#   Version 3 along with MassTodon.  If not, see
-#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
 from __future__ import absolute_import, division, print_function
 from collections import Counter, namedtuple
-from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
-from future.builtins import super
 import networkx as nx
 from networkx import connected_component_subgraphs as connected_components
 
 
-BaseNode = namedtuple('N', ['type', 'no', 'bp', 'q'])
+SimpleNode = namedtuple('N', ['type', 'no', 'bp', 'q'])
 
 # TODO: instantiate all reported variables in the class init
-class Base_cz_match(Counter):
-    """Base class for matching c and z ions' intensities.
+class SimpleCzMatch(object):
+    """Match c and z ions' intensities neglecting the quenched charge.
 
     Parameters
     ==========
@@ -43,7 +23,7 @@ class Base_cz_match(Counter):
     def __init__(self,
                  results,
                  precursor,
-                 minimal_intensity=100.0):
+                 minimal_intensity=100.):
         self.results = results
         self.precursor = precursor
         self.minimal_intensity = minimal_intensity
@@ -55,7 +35,7 @@ class Base_cz_match(Counter):
         self.I_ETnoD_PTR_precursor = Counter()  # len(ETnoD), len(PTR) -> Intensity
         self.I_ETnoD_PTR_fragments = 0
         self.I_lavish = 0
-        self._get_graph()
+        self._make_graph()
         self._match()
         self._make_info()
 
@@ -68,26 +48,26 @@ class Base_cz_match(Counter):
                         mol = mol['molecule']
                         yield mol, estimate
 
-    def _get_node(self, molecule):
-        """Define what should be hashed as graph node."""
+    def _get_node_info(self, molecule):
         mol_type = molecule.name[0]
         no = int(molecule.name[1:])
         if mol_type is 'c':
             bp = int(molecule.name[1:])
         else:
             bp = len(self.precursor.fasta) - int(molecule.name[1:])
-        return BaseNode(mol_type, no, bp, molecule.q)
+        return mol_type, no, bp, molecule.q, molecule.g
 
-    def _add_edges_to_graph(self):
-        """Add edges between c and z fragments."""
-        for C in self.graph:
-            if C.type is 'c':
-                for Z in self.graph:
-                    if Z.type is 'z':
-                        if C.bp is Z.bp and C.q + Z.q < self.precursor.q:
-                            self.graph.add_edge(C, Z)
+    def _get_node(self, molecule):
+        """Define what should be hashed as graph node."""
+        mol_type, no, bp, q, g = self._get_node_info(molecule)
+        return SimpleNode(mol_type, no, bp, q)
 
-    def _get_graph(self):
+    def _add_edge(self, C, Z):
+        """Add edge between a 'c' fragment and a 'z' fragment."""
+        if C.bp is Z.bp and C.q + Z.q < self.precursor.q:
+            self.graph.add_edge(C, Z)    
+
+    def _make_graph(self):
         """Prepare the matching graph."""
         Q = self.precursor.q
         self.graph = nx.Graph()
@@ -101,7 +81,11 @@ class Base_cz_match(Counter):
                 if not frag in self.graph:
                     self.graph.add_node(frag, intensity=0)
                     self.graph.node[frag]['intensity'] += estimate
-        self._add_edges_to_graph()
+        for C in self.graph:
+            if C.type is 'c':
+                for Z in self.graph:
+                    if Z.type is 'z':
+                        self._add_edge(C, Z)
 
     def _optimize(self, G):
         """Match the intensities in a cluster."""

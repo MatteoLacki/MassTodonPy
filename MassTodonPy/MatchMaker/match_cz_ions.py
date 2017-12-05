@@ -1,21 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
-#
-#   This file is part of MassTodon.
-#
-#   MassTodon is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
-#   Version 3.
-#
-#   MassTodon is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-#
-#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
-#   Version 3 along with MassTodon.  If not, see
-#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
 from __future__ import absolute_import, division, print_function
 from collections import Counter
 from future.builtins import super
@@ -260,18 +242,17 @@ class czMatchMakerIntermediate(czMatchMaker):
         return bP
 
     def add_edges_to_graph(self):
-        Q = self.precursor.q
         for Ctype, qC, gC in self.graph: # add c-z edges
                 if Ctype[0]=='c':
                     for Ztype, qZ, gZ in self.graph:
                         if Ztype[0]=='z':
                             bpC = self.get_break_point(Ctype)
                             bpZ = self.get_break_point(Ztype)
-                            if bpC==bpZ and qC + qZ + gC + gZ < Q:
+                            if bpC is bpZ and qC + qZ + gC + gZ < self.precursor.q:
                                 ETnoD_cnt, PTR_cnt = self.etnod_ptr_on_c_z_pairing( qC, gC, qZ, gZ )
                                 self.graph.add_edge( (Ctype,qC,gC), (Ztype,qZ,gZ), ETnoD=ETnoD_cnt, PTR=PTR_cnt )
 
-    def optimize(self):
+    def optimize(self, G):
         if len(G) > 1:
             Jsum = sum( G.node[N]['intensity'] for N in G)
             bP = self.get_break_point( next(G.nodes_iter())[0])
