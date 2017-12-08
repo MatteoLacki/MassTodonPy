@@ -15,6 +15,9 @@
 * Drawing of
     * spectra
     * deconvolion
+* Cannot pass different non-default args to mol.isotopologues()
+    * e.g. mol.isotopologues(5, .99) seems to loop like hell.
+    * might be because of some issues with aggregation.
 
 # elegant
 * Automate devel set up

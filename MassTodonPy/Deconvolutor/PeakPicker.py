@@ -30,10 +30,44 @@ def get_deconvolution_graphs(molecules,
                              mz_tol=.05,
                              min_prob_per_molecule=.7,
                              joint_probability=.999,
-                             mz_precision=3):
-    """Get the sequence of deconvolution problems."""
+                             mz_precision=3,
+                             **mz_tol_args):
+    """Get the sequence of deconvolution problems.
+
+    Parameters
+    ==========
+    molecules : iterable
+        An iterable of the Molecule objects.
+    spectrum : ExperimentalSpectrum
+        An instance of the ExperimentalSpectrum class.
+    mz_tol : float or function
+        The tolerance in the m/z axis.
+        Ultimately, we change it to a function mz_tol(mz),
+        that reports the left and right ends of the tolerance
+        interval, that you can provide yourself.
+        The function takes as input 'mz' and outputs a tuple '(mz_L, mz_R)'.
+        If mz_tol was a number, the function we prepare outputs
+        '(mz - mz_tol, mz + mz_tol)'.
+    min_prob_per_molecule : float
+        The minimal probability an envelope has to scoop
+        to be included in the deconvolution graph.        
+    joint_probability : float
+        The joint probability threshold for generating
+        theoretical isotopic distributions.
+    mz_precision : int
+        The number of digits obtained when rounding the m/z values.
+    mz_tol_args :
+        optional arguments passed to the mz_tol function.
+
+    """
     graph = nx.Graph()
     I_cnt = 0
+    if isinstance(mz_tol, float):
+        _mz_tol = mz_tol
+        def mz_tol(mz, **mz_tol_args):
+            """Calculates the tolerance interval around m/z."""
+            return (mz - _mz_tol, mz + _mz_tol)
+
     for M_cnt, mol in enumerate(molecules):
         M = 'M' + str(M_cnt)
         # the tree might be included in the graph
@@ -47,9 +81,8 @@ def get_deconvolution_graphs(molecules,
             I_cnt += 1
             tree.add_node(I, mz=mz_I, probability=prob)
             tree.add_edge(M, I)
-            for E_cnt, mz_E, intensity in spectrum[mz_I - mz_tol,
-                                                   mz_I + mz_tol,
-                                                   True]:
+            mz_L, mz_R = mz_tol(mz_I, **mz_tol_args)
+            for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:
                 E = 'E' + str(E_cnt)
                 tree.add_node(E, mz=mz_E, intensity=intensity)
                 tree.add_edge(I, E)

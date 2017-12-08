@@ -26,7 +26,7 @@ class CzMatch(SimpleCzMatch):
         """
         self.I_ETnoD_fragments = 0
         self.I_PTR_fragments = 0
-        super.__init__(results, precursor, minimal_intensity)
+        super().__init__(results, precursor, minimal_intensity)
 
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""
@@ -35,12 +35,24 @@ class CzMatch(SimpleCzMatch):
 
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""
-        if C.bp is Z.bp and C.q + Z.q + C.g + Z.g < self.precursor.q:
+        # N_PTR = precursor.q - 1 - C.q - Z.q - C.g - Z.g
+        #   N_PTR >= 0
+        #       N_PTR = precursor.q - 1 - C.q - Z.q - C.g - Z.g
+        #       precursor.q - 1 - C.q - Z.q - C.g - Z.g >= 0
+        #       precursor.q > C.q + Z.q + C.g + Z.g
+        #   N_PTR <= precursor.q - 1
+        #       C.q + Z.q + C.g + Z.g >= 0  # automatically
+        # N_ETnoD = C.g + Z.g
+        #   N_ETnoD >= 0
+        #       C.g + Z.g >= 0              # automatically
+        #   N_ETnoD < precursor.q
+        #       C.g + Z.g < precursor.q,
+        #       but
+        #       C.q + Z.q + C.g + Z.g < precursor.q
+        if C.bp == Z.bp and C.q + Z.q + C.g + Z.g < self.precursor.q:
             ETnoD = C.g + Z.g
             PTR = self.precursor.q - 1 - C.g - Z.g - C.q - Z.q
             self.graph.add_edge(C, Z, ETnoD=ETnoD, PTR=PTR)
 
-    def _optimize(self, G):
-        if len(G) > 1:
-            passycon            
-
+    def _make_info(self):
+        pass

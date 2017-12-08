@@ -8,7 +8,7 @@ D = read_table(path_to_csv, col_names = F)
 colnames(D) = c('mz', 'intensity')
 D
 
-
+D %>% filter(mz > 1192, mz < 1195)
 
 base_plot = 
   figure(width=900, height=500, title="Mass Spectrum") %>%
@@ -19,7 +19,8 @@ base_plot =
     ybottom = 0,
     ytop    = intensity,
     hover   = "m/z = @mz | intensity = @intensity",
-    color   = 'black'
-  ) %>% 
+    color   = 'black') %>% 
   x_axis(label = "m/z") %>%
   y_axis(label = "Intensity")
+
+base_plot

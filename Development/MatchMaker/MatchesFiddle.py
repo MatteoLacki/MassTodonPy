@@ -14,8 +14,8 @@ from MassTodonPy.MatchMaker.RegularizedCzMatch import RegularizedCzMatch
 # %%time
 mol = get_dataset('substanceP') # adjust the spectrum
 mols = list(mol.precursor.molecules())
-D = list(deconvolve(mols, mol.spectrum))
 
+D = list(deconvolve(mols, mol.spectrum))
 results = [d.report() for d in D]
 res = results[0]
 M = res['alphas'][0]
@@ -25,7 +25,11 @@ M = res['alphas'][0]
 # matches.get_intensities()
 
 matches = CzMatch(results, mol.precursor)
-matches.graph.nodes(data=1)
-matches.graph.edges(data=1)
+matches.get_probabilities()
+matches.get_intensities()
+
+
+# matches.graph.nodes(data=1)
+# matches.graph.edges(data=1)
 # matches.get_probabilities()
 # matches.get_intensities()

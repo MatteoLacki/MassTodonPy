@@ -28,5 +28,6 @@ for mz, intensity in spectrum[600, 800]:
 path_to_csv = '/Users/matteo/Documents/MassTodon/MassTodonPy/Development/Bokeh/H4-qb.csv'
 with open(path_to_csv, 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    # writer.writerow(['mz', 'intensity'])
     for mz, intensity in spectrum:
         writer.writerow([mz, intensity])
