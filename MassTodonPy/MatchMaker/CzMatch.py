@@ -55,4 +55,6 @@ class CzMatch(SimpleCzMatch):
             self.graph.add_edge(C, Z, ETnoD=ETnoD, PTR=PTR)
 
     def _make_info(self):
-        pass
+        """Prepare the information on matches."""
+        super()._make_info()
+        self.I_ETnoD_bond = Counter()

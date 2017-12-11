@@ -65,7 +65,7 @@ class SimpleCzMatch(object):
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""
         if C.bp is Z.bp and C.q + Z.q < self.precursor.q:
-            self.graph.add_edge(C, Z)    
+            self.graph.add_edge(C, Z)
 
     def _make_graph(self):
         """Prepare the matching graph."""
@@ -88,7 +88,10 @@ class SimpleCzMatch(object):
                         self._add_edge(C, Z)
 
     def _optimize(self, G):
-        """Match the intensities in a cluster."""
+        """Match the intensities in a cluster.
+
+        Decorates the self.graph with flow values.
+        """
         Q = self.precursor.q
         # lavish: all fragments lose cofragments
         lavish = sum((Q - 1 - N.q) * I for N, I in
@@ -107,33 +110,33 @@ class SimpleCzMatch(object):
                         FG.add_node(Z)
                         FG.add_edge(C, Z)
                         FG.add_edge(Z, 'T', capacity=Z_intensity)
+            max_flow_min_cost = nx.max_flow_min_cost(FG, 'S', 'T')
             total_flow, flows = nx.maximum_flow(FG, 'S', 'T')
             self.I_ETnoD_PTR_fragments += lavish - (Q - 1) * total_flow
             for N in G:
-                G.add_edge(N, N)
+                self.graph.add_edge(N, N)
             # no double count: flows = { start: {end: {value}, .. }, .. }
             for N in flows:
                 for M in flows[N]:
                     if N is 'S':  # M is a C fragment
-                        G[M][M]['flow'] = G.node[M]['intensity'] - flows[N][M]
+                        self.graph[M][M]['flow'] = G.node[M]['intensity'] - flows[N][M]
                     elif M is 'T':  # N is a Z fragment
-                        G[N][N]['flow'] = G.node[N]['intensity'] - flows[N][M]
+                        self.graph[N][N]['flow'] = G.node[N]['intensity'] - flows[N][M]
                     else:  # N is a C and M a Z fragment
-                        G[N][M]['flow'] = flows[N][M]
-        else:  # trivial case
+                        self.graph[N][M]['flow'] = flows[N][M]
+        else:  # trivial
             self.I_ETnoD_PTR_fragments += lavish
             N, N_intensity = list(G.nodes.data('intensity'))[0]
-            G.add_edge(N, N, flow=N_intensity)
-            flows = None
-        for N, M, intensity in G.edges.data('flow'):
-            self.I_ETD_bond[M.bp] += intensity
-        return flows
+            self.graph.add_edge(N, N, flow=N_intensity)
 
     def _make_info(self):
         """Prepare the information on matches."""
         assert self.I_ETnoD_PTR_fragments >= 0,\
             "The total intensity of ETnoD and PTR on fragments should be non-negative.\
             But it equals {}".format(self.I_ETnoD_PTR_fragments)
+
+        for N, M, intensity in self.graph.edges.data('flow'):
+            self.I_ETD_bond[M.bp] += intensity
 
         self.I_ETD = sum(v for k, v in self.I_ETD_bond.items())
         self.I_reactions = self.I_ETnoD + self.I_PTR + self.I_ETD
@@ -155,7 +158,5 @@ class SimpleCzMatch(object):
 
     def _match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""
-        self.flows = []
         for G in connected_components(self.graph):
-            self.flows.append(self._optimize(G))
-
+            self._optimize(G)

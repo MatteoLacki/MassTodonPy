@@ -81,8 +81,8 @@ def get_deconvolution_graphs(molecules,
             I_cnt += 1
             tree.add_node(I, mz=mz_I, probability=prob)
             tree.add_edge(M, I)
-            mz_L, mz_R = mz_tol(mz_I, **mz_tol_args)
-            for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:
+            mz_L, mz_R = mz_tol(mz_I, **mz_tol_args)  # tolerance interval
+            for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:  # True - get E_cnt additionally to m/z and intensity.
                 E = 'E' + str(E_cnt)
                 tree.add_node(E, mz=mz_E, intensity=intensity)
                 tree.add_edge(I, E)
