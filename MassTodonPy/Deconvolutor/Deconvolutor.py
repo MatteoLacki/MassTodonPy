@@ -18,15 +18,27 @@
 from __future__ import absolute_import
 
 from MassTodonPy.Deconvolutor.DeconvolutionProblem import DeconvolutionProblem
-from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_graphs
+from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_problems as get_graphs
 
 
 def deconvolve(molecules,
                spectrum,
-               # processes=0,
-               **deconvolution_args):
-    """Solve deconvolution problems."""
-    for graph in get_deconvolution_graphs(molecules, spectrum):
-        problem = DeconvolutionProblem(graph, **deconvolution_args)
-        problem.solve()
-        yield problem
+               method="Matteo",
+               isospec_args={},
+               mz_tol_args={},
+               deconvolution_args={},
+               **args):
+    graphs = get_graphs(molecules,
+                        spectrum, 
+                        method,
+                        isospec_args,
+                        mz_tol_args)
+    """Solve the deconvolution problems."""
+    for graph in graphs:
+        if method == 'Matteo':
+            problem = DeconvolutionProblem(graph, **deconvolution_args)
+            problem.solve()
+            yield problem
+        else:
+            yield graph
+        

@@ -6,26 +6,34 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_graphs
-
+from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_problems
+from MassTodonPy.Deconvolutor.Deconvolutor import deconvolve
 
 # %%time
 mol = get_dataset('substanceP') # adjust the spectrum
-
-
 molecules = list(mol.precursor.molecules())
-support_length = .2
+sigma = 0.01949749
+support_length = 0.1
 
-deconvolution_graph = get_deconvolution_graphs(molecules,
-                                               mol.spectrum,
-                                               mz_tol=support_length/2)
+deconvolution_graph = deconvolve(molecules,
+                                 mol.spectrum,
+                                 mz_tol=support_length/2,
+                                 method='Ciacho_Wanda')
 
-problem = list(deconvolution_graph)
+problems = list(deconvolution_graph)
+
+problems[0].nodes
 
 
+def fun(arg=0, **args):
+    print(arg, args)
 
-problem[0].nodes()
-nx.draw(problem[0], node_labels=True)
+fun(**{'a': 10, 'b': 20})
+
+deconvolve()
+
+problems[0].nodes()
+nx.draw(problems[0], node_labels=True)
 plt.show()
 
 Counter(n[0] for n in problem[0].nodes())

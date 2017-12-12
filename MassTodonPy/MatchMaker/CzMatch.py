@@ -5,7 +5,7 @@ from future.builtins import super
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 
 
-Node = namedtuple('N', ['type', 'no', 'bp', 'q', 'g'])
+Node = namedtuple('node', ['type', 'no', 'bp', 'q', 'g'])
 
 class CzMatch(SimpleCzMatch):
     def __init__(self,
@@ -50,11 +50,39 @@ class CzMatch(SimpleCzMatch):
         #       but
         #       C.q + Z.q + C.g + Z.g < precursor.q
         if C.bp == Z.bp and C.q + Z.q + C.g + Z.g < self.precursor.q:
-            ETnoD = C.g + Z.g
-            PTR = self.precursor.q - 1 - C.g - Z.g - C.q - Z.q
-            self.graph.add_edge(C, Z, ETnoD=ETnoD, PTR=PTR)
+            self.graph.add_edge(C, Z, ETnoD=C.g + Z.g, 
+                                      PTR=self.precursor.q - 1 - C.g - Z.g - C.q - Z.q,
+                                      ETnoD_PTR=self.precursor.q - 1 - C.q - Z.q)
 
-    def _make_info(self):
-        """Prepare the information on matches."""
-        super()._make_info()
+    def _get_intensities(self):
+        """Estimate intensities."""
+        super()._get_intensities()
         self.I_ETnoD_bond = Counter()
+        self.I_PTR_bond = Counter()
+        for N, M, intensity in self.graph.edges.data('flow'):
+            if N is not M:
+                PTR = self.graph[N][M]['PTR']
+                self.I_PTR_bond[M.bp] += PTR * intensity
+                ETnoD = self.graph[N][M]['ETnoD']
+                self.I_ETnoD_bond[M.bp] += ETnoD * intensity
+        self.I_PTR_frags = sum(self.I_PTR_bond.values())
+        self.I_PTR += self.I_PTR_frags
+        self.I_ETnoD_frags = sum(self.I_ETnoD_bond.values())
+        self.I_ETnoD += self.I_ETnoD_frags
+
+    def _get_probabilities(self):
+        """Estimate probabilities."""
+        super()._get_probabilities()
+        if self.I_ETnoD_frags > 0:
+            self.P_ETnoD_bond = {k: v/self.I_ETnoD_frags for k, v in self.I_ETnoD_bond.items()}
+        if self.I_PTR_frags > 0:
+            self.P_PTR_bond = {k: v/self.I_PTR_frags for k, v in self.I_PTR_bond.items()}
+    
+    def _get_branching_ratios(self):
+        """Estimate branching ratios."""
+        super()._get_branching_ratios()
+        if sum(self.I_ETnoD_bond.values()) > 0:
+            self.branching_ratio['branching_ratio_bond'] = {
+                self.I_PTR_bond[k]/I_ETnoD 
+                for k, I_ETnoD in self.I_ETnoD_bond.items()
+                if I_ETnoD > 0}

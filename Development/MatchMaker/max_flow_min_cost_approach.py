@@ -9,16 +9,12 @@ from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 
 mol = get_dataset('substanceP')
 mols = list(mol.precursor.molecules())
-str(mols[0].formula)
-
 D = list(deconvolve(mols, mol.spectrum))
 results = [d.report() for d in D]
-res = results[0]
-M = res['alphas'][0]
 
-# matches = SimpleCzMatch(results, mol.precursor)
-# matches.get_probabilities()
-# matches.get_intensities()
+matches = SimpleCzMatch(results, mol.precursor)
+matches.get_probabilities()
+matches.get_intensities()
 
 
 

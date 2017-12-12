@@ -25,13 +25,11 @@ from networkx import connected_component_subgraphs
 from MassTodonPy.Data.Constants import infinity
 
 
-def get_deconvolution_graphs(molecules,
-                             spectrum,
-                             mz_tol=.05,
-                             min_prob_per_molecule=.7,
-                             joint_probability=.999,
-                             mz_precision=3,
-                             **mz_tol_args):
+def get_deconvolution_problems(molecules,
+                               spectrum,
+                               method='Matteo',
+                               isospec_args={},
+                               mz_tol_args={}):
     """Get the sequence of deconvolution problems.
 
     Parameters
@@ -60,8 +58,8 @@ def get_deconvolution_graphs(molecules,
         optional arguments passed to the mz_tol function.
 
     """
-    graph = nx.Graph()
     I_cnt = 0
+    graph = nx.Graph()
     if isinstance(mz_tol, float):
         _mz_tol = mz_tol
         def mz_tol(mz, **mz_tol_args):
@@ -94,12 +92,28 @@ def get_deconvolution_graphs(molecules,
         if total_prob >= min_prob_per_molecule: # update Deconvolution Graph
             graph.add_nodes_from(tree.nodes(data=True))
             graph.add_edges_from(tree.edges(data=True))
+    
+    if method is 'Matteo':
+        graph = _add_G_remove_E(graph)
+    elif method is 'Ciacho_Wanda':
+        pass
+    else: 
+        raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'")
+    return connected_component_subgraphs(graph)
 
-    # prepare for G nodes
+
+def _add_G_remove_E(graph):
+    """Add groups of experimental peaks to the graph.
+
+    Parameters
+    ==========
+    graph: networkx.Graph()
+        A graph with molecule nodes M, 
+        isotopologue nodes I, and experimental peak nodes E.
+    ."""
     G_intensity = Counter()
     G_min_mz = defaultdict(lambda: infinity)
     G_max_mz = defaultdict(lambda: 0.0)
-
     for E, E_data in graph.nodes(data=True):
         if E[0] is 'E':
             isotopologues = frozenset(graph[E]) # unmutable!
@@ -134,5 +148,5 @@ def get_deconvolution_graphs(molecules,
             new_edges.append((I, G))
     graph.add_nodes_from(new_nodes)
     graph.add_edges_from(new_edges)
+    return graph
 
-    return connected_component_subgraphs(graph)

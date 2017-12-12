@@ -1,12 +1,27 @@
 from __future__ import absolute_import, division, print_function
 from collections import Counter, namedtuple
+from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
 import networkx as nx
 from networkx import connected_component_subgraphs as connected_components
 
+from MassTodonPy.Data.Constants import eps, infinity
 
-SimpleNode = namedtuple('N', ['type', 'no', 'bp', 'q'])
+SimpleNode = namedtuple('simple_node', ['type', 'no', 'bp', 'q'])
 
-# TODO: instantiate all reported variables in the class init
+def diag(val, dim):
+    """Make a sparse identity matrix multiplied by a scalar val."""
+    return spdiag([spmatrix(val,[0],[0]) for i in range(dim)])
+
+def incidence_matrix(graph, row_cnt, col_cnt):
+    """Make a sparse incidence matrix of the graph G."""
+    L = spmatrix([], [], [], size=(row_cnt, col_cnt) )
+    NodesNo = dict([ (N,i) for i,N in enumerate(graph)])
+    for j, (N0, N1) in enumerate(graph.edges()):
+        L[NodesNo[N0],j] = 1
+        L[NodesNo[N1],j] = 1
+    return L
+
+
 class SimpleCzMatch(object):
     """Match c and z ions' intensities neglecting the quenched charge.
 
@@ -24,6 +39,8 @@ class SimpleCzMatch(object):
                  results,
                  precursor,
                  minimal_intensity=100.):
+        solvers.options['show_progress'] = False
+        solvers.options['maxiters'] = 1000
         self.results = results
         self.precursor = precursor
         self.minimal_intensity = minimal_intensity
@@ -37,7 +54,9 @@ class SimpleCzMatch(object):
         self.I_lavish = 0
         self._make_graph()
         self._match()
-        self._make_info()
+        self._get_intensities()
+        self._get_probabilities()
+        self._get_branching_ratios()
 
     def _iter_results(self):
         for res in self.results:
@@ -65,7 +84,11 @@ class SimpleCzMatch(object):
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""
         if C.bp is Z.bp and C.q + Z.q < self.precursor.q:
-            self.graph.add_edge(C, Z)
+            self.graph.add_edge(C, Z, ETnoD_PTR=self.precursor.q-1-C.q-Z.q)
+
+    def _add_self_loop(self, N):
+        """Add edge between a 'c' fragment and a 'z' fragment."""
+        self.graph.add_edge(N, N, ETnoD_PTR=self.precursor.q-1-N.q)
 
     def _make_graph(self):
         """Prepare the matching graph."""
@@ -86,6 +109,8 @@ class SimpleCzMatch(object):
                 for Z in self.graph:
                     if Z.type is 'z':
                         self._add_edge(C, Z)
+        for N in self.graph:
+            self._add_self_loop(N)
 
     def _optimize(self, G):
         """Match the intensities in a cluster.
@@ -94,67 +119,74 @@ class SimpleCzMatch(object):
         """
         Q = self.precursor.q
         # lavish: all fragments lose cofragments
-        lavish = sum((Q - 1 - N.q) * I for N, I in
-                     G.nodes.data('intensity'))
+        lavish = sum((Q - 1 - N.q) * I for N, I in G.nodes.data('intensity'))
         self.I_lavish += lavish
-        if len(G) > 1:  # not trivial
-            FG = nx.DiGraph()
-            FG.add_node('S')  # start
-            FG.add_node('T')  # terminus/sink
-            for C, C_intensity in G.nodes.data("intensity"):
-                if C.type is 'c':
-                    FG.add_node(C)
-                    FG.add_edge('S', C, capacity=C_intensity)
-                    for Z in G[C]:
-                        Z_intensity = G.node[Z]['intensity']
-                        FG.add_node(Z)
-                        FG.add_edge(C, Z)
-                        FG.add_edge(Z, 'T', capacity=Z_intensity)
-            max_flow_min_cost = nx.max_flow_min_cost(FG, 'S', 'T')
-            total_flow, flows = nx.maximum_flow(FG, 'S', 'T')
-            self.I_ETnoD_PTR_fragments += lavish - (Q - 1) * total_flow
-            for N in G:
-                self.graph.add_edge(N, N)
-            # no double count: flows = { start: {end: {value}, .. }, .. }
-            for N in flows:
-                for M in flows[N]:
-                    if N is 'S':  # M is a C fragment
-                        self.graph[M][M]['flow'] = G.node[M]['intensity'] - flows[N][M]
-                    elif M is 'T':  # N is a Z fragment
-                        self.graph[N][N]['flow'] = G.node[N]['intensity'] - flows[N][M]
-                    else:  # N is a C and M a Z fragment
-                        self.graph[N][M]['flow'] = flows[N][M]
-        else:  # trivial
+        if len(G) > 1:
+            intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
+            costs = matrix([float(ETnoD_PTR) for N,M, ETnoD_PTR 
+                            in G.edges.data('ETnoD_PTR')])
+            edges_cnt = G.size()  # number of c-z pairings
+            equalities = incidence_matrix(G, len(intensities), edges_cnt)
+            inequalities = diag(-1.0, edges_cnt)
+            upper_bounds = matrix([0.0] * edges_cnt)
+            primalstart = {}
+            primalstart['x'] = matrix([0.0] * edges_cnt)
+            primalstart['s'] = matrix([eps] * len(upper_bounds))
+            solution = solvers.conelp(c=costs,
+                                      G=inequalities,
+                                      h=upper_bounds,
+                                      A=equalities,
+                                      b=intensities,
+                                      primalstart=primalstart)
+            self.I_ETnoD_PTR_fragments += solution['primal objective']
+            for i, (N, M) in enumerate(G.edges()):
+                self.graph[N][M]['flow'] = solution['x'][i]
+        else:
             self.I_ETnoD_PTR_fragments += lavish
             N, N_intensity = list(G.nodes.data('intensity'))[0]
-            self.graph.add_edge(N, N, flow=N_intensity)
+            self.graph[N][N]['flow'] = N_intensity
 
-    def _make_info(self):
-        """Prepare the information on matches."""
+    def _get_intensities(self):
+        """Estimate intensities."""
+        # I_ = Intensity
         assert self.I_ETnoD_PTR_fragments >= 0,\
             "The total intensity of ETnoD and PTR on fragments should be non-negative.\
             But it equals {}".format(self.I_ETnoD_PTR_fragments)
-
         for N, M, intensity in self.graph.edges.data('flow'):
             self.I_ETD_bond[M.bp] += intensity
-
         self.I_ETD = sum(v for k, v in self.I_ETD_bond.items())
         self.I_reactions = self.I_ETnoD + self.I_PTR + self.I_ETD
         self.I_unreacted_precursor = self.I_ETnoD_PTR_precursor[0,0]
         self.I_ETD_ETnoD_PTR = self.I_ETnoD + self.I_PTR + self.I_ETD
+
+    def _get_probabilities(self):
+        """Estimate probabilities."""
         # P_ = Probability
-        self.P_bond = {k: v/self.I_ETD for k, v in self.I_ETD_bond.items()}
-        self.P_reaction = self.I_reactions / (self.I_reactions + self.I_unreacted_precursor)
-        self.P_fragmentation = self.I_ETD / self.I_reactions
-        self.P_ETD = self.I_ETD / self.I_ETD_ETnoD_PTR
-        self.P_ETnoD = self.I_ETnoD / self.I_ETD_ETnoD_PTR
-        self.P_PTR = self.I_PTR / self.I_ETD_ETnoD_PTR
+        if self.I_ETD > 0:
+            self.P_ETD_bond = {k: v/self.I_ETD for k, v in self.I_ETD_bond.items()}
+        if self.I_reactions + self.I_unreacted_precursor > 0:
+            self.P_reaction = self.I_reactions / (self.I_reactions + self.I_unreacted_precursor)
+        if self.I_reactions > 0:
+            self.P_fragmentation = self.I_ETD / self.I_reactions
+        if self.I_ETD_ETnoD_PTR > 0:
+            self.P_ETD = self.I_ETD / self.I_ETD_ETnoD_PTR
+            self.P_ETnoD = self.I_ETnoD / self.I_ETD_ETnoD_PTR
+            self.P_PTR = self.I_PTR / self.I_ETD_ETnoD_PTR
+
+    def _get_branching_ratios(self):
+        """Estimate branching ratios."""
+        self.branching_ratio = {}
+        if self.I_ETnoD and self.I_PTR:
+            self.branching_ratio['branching_ratio'] = self.I_PTR / self.I_ETnoD
 
     def get_probabilities(self):
         return {k[2:]: v for k, v in self.__dict__.items() if k[0:2] == 'P_'}
 
     def get_intensities(self):
         return {k[2:]: v for k, v in self.__dict__.items() if k[0:2] == 'I_'}
+
+    def get_branching_ratios(self):
+        return self.branching_ratio
 
     def _match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""
