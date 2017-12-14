@@ -7,38 +7,38 @@ PIP_3		= ../MassTodonVEpy3/bin/pip3
 NOSE_2 		= ../MassTodonVEpy2/bin/nosetests
 NOSE_3 		= ../MassTodonVEpy3/bin/nosetests
 
-install_MassTodonPy_2: ## Install MassTodon virtual environment with python2
+masstodon_2: ## Install MassTodon virtual environment with python2
 	virtualenv -p python2 ../MassTodonVEpy2
 	$(PIP_2) install -e .
 	$(PIP_2) install ipykernel
 
-install_MassTodonPy_3:
+masstodon_3:
 	virtualenv -p python3 ../MassTodonVEpy3
 	$(PIP_3) install -e .
 	$(PIP_3) install ipykernel
 
-reinstall_2: ## reinstall MassTodonPy under python2
+masstodon_2_again: ## reinstall MassTodonPy under python2
 	$(PIP2) uninstall -y MassTodonPy
 	pip2 install -e .
 
-reinstall_3: ## reinstall MassTodonPy under python3
+masstodon_3_again: ## reinstall MassTodonPy under python3
 	$(PIP3) uninstall -y MassTodonPy
 	pip3 install -e .
 
-example_call_2: ## run an example session of the algorithm
+call_2: ## run an example session of the algorithm
 	$(PYTHON_2) ./bin/masstodon_example_call
 
-example_call_3: ## run an example session of the algorithm
+call_3: ## run an example session of the algorithm
 	$(PYTHON_3) ./bin/masstodon_example_call
 
-run_tests:  ## run all possible tests.
+tests:  ## run all possible tests.
 	$(NOSE_2) MassTodonPy
 	$(NOSE_3) MassTodonPy
 
-clean_ve_2: ## remove virtual environment with python2
+clean_masstodon_2: ## remove virtual environment with python2
 	rm -rf ../MassTodonVEpy2
 
-clean_ve_3: ## remove virtual environment with python2
+clean_masstodon_3: ## remove virtual environment with python2
 	rm -rf ../MassTodonVEpy3
 
 

@@ -23,15 +23,16 @@ import networkx as nx
 from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
-
+from MassTodonPy.Deconvolutor.DeconvolutionProblem import DeconvolutionProblem
 
 def get_deconvolution_problems(molecules,
                                spectrum,
                                method='Matteo',
                                mz_tol=.05,
                                min_prob_per_molecule=.7,
-                               isospec_args={},
-                               mz_tol_args={}):
+                               joint_probability=.999,
+                               mz_precision=3,
+                               deconvolution_args={}):
     """Get the sequence of deconvolution problems.
 
     Parameters
@@ -40,14 +41,15 @@ def get_deconvolution_problems(molecules,
         An iterable of the Molecule objects.
     spectrum : ExperimentalSpectrum
         An instance of the ExperimentalSpectrum class.
+    method: string
+        Either 'Matteo' or 'Wanda_Ciacho'.
     mz_tol : float or function
         The tolerance in the m/z axis.
-        Ultimately, we change it to a function mz_tol(mz),
-        that reports the left and right ends of the tolerance
-        interval, that you can provide yourself.
-        The function takes as input 'mz' and outputs a tuple '(mz_L, mz_R)'.
-        If mz_tol was a number, the function we prepare outputs
-        '(mz - mz_tol, mz + mz_tol)'.
+        Ultimately turned into a function mz_tol(mz),
+        reporting the tolerance interval - a tuple '(mz_L, mz_R)',
+        where mz_L = mz - mz_tol and mz_R = mz + mz_tol.
+        Accepts user-provided functions too: in that case, the header should be
+        'def mz_tol(mz):' and it should return a tuple '(mz_L, mz_R)'.
     min_prob_per_molecule : float
         The minimal probability an envelope has to scoop
         to be included in the deconvolution graph.        
@@ -56,15 +58,15 @@ def get_deconvolution_problems(molecules,
         theoretical isotopic distributions.
     mz_precision : int
         The number of digits obtained when rounding the m/z values.
-    mz_tol_args :
-        optional arguments passed to the mz_tol function.
+    deconvolution_args : dictionary
+        A dictionary of values for the deconvolution methods.
 
     """
     I_cnt = 0
     graph = nx.Graph()
     if isinstance(mz_tol, float):
         _mz_tol = mz_tol
-        def mz_tol(mz, **mz_tol_args):
+        def mz_tol(mz):
             """Calculates the tolerance interval around m/z."""
             return (mz - _mz_tol, mz + _mz_tol)
 
@@ -75,12 +77,12 @@ def get_deconvolution_problems(molecules,
         tree.add_node(M, molecule=mol)
         # this is the reverse mapping between molecules and the graph
         mol.graph_tag = M
-        for mz_I, prob in mol.isotopologues(**isospec_args):
+        for mz_I, prob in mol.isotopologues(joint_probability, mz_precision):
             I = 'I' + str(I_cnt)
             I_cnt += 1
             tree.add_node(I, mz=mz_I, probability=prob)
             tree.add_edge(M, I)
-            mz_L, mz_R = mz_tol(mz_I, **mz_tol_args)  # tolerance interval
+            mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:  # True - get E_cnt additionally to m/z and intensity.
                 E = 'E' + str(E_cnt)
                 tree.add_node(E, mz=mz_E, intensity=intensity)
@@ -96,11 +98,17 @@ def get_deconvolution_problems(molecules,
     
     if method is 'Matteo':
         graph = _add_G_remove_E(graph)
+        graphs = connected_component_subgraphs(graph) 
+        for graph in graphs:
+            problem = DeconvolutionProblem(graph, **deconvolution_args)
+            problem.solve()
+            yield problem
     elif method is 'Ciacho_Wanda':
-        pass
+        graphs = connected_component_subgraphs(graph)
+        for graph in graphs:
+            yield graph
     else: 
-        raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'")
-    return connected_component_subgraphs(graph)
+        raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
 
 
 def _add_G_remove_E(graph):

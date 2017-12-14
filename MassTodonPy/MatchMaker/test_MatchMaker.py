@@ -5,7 +5,6 @@ import unittest
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 from MassTodonPy.MatchMaker.CzMatch import CzMatch
-# from MassTodonPy.MatchMaker.RegularizedCzMatch import RegularizedCzMatch
 from MassTodonPy.MatchMaker.match_cz_ions import czMatchMakerIntermediate
 from MassTodonPy.MatchMaker.match_cz_ions import czMatchMakerAdvanced
 
@@ -64,34 +63,41 @@ class TestPeakPicker(unittest.TestCase):
         self.assertEqual(expected_nodes, obtained_nodes)
 
         expected_edges = set(frozenset(e) for e in
-                             [[('c4', 1), ('z7', 1)],
-                              [('c5', 1), ('z6', 1)],
-                              [('c6', 1), ('z5', 1)]])
+                     [[('c4', 1), ('z7', 1)],
+                      [('c5', 1), ('z6', 1)],
+                      [('c6', 1), ('z5', 1)],
+                      [('c4', 1), ('c4', 1)],
+                      [('c5', 1), ('c5', 1)],
+                      [('c6', 1), ('c6', 1)],
+                      [('z5', 1), ('z5', 1)],
+                      [('z6', 1), ('z6', 1)],
+                      [('z7', 1), ('z7', 1)]])
+
         obtained_edges = set(frozenset([node_to_tuple(n),
                                         node_to_tuple(m)])
                              for n, m in matches.graph.edges)
         self.assertEqual(expected_edges, obtained_edges)
 
-    def test_intermediate_matchmaker(self):
-        print("Testing basic matchmaker: graph creation.")
-        matches = czMatchMakerIntermediate(self.results,
-                                           self.mol.precursor)
+    # def test_intermediate_matchmaker(self):
+    #     print("Testing basic matchmaker: graph creation.")
+    #     matches = czMatchMakerIntermediate(self.results,
+    #                                        self.mol.precursor)
 
-        expected_nodes = set([('c4', 1, 0), ('z7', 1, 0), ('c5', 1, 0),
-                              ('z6', 1, 0), ('c6', 1, 0), ('z5', 1, 0)])
-        obtained_nodes = set(matches.graph.nodes)
-        self.assertEqual(expected_nodes, obtained_nodes)
+    #     expected_nodes = set([('c4', 1, 0), ('z7', 1, 0), ('c5', 1, 0),
+    #                           ('z6', 1, 0), ('c6', 1, 0), ('z5', 1, 0)])
+    #     obtained_nodes = set(matches.graph.nodes)
+    #     self.assertEqual(expected_nodes, obtained_nodes)
 
-        expected_edges = set(frozenset(e) for e in
-                            [[('c4', 1, 0), ('z7', 1, 0)],
-                             [('c5', 1, 0), ('z6', 1, 0)],
-                             [('c6', 1, 0), ('z5', 1, 0)]])
-        obtained_edges = set(frozenset(e) for e in matches.graph.edges)
-        self.assertEqual(expected_edges, obtained_edges)
+    #     expected_edges = set(frozenset(e) for e in
+    #                         [[('c4', 1, 0), ('z7', 1, 0)],
+    #                          [('c5', 1, 0), ('z6', 1, 0)],
+    #                          [('c6', 1, 0), ('z5', 1, 0)]])
+    #     obtained_edges = set(frozenset(e) for e in matches.graph.edges)
+    #     self.assertEqual(expected_edges, obtained_edges)
 
-    def test_advanced_matchmaker(self):
-        print("Testing advanced matchmaker: graph creation.")
-        pass
+    # def test_advanced_matchmaker(self):
+    #     print("Testing advanced matchmaker: graph creation.")
+    #     pass
 
 if __name__ == "__main__":
     unittest.main()

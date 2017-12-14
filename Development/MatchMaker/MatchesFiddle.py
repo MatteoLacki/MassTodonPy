@@ -1,22 +1,19 @@
 %load_ext autoreload
 %autoreload 2
 
+from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
 import matplotlib.pyplot as plt
 import networkx as nx
 from networkx import connected_component_subgraphs as connected_components
-from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
+import numpy as np
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.Data.Constants import eps
-from MassTodonPy.Deconvolutor.Deconvolutor import deconvolve
 from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch, diag, incidence_matrix
 from MassTodonPy.MatchMaker.CzMatch import CzMatch
 from MassTodonPy.MatchMaker.RegularizedCzMatch import RegularizedCzMatch
 
-# %%time
-
-# twice bigger substanceP molecule.
 
 mol = get_dataset('substanceP') # adjust the spectrum
 mol.precursor.q = 4
@@ -56,10 +53,9 @@ results = [
      'status': 'optimal'}]
 
 simple_matches = SimpleCzMatch(results, mol.precursor)
-
-simple_matches.get_intensities()
-simple_matches.get_probabilities()
-simple_matches.get_branching_ratios()
+# simple_matches.get_intensities()
+# simple_matches.get_probabilities()
+# simple_matches.get_branching_ratios()
 
 matches = CzMatch(results, mol.precursor)
 matches.get_intensities()
@@ -67,9 +63,9 @@ matches.get_probabilities()
 matches.get_branching_ratios()
 
 Q = matches.precursor.q
-G = matches.graph
+G = matches.graph.copy()
 
-import numpy as np
+
 # lavish: all fragments lose cofragments
 lavish = sum((Q - 1 - N.q) * I for N, I in G.nodes.data('intensity'))
 node_intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
@@ -79,7 +75,7 @@ equalities = incidence_matrix(G, len(node_intensities), edges_cnt)
 inequalities = diag(-1.0, edges_cnt)
 upper_bounds = matrix([0.0] * edges_cnt)
 
-print(costs, equalities, node_intensities, inequalities, upper_bounds)
+# print(costs, equalities, node_intensities, inequalities, upper_bounds)
 primalstart = {}
 primalstart['x'] = matrix([0.0] * edges_cnt)
 primalstart['s'] = matrix([eps] * len(upper_bounds))
@@ -90,101 +86,53 @@ solution = solvers.conelp(c=costs,
                           A=equalities,
                           b=node_intensities,
                           primalstart=primalstart)
-solution['primal objective']
 
-equalities
+# Studying the max and min PTR and ETnoD on fragments
 
 # removing self-loops
 G.remove_edges_from([(N, M) for N, M in G.edges if N is M])
+# removing trivial cases
 G.remove_nodes_from([N for N, deg in G.degree if not deg])
 
-G.degree
+if len(G) > 0:
+    PTR_cnts = matrix([float(PTR) for N,M, PTR in G.edges.data('PTR')])
+    ETnoD_cnts = matrix([float(ETnoD) for N,M, ETnoD in G.edges.data('ETnoD')])
 
-for N, deg in G.degree():
-    print(N, deg)
-lavish = sum((Q - 1 - N.q) * I for N, I in G.nodes.data('intensity'))
-node_intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
-PTR_costs = matrix([float(PTR) for N,M, PTR in G.edges.data('PTR')])
-edges_cnt = G.size()
+    no_ETnoD = all(ETnoD == 0 for ETnoD in ETnoD_cnts)
+    no_PTR = all(PTR == 0 for PTR in PTR_cnts)
+    min_reaction_intensity = sum(I for N, M, I in G.edges.data('flow'))
 
+    if no_ETnoD:
+        PTR_min = PTR_max = min_reaction_intensity
+        ETnoD_min = ETnoD_max = 0.0
+    elif no_PTR:
+        ETnoD_min = ETnoD_max = min_reaction_intensity
+        PTR_min = PTR_max = 0.0
+    else:
+        node_intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
+        edges_cnt = G.size()
+        inequalities = sparse([incidence_matrix(G, len(node_intensities), edges_cnt),
+                               diag(-1.0, edges_cnt)])
+        inequality_constraints = matrix([node_intensities, matrix([0.0] * edges_cnt)])
+        min_reaction_coef = matrix([float(ETnoD_PTR) for N,M, ETnoD_PTR in
+                                    G.edges.data('ETnoD_PTR')]).T
+        primalstart['x'] = matrix([0.0] * edges_cnt)
+        primalstart['s'] = matrix([eps] * len(inequality_constraints))
+        min_PTR = solvers.conelp(c=PTR_cnts,
+                                 G=inequalities,
+                                 h=inequality_constraints,
+                                 A=min_reaction_coef,
+                                 b=matrix(min_reaction_intensity),
+                                 primalstart=primalstart)
+        PTR_min = min_PTR['x']
+        ETnoD_max = min_reaction_intensity - PTR_min
+        max_PTR = solvers.conelp(c=-PTR_cnts,
+                                 G=inequalities,
+                                 h=inequality_constraints,
+                                 A=min_reaction_coef,
+                                 b=min_reaction_intensity,
+                                 primalstart=primalstart)
+        PTR_max = max_PTR['x']
+        ETnoD_min = min_reaction_intensity - PTR_max
 
-inequalities = sparse([incidence_matrix(G, len(node_intensities), edges_cnt),
-                       diag(-1.0, edges_cnt)])
-upper_bounds = matrix([0.0] * edges_cnt)
-inequality_constraints = matrix([node_intensities, upper_bounds])
-
-
-
-
-
-
-
-print(node_intensities)
-
-
-
-
-
-
-
-
-costs_no_self_loops = matrix([float(PTR) for N, M, PTR in
-                              G.edges.data('PTR') if not N is M])
-print(costs_no_self_loops)
-node_intensities_no_self_loops = matrix([float(I) for N, I
-                                         in G.nodes.data('intensity')
-                                         if G.degree[N] > 2])
-
-node_intensities_no_self_loops
-
-MR_equalities = sparse([equalities, costs.T])
-print(equalities, MR_equalities)
-ETnoD_costs = matrix([float(ETnoD) for N,M, ETnoD_PTR in G.edges.data('ETnoD_PTR')])
-
-
-
-
-
-
-
-
-
-
-for i, (N, M) in enumerate(G.edges()):
-    G[N][M]['flow'] = solution['x'][i]
-
-
-
-
-
-G.edges.data('flow')
-x = np.array(solution['x'])
-np.array(solution['x'][0:4]).sum()
-
-from itertools import islice
-
-
-
-for N, M, ETnoD_PTR in islice(G.edges.data('ETnoD_PTR'), 4):
-    print(N, M, ETnoD_PTR, G[N][M]['flow'])
-sum(ETnoD_PTR * G[N][M]['flow'] for N, M, ETnoD_PTR in islice(G.edges.data('ETnoD_PTR'), 4))
-
-
-print(x[0:4])
-print(solution['x'][0:4].T * matrix([1,2,0,1]))
-
-G.edges.data('ETnoD_PTR')
-print(np.round(solution['x']))
-sum(I)
-
-
-
-
-
-# matches.get_probabilities()
-# matches.get_intensities()
-# matches = CzMatch(results, mol.precursor)
-# matches.get_probabilities()
-# matches.get_intensities()
-#
-# matches.graph.edges.data('flow')
+print(PTR_min, PTR_max, ETnoD_min, ETnoD_max)
