@@ -36,6 +36,8 @@ results = [
     {'alphas': [
         {'estimate': 1200,
          'molecule': mols_dict[('z12', 1, 0)]},
+        {'estimate': 1200,
+         'molecule': mols_dict[('z12', 1, 1)]},
         {'estimate': 4800,
          'molecule': mols_dict[('z6', 1, 0)]},
         {'estimate': 8300,
@@ -52,6 +54,22 @@ results = [
          'molecule': mols_dict[('precursor', 1, 0)]}],
      'status': 'optimal'}]
 
+
+results = [
+    {'alphas': [
+        {'estimate': 1000,
+         'molecule': mols_dict[('c10', 1, 0)]},
+        {'estimate': 1300,
+         'molecule': mols_dict[('c10', 2, 0)]}],
+     'status': 'optimal'},
+    {'alphas': [
+        {'estimate': 1200,
+         'molecule': mols_dict[('z12', 1, 0)]},
+        {'estimate': 1200,
+         'molecule': mols_dict[('z12', 1, 1)]}],
+     'status': 'optimal'}]
+
+
 simple_matches = SimpleCzMatch(results, mol.precursor)
 # simple_matches.get_intensities()
 # simple_matches.get_probabilities()
@@ -59,11 +77,25 @@ simple_matches = SimpleCzMatch(results, mol.precursor)
 
 matches = CzMatch(results, mol.precursor)
 matches.get_intensities()
-matches.get_probabilities()
-matches.get_branching_ratios()
+# matches.get_probabilities()
+# matches.get_branching_ratios()
+
+
+solvers.options['show_progress'] = False
+solvers.options['maxiters'] = 1200
 
 Q = matches.precursor.q
 G = matches.graph.copy()
+
+for N,M, PTR in G.edges.data('PTR'):
+    print(N, M, PTR)
+
+for N,M, ETnoD in G.edges.data('ETnoD'):
+    print(N, M, ETnoD)
+
+for N,M, ETnoD_PTR in G.edges.data('ETnoD_PTR'):
+    print(N, M, ETnoD_PTR)
+
 
 
 # lavish: all fragments lose cofragments
@@ -86,6 +118,9 @@ solution = solvers.conelp(c=costs,
                           A=equalities,
                           b=node_intensities,
                           primalstart=primalstart)
+for N, M, I in G.edges.data('flow'):
+    print(N,M,I)
+
 
 # Studying the max and min PTR and ETnoD on fragments
 
@@ -100,7 +135,7 @@ if len(G) > 0:
 
     no_ETnoD = all(ETnoD == 0 for ETnoD in ETnoD_cnts)
     no_PTR = all(PTR == 0 for PTR in PTR_cnts)
-    min_reaction_intensity = sum(I for N, M, I in G.edges.data('flow'))
+    min_reaction_intensity = float(sum(int(I) for N, M, I in G.edges.data('flow')))
 
     if no_ETnoD:
         PTR_min = PTR_max = min_reaction_intensity
@@ -109,16 +144,18 @@ if len(G) > 0:
         ETnoD_min = ETnoD_max = min_reaction_intensity
         PTR_min = PTR_max = 0.0
     else:
-        node_intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
+        node_intensities = matrix([int(I) for N, I in G.nodes.data('intensity')])
         edges_cnt = G.size()
         inequalities = sparse([incidence_matrix(G, len(node_intensities), edges_cnt),
                                diag(-1.0, edges_cnt)])
         inequality_constraints = matrix([node_intensities, matrix([0.0] * edges_cnt)])
         min_reaction_coef = matrix([float(ETnoD_PTR) for N,M, ETnoD_PTR in
                                     G.edges.data('ETnoD_PTR')]).T
-        primalstart['x'] = matrix([0.0] * edges_cnt)
+        primalstart['x'] = matrix([I_prev-eps for N, M, I_prev in
+                                    G.edges.data('flow')])
+        # matrix([0.0] * edges_cnt)
         primalstart['s'] = matrix([eps] * len(inequality_constraints))
-        min_PTR = solvers.conelp(c=PTR_cnts,
+        min_PTR = solvers.lp(c=PTR_cnts,
                                  G=inequalities,
                                  h=inequality_constraints,
                                  A=min_reaction_coef,
@@ -130,9 +167,14 @@ if len(G) > 0:
                                  G=inequalities,
                                  h=inequality_constraints,
                                  A=min_reaction_coef,
-                                 b=min_reaction_intensity,
+                                 b=matrix(min_reaction_intensity),
                                  primalstart=primalstart)
         PTR_max = max_PTR['x']
         ETnoD_min = min_reaction_intensity - PTR_max
 
+
+print(PTR_cnts, inequalities, inequality_constraints, min_reaction_coef, matrix(min_reaction_intensity), primalstart)
 print(PTR_min, PTR_max, ETnoD_min, ETnoD_max)
+
+# for some reason, the conditional optimization does not work as wanted.
+# the algo reaches max iteration and that's it.

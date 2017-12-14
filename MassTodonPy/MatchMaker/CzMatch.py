@@ -56,6 +56,7 @@ class CzMatch(SimpleCzMatch):
 
 
 ## These procedures are false for now. Need to report additionally the min and max intensities of PTR and ETnoD.
+## Tests to get PTR_min, PTR_max, ETnoD_min, ETnoD_max failed -> unknown solution.
     # def _get_intensities(self):
     #     """Estimate intensities."""
     #     super()._get_intensities()
