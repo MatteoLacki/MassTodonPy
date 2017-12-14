@@ -67,7 +67,9 @@ matches.get_probabilities()
 matches.get_branching_ratios()
 
 Q = matches.precursor.q
+G = matches.graph
 
+import numpy as np
 # lavish: all fragments lose cofragments
 lavish = sum((Q - 1 - N.q) * I for N, I in G.nodes.data('intensity'))
 node_intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
@@ -89,11 +91,89 @@ solution = solvers.conelp(c=costs,
                           b=node_intensities,
                           primalstart=primalstart)
 solution['primal objective']
+
+equalities
+
+# removing self-loops
+G.remove_edges_from([(N, M) for N, M in G.edges if N is M])
+G.remove_nodes_from([N for N, deg in G.degree if not deg])
+
+G.degree
+
+for N, deg in G.degree():
+    print(N, deg)
+lavish = sum((Q - 1 - N.q) * I for N, I in G.nodes.data('intensity'))
+node_intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
+PTR_costs = matrix([float(PTR) for N,M, PTR in G.edges.data('PTR')])
+edges_cnt = G.size()
+
+
+inequalities = sparse([incidence_matrix(G, len(node_intensities), edges_cnt),
+                       diag(-1.0, edges_cnt)])
+upper_bounds = matrix([0.0] * edges_cnt)
+inequality_constraints = matrix([node_intensities, upper_bounds])
+
+
+
+
+
+
+
+print(node_intensities)
+
+
+
+
+
+
+
+
+costs_no_self_loops = matrix([float(PTR) for N, M, PTR in
+                              G.edges.data('PTR') if not N is M])
+print(costs_no_self_loops)
+node_intensities_no_self_loops = matrix([float(I) for N, I
+                                         in G.nodes.data('intensity')
+                                         if G.degree[N] > 2])
+
+node_intensities_no_self_loops
+
+MR_equalities = sparse([equalities, costs.T])
+print(equalities, MR_equalities)
+ETnoD_costs = matrix([float(ETnoD) for N,M, ETnoD_PTR in G.edges.data('ETnoD_PTR')])
+
+
+
+
+
+
+
+
+
+
 for i, (N, M) in enumerate(G.edges()):
     G[N][M]['flow'] = solution['x'][i]
 
-G.edges.data('flow')
 
+
+
+
+G.edges.data('flow')
+x = np.array(solution['x'])
+np.array(solution['x'][0:4]).sum()
+
+from itertools import islice
+
+
+
+for N, M, ETnoD_PTR in islice(G.edges.data('ETnoD_PTR'), 4):
+    print(N, M, ETnoD_PTR, G[N][M]['flow'])
+sum(ETnoD_PTR * G[N][M]['flow'] for N, M, ETnoD_PTR in islice(G.edges.data('ETnoD_PTR'), 4))
+
+
+print(x[0:4])
+print(solution['x'][0:4].T * matrix([1,2,0,1]))
+
+G.edges.data('ETnoD_PTR')
 print(np.round(solution['x']))
 sum(I)
 

@@ -28,6 +28,8 @@ from MassTodonPy.Data.Constants import infinity
 def get_deconvolution_problems(molecules,
                                spectrum,
                                method='Matteo',
+                               mz_tol=.05,
+                               min_prob_per_molecule=.7,
                                isospec_args={},
                                mz_tol_args={}):
     """Get the sequence of deconvolution problems.
@@ -73,8 +75,7 @@ def get_deconvolution_problems(molecules,
         tree.add_node(M, molecule=mol)
         # this is the reverse mapping between molecules and the graph
         mol.graph_tag = M
-        for mz_I, prob in mol.isotopologues(joint_probability,
-                                            mz_precision):
+        for mz_I, prob in mol.isotopologues(**isospec_args):
             I = 'I' + str(I_cnt)
             I_cnt += 1
             tree.add_node(I, mz=mz_I, probability=prob)

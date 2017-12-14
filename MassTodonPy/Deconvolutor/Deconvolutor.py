@@ -24,6 +24,8 @@ from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_problems as ge
 def deconvolve(molecules,
                spectrum,
                method="Matteo",
+               mz_tol=0.05,
+               min_prob_per_molecule=.7,
                isospec_args={},
                mz_tol_args={},
                deconvolution_args={},
@@ -31,6 +33,8 @@ def deconvolve(molecules,
     graphs = get_graphs(molecules,
                         spectrum, 
                         method,
+                        mz_tol,
+                        min_prob_per_molecule,
                         isospec_args,
                         mz_tol_args)
     """Solve the deconvolution problems."""

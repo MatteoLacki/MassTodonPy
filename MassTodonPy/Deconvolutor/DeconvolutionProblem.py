@@ -28,10 +28,15 @@ from MassTodonPy.Deconvolutor.Misc import diag, normalize_rows
 
 class DeconvolutionProblem(nx.Graph):
     """Prepare and solve one deconvolution problem."""
-    def __init__(self, data=None, max_times=10,
-                 L1_x=0.001, L2_x=0.001,
-                 L1_alpha=0.001, L2_alpha=0.001,
-                 show_progress=False, maxiters=1000,
+    def __init__(self, 
+                 data=None,
+                 L1_x=0.001, 
+                 L2_x=0.001,
+                 L1_alpha=0.001,
+                 L2_alpha=0.001,
+                 max_times=10,
+                 show_progress=False,
+                 maxiters=1000,
                  **attr):
         global solvers
         super().__init__(data, **attr)
