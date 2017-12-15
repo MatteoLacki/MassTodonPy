@@ -75,8 +75,10 @@ class Spectrum(object):
             A path to the file to write to.
         """
         file_path, file_name, file_ext = parse_path(path)
+        assert file_ext in ('.csv', '.tsv'), "Writing only to csv or tsv."
         delimiter = ',' if file_ext is '.csv' else '\t'
         with open(path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=delimiter)
+            writer.writerow(['m/z', 'intensity'])
             for mz, intensity in self:
                 writer.writerow([mz, intensity])

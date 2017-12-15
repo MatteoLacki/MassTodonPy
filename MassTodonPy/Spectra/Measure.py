@@ -24,6 +24,7 @@ class Measure(object):
         """
         self.atoms = np.array(atoms)
         self.masses = np.array(masses)
+        self._store_names = ('atoms', 'masses')
 
     def __has_type_of(self, other):
         """Assert that 'self' and 'other' have the same type."""
@@ -234,8 +235,9 @@ class Measure(object):
             A path to the file to write to.
         """
         file_path, file_name, file_ext = parse_path(path)
-        delimiter = ',' if file_ext is '.csv' else '\t'
-        with open(path, 'w', newline='') as csvfile:
+        delimiter = ',' if file_ext == '.csv' else '\t'
+        with open(path, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=delimiter)
+            writer.writerow(self._store_names)
             for atom, mass in self:
                 writer.writerow([atom, mass])

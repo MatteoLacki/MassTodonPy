@@ -147,7 +147,7 @@ class SimpleCzMatch(object):
         self._I_reactions = self._I_ETnoD + self._I_PTR + self._I_ETD
         self._I_unreacted_precursor = self._I_ETnoD_PTR_precursor[0,0]
         self._I_ETD_ETnoD_PTR = self._I_ETnoD + self._I_PTR + self._I_ETD
-        return {k[2:]: v for k, v in self.__dict__.items() if k[0:3] == '_I_'}
+        return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_I_'}
 
     def _get_probabilities(self):
         """Estimate probabilities."""
@@ -165,7 +165,7 @@ class SimpleCzMatch(object):
             self._P_ETD = self._I_ETD / self._I_ETD_ETnoD_PTR
             self._P_ETnoD = self._I_ETnoD / self._I_ETD_ETnoD_PTR
             self._P_PTR = self._I_PTR / self._I_ETD_ETnoD_PTR
-        return {k[2:]: v for k, v in self.__dict__.items() if k[0:3] == '_P_'}
+        return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_P_'}
 
     def _match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""

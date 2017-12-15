@@ -38,6 +38,7 @@ class ExperimentalSpectrum(Measure):
         """
         self.mz = np.array(mz)
         self.intensity = np.array(intensity)
+        self._store_names = ('m/z', 'intensity')
 
     @property
     def mz(self):

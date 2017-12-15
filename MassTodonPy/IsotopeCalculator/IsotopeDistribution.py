@@ -37,6 +37,7 @@ class IsotopeDistribution(Measure):
         """
         self.mz = np.array(mz)
         self.probability = np.array(probability)
+        self._store_names = ('m/z', 'probability')
 
     @property
     def mz(self):
