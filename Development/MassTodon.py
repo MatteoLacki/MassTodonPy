@@ -18,3 +18,10 @@ masstodon = MassTodon(spectrum=mol.spectrum,
 # masstodon.cz_match.intensities
 # masstodon.cz_match.branching_ratio
 # masstodon.cz_match.probabilities
+
+G = masstodon._solutions[0]
+
+G.node.data('estimate')
+
+
+import bokeh

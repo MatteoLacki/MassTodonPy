@@ -197,7 +197,7 @@ class MassTodon(object):
         path_probabilities = path.replace('.', '_probabilities.')
         with open(path_probabilities, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(['reaction', 'intensity'])
+            writer.writerow(['reaction', 'probability'])
             for name, intensity in self.cz_match.probabilities.items():
                 if isinstance(intensity, (Counter, dict)):
                     for k, v in intensity.items():
