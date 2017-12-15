@@ -63,7 +63,7 @@ def get_dataset(dataset_name):
 
     precursor = Precursor(name=mol['name'],
                           fasta=mol['fasta'],
-                          q=mol['Q'],
+                          charge=mol['Q'],
                           modifications=modifications,
                           fragmentation_type="cz")
 

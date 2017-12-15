@@ -23,16 +23,15 @@ import networkx as nx
 from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
-from MassTodonPy.Deconvolutor.DeconvolutionProblem import DeconvolutionProblem
+from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
 
-def get_deconvolution_problems(molecules,
-                               spectrum,
-                               method='Matteo',
-                               mz_tol=.05,
-                               min_prob_per_molecule=.7,
-                               joint_probability=.999,
-                               mz_precision=3,
-                               deconvolution_args={}):
+def deconvolve(molecules,
+               spectrum,
+               method='Matteo',
+               mz_tol=.05,
+               min_prob_per_molecule=.7,
+               isospec_args={},
+               solver_args={}):
     """Get the sequence of deconvolution problems.
 
     Parameters
@@ -53,13 +52,10 @@ def get_deconvolution_problems(molecules,
     min_prob_per_molecule : float
         The minimal probability an envelope has to scoop
         to be included in the deconvolution graph.        
-    joint_probability : float
-        The joint probability threshold for generating
-        theoretical isotopic distributions.
-    mz_precision : int
-        The number of digits obtained when rounding the m/z values.
-    deconvolution_args : dictionary
-        A dictionary of values for the deconvolution methods.
+    isospec_args: dict
+        Arguments for isospec: 'joint_probability' and 'mz_precision'.
+    solver_args : dictionary
+        A dictionary of values for the deconvolution solver.
 
     """
     I_cnt = 0
@@ -70,29 +66,36 @@ def get_deconvolution_problems(molecules,
             """Calculates the tolerance interval around m/z."""
             return (mz - _mz_tol, mz + _mz_tol)
 
+    # build up the deconvolution graph
     for M_cnt, mol in enumerate(molecules):
         M = 'M' + str(M_cnt)
-        # the tree might be included in the graph
+        # tree represents how a molecule links to the spectrum
+        # and might be included in the deconvolution graph
         tree = nx.Graph()
         tree.add_node(M, molecule=mol)
         # this is the reverse mapping between molecules and the graph
         mol.graph_tag = M
-        for mz_I, prob in mol.isotopologues(joint_probability, mz_precision):
+
+        # add isotopologues
+        for mz_I, prob in mol.isotopologues(**isospec_args):
             I = 'I' + str(I_cnt)
             I_cnt += 1
             tree.add_node(I, mz=mz_I, probability=prob)
             tree.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
+
+            # link with real peaks
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:  # True - get E_cnt additionally to m/z and intensity.
                 E = 'E' + str(E_cnt)
                 tree.add_node(E, mz=mz_E, intensity=intensity)
                 tree.add_edge(I, E)
+        
         # total probability of isotopologues around experimental peaks
         total_prob = sum(d['probability']
                          for n, d in tree.nodes(data=True)
                          if n[0] is 'I' and tree.degree[n] > 1)
-
-        if total_prob >= min_prob_per_molecule: # update Deconvolution Graph
+        # plant the tree in the graph?
+        if total_prob >= min_prob_per_molecule: 
             graph.add_nodes_from(tree.nodes(data=True))
             graph.add_edges_from(tree.edges(data=True))
     
@@ -100,7 +103,7 @@ def get_deconvolution_problems(molecules,
         graph = _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph) 
         for graph in graphs:
-            problem = DeconvolutionProblem(graph, **deconvolution_args)
+            problem = DeconvolutionProblem(graph, **solver_args)
             problem.solve()
             yield problem
     elif method is 'Ciacho_Wanda':

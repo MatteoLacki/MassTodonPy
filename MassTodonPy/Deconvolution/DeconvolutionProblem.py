@@ -24,7 +24,7 @@ from math import sqrt
 import networkx as nx
 from random import randint
 
-from MassTodonPy.Deconvolutor.Misc import diag, normalize_rows
+from MassTodonPy.Deconvolution.Misc import diag, normalize_rows
 
 class DeconvolutionProblem(nx.Graph):
     """Prepare and solve one deconvolution problem."""

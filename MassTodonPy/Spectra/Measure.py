@@ -1,10 +1,12 @@
 from bisect import bisect_left
+import csv
 import numpy as np
 from operator import itemgetter
 from six.moves import zip
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Misc.strings import repr_long_list
+from MassTodonPy.Parsers.Paths import parse_path
 
 class Measure(object):
     """Store a discrete finite measure with atoms in R."""
@@ -222,3 +224,18 @@ class Measure(object):
 
     def total_mass(self):
         return self.masses.sum()
+
+    def write(self, path):
+        """Write the spectrum to a csv or tsv file.
+
+        Parameters
+        ==========
+        path : str
+            A path to the file to write to.
+        """
+        file_path, file_name, file_ext = parse_path(path)
+        delimiter = ',' if file_ext is '.csv' else '\t'
+        with open(path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=delimiter)
+            for atom, mass in self:
+                writer.writerow([atom, mass])

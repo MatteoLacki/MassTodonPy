@@ -32,7 +32,7 @@ class Precursor(object):
         The name of the precursor molecule.
     fasta : str
         The fasta of the studied molecular species.
-    q : int
+    charge : int
         The charge of the precursor ion.
     modifications : dictionary
         A dictionary of modifications of amino acids.
@@ -45,14 +45,17 @@ class Precursor(object):
     """
     amino_acids = get_amino_acids()  # residues only!
 
-    def __init__(self, name, fasta, q,
+    def __init__(self, 
+                 fasta,
+                 charge,
+                 name="",
                  modifications={},
                  fragmentation_type="cz",
                  blocked_fragments=set(['c0']),
                  distance_charges=5):
         self.name = name
         self.fasta = fasta
-        self.q = q
+        self.q = charge
         self.groups = ('N', 'C_alpha', 'C_carbo')
         self.modifications = {(number - 1, group): Formula(atom_cnt)
                               for number, mods in modifications.items()

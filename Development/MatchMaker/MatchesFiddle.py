@@ -2,7 +2,6 @@
 %autoreload 2
 
 from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
-import matplotlib.pyplot as plt
 import networkx as nx
 from networkx import connected_component_subgraphs as connected_components
 import numpy as np

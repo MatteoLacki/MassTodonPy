@@ -5,9 +5,6 @@ import unittest
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 from MassTodonPy.MatchMaker.CzMatch import CzMatch
-from MassTodonPy.MatchMaker.match_cz_ions import czMatchMakerIntermediate
-from MassTodonPy.MatchMaker.match_cz_ions import czMatchMakerAdvanced
-
 # TODO add test for the optimality of the fragment matching
 
 def node_to_tuple(node):
@@ -51,8 +48,8 @@ class TestPeakPicker(unittest.TestCase):
         """Tear down a method."""
         pass
 
-    def test_basic_matchmaker(self):
-        print("Testing basic matchmaker: graph creation.")
+    def test_SimpleCzMatch(self):
+        print("Testing SimpleCzMatch graph creation.")
         matches = SimpleCzMatch(self.results,
                                 self.mol.precursor)
 

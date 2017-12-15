@@ -1,14 +1,14 @@
 ### MassTodon todo list
 
 # important
+* csv:
+    * input spectrum
+    * save results
+    * no pandas
 * Update to IsoSpec 2.0
-* Get rid of the Pandas dependency for csv saving (sic!)
 * Get rid of highcharts -> turn it into Bokeh
 * check different modes of isotopic calculations under IsoSpec2.0
-* add csv input spectrum
 * add assertions to read_mzxml_spectrum
-* Replace the some arguments for MassTodonize with dictionaries.
-    * e.g. solver_args, deconvolutor_args
 * Replace ubiquitin dataset
     * now, the intensity if monotonically increasing
 * RE must parse H-200 -> {'H': -200}
@@ -21,7 +21,6 @@
 
 # elegant
 * Automate devel set up
-* Get lavish estimates
 
 # Don't forget
 * The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()

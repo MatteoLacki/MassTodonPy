@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.Deconvolutor.PeakPicker import get_deconvolution_problems
+from MassTodonPy.Deconvolutor.PeakPicker import deconvolve
 
 # %%time
 mol = get_dataset('substanceP') # adjust the spectrum
@@ -15,10 +15,10 @@ sigma = 0.01949749
 support_length = 0.1
 
 
-deconvolution_graph = get_deconvolution_problems(molecules,
-                                                 mol.spectrum,
-                                                 'Ciacho_Wanda',
-                                                 mz_tol=.05,
-                                                 min_prob_per_molecule=.7)
+deconvolution_graph = deconvolve(molecules,
+                                 mol.spectrum,
+                                 'Ciacho_Wanda',
+                                 mz_tol=.05,
+                                 min_prob_per_molecule=.7)
 
 problems = list(deconvolution_graph)
