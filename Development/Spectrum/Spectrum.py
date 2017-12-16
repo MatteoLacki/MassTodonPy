@@ -7,19 +7,39 @@ from MassTodonPy.Data.Constants import eps, infinity
 spectrum_path = '/Users/matteo/Documents/MassTodon/Data/'
 spectrum_mzxml = spectrum_path + 'FRL_220715_ubi_952_ETD_40ms_01.mzXML'
 
-%%timeit
-ms = Spectrum(spectrum=spectrum_mzxml, mz_precision=2,
-              minimal_intensity=100.0, percent_top_peaks=.95)
+%time
+ms = Spectrum(spectrum=spectrum_mzxml, mz_digits=2,
+              min_intensity=100.0, percent_top_peaks=.95)
 
-ms.spectrum
+
+
+
+
+ms.low_spectrum.plot()
+
+ms.plot()
+
+import numpy as np
+
+
+len(ms.mz)
+prev_mz = ms.mz[0]
+min_diff_mz = infinity
+for i in range(1, len(ms.mz)):
+    mz = ms.mz[i]
+    min_diff_mz = min(mz - prev_mz, min_diff_mz)
+    prev_mz = mz
+
+min_diff_mz
+
 
 spectrum_path = '/Users/matteo/Documents/MassTodon/Data/'
 spectrum_txt = spectrum_path + 'subP_spectrum.txt'
 
 %%time
-ms = Spectrum(spectrum=spectrum_txt, mz_precision=3,
-              minimal_intensity=100.0, percent_top_peaks=.95)
-ms.spectrum
+ms = Spectrum(spectrum=spectrum_txt, mz_digits=2,
+              min_intensity=100.0, percent_top_peaks=.95)
+ms
 
 %%time
 ms = Spectrum(spectrum=spectrum_txt, mz_precision=2,

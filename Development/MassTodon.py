@@ -8,14 +8,12 @@ mol = get_dataset('substanceP')
 precursor = {'name': 'substanceP',
              'fasta': mol.precursor.fasta,
              'charge': 3}
-
-mol.spectrum.plot(.05)
-
 %%time
 masstodon = MassTodon(spectrum=mol.spectrum,
                       precursor=precursor,
                       mz_precision=.05,
                       _devel=True)
+
 
 # masstodon.cz_match.intensities
 # masstodon.cz_match.branching_ratio

@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from MassTodonPy.Spectra.Measure import Measure
+from MassTodonPy.Measure.Measure import Measure
 
 
 class IsotopeDistribution(Measure):

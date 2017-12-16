@@ -28,7 +28,7 @@ from MassTodonPy.IsotopeCalculator.Misc import cdata2numpyarray  # TODO IsoSpec 
 from MassTodonPy.IsotopeCalculator.Misc import get_mean_and_variance
 from MassTodonPy.IsotopeCalculator.Misc import check_charges
 from MassTodonPy.IsotopeCalculator.IsotopeDistribution import IsotopeDistribution as IsoDistr
-from MassTodonPy.Spectra.Measure import Measure
+from MassTodonPy.Measure.Measure import Measure
 
 # convolute spectra with diffs spectra instead of Dirac deltas.
 class IsotopeCalculator(object):

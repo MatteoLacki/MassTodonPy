@@ -38,8 +38,8 @@ def deconvolve(molecules,
     ==========
     molecules : iterable
         An iterable of the Molecule objects.
-    spectrum : ExperimentalSpectrum
-        An instance of the ExperimentalSpectrum class.
+    spectrum : Spectrum
+        An instance of the Spectrum class.
     method: string
         Either 'Matteo' or 'Wanda_Ciacho'.
     mz_tol : float or function

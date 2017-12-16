@@ -5,7 +5,7 @@ import unittest
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.Deconvolution.Deconvolve import deconvolve
-from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
+from MassTodonPy.Spectra.Spectrum import Spectrum
 
 
 class TestPeakPicking(unittest.TestCase):
@@ -14,11 +14,11 @@ class TestPeakPicking(unittest.TestCase):
         # R_ = real
         R_stats = {(1, 11, 7), (2, 27, 8), (3, 54, 9)}
         subP = get_dataset('substanceP')
-        precursors = list(mol for mol in subP.precursor.molecules()
-                          if mol.name is 'precursor')
-        spectrum = sum(mol.isotopologues() for mol in precursors)
-        spectrum = ExperimentalSpectrum(mz=spectrum.mz,
-                                        intensity=100000 * spectrum.probability)
+        precursors = list(m for m in subP.precursor.molecules()
+                          if m.name is 'precursor')
+        spectrum = sum(m.isotopologues() for m in precursors)
+        spectrum = Spectrum(mz=spectrum.mz,
+                            intensity=100000 * spectrum.probability)
         spectrum.round_mz(precision=2)
         DGs = deconvolve(precursors,
                          spectrum,

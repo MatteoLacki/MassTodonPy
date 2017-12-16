@@ -93,7 +93,7 @@ class MassTodon(object):
 
         Parameters
         ==========
-        spectrum : string, tuple of numpy arrays, or ExperimentalSpectrum
+        spectrum : string, tuple of numpy arrays, or Spectrum
             The string path can end with:
                 *.txt, for spectra saved in tab separated format.
                 *.mzXml, for spectra saved in mzXml format.
@@ -101,7 +101,7 @@ class MassTodon(object):
             The tuple consists of two numpy arrays:
                 one with m over z ratios,
                 the other with intensities.
-            Details of the ExperimentalSpectrum can be found here.
+            Details of the Spectrum can be found here [TODO add link].
         precursor : dict
             A dictionary with fasta and charge. Also accepts the precursor's name,
             modifications, fragmentation_type, blocked_fragments, and distance_charges.
@@ -121,18 +121,13 @@ class MassTodon(object):
         # precision one digit lower than the input precision of spectra, eg.
         # mz_precision = .05  --> prec_digits = 3
         # mz_precision = .005 --> prec_digits = 4
-        mz_prec_digits_tmp = int(ceil(-log10(mz_precision)))
-
-        self.mz_precision_digits = deconvolution_args.get('mz_precision_digits',
-                                                          mz_prec_digits_tmp)
+        mz_digits_tmp = int(ceil(-log10(mz_precision)))
+        self.mz_digits = deconvolution_args.get('mz_digits', mz_digits_tmp)
         self.precursor = Precursor(**precursor)
-        
-        self.spectrum = Spectrum(spectrum,
-                                 self.mz_precision_digits,
+        self.spectrum = Spectrum(spectrum=spectrum,
+                                 mz_digits=self.mz_digits,
                                  **preprocessing_args)
-        
         self.minimal_intensity = preprocessing_args.get('minimal_intensity', eps)
-        
         self._solutions = deconvolve(self.precursor.molecules(),
                                     self.spectrum,
                                     isospec_args=isospec_args,
@@ -140,9 +135,7 @@ class MassTodon(object):
                                     **deconvolution_args)
         if _devel:
             self._solutions = list(self._solutions)
-
         self._raw_estimates = [sol.report() for sol in self._solutions]
-
         if simple_cz_match:
             self.simple_cz_match = SimpleCzMatch(self.get_estimates(self.minimal_intensity),
                                                  self.precursor)

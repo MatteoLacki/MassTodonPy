@@ -3,7 +3,7 @@ from bisect import bisect_left
 import csv
 import numpy as np
 from operator import itemgetter
-from six.moves import zip
+from six.moves import range, zip
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Misc.strings import repr_long_list
@@ -149,7 +149,6 @@ class Measure(object):
         ----------
         other : Measure
             A measure with masses strictly below the cut off.
-
         """
         other = self.__class__(self.atoms[self.masses < cut_off],
                                self.masses[self.masses < cut_off])
@@ -179,9 +178,15 @@ class Measure(object):
 
     def __repr__(self):
         """Represent the measure."""
-        return "{0}:\n\t* {1}\n\t* {2}\n".format(self.__class__.__name__,
-                                                 repr_long_list(self.atoms),
-                                                 repr_long_list(self.masses))
+        if len(self.atoms) > 0:
+            out = "{0}:\n\t{1} = {2}\n\t{3} = {4}\n".format(self.__class__.__name__,
+                                                            self._store_names[0],
+                                                            repr_long_list(self.atoms)[1:-1],
+                                                            self._store_names[1],
+                                                            repr_long_list(self.masses)[1:-1])
+        else:
+            out = self.__class__.__name__ + " (empty)"
+        return out
 
     def __len__(self):
         """Get size of the measure: the number of atoms."""
@@ -243,7 +248,7 @@ class Measure(object):
             for atom, mass in self:
                 writer.writerow([atom, mass])
 
-    def plot(self, width):
+    def plot(self, width=None):
         """Make an interactive Bokeh barplot.
 
         Parameters
@@ -251,22 +256,33 @@ class Measure(object):
         width : float
             The width of the bar.
         """
-        try:
-            from bokeh.plotting import figure, show
-            from bokeh.models import HoverTool
+        if len(self.atoms) > 0:
+            try:
+                from bokeh.plotting import figure, show
+                from bokeh.models import HoverTool
 
-            hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
-                                    (self._store_names[1], "@top{0,0}")])
-            TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select " 
-            TOOLS += "lasso_select save"
-            TOOLS = TOOLS.split(' ')
-            TOOLS.append(hover)
-            plot = figure(tools=TOOLS)
-            plot.vbar(x=self.atoms,
-                      top=self.masses, 
-                      width=width,
-                      color='black')
-            show(plot)
-        except ImportError:
-            print('Try installing/reinstalling the Bokeh module.')
-        
+                if not width:  # get minimal width - the minimal space between atoms
+                    prev_atom = self.atoms[0]
+                    width = infinity
+                    for i in range(1, len(self.atoms)):
+                        atom = self.atoms[i]
+                        width = min(atom - prev_atom, width)
+                        prev_atom = atom
+                    width = min(width, 1.0)  # otherwise, with one peak there ain't much to plot.
+                hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
+                                        (self._store_names[1], "@top{0,0}")])
+                TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select " 
+                TOOLS += "lasso_select save"
+                TOOLS = TOOLS.split(' ')
+                TOOLS.append(hover)
+                plot = figure(tools=TOOLS, width=1000, height=600)
+                plot.vbar(x=self.atoms,
+                          top=self.masses, 
+                          width=width,
+                          color='black')
+                plot.sizing_mode = 'scale_both'
+                show(plot)
+            except ImportError:
+                print('Try installing/reinstalling the Bokeh module.')
+        else:
+            print('You were trying to plot emptiness: look deeper into your heart.')

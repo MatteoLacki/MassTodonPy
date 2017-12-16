@@ -5,7 +5,7 @@ from pyteomics import mzxml  # >= 3.41
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.Constants import eps
 from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
+from MassTodonPy.Measure.Measure import Measure
 
 # TODO add checks about the MS number
 def read_mz_file(path,
@@ -29,16 +29,15 @@ def read_mz_file(path,
         Either 'mzxml' or 'mzml'.
     Returns
     -------
-    out : ExperimentalSpectrum
+    out : Measure
     """
     format = format.lower()
     reader = {'mzxml': mzxml, 'mzml': mzml}[format]
     with reader.read(path) as info:
         for spectrum in info:
-            spectrum = ExperimentalSpectrum(spectrum['m/z array'],
-                                            spectrum['intensity array'])
-            spectrum.trim_intensity(intensity_cut_off)
-            spectrum.round_mz(mz_precision)
+            spectrum = Measure(spectrum['m/z array'], spectrum['intensity array'])
+            spectrum.trim(intensity_cut_off)
+            spectrum.round_atoms(mz_precision)
             yield spectrum
 
 
@@ -58,7 +57,7 @@ def read_txt_file(path,
         The cut off value for peak intensity.
     Returns
     -------
-    out : ExperimentalSpectrum
+    out : Measure
     """
     mzs = []
     intensities = []
@@ -67,9 +66,9 @@ def read_txt_file(path,
             line = line.split()
             mzs.append(float(line[0]))
             intensities.append(float(line[1]))
-    spectrum = ExperimentalSpectrum(mzs, intensities)
-    spectrum.trim_intensity(intensity_cut_off)
-    spectrum.round_mz(mz_precision)
+    spectrum = Measure(mzs, intensities)
+    spectrum.trim(intensity_cut_off)
+    spectrum.round_atoms(mz_precision)
     return spectrum
 
 
@@ -89,7 +88,7 @@ def read_spectrum(path='',
         The cut off value for peak intensity.
     Returns
     -------
-    out : ExperimentalSpectrum
+    out : Measure
 
     """
     assert path is not '', "Provide a spectrum to analyze!"

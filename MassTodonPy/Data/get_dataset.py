@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 from MassTodonPy.Precursor.Precursor import Precursor
-from MassTodonPy.Spectra.ExperimentalSpectrum import ExperimentalSpectrum
+from MassTodonPy.Spectra.Spectrum import Spectrum
 
 
 class Dataset(object):
@@ -55,8 +55,7 @@ def get_dataset(dataset_name):
     with open(path + dataset_name + '.json', 'rb') as f:
         mol = json.load(f)
 
-    spectrum = ExperimentalSpectrum(mz=mol['spectrum'][0],
-                                    intensity=mol['spectrum'][1])
+    spectrum = Spectrum(spectrum=mol['spectrum'])
 
     modifications = {int(k): v for k, v in
                      mol['modifications'].items()}
