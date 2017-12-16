@@ -9,6 +9,8 @@ precursor = {'name': 'substanceP',
              'fasta': mol.precursor.fasta,
              'charge': 3}
 
+mol.spectrum.plot(.05)
+
 %%time
 masstodon = MassTodon(spectrum=mol.spectrum,
                       precursor=precursor,

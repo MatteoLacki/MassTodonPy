@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 from bisect import bisect_left
 import csv
 import numpy as np
@@ -24,7 +25,7 @@ class Measure(object):
         """
         self.atoms = np.array(atoms)
         self.masses = np.array(masses)
-        self._store_names = ('atoms', 'masses')
+        self._store_names = ('atom', 'mass')
 
     def __has_type_of(self, other):
         """Assert that 'self' and 'other' have the same type."""
@@ -241,3 +242,31 @@ class Measure(object):
             writer.writerow(self._store_names)
             for atom, mass in self:
                 writer.writerow([atom, mass])
+
+    def plot(self, width):
+        """Make an interactive Bokeh barplot.
+
+        Parameters
+        ==========
+        width : float
+            The width of the bar.
+        """
+        try:
+            from bokeh.plotting import figure, show
+            from bokeh.models import HoverTool
+
+            hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
+                                    (self._store_names[1], "@top{0,0}")])
+            TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select " 
+            TOOLS += "lasso_select save"
+            TOOLS = TOOLS.split(' ')
+            TOOLS.append(hover)
+            plot = figure(tools=TOOLS)
+            plot.vbar(x=self.atoms,
+                      top=self.masses, 
+                      width=width,
+                      color='black')
+            show(plot)
+        except ImportError:
+            print('Try installing/reinstalling the Bokeh module.')
+        
