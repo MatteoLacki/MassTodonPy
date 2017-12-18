@@ -20,6 +20,7 @@ from IsoSpecPy import IsoSpecPy
 from math import sqrt
 import numpy as np
 
+from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities
 # Formula needed for modularity of the class
 #   need to parse a string formula
@@ -36,12 +37,13 @@ class IsotopeCalculator(object):
 
     Parameters
     ==========
-    mz_precision : float or int
-        The number of digits after which the floats get rounded.
-        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
     joint_probability : float
         The joint probability threshold for generating
         theoretical isotopic distributions.
+    mz_digits : float or int
+        The number of digits after which the floats get rounded.
+        E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
+        Defaults to infinity, i.e. you computer architecture I guess.
     _masses : dict
         The isotopic masses, e.g. from IUPAC.
     _probabilities : dict
@@ -63,8 +65,8 @@ class IsotopeCalculator(object):
             cls._probabilities = _probabilities
 
     def __init__(self,
-                 mz_precision=2,
                  joint_probability=.999,
+                 mz_digits=infinity,
                  _masses=None,
                  _probabilities=None,
                  _isotope_DB=None):
@@ -81,7 +83,7 @@ class IsotopeCalculator(object):
             self.mean_mass[el], self.mean_variance[el] = \
                 get_mean_and_variance(self._masses[el],
                                       self._probabilities[el])
-        self.mz_precision = mz_precision
+        self.mz_digits = mz_digits
         self.joint_probability = joint_probability
 
     def get_monoisotopic_mz(self, formula, q, g=0):
@@ -138,7 +140,7 @@ class IsotopeCalculator(object):
                      joint_probability=None,
                      q=0,
                      g=0,
-                     mz_precision=None,
+                     mz_digits=None,
                      memoize=False):
         """Get an isotopic envelope.
 
@@ -153,6 +155,8 @@ class IsotopeCalculator(object):
         g : int
             Additional hydrogen atoms:
             referred to as quenched charge in the MassTodon paper.
+        mz_digits : integer
+
         memoize : bool
             Should the call be memoized: by default no.
         Returns
@@ -164,8 +168,8 @@ class IsotopeCalculator(object):
 
         if not joint_probability:
             joint_probability = self.joint_probability
-        if not mz_precision:
-            mz_precision = self.mz_precision
+        if not mz_digits:
+            mz_digits = self.mz_digits
 
         try:
             mass, probability = self._isotope_DB[(str(formula),
@@ -177,12 +181,12 @@ class IsotopeCalculator(object):
                                                     memoize)
         if q is 0:
             measure = Measure(atoms=mass, masses=probability)
-            measure.round_atoms(mz_precision)
+            measure.round_atoms(mz_digits)
             return measure
         else:
             check_charges(q, g)
             hydrogen_mass = self.mean_mass['H']
             iso_distr = IsoDistr(mz=(mass + (g + q) * hydrogen_mass) / q,
                                  probability=probability)
-            iso_distr.round_mz(mz_precision)
+            iso_distr.round_mz(mz_digits)
             return iso_distr

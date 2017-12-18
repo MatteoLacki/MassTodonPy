@@ -15,11 +15,13 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.IsotopeCalculator.IsotopeCalculator import IsotopeCalculator
 
+
 class Molecule(object):
-    iso_calc = IsotopeCalculator(mz_precision=3,
-                                 joint_probability=.999)
+    iso_calc = IsotopeCalculator(joint_probability=.999,
+                                 mz_digits=infinity)
 
     @classmethod
     def reset_isotope_calculator(cls, **args):
@@ -43,12 +45,12 @@ class Molecule(object):
 
     def isotopologues(self,
                       joint_probability=.999,
-                      mz_precision=3):
+                      mz_digits=infinity):
         return self.iso_calc.get_envelope(self.formula,
                                           joint_probability,
                                           self.q,
                                           self.g,
-                                          mz_precision,
+                                          mz_digits,
                                           memoize=True)
 
     def __repr__(self):

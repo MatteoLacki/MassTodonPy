@@ -32,7 +32,7 @@ class Spectrum(Measure):
                  mz=np.array([]), 
                  intensity=np.array([]),
                  spectrum='',
-                 mz_digits=2,
+                 mz_digits=infinity,
                  min_intensity=eps,
                  percent_top_peaks=1.0):
         """Initialize the Spectrum."""
@@ -50,15 +50,17 @@ class Spectrum(Measure):
                 mz, intensity = spectrum
             elif not spectrum:  # potentially an empty spectrum
                 mz = mz
-                intensity = intensity            
+                intensity = intensity
+            else:
+                raise AssertionError("Spectrum got wrong input.")
             mz = np.array(mz)
             intensity = np.array(intensity)
             assert all(intensity >= 0), "intensity must be non-negative"
             assert len(mz) == len(intensity)
             self.mz = mz
             self.intensity = intensity
-            self.trim_intensity(eps)  # intensity > 0
-            self.round_mz(mz_digits)
+        self.trim_intensity(eps)  # intensity > 0
+        self.round_mz(self.mz_digits)
         self.low_spectrum = 0
         if min_intensity > eps:
             self.low_spectrum += self.split_measure(min_intensity)

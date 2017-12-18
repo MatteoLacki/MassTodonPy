@@ -127,30 +127,35 @@ class MassTodon(object):
         self.spectrum = Spectrum(spectrum=spectrum,
                                  mz_digits=self.mz_digits,
                                  **preprocessing_args)
+
+        isospec_args['mz_digits'] = self.mz_digits
         self.minimal_intensity = preprocessing_args.get('minimal_intensity', eps)
         self._solutions = deconvolve(self.precursor.molecules(),
-                                    self.spectrum,
-                                    isospec_args=isospec_args,
-                                    solver_args=solver_args,
-                                    **deconvolution_args)
+                                     self.spectrum,
+                                     isospec_args=isospec_args,
+                                     solver_args=solver_args,
+                                     **deconvolution_args)
         if _devel:
             self._solutions = list(self._solutions)
-        self._raw_estimates = [sol.report() for sol in self._solutions]
+        self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps))
         if simple_cz_match:
-            self.simple_cz_match = SimpleCzMatch(self.get_estimates(self.minimal_intensity),
-                                                 self.precursor)
-        self.cz_match = CzMatch(self.get_estimates(self.minimal_intensity),
-                                self.precursor)
+            self.simple_cz_match = SimpleCzMatch(self._raw_estimates, self.precursor)
+        self.cz_match = CzMatch(self._raw_estimates, self.precursor)
 
-    def get_estimates(self, minimal_intensity=eps):
+    def get_raw_estimates(self, minimal_intensity=eps):
         """Iterate over estimates with intensity greater than the minimal_intensity."""
-        for res in self._raw_estimates:
+        for sol in self._solutions:
+            res = sol.report()
             if res['status'] is not 'ValueError':
                 for mol in res['alphas']:
                     estimate = int(mol['estimate'])
                     if estimate >= minimal_intensity:
                         mol = mol['molecule']
                         yield mol, estimate
+
+    def get_estimates_for_plot(self, minimal_intensity=eps):
+        """Probably just like function above."""
+        pass
 
     def write(self, path):
         """Write the spectrum to a csv or tsv file.

@@ -248,12 +248,12 @@ class Measure(object):
             for atom, mass in self:
                 writer.writerow([atom, mass])
 
-    def plot(self, width=None):
+    def plot(self, bar_width=1, plot_width=1000, plot_height=600):
         """Make an interactive Bokeh barplot.
 
         Parameters
         ==========
-        width : float
+        bar_width : float
             The width of the bar.
         """
         if len(self.atoms) > 0:
@@ -261,28 +261,30 @@ class Measure(object):
                 from bokeh.plotting import figure, show
                 from bokeh.models import HoverTool
 
-                if not width:  # get minimal width - the minimal space between atoms
+                if bar_width is 1:  # get minimal width - the minimal space between atoms
                     prev_atom = self.atoms[0]
-                    width = infinity
+                    bw = infinity
                     for i in range(1, len(self.atoms)):
                         atom = self.atoms[i]
-                        width = min(atom - prev_atom, width)
+                        bw = min(atom - prev_atom, bw)
                         prev_atom = atom
-                    width = min(width, 1.0)  # otherwise, with one peak there ain't much to plot.
+                    bar_width = min(bw, bar_width)  # prevent infinite width
                 hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
                                         (self._store_names[1], "@top{0,0}")])
                 TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select " 
                 TOOLS += "lasso_select save"
                 TOOLS = TOOLS.split(' ')
                 TOOLS.append(hover)
-                plot = figure(tools=TOOLS, width=1000, height=600)
+                plot = figure(tools=TOOLS, 
+                              width=plot_width,
+                              height=plot_height)
                 plot.vbar(x=self.atoms,
                           top=self.masses, 
-                          width=width,
+                          width=bar_width,
                           color='black')
                 plot.sizing_mode = 'scale_both'
                 show(plot)
             except ImportError:
                 print('Try installing/reinstalling the Bokeh module.')
         else:
-            print('You were trying to plot emptiness: look deeper into your heart.')
+            print('You try to plot emptiness: look deeper into your heart.')

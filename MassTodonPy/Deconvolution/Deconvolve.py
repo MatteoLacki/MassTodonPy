@@ -53,7 +53,7 @@ def deconvolve(molecules,
         The minimal probability an envelope has to scoop
         to be included in the deconvolution graph.        
     isospec_args: dict
-        Arguments for isospec: 'joint_probability' and 'mz_precision'.
+        Arguments for isospec: 'joint_probability' and 'mz_digits'.
     solver_args : dictionary
         A dictionary of values for the deconvolution solver.
 
@@ -84,7 +84,7 @@ def deconvolve(molecules,
             tree.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
 
-            # link with real peaks
+            # link with real peaks                  show indices ↓ ?
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:  # True - get E_cnt additionally to m/z and intensity.
                 E = 'E' + str(E_cnt)
                 tree.add_node(E, mz=mz_E, intensity=intensity)
@@ -122,7 +122,7 @@ def _add_G_remove_E(graph):
     graph: networkx.Graph()
         A graph with molecule nodes M, 
         isotopologue nodes I, and experimental peak nodes E.
-    ."""
+    """
     G_intensity = Counter()
     G_min_mz = defaultdict(lambda: infinity)
     G_max_mz = defaultdict(lambda: 0.0)

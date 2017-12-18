@@ -11,12 +11,6 @@ spectrum_mzxml = spectrum_path + 'FRL_220715_ubi_952_ETD_40ms_01.mzXML'
 ms = Spectrum(spectrum=spectrum_mzxml, mz_digits=2,
               min_intensity=100.0, percent_top_peaks=.95)
 
-
-
-
-
-ms.low_spectrum.plot()
-
 ms.plot()
 
 import numpy as np

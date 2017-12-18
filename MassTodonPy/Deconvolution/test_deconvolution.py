@@ -8,7 +8,7 @@ from MassTodonPy.Deconvolution.Deconvolve import deconvolve
 from MassTodonPy.Spectra.Spectrum import Spectrum
 
 
-class TestPeakPicking(unittest.TestCase):
+class TestDeconvolution(unittest.TestCase):
     def test_deconvolve(self):
         print("Testing the get_deconvolution_problems function.")
         # R_ = real

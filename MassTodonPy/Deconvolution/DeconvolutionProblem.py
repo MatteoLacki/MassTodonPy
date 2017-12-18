@@ -54,12 +54,12 @@ class DeconvolutionProblem(nx.Graph):
         solvers.options['maxiters'] = maxiters
 
     def count_nodes_and_edges(self):
-        """Add numbers to graph nodes and edges."""
+        """Tag nodes and edges with distinct id numbers."""
         cnts = Counter()
         for N in self:
             self.node[N]['cnt'] = cnts[N[0]]
             cnts[N[0]] += 1
-            if N[0] is not 'I':  # number edges
+            if N[0] is not 'I':  # N-I in { M-I, G-I }
                 for I in self[N]:
                     self[N][I]['cnt'] = cnts[N[0]+I[0]]
                     cnts[N[0]+I[0]] += 1

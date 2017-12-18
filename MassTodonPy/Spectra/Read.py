@@ -9,7 +9,7 @@ from MassTodonPy.Measure.Measure import Measure
 
 # TODO add checks about the MS number
 def read_mz_file(path,
-                 mz_precision=10,
+                 mz_precision=infinity,
                  intensity_cut_off=eps,
                  format='mzxml'):
     """Read mzXML spectra.
@@ -23,6 +23,7 @@ def read_mz_file(path,
     mz_precision : integer
         The number of digits after which the support values get rounded.
         E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
+        Defaults to infinity: no rounding of the input.
     intensity_cut_off : float
         The cut off value for peak intensity.
     format : str
@@ -37,7 +38,8 @@ def read_mz_file(path,
         for spectrum in info:
             spectrum = Measure(spectrum['m/z array'], spectrum['intensity array'])
             spectrum.trim(intensity_cut_off)
-            spectrum.round_atoms(mz_precision)
+            if mz_precision is not infinity:
+                spectrum.round_atoms(mz_precision)
             yield spectrum
 
 
@@ -68,12 +70,13 @@ def read_txt_file(path,
             intensities.append(float(line[1]))
     spectrum = Measure(mzs, intensities)
     spectrum.trim(intensity_cut_off)
-    spectrum.round_atoms(mz_precision)
+    if mz_precision is not infinity:
+        spectrum.round_atoms(mz_precision)
     return spectrum
 
 
 def read_spectrum(path='',
-                  mz_precision=10,
+                  mz_precision=infinity,
                   intensity_cut_off=eps):
     """Read mzXML spectra.
 
