@@ -248,7 +248,7 @@ class Measure(object):
             for atom, mass in self:
                 writer.writerow([atom, mass])
 
-    def plot(self, bar_width=1, plot_width=1000, plot_height=600):
+    def plot(self, bar_width=1, plot_width=1000, plot_height=600, show=True):
         """Make an interactive Bokeh barplot.
 
         Parameters
@@ -271,19 +271,22 @@ class Measure(object):
                     bar_width = min(bw, bar_width)  # prevent infinite width
                 hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
                                         (self._store_names[1], "@top{0,0}")])
-                TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select " 
+                TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select "
                 TOOLS += "lasso_select save"
                 TOOLS = TOOLS.split(' ')
                 TOOLS.append(hover)
-                plot = figure(tools=TOOLS, 
+                plot = figure(tools=TOOLS,
                               width=plot_width,
                               height=plot_height)
                 plot.vbar(x=self.atoms,
-                          top=self.masses, 
+                          top=self.masses,
                           width=bar_width,
                           color='black')
                 plot.sizing_mode = 'scale_both'
-                show(plot)
+                if show:
+                    show(plot)
+                else:
+                    return plot
             except ImportError:
                 print('Try installing/reinstalling the Bokeh module.')
         else:
