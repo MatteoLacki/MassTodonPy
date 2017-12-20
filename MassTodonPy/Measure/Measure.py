@@ -6,7 +6,7 @@ from operator import itemgetter
 from six.moves import range, zip
 
 from MassTodonPy.Data.Constants import infinity
-from MassTodonPy.Misc.plot_buffers import get_buffers
+from MassTodonPy.Misc.plot_buffers import buffers
 from MassTodonPy.Misc.strings import repr_long_list
 from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Parsers.Paths import parse_path
@@ -263,7 +263,7 @@ class Measure(object):
             for atom, mass in self:
                 writer.writerow([atom, mass])
 
-    def plot(self, 
+    def plot(self,
              bar_width=.01,
              plot_width=1000,
              plot_height=600,
@@ -283,7 +283,7 @@ class Measure(object):
                 from bokeh.models import HoverTool
             except ImportError:
                 raise ImportError('Try installing/reinstalling the Bokeh module.')
-            
+
             if _simple:  # a simple plot
                 if bar_width is 1:  # get minimal width - the minimal space between atoms
                     prev_atom = self.atoms[0]
@@ -296,7 +296,7 @@ class Measure(object):
                 hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
                                             (self._store_names[1], "@top{0,0}")],
                                   mode='vline')
-    
+
             TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(' ')
 
             max_mass = self.masses.max() * 1.05
@@ -312,9 +312,9 @@ class Measure(object):
             plot.sizing_mode = 'scale_both'
 
             if not _simple:  # nice, complex plot
-                buffers_L, buffers_R = get_buffers(self.atoms,
-                                                   self.atoms,
-                                                   _max_buffer_len)
+                buffers_L, buffers_R = buffers(self.atoms,
+                                               self.atoms,
+                                               _max_buffer_len)
                 source = ColumnDataSource(data={'atoms': self.atoms,
                                                 'top': self.masses,
                                                 'left': buffers_L,
@@ -335,6 +335,6 @@ class Measure(object):
             if show:
                 show(plot)
             else:
-                return plot                
+                return plot
         else:
             print('You try to plot emptiness: look deeper into your heart.')

@@ -9,55 +9,12 @@ import numpy as np
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
-# from MassTodonPy.Misc.plot_buffers import get_buffers
+from MassTodonPy.Misc.plot_buffers import buffers
 from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Spectra.Spectrum import Spectrum
 
 substanceP = get_dataset('substanceP')
-spectrum = substanceP.spectrum
-
-spectrum.plot()
-
-atoms = spectrum.atoms
-masses = spectrum.masses
-buffers_L, buffers_R = get_buffers(atoms, atoms, max_length=2)
-plot_width = 1000
-plot_height = 600
-bar_width = .01
-
-TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(' ')
-plot = figure(tools=TOOLS,
-              width=plot_width,
-              height=plot_height)
-
-_store_names = spectrum._store_names
-
-source = ColumnDataSource(data={'top': masses,
-                                'left': buffers_L,
-                                'right': buffers_R,
-                                'atoms': atoms})
-
-invisible_buffers = plot.quad(left='left',
-                              right='right',
-                              top='top',
-                              bottom=0.0,
-                              alpha=0.0,
-                              color='black',
-                              source=source)
-raw_spectrum = plot.vbar(x=atoms,
-                         top=masses,
-                         width=bar_width,
-                         color='black')
-hover = HoverTool(renderers=[invisible_buffers],
-                  tooltips=[(_store_names[1], "@top{0,0}"),
-                            (_store_names[0], "@atoms{0,0.000}")],
-                  mode='vline')
-plot.add_tools(hover)
-show(plot)
-
-
-
-
+# substanceP.spectrum.plot()
 
 modifications = defaultdict(dict)
 for (number, group), mods in substanceP.precursor.modifications.items():
@@ -73,7 +30,7 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       mz_precision=.05,
                       _devel=True)
 
-def base_data(solutions, mz_digits):
+def data(solutions, mz_digits):
     base_width = 10**(-mz_digits)
     for sol in solutions:
         for N in sol:
@@ -91,18 +48,28 @@ def base_data(solutions, mz_digits):
                     intensity_d = intensity/(max_mz - min_mz)
                     estimate = sol.node[N]['estimate']
                     estimate_d = estimate/(max_mz - min_mz)
-                    yield (min_mz, max_mz), Counter({'intensity': intensity,
-                                                     'intensity_d': intensity_d,
-                                                     'estimate': estimate,
-                                                     'estimate_d': estimate_d})
+                    out_counter = Counter({'intensity': intensity,
+                                           'intensity_d': intensity_d,
+                                           'estimate': estimate,
+                                           'estimate_d': estimate_d})
+                    for I in sol[N]:
+
+                    out_formulas
+
+                    yield (min_mz, max_mz), (out_counter, out_formulas)
 
 D = defaultdict(Counter)
-for interval, data in base_data(masstodon._solutions, masstodon.mz_digits):
+for interval, data in base_data(masstodon._solutions,
+                                masstodon.mz_digits):
     D[interval] += data
 
+D
+
 mz_L, mz_R, I, I_d, E, E_d = list(zip(*sorted((l, r,
-                                               c['intensity'], c['intensity_d'],
-                                               c['estimate'], c['estimate_d'])
+                                               c['intensity'],
+                                               c['intensity_d'],
+                                               c['estimate'],
+                                               c['estimate_d'])
                                               for (l, r), c in D.items())))
 
 buffers_L, buffers_R = get_buffers(mz_L, mz_R, max_length=.5)

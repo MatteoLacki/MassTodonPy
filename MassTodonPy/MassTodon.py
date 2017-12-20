@@ -168,7 +168,7 @@ class MassTodon(object):
         file_path, file_name, file_ext = parse_path(path)
         assert file_ext in ('.csv', '.tsv'), "Writing only to csv or tsv."
         delimiter = ',' if file_ext == '.csv' else '\t'
-        
+
         # write intensities of molecules
         path_intensities = path.replace('.', '_intensities.')
         with open(path_intensities, 'w') as csvfile:
@@ -190,7 +190,7 @@ class MassTodon(object):
                         writer.writerow([name + str(k), v])
                 else:
                     writer.writerow([name, intensity])
-        
+
         # write probabilities of reactions
         path_probabilities = path.replace('.', '_probabilities.')
         with open(path_probabilities, 'w') as csvfile:
@@ -203,3 +203,5 @@ class MassTodon(object):
                 else:
                     writer.writerow([name, intensity])
 
+    def plot(self, simple=True):
+        pass

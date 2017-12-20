@@ -3,7 +3,7 @@ from six.moves import range, zip
 from MassTodonPy.Data.Constants import infinity
 
 
-def get_buffer(r_prev, l, r, l_next, max_length=.5):
+def buffer(r_prev, l, r, l_next, max_length=.5):
     """Create one buffer."""
     tol = min(max_length, (l-r_prev)/2, (l_next-r)/2)
     return l - tol, r + tol
@@ -15,7 +15,7 @@ def buffer_args(L, R, max_length=.5):
         yield R[i-1], L[i], R[i] , L[i+1], max_length
     yield R[-2], L[-1], R[-1], infinity, max_length
 
-def get_buffers(L, R, max_length=.5):
+def buffers(L, R, max_length=.5):
     """Get left and right ends of buffers around intervals.
 
     Parameters
@@ -31,4 +31,6 @@ def get_buffers(L, R, max_length=.5):
     out : iterable
         Two lists of left and right ends of buffers.
     """
-    return zip(*(get_buffer(*args) for args in buffer_args(L, R, max_length)))
+    # the results of get_buffer are tuples:
+    #   below we unpack them and report all first, then all second, and so on ..
+    return zip(*(buffer(*args) for args in buffer_args(L, R, max_length)))
