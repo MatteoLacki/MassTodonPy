@@ -6,15 +6,67 @@ from bokeh.models import HoverTool
 from collections import Counter, defaultdict
 import numpy as np
 
+from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
+# from MassTodonPy.Misc.plot_buffers import get_buffers
+from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Spectra.Spectrum import Spectrum
 
 substanceP = get_dataset('substanceP')
+spectrum = substanceP.spectrum
+
+spectrum.plot()
+
+atoms = spectrum.atoms
+masses = spectrum.masses
+buffers_L, buffers_R = get_buffers(atoms, atoms, max_length=2)
+plot_width = 1000
+plot_height = 600
+bar_width = .01
+
+TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(' ')
+plot = figure(tools=TOOLS,
+              width=plot_width,
+              height=plot_height)
+
+_store_names = spectrum._store_names
+
+source = ColumnDataSource(data={'top': masses,
+                                'left': buffers_L,
+                                'right': buffers_R,
+                                'atoms': atoms})
+
+invisible_buffers = plot.quad(left='left',
+                              right='right',
+                              top='top',
+                              bottom=0.0,
+                              alpha=0.0,
+                              color='black',
+                              source=source)
+raw_spectrum = plot.vbar(x=atoms,
+                         top=masses,
+                         width=bar_width,
+                         color='black')
+hover = HoverTool(renderers=[invisible_buffers],
+                  tooltips=[(_store_names[1], "@top{0,0}"),
+                            (_store_names[0], "@atoms{0,0.000}")],
+                  mode='vline')
+plot.add_tools(hover)
+show(plot)
+
+
+
+
+
+modifications = defaultdict(dict)
+for (number, group), mods in substanceP.precursor.modifications.items():
+    modifications[number][group] = dict(mods)
 
 precursor = {'name': 'substanceP',
              'fasta': substanceP.precursor.fasta,
-             'charge': 3}
+             'charge': 3,
+             'modifications': modifications}
 
 masstodon = MassTodon(spectrum=substanceP.spectrum,
                       precursor=precursor,
@@ -49,26 +101,22 @@ for interval, data in base_data(masstodon._solutions, masstodon.mz_digits):
     D[interval] += data
 
 mz_L, mz_R, I, I_d, E, E_d = list(zip(*sorted((l, r,
-                                               c['estimate'], c['estimate_d'],
-                                               c['intensity'], c['intensity_d'])
+                                               c['intensity'], c['intensity_d'],
+                                               c['estimate'], c['estimate_d'])
                                               for (l, r), c in D.items())))
 
-# def get_buffers(mz_L, mz_R, max_length=.45):
-#     L = []
-#     R = []
-#     r_prev = 0  # guards: 0th peak is a phoney
-#     for i, (l, r) in enumerate(zip(mz_L, mz_R)):
-#         tol = min((l - r_prev)/2, max_length)
-#         if i:
-#             R.append(r_prev + tol)
-#         L.append(l - tol)
-#         r_prev = r
-#     R.append(r + tol)
-#     return L, R
-# not symmetric
+buffers_L, buffers_R = get_buffers(mz_L, mz_R, max_length=.5)
 
-def get_buffers(mz_L, mz_R, max_length=.45):
-    tol = min(max_length, (mz_L[1] - mz_R[0])/2)
+
+buffers_L, buffers_R = list(zip(*get_buffers(mz_L, mz_R)))
+
+
+def get_buffers(mz_L, mz_R, max_length=.5):
+    r_prev = -infinity
+    l = mz_R[0]
+    r = mz_R[0]
+    l_next = mz_L[1]
+    tol = min(max_length, (l-r_prev)/2, (l_next - r)/2)
     L = [mz_L[0]-tol]
     R = [mz_R[0]+tol]
     for i in range(1,len(mz_L)-1):
@@ -85,96 +133,55 @@ def get_buffers(mz_L, mz_R, max_length=.45):
     return L, R
 
 buffers_L, buffers_R = get_buffers(mz_L, mz_R)
-
-
-# source = ColumnDataSource(data=D)
-max_intensity = max(max(I_d), max(E_d))
 TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(" ")
-_mult = 2
 
+_mult = 2
+intensity = True
+Y_exp = I if intensity else I_d
+Y_est = E if intensity else E_d
+
+max_intensity = max(max(Y_est), max(Y_exp))*1.05
 plot = figure(plot_width=800*_mult,
               plot_height=400*_mult,
               y_range=(0, max_intensity),
               tools=TOOLS)
 plot.xaxis.axis_label = 'mass/charge'
-plot.yaxis.axis_label = 'intensity'
-
-# tolerance = .03
-# experimental_bars = plot.vbar(x=masstodon.spectrum.mz,
-#                               top=masstodon.spectrum.intensity,
-#                               width=tolerance,
-#                               color='black',
-#                               alpha=.2)
-# experimental_squares = plot.square(x=masstodon.spectrum.mz,
-#                                    y=masstodon.spectrum.intensity,
-#                                    size=5,
-#                                    color='black',
-#                                    alpha=.2)
-
-experimental_bars = plot.quad(left=mz_L,
-                              right=mz_R,
+plot.yaxis.axis_label = 'intensity' if intensity else 'intensity / (m over z interval length)'
+source = ColumnDataSource(data={'top': Y_exp, 'estimated': Y_est,
+                                'left': buffers_L, 'right': buffers_R})
+invisible_buffers = plot.quad(left='left',
+                              right='right',
+                              top='top',
                               bottom=0.0,
-                              top=I_d,
-                              line_color='black',
-                              fill_alpha=0)
-
+                              alpha=0.04,
+                              color='black',
+                              source=source)
+if intensity:
+    tolerance = .01
+    experimental_bars = plot.vbar(x=masstodon.spectrum.mz,
+                                  top=masstodon.spectrum.intensity,
+                                  width=tolerance,
+                                  color='black',
+                                  alpha=.1)
+    raw_spectrum = plot.square(x=masstodon.spectrum.mz,
+                               y=masstodon.spectrum.intensity,
+                               size=10,
+                               color='black',
+                               alpha=.5)
+plot.segment(x0=buffers_L, x1=buffers_R, y0=Y_exp, y1=Y_exp,
+             color='black', line_width=3)
+plot.segment(x0=buffers_L, x1=buffers_R, y0=Y_est, y1=Y_est,
+             color='red', line_width=3)
 estimated_bars = plot.quad(left=mz_L,
                            right=mz_R,
                            bottom=0.0,
-                           top=E_d,
+                           top=Y_est,
                            color='red',
                            fill_alpha=.3)
-
-invisible_buffers = plot.quad(left=buffers_L,
-                              right=buffers_R,
-                              top=I_d,
-                              bottom=0.0,
-                              alpha=0.0)
-
 hover_invisible = HoverTool(renderers=[invisible_buffers],
-                            tooltips=[('intensity', "@top{0,0.000}"),
-                                      ('m/z', "@left{0,0.000}")],
+                            tooltips=[('observed I', "@top{0,0}"),
+                                      ('estimated I', "@estimated{0,0}"),
+                                      ('m/z', "[@left{0,0.000}, @right{0,0.000}]")],
                             mode='vline')
-
-
 plot.add_tools(hover_invisible)
 show(plot)
-
-
-#
-# plot = figure(plot_width=800*_mult,
-#               plot_height=400*_mult,
-#               # background_fill_color='black',
-#               # border_fill_color='black',
-#               y_range=(0, max_intensity),
-#               tools=TOOLS)
-
-# hover_quads = HoverTool(renderers = [groups],
-#                         tooltips=[('intensity', "@top{0,0}"),
-#                                   ('m/z', "[@left{0,0.000}, @right{0,0.000}]")],
-#                         mode='vline')
-# hover_invisible = HoverTool(renderers = [invisible_buffers],
-#                             tooltips=[('intensity', "@top{0,0}"),
-#                                       ('m/z', "@x{0,0.000}")],
-#                             mode='vline')
-# plot.add_tools(hover_invisible, hover_bars, hover_squares, hover_quads)
-
-# def get_buffers(mz_L, mz_R, max_buffer_length=.45):
-#     r_prev = 0  # guard: 0th peak is a phoney
-#     prev_width = 0
-#     for i, (l, r) in enumerate(zip(mz_L, mz_R)):
-#         buffer_length = min((l- r_prev)/2, max_buffer_length)
-#         if i is not 0:
-#             yield r_prev - prev_width/2, r_prev + buffer_length # previous right buffer
-#         width = r - l
-#         yield l - buffer_length, l + width/2  # current left buffer
-#         r_prev = r
-#         prev_width = width
-#     yield r_prev, r_prev + max_buffer_length  # last right buffer
-# hover_bars = HoverTool(renderers = [experimental_bars],
-#                        tooltips=[('intensity', "@top{0,0}"),
-#                                  ('m/z', "[@left{0,0.000}, @right{0,0.000}]")])
-#
-# hover_bars_e = HoverTool(renderers = [estimated_bars],
-#                           tooltips=[('intensity', "@top{0,0}"),
-#                                     ('m/z', "[@left{0,0.000},@right{0,0.000}]")])

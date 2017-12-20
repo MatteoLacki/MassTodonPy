@@ -4,7 +4,7 @@
 + csv:
     + input spectrum
     * save results
-    * no pandas 
+    * no pandas
 + Update to IsoSpec 2.0
 + check different modes of isotopic calculations under IsoSpec2.0
 + add assertions to read_mzxml_spectrum
@@ -19,6 +19,7 @@
 
 # elegant
 + Automate devel set up
++ Add the invisible buffers to Measure.plot()
 
 # Don't forget
 + The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()

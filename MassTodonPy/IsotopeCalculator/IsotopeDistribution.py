@@ -16,6 +16,7 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
+from future.builtins import super
 import numpy as np
 
 from MassTodonPy.Measure.Measure import Measure
@@ -24,7 +25,7 @@ from MassTodonPy.Measure.Measure import Measure
 class IsotopeDistribution(Measure):
     """Store an isotopic distribution."""
 
-    def __init__(self, mz=np.array([]), probability=np.array([])):
+    def __init__(self, mz=np.array([]), probability=np.array([]), sort=True):
         """Initialize an isotopic distribution.
 
         Parameters
@@ -35,8 +36,7 @@ class IsotopeDistribution(Measure):
             Probabilities of the isotopic distribution.
 
         """
-        self.mz = np.array(mz)
-        self.probability = np.array(probability)
+        super().__init__(mz, probability, sort)
         self._store_names = ('m/z', 'probability')
 
     @property

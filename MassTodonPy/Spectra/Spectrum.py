@@ -34,9 +34,10 @@ class Spectrum(Measure):
                  spectrum='',
                  mz_digits=infinity,
                  min_intensity=eps,
-                 percent_top_peaks=1.0):
+                 percent_top_peaks=1.0,
+                 sort=True):
         """Initialize the Spectrum."""
-        self._store_names = ('mz', 'intensity')
+        self._store_names = ('m/z', 'intensity')
         self.mz_digits = mz_digits
         if isinstance(spectrum, str) and spectrum: 
             spectrum = read_spectrum(spectrum, mz_digits, eps)
@@ -60,6 +61,8 @@ class Spectrum(Measure):
             self.mz = mz
             self.intensity = intensity
         self.trim_intensity(eps)  # intensity > 0
+        if sort:
+            self.sort()
         self.round_mz(self.mz_digits)
         self.low_spectrum = 0
         if min_intensity > eps:

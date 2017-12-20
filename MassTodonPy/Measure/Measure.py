@@ -6,26 +6,41 @@ from operator import itemgetter
 from six.moves import range, zip
 
 from MassTodonPy.Data.Constants import infinity
+from MassTodonPy.Misc.plot_buffers import get_buffers
 from MassTodonPy.Misc.strings import repr_long_list
+from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Parsers.Paths import parse_path
 
 class Measure(object):
     """Store a discrete finite measure with atoms in R."""
 
-    def __init__(self, atoms=np.array([]), masses=np.array([])):
+    def __init__(self, atoms=np.array([]),
+                       masses=np.array([]),
+                       sort=True):
         """Initialize a measure.
 
         Parameters
-        ----------
+        ==========
         atoms : numpy array
             The atoms upon which the measure holds the mass.
         masses : numpy array
             The masses on atoms.
 
+        Remarks
+        =======
+        If you have sorted the measure beforehand, do set 'is_sorted' to True.
+
         """
-        self.atoms = np.array(atoms)
-        self.masses = np.array(masses)
+        self.atoms = atoms
+        self.masses = masses
+        if sort:
+            self.sort()
         self._store_names = ('atom', 'mass')
+
+    def sort(self):
+        """Sort measure by atomic values."""
+        self.atoms, self.masses = (np.array(x) for x in sort_by_first(self.atoms,
+                                                                      self.masses))
 
     def __has_type_of(self, other):
         """Assert that 'self' and 'other' have the same type."""
@@ -170,7 +185,7 @@ class Measure(object):
         total_value = self.masses.sum()
         i = 0
         S = 0.0
-        for intensity in sorted(self.masses):
+        for intensity in self.masses:
             S += intensity/total_value
             if S < P:
                 break
@@ -248,7 +263,13 @@ class Measure(object):
             for atom, mass in self:
                 writer.writerow([atom, mass])
 
-    def plot(self, bar_width=1, plot_width=1000, plot_height=600, show=True):
+    def plot(self, 
+             bar_width=.01,
+             plot_width=1000,
+             plot_height=600,
+             show=True,
+             _simple=False,
+             _max_buffer_len=2):
         """Make an interactive Bokeh barplot.
 
         Parameters
@@ -258,9 +279,12 @@ class Measure(object):
         """
         if len(self.atoms) > 0:
             try:
-                from bokeh.plotting import figure, show
+                from bokeh.plotting import figure, show, ColumnDataSource
                 from bokeh.models import HoverTool
-
+            except ImportError:
+                raise ImportError('Try installing/reinstalling the Bokeh module.')
+            
+            if _simple:  # a simple plot
                 if bar_width is 1:  # get minimal width - the minimal space between atoms
                     prev_atom = self.atoms[0]
                     bw = infinity
@@ -270,24 +294,47 @@ class Measure(object):
                         prev_atom = atom
                     bar_width = min(bw, bar_width)  # prevent infinite width
                 hover = HoverTool(tooltips=[(self._store_names[0], "@x{0,0.000}"),
-                                        (self._store_names[1], "@top{0,0}")])
-                TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select "
-                TOOLS += "lasso_select save"
-                TOOLS = TOOLS.split(' ')
-                TOOLS.append(hover)
-                plot = figure(tools=TOOLS,
-                              width=plot_width,
-                              height=plot_height)
-                plot.vbar(x=self.atoms,
-                          top=self.masses,
-                          width=bar_width,
-                          color='black')
-                plot.sizing_mode = 'scale_both'
-                if show:
-                    show(plot)
-                else:
-                    return plot
-            except ImportError:
-                print('Try installing/reinstalling the Bokeh module.')
+                                            (self._store_names[1], "@top{0,0}")],
+                                  mode='vline')
+    
+            TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(' ')
+
+            max_mass = self.masses.max() * 1.05
+            plot = figure(tools=TOOLS,
+                          width=plot_width,
+                          height=plot_height,
+                          y_range=(0, max_mass))
+
+            raw_measure = plot.vbar(x=self.atoms,
+                                    top=self.masses,
+                                    width=bar_width,
+                                    color='black')
+            plot.sizing_mode = 'scale_both'
+
+            if not _simple:  # nice, complex plot
+                buffers_L, buffers_R = get_buffers(self.atoms,
+                                                   self.atoms,
+                                                   _max_buffer_len)
+                source = ColumnDataSource(data={'atoms': self.atoms,
+                                                'top': self.masses,
+                                                'left': buffers_L,
+                                                'right': buffers_R})
+                invisible_buffers = plot.quad(left='left',
+                                              right='right',
+                                              top='top',
+                                              bottom=0.0,
+                                              alpha=0.0,
+                                              color='black',
+                                              source=source)
+                hover = HoverTool(renderers=[invisible_buffers],
+                                  tooltips=[(self._store_names[1], "@top{0,0}"),
+                                            (self._store_names[0], "@atoms{0,0.000}")],
+                                  mode='vline')
+
+            plot.add_tools(hover)
+            if show:
+                show(plot)
+            else:
+                return plot                
         else:
             print('You try to plot emptiness: look deeper into your heart.')
