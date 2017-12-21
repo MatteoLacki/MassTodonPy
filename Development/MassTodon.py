@@ -30,6 +30,11 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       mz_precision=.05,
                       _devel=True)
 
+masstodon._solutions[0].node['I0']
+Counter(N[0] for sol in masstodon._solutions for N in sol)
+
+
+masstodon._solutions[0].nodes
 def data(solutions, mz_digits):
     base_width = 10**(-mz_digits)
     for sol in solutions:

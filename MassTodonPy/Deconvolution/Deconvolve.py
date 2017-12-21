@@ -69,10 +69,10 @@ def deconvolve(molecules,
     # build up the deconvolution graph
     for M_cnt, mol in enumerate(molecules):
         M = 'M' + str(M_cnt)
-        # tree represents how a molecule links to the spectrum
+        # mol_graph represents how a molecule links to the spectrum
         # and might be included in the deconvolution graph
-        tree = nx.Graph()
-        tree.add_node(M, molecule=mol)
+        mol_graph = nx.Graph()
+        mol_graph.add_node(M, molecule=mol)
         # this is the reverse mapping between molecules and the graph
         mol.graph_tag = M
 
@@ -80,27 +80,29 @@ def deconvolve(molecules,
         for mz_I, prob in mol.isotopologues(**isospec_args):
             I = 'I' + str(I_cnt)
             I_cnt += 1
-            tree.add_node(I, mz=mz_I, probability=prob)
-            tree.add_edge(M, I)
+            mol_graph.add_node(I, mz=mz_I, probability=prob)
+            mol_graph.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
 
             # link with real peaks                  show indices ↓ ?
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:  # True - get E_cnt additionally to m/z and intensity.
                 E = 'E' + str(E_cnt)
-                tree.add_node(E, mz=mz_E, intensity=intensity)
-                tree.add_edge(I, E)
+                mol_graph.add_node(E, mz=mz_E, intensity=intensity)
+                mol_graph.add_edge(I, E)
         
         # total probability of isotopologues around experimental peaks
         total_prob = sum(d['probability']
-                         for n, d in tree.nodes(data=True)
-                         if n[0] is 'I' and tree.degree[n] > 1)
-        # plant the tree in the graph?
+                         for n, d in mol_graph.nodes(data=True)
+                         if n[0] is 'I' and mol_graph.degree[n] > 1)
+        # plant the mol_graph in the graph?
         if total_prob >= min_prob_per_molecule: 
-            graph.add_nodes_from(tree.nodes(data=True))
-            graph.add_edges_from(tree.edges(data=True))
+            if method is 'Matteo':  # Glue Is that share common Es.
+                _glue_sister_isotopologues(mol_graph)
+            graph.add_nodes_from(mol_graph.nodes(data=True))
+            graph.add_edges_from(mol_graph.edges(data=True))
     
     if method is 'Matteo':
-        graph = _add_G_remove_E(graph)
+        _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph) 
         for graph in graphs:
             problem = DeconvolutionProblem(graph, **solver_args)
@@ -114,14 +116,48 @@ def deconvolve(molecules,
         raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
 
 
-def _add_G_remove_E(graph):
-    """Add groups of experimental peaks to the graph.
+def _glue_sister_isotopologues(graph):
+    """Merge I nodes that share parents.
+
+    The final graph will have I with the id of the smallest I in the group
+    of Is that share common E nodes.
 
     Parameters
     ==========
-    graph: networkx.Graph()
-        A graph with molecule nodes M, 
-        isotopologue nodes I, and experimental peak nodes E.
+    graph: networkx.Graph
+        The graph consisting of a molecule node M,
+        its isotopologues I, and their experimental peaks E.
+    """
+    visited = {}
+    I_2_delete = []
+    for I in graph:
+        if I[0] is 'I':
+            Gs = frozenset(n for n in graph[I] if n[0] is not 'M')
+            if Gs:
+                if not Gs in visited:
+                    visited[Gs] = I
+                    graph.node[I]['min_mz'] = graph.node[I]['mz']
+                    graph.node[I]['max_mz'] = graph.node[I]['mz']
+                    del graph.node[I]['mz']
+                else:
+                    _I = visited[Gs]
+                    graph.node[_I]['min_mz'] = min(graph.node[_I]['min_mz'],
+                                                       graph.node[I]['mz'])
+                    graph.node[_I]['max_mz'] = max(graph.node[_I]['max_mz'],
+                                                       graph.node[I]['mz'])
+                    graph.node[_I]['probability'] += graph.node[I]['probability']
+                    I_2_delete.append(I)
+    graph.remove_nodes_from(I_2_delete)
+
+
+def _add_G_remove_E(graph):
+    """Merge experimental nodes E into experimental group nodes G.
+
+    Parameters
+    ==========
+    graph: networkx.Graph
+        The graph consisting of a molecule node M,
+        its isotopologues I, and their experimental peaks E.
     """
     G_intensity = Counter()
     G_min_mz = defaultdict(lambda: infinity)
@@ -160,5 +196,5 @@ def _add_G_remove_E(graph):
             new_edges.append((I, G))
     graph.add_nodes_from(new_nodes)
     graph.add_edges_from(new_edges)
-    return graph
+
 
