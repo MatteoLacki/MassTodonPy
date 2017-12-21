@@ -26,6 +26,9 @@ from random import randint
 
 from MassTodonPy.Deconvolution.Misc import diag, normalize_rows
 
+#TODO: try to eliminate copying while instantiating
+#TODO:  turn the matrix generators into iterators
+#       so to use the with different solvers easily
 class DeconvolutionProblem(nx.Graph):
     """Prepare and solve one deconvolution problem."""
     def __init__(self, 
@@ -64,6 +67,7 @@ class DeconvolutionProblem(nx.Graph):
                     self[N][I]['cnt'] = cnts[N[0]+I[0]]
                     cnts[N[0]+I[0]] += 1
         cnts['var'] = cnts['GI'] + cnts['M']
+        print(cnts)
         self.__dict__.update({k + str('_no'): v
                               for k, v in cnts.items()})
 

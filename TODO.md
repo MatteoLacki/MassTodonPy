@@ -16,6 +16,9 @@
     + deconvolution
 + Have a look at IsotopeCalculator/simulator.py
     + DO WE USE SPECTRUM CLASS HERE? We certainly could.
++ Spectrum reader must be run without sorting the spectra all the time.
++ Add a bash script plot_spectrum to open a file directly from command line
++ Add a similar bash script for IsoSpecPy
 
 # elegant
 + Automate devel set up

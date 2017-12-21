@@ -24,6 +24,7 @@ from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
+from MassTodonPy.Deconvolution.Wanda_Ciacho_DeconvolutionProblem import GaussianDeconvolutionProblem
 
 def deconvolve(molecules,
                spectrum,
@@ -31,7 +32,8 @@ def deconvolve(molecules,
                mz_tol=.05,
                min_prob_per_molecule=.7,
                isospec_args={},
-               solver_args={}):
+               solver_args={},
+               _merge_sister_Is=True):
     """Get the sequence of deconvolution problems.
 
     Parameters
@@ -96,11 +98,12 @@ def deconvolve(molecules,
                          if n[0] is 'I' and mol_graph.degree[n] > 1)
         # plant the mol_graph in the graph?
         if total_prob >= min_prob_per_molecule: 
-            if method is 'Matteo':  # Glue Is that share common Es.
+            if method is 'Matteo' and _merge_sister_Is:  # Glue Is that share common Es.
                 _glue_sister_isotopologues(mol_graph)
             graph.add_nodes_from(mol_graph.nodes(data=True))
             graph.add_edges_from(mol_graph.edges(data=True))
     
+    #TODO Here we have double copying. Optimize.
     if method is 'Matteo':
         _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph) 
@@ -111,7 +114,9 @@ def deconvolve(molecules,
     elif method is 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
-            yield graph
+            problem = GaussianDeconvolutionProblem(graph, **solver_args)
+            problem.solve()
+            yield problem
     else: 
         raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
 

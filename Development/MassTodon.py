@@ -30,11 +30,11 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       mz_precision=.05,
                       _devel=True)
 
-masstodon._solutions[0].node['I0']
-Counter(N[0] for sol in masstodon._solutions for N in sol)
 
-
-masstodon._solutions[0].nodes
+# Counter(N[0] for sol in masstodon._solutions for N in sol)
+#
+# Counter(N[0] for sol in masstodon._solutions for N in sol)
+#TODO extract M information.
 def data(solutions, mz_digits):
     base_width = 10**(-mz_digits)
     for sol in solutions:
@@ -57,18 +57,13 @@ def data(solutions, mz_digits):
                                            'intensity_d': intensity_d,
                                            'estimate': estimate,
                                            'estimate_d': estimate_d})
-                    for I in sol[N]:
-
-                    out_formulas
-
-                    yield (min_mz, max_mz), (out_counter, out_formulas)
-
+                    # for I in sol[N]:
+                    # out_formulas
+                    # yield (min_mz, max_mz), (out_counter, out_formulas)
+                    yield (min_mz, max_mz), out_counter
 D = defaultdict(Counter)
-for interval, data in base_data(masstodon._solutions,
-                                masstodon.mz_digits):
+for interval, data in data(masstodon._solutions, masstodon.mz_digits):
     D[interval] += data
-
-D
 
 mz_L, mz_R, I, I_d, E, E_d = list(zip(*sorted((l, r,
                                                c['intensity'],
@@ -77,36 +72,10 @@ mz_L, mz_R, I, I_d, E, E_d = list(zip(*sorted((l, r,
                                                c['estimate_d'])
                                               for (l, r), c in D.items())))
 
-buffers_L, buffers_R = get_buffers(mz_L, mz_R, max_length=.5)
+buffers_L, buffers_R = buffers(mz_L, mz_R, max_length=.5)
 
 
-buffers_L, buffers_R = list(zip(*get_buffers(mz_L, mz_R)))
-
-
-def get_buffers(mz_L, mz_R, max_length=.5):
-    r_prev = -infinity
-    l = mz_R[0]
-    r = mz_R[0]
-    l_next = mz_L[1]
-    tol = min(max_length, (l-r_prev)/2, (l_next - r)/2)
-    L = [mz_L[0]-tol]
-    R = [mz_R[0]+tol]
-    for i in range(1,len(mz_L)-1):
-        r_prev = mz_R[i-1]
-        l = mz_L[i]
-        r = mz_R[i]
-        l_next = mz_L[i+1]
-        tol = min(max_length, (l-r_prev)/2, (l_next-r)/2)
-        L.append(l-tol)
-        R.append(r+tol)
-    tol = min(max_length, (mz_L[-1] - mz_R[-2])/2)
-    L.append(mz_L[-1] - tol)
-    R.append(mz_R[-1] + tol)
-    return L, R
-
-buffers_L, buffers_R = get_buffers(mz_L, mz_R)
 TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(" ")
-
 _mult = 2
 intensity = True
 Y_exp = I if intensity else I_d
