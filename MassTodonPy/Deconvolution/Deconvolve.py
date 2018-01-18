@@ -53,7 +53,7 @@ def deconvolve(molecules,
         'def mz_tol(mz):' and it should return a tuple '(mz_L, mz_R)'.
     min_prob_per_molecule : float
         The minimal probability an envelope has to scoop
-        to be included in the deconvolution graph.        
+        to be included in the deconvolution graph.
     isospec_args: dict
         Arguments for isospec: 'joint_probability' and 'mz_digits'.
     solver_args : dictionary
@@ -86,27 +86,30 @@ def deconvolve(molecules,
             mol_graph.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
 
-            # link with real peaks                  show indices ↓ ?
-            for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:  # True - get E_cnt additionally to m/z and intensity.
+            # link with real peaks ---------------> show indices ↓ ?
+            for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:
+                # get E_cnt additionally to m/z and intensity <--|
                 E = 'E' + str(E_cnt)
                 mol_graph.add_node(E, mz=mz_E, intensity=intensity)
                 mol_graph.add_edge(I, E)
-        
+
         # total probability of isotopologues around experimental peaks
         total_prob = sum(d['probability']
                          for n, d in mol_graph.nodes(data=True)
                          if n[0] is 'I' and mol_graph.degree[n] > 1)
+
         # plant the mol_graph in the graph?
-        if total_prob >= min_prob_per_molecule: 
-            if method is 'Matteo' and _merge_sister_Is:  # Glue Is that share common Es.
+        if total_prob >= min_prob_per_molecule:
+            if method is 'Matteo' and _merge_sister_Is:
+                # Glue Is sharing common Es.
                 _glue_sister_isotopologues(mol_graph)
             graph.add_nodes_from(mol_graph.nodes(data=True))
             graph.add_edges_from(mol_graph.edges(data=True))
-    
+
     #TODO Here we have double copying. Optimize.
     if method is 'Matteo':
         _add_G_remove_E(graph)
-        graphs = connected_component_subgraphs(graph) 
+        graphs = connected_component_subgraphs(graph)
         for graph in graphs:
             problem = DeconvolutionProblem(graph, **solver_args)
             problem.solve()
@@ -117,7 +120,7 @@ def deconvolve(molecules,
             problem = GaussianDeconvolutionProblem(graph, **solver_args)
             problem.solve()
             yield problem
-    else: 
+    else:
         raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
 
 
@@ -137,7 +140,7 @@ def _glue_sister_isotopologues(graph):
     I_2_delete = []
     for I in graph:
         if I[0] is 'I':
-            Gs = frozenset(n for n in graph[I] if n[0] is not 'M')
+            Gs = frozenset(G for G in graph[I] if G[0] is not 'M')
             if Gs:
                 if not Gs in visited:
                     visited[Gs] = I
@@ -201,5 +204,3 @@ def _add_G_remove_E(graph):
             new_edges.append((I, G))
     graph.add_nodes_from(new_nodes)
     graph.add_edges_from(new_edges)
-
-

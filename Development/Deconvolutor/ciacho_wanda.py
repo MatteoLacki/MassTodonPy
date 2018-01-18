@@ -23,3 +23,4 @@ deconvolution_graph = deconvolve(molecules,
 problems = list(deconvolution_graph)
 problem = problems[0]
 problem.node['M0']
+print(problem.q)

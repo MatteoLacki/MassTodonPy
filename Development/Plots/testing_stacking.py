@@ -30,13 +30,13 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       mz_precision=.05,
                       _devel=True)
 
-sol = masstodon._solutions[0]
-sol.nodes['M1']
-sol.nodes['G1']
-sol.nodes['I1']
-
-sol['G1']['I1']
-sol['G1']['I19']
+# sol = masstodon._solutions[0]
+# sol
+# sol.nodes['M1']
+# sol.nodes['G1']
+# sol.nodes['I1']
+# sol['G1']['I1']
+# sol['G1']['I19']
 
 #TODO extract M information.
 def data(solutions, mz_digits, verbosity=0):
@@ -114,9 +114,7 @@ plot = figure(plot_width=800*_mult,
               tools=TOOLS)
 
 plot.xaxis.axis_label = 'mass/charge'
-
 plot.yaxis.axis_label = 'intensity' if intensity else 'intensity / (m over z interval length)'
-
 source = ColumnDataSource(data={'top': Y_exp, 'estimated': Y_est,
                                 'left': buffers_L, 'right': buffers_R})
 

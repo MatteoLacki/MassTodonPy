@@ -14,11 +14,15 @@
 + Drawing of
     * spectra
     + deconvolution
+        + Add the simple plot (observed-predicted) to the module
+        + Add the complex plot (observed-predicted-per-molecule)
 + Have a look at IsotopeCalculator/simulator.py
     + DO WE USE SPECTRUM CLASS HERE? We certainly could.
 + Spectrum reader must be run without sorting the spectra all the time.
-+ Add a bash script plot_spectrum to open a file directly from command line
-+ Add a similar bash script for IsoSpecPy
++ Bash scripts:
+    + plot_spectrum to open any mzXml, mzMl, txt spectra file
+    + IsoSpecPy plot tools
++ Export data to ETDetective
 
 # elegant
 + Automate devel set up

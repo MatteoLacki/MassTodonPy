@@ -27,6 +27,10 @@ class NegativeAtomCount(Exception):
     pass
 
 
+def dict_2_string(d):
+    return "".join(element + str(count) for element, count in sorted(d.items()))
+
+
 class Formula(LinearDict):
     pattern = get_pattern('([A-Z][a-z]?)([0-9]*)')
 
@@ -40,9 +44,7 @@ class Formula(LinearDict):
         super().__init__(formula)
 
     def __str__(self):
-        return "".join(element + str(count)
-                       for element, count in
-                       sorted(self._storage.items()))
+        return dict_2_string(self._storage)
 
     def __repr__(self):
         out = self._storage.__repr__()
@@ -52,3 +54,8 @@ class Formula(LinearDict):
     def check_positivity(self):
         if any(count < 0 for element, count in self.items()):
             raise NegativeAtomCount("Attention: negative atom count after including your modifications.")
+
+    def str_with_charges(self, q=0, g=0):
+        out = self._storage.copy()
+        out['H'] += q + g
+        return dict_2_string(out)
