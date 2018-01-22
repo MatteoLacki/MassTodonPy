@@ -98,8 +98,14 @@ def deconvolve(molecules,
                          for n, d in mol_graph.nodes(data=True)
                          if n[0] is 'I' and mol_graph.degree[n] > 1)
 
+
         # plant the mol_graph in the graph?
         if total_prob >= min_prob_per_molecule:
+            #TODO: add another intensity-based criterion here.
+            #TODO: basically, check how much of a substance could there be,
+            #      if the was the only possible source of these ions.
+            #      and accept if it is more than some number.
+            #      This way silly solutions should be eliminated.
             if method is 'Matteo' and _merge_sister_Is:
                 # Glue Is sharing common Es.
                 _glue_sister_isotopologues(mol_graph)

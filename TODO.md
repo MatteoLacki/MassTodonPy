@@ -23,10 +23,13 @@
     + plot_spectrum to open any mzXml, mzMl, txt spectra file
     + IsoSpecPy plot tools
 + Export data to ETDetective
++ Support multiple input precursors!!!
 
 # elegant
 + Automate devel set up
 + Add the invisible buffers to Measure.plot()
++ add another intensity-based criterion here.
+    + basically, check how much of a substance could there be, if the was the only possible source of these ions. and accept if it is more than some number. This way silly solutions should be eliminated.
 
 # Don't forget
 + The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()

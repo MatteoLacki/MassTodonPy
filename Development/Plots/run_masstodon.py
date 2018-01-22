@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
-from MassTodonPy.Misc.plot_buffers import buffers
+from MassTodonPy.Plotting.plot_buffers import buffers
 from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Spectra.Spectrum import Spectrum
 
