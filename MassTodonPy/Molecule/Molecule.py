@@ -34,7 +34,7 @@ class Molecule(object):
         self.formula = formula
         self.q = q
         self.g = g
-        self.estimate = 0.0
+        self.intensity = 0.0
 
     @property
     def monoisotopic_mz(self):
@@ -57,7 +57,7 @@ class Molecule(object):
     def __repr__(self):
         out = "Molecule {name} out of {source}:\n".format(**self.__dict__)
         out += "\t{}\n".format(self.formula.__repr__())
-        out += "\tCharge = {q}\n\tQuenched charge = {g}\n".format(**self.__dict__)
+        out += "\tq = {q}\n\tg = {g}\n\tintensity = {intensity}\n".format(**self.__dict__)
         return out
 
     def __hash__(self):

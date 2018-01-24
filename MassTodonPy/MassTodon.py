@@ -137,8 +137,9 @@ class MassTodon(object):
                                      **deconvolution_args)
         if _devel:
             self._solutions = list(self._solutions)
-        self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps))
+        self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps)) #TODO terminate
         if simple_cz_match:
+            #TODO adjust input reading
             self.simple_cz_match = SimpleCzMatch(self._raw_estimates, self.precursor)
         self.cz_match = CzMatch(self._raw_estimates, self.precursor)
 

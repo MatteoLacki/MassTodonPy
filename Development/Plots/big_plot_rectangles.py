@@ -15,8 +15,6 @@ masstodon = get_masstodon_results()
 sol = masstodon._solutions[0]
 mz_digits = masstodon.mz_digits
 
-# sol.node['M0']
-
 # TODO:
 #   add terminal functions for plotting spectra
 #   call ColumnDataSource as many times as there are problems
@@ -39,6 +37,8 @@ mz_digits = masstodon.mz_digits
 
 
 # General picture:
+# viridis(2)
+# ['#440154', '#FDE724']
 
 class ColorGenerator(object):
     def __init__(self):
@@ -57,25 +57,16 @@ class ColorGenerator(object):
             self.colors[info] = color
             return color
 
-Brick = namedtuple('Brick',
-                   'mz_L mz_R mz_left mz_right top buttom color intensity molecule')
-
 Cluster = namedtuple('Cluster',
-    'mz_L mz_R intensity intensity_d estimate estimate_d')
+                     'mz_L mz_R mz_left mz_right intensity intensity_d estimate estimate_d')
 
+Brick = namedtuple('Brick', 'cluster top buttom color intensity molecule')
 
 class Results(object):
-    def __init__(self, masstodon):
-        self.masstodon = masstodon
-        self.bricks = []
-        self.clusters = []
-        for name, thing in self.get_bricks_and_observed_clusters():
-            self.__dict__[name].append(thing)
-        self.bricks.sort(key=lambda b: (b.mz_L, -b.mol_intensity))
-        self.clusters.sort(key=lambda c: c.mz_L)
+    """Retrieve results from the MassTodon deconvolution graph."""
 
-    def get_bricks_and_observed_clusters(self):
-        """Generate a flow of bricks for the plot, yet unordered."""
+    def get_bricks_clusters(self):
+        """Generate an unorderd flow of bricks and clusters for the plot."""
         base_width = 10**(-self.masstodon.mz_digits)
         for sol in self.masstodon._solutions:
             for G in sol:
@@ -92,28 +83,41 @@ class Results(object):
                         intensity_d = intensity/(max_mz - min_mz)
                         estimate = sol.node[G]['estimate']
                         estimate_d = estimate/(max_mz - min_mz)
-                        yield ('clusters',
-                               Cluster(min_mz, max_mz,
-                                       intensity, intensity_d,
-                                       estimate, estimate_d))
-                        out_formulas = {}
+                        cluster = Cluster(mz_L=min_mz,
+                                          mz_R=max_mz,
+                                          mz_left=min_mz,     # 2 update
+                                          mz_right=max_mz,    # 2 update
+                                          intensity=intensity,
+                                          intensity_d=intensity_d,
+                                          estimate=estimate,
+                                          estimate_d=estimate_d)
+                        yield 'clusters', cluster
                         for I in sol[G]:
-                            GM_estimate = sol[G][I]['estimate']
+                            estimate = sol[G][I]['estimate']
                             for M in sol[I]:
                                 if M[0] is 'M':
                                     mol = sol.node[M]['molecule']
-                                    out_formulas[mol] = GM_estimate
                                     yield ('bricks',
-                                            Brick(mz_L=min_mz,
-                                                mz_R=max_mz,
-                                                mz_left=min_mz, # updates later
-                                                mz_right=max_mz,# updates later
-                                                mol_name=mol.name,
-                                                formula=str(mol.formula),
-                                                intensity=GM_estimate,
-                                                q=mol.q,
-                                                g=mol.g,
-                                                mol_intensity=sol.node[M]['estimate']))
+                                            Brick(cluster=cluster,
+                                                  top=estimate,
+                                                  buttom=0.0,
+                                                  color='#440154',# 2 update
+                                                  intensity=estimate,
+                                                  molecule=mol))
+
+    def __init__(self, masstodon):
+        self.masstodon = masstodon
+
+        self.bricks = []
+        self.clusters = []
+        for name, thing in self.get_bricks_clusters():
+            self.__dict__[name].append(thing)
+
+        # m/z ratio order
+        self.clusters.sort(key=lambda c: c.mz_L)
+        # lexicographic order
+        self.bricks.sort(key=lambda b: (b.cluster.mz_L, -b.molecule.intensity))
+
     def adjust_bricks(self, bricks):
         """Adjust the position of the bricks.
 
@@ -130,6 +134,10 @@ class Results(object):
         #         brick.top = brick.bottom + brick.intensity
         #     prev_brick = brick
         #     yield brick
+
+    def aggregate(self):
+        """Aggregate the results of MassTodon."""
+        pass
 
     def write(self, file_path):
         """Write results to a file.
@@ -153,11 +161,28 @@ class Results(object):
             used by the Bokeh module.
         """
         pass
-# turn this into a results class!
 
 results = Results(masstodon)
 bricks = results.bricks
-results.clusters
+clusters = results.clusters
+
+# For making the other plots... probably not so necessary...
+mz_L, mz_R = list(zip(*((c.mz_L, c.mz_R) for c in clusters)))
+# check out the bokeh flow plotting
+mz_lefts, mz_rights = buffers(mz_L, mz_R, max_length=.5)
+for c, mz_left, mz_right in zip(clusters, mz_lefts, mz_rights):
+    c.mz_left = mz_left
+    c.mz_right = mz_right
+
+
+T = namedtuple('T', 'a b')
+t = T(a=[1,2], b='aad')
+t.a[0] = 3
+t.a
+# Find a proper structure for storing mutable thing....
+# OK, a list will do. Do it with lists first.
+# unless there is a mutable tuple
+
 
 prev_brick = 0.0
 for brick in bricks:

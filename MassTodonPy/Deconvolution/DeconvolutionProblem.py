@@ -181,10 +181,11 @@ class DeconvolutionProblem(nx.Graph):
 
         # filling up the graph
         X = self.solution['x']
-        self.alphas = []
+        self.alphas = [] #TODO terminate
         for M, M_cnt in self.node_iter('M', 'cnt'):
             self.node[M]['estimate'] = X[self.GI_no + M_cnt]
-            self.alphas.append(self.node[M])
+            self.alphas.append(self.node[M]) #TODO terminate
+            self.node[M]['molecule'].intensity = X[self.GI_no + M_cnt]
         for G in self.node_iter('G'):
             self.node[G]['estimate'] = 0.0
             for I in self[G]:
@@ -194,7 +195,7 @@ class DeconvolutionProblem(nx.Graph):
 
     def report(self):
         if self.solution['status'] is 'optimal':
-            res = {'alphas': self.alphas,
+            res = {'alphas': self.alphas, #TODO terminate
                    'L1_error': self.get_L1_error(),
                    'L2_error': self.get_L2_error(),
                    'underestimates': self.get_L1_signed_error(sign=1.0),

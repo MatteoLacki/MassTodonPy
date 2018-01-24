@@ -98,8 +98,7 @@ def deconvolve(molecules,
                          for n, d in mol_graph.nodes(data=True)
                          if n[0] is 'I' and mol_graph.degree[n] > 1)
 
-
-        # plant the mol_graph in the graph?
+        # plant the mol_graph into the graph?
         if total_prob >= min_prob_per_molecule:
             #TODO: add another intensity-based criterion here.
             #TODO: basically, check how much of a substance could there be,
@@ -112,7 +111,7 @@ def deconvolve(molecules,
             graph.add_nodes_from(mol_graph.nodes(data=True))
             graph.add_edges_from(mol_graph.edges(data=True))
 
-    #TODO Here we have double copying. Optimize.
+    #TODO Here double copying. Optimize.
     if method is 'Matteo':
         _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph)

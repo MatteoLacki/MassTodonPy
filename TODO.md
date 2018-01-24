@@ -1,6 +1,8 @@
 ### MassTodon todo list
 
 # important
++ eliminate the alphas and raw estimates
+    + we are saving them with the reporter class
 + csv:
     + input spectrum
     * save results
@@ -26,6 +28,7 @@
 + Support multiple input precursors!!!
 
 # elegant
++ Memoization of isotopic distributions should be an option, not a must.
 + Automate devel set up
 + Add the invisible buffers to Measure.plot()
 + add another intensity-based criterion here.
