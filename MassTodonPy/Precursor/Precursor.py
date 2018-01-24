@@ -45,7 +45,7 @@ class Precursor(object):
     """
     amino_acids = get_amino_acids()  # residues only!
 
-    def __init__(self, 
+    def __init__(self,
                  fasta,
                  charge,
                  name="",

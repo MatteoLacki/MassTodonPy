@@ -9,7 +9,8 @@ from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Misc.strings import repr_long_list
 from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.Plotting.plot_buffers import buffers
+from MassTodonPy.Reporter.buffers import buffers
+
 
 class Measure(object):
     """Store a discrete finite measure with atoms in R."""

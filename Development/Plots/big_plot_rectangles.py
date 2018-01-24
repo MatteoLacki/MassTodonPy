@@ -3,14 +3,11 @@
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool
-from bokeh.palettes import viridis, Colorblind
-from collections import Counter, defaultdict, namedtuple
+from bokeh.palettes import viridis, Colorblind, Paired, Set3, Set1
 from itertools import cycle
-from operator import sub
-from operator import attrgetter
 
 from Development.Plots.run_masstodon import get_masstodon_results
-from MassTodonPy.Plotting.plot_buffers import buffers
+from MassTodonPy.Reporter.buffers import buffers
 
 masstodon = get_masstodon_results()
 sol = masstodon._solutions[0]
@@ -25,10 +22,10 @@ mz_digits = masstodon.mz_digits
 #       intensity,                          - constant
 #       formula_with_charges, q, g,         - constant
 #       parent molecule overall intensity   - constant
-#       top, buttom, color                  - adjusted by M.estimate
+#       top, bottom, color                  - adjusted by M.estimate
 #
-#   substances with larger presence must go at the buttom
-#       this should influence the top/buttom values of the bricks
+#   substances with larger presence must go at the bottom
+#       this should influence the top/bottom values of the bricks
 #       I have to calculate first how many intensity there is for each substance
             # that is already stored in sol.node[M]['estimate']
 #       or use a priority queue that stores info on the molecules
@@ -53,7 +50,7 @@ class Cluster(object):
 
 
 class Brick(object):
-    __slots__ = ('cluster', 'top', 'buttom', 'color', 'intensity', 'molecule')
+    __slots__ = ('cluster', 'top', 'bottom', 'color', 'intensity', 'molecule')
 
     def __init__(self, **kwds):
         for s in self.__slots__:
@@ -70,8 +67,11 @@ class Brick(object):
 class ColorGenerator(object):
     """Generator of colors with memoization."""
 
-    def __init__(self, max_colors=8):
-        self.color = cycle(Colorblind[max_colors])
+    def __init__(self, pallette='Set1'):
+        self.color = cycle({'Colorblind': Colorblind[8],
+                            'Paired': Paired[12],
+                            'Set1': Set1[9],
+                            'Set3': Set3[12]}[pallette])
         self.colors = {}
 
     def __call__(self, molecule):
@@ -86,7 +86,7 @@ class ColorGenerator(object):
 class Results(object):
     """Retrieve results from the MassTodon deconvolution graph."""
 
-    def __init__(self, masstodon, max_buffer_len=0.5, max_colors=8):
+    def __init__(self, masstodon, max_buffer_len=0.5):
         self.masstodon = masstodon
         self.bricks = []
         self.clusters = []
@@ -100,14 +100,14 @@ class Results(object):
             c.mz_left = mz_left
             c.mz_right = mz_right
 
-        self.color = ColorGenerator(max_colors)
+        self.color = ColorGenerator()
         # lexicographically order the bricks
         self.bricks.sort(key=lambda b: (b.cluster.mz_L, -b.molecule.intensity))
         # adjust brick heights
-        prev_b = Brick(top=0.0, buttom=0.0, cluster=Cluster(mz_L=0.0)) # guardian
+        prev_b = Brick(top=0.0, bottom=0.0, cluster=Cluster(mz_L=0.0)) # guardian
         for b in self.bricks:
             if b.cluster.mz_L is prev_b.cluster.mz_L:
-                b.buttom = prev_b.top
+                b.bottom = prev_b.top
                 b.top = prev_b.top + b.intensity
             b.color = self.color(b.molecule)
             prev_b = b
@@ -148,7 +148,7 @@ class Results(object):
                                     yield ('bricks',
                                             Brick(cluster=cluster,
                                                   top=estimate,
-                                                  buttom=0.0,
+                                                  bottom=0.0,
                                                   color='#440154',# 2 update
                                                   intensity=estimate,
                                                   molecule=mol))
@@ -157,7 +157,7 @@ class Results(object):
         """Adjust the position of the bricks.
 
         The adjustement is based on their m/z ratio and intensity.
-        Also, assign top, buttom, and color to the bricks.
+        Also, assign top, bottom, and color to the bricks.
         """
         pass
 
@@ -195,8 +195,12 @@ clusters = results.clusters
 
 # Making the Plot
 
+if "":
+    print('a')
+
 file_path = "big_plot.html"
 mode = 'inline'
+
 output_file(file_path, mode=mode)
 TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select save".split(" ")
 _mult = 1
@@ -207,19 +211,16 @@ plot.y_range.start = 0
 plot.xaxis.axis_label = 'mass/charge'
 plot.yaxis.axis_label = 'intensity'
 tolerance = 0.01
-mz_representation = "@mz{0." + "".join(["0"] * mz_digits) + "}"
 
+def make_string_represenation(name, digits):
+    return "@" + str(name) + "{0." + "".join(["0"] * digits) + "}"
+
+mz_representation = make_string_represenation('mz', mz_digits)
 experimental_bars = plot.vbar(x=masstodon.spectrum.mz,
                               top=masstodon.spectrum.intensity,
                               width=tolerance,
                               color='black',
                               alpha=.1)
-
-raw_spectrum = plot.square(x=masstodon.spectrum.mz,
-                           y=masstodon.spectrum.intensity,
-                           size=5,
-                           color='black',
-                           alpha=.5)
 
 # Plotting the bricks
 lists = zip(*((b.cluster.mz_L,
@@ -227,7 +228,7 @@ lists = zip(*((b.cluster.mz_L,
                b.cluster.mz_left,
                b.cluster.mz_right,
                (b.cluster.mz_L + b.cluster.mz_R)/2.0,
-               b.buttom,
+               b.bottom,
                b.top,
                b.color,
                b.intensity,
@@ -244,7 +245,7 @@ data = dict(zip(('mz_L',
                  'mz_left',
                  'mz_right',
                  'mz',
-                 'buttom',
+                 'bottom',
                  'top',
                  'color',
                  'intensity',
@@ -258,12 +259,12 @@ data = dict(zip(('mz_L',
 
 source = ColumnDataSource(data)
 
-fat_rectangles = plot.quad(top='top', bottom='buttom',
+fat_rectangles = plot.quad(top='top', bottom='bottom',
                            left='mz_left', right='mz_right',
                            color='color', source=source,
                            alpha=.5)
 
-slim_rectangles = plot.quad(top='top', bottom='buttom',
+slim_rectangles = plot.quad(top='top', bottom='bottom',
                            left='mz_L', right='mz_R',
                            color='color', source=source)
 
@@ -312,5 +313,18 @@ hover_clusters = HoverTool(renderers=[cluster_intensities],
                                      ('m/z', mz_representation)])
 
 plot.add_tools(hover_clusters)
+
+# Experimental Squares
+raw_spectrum = plot.square(x=masstodon.spectrum.mz,
+                           y=masstodon.spectrum.intensity,
+                           size=5,
+                           color='black',
+                           alpha=.5)
+
+x_representation = make_string_represenation('x', mz_digits)
+hover_squares = HoverTool(renderers=[raw_spectrum],
+                          tooltips=[('intensity', "@y{0,0}"),
+                                    ('m/z', x_representation)])
+plot.add_tools(hover_squares)
 
 show(plot)

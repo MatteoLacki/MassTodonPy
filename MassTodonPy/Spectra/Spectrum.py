@@ -29,7 +29,7 @@ class Spectrum(Measure):
 
     """
     def __init__(self,
-                 mz=np.array([]), 
+                 mz=np.array([]),
                  intensity=np.array([]),
                  spectrum='',
                  mz_digits=infinity,
@@ -39,7 +39,8 @@ class Spectrum(Measure):
         """Initialize the Spectrum."""
         self._store_names = ('m/z', 'intensity')
         self.mz_digits = mz_digits
-        if isinstance(spectrum, str) and spectrum: 
+        self.min_intensity = min_intensity
+        if isinstance(spectrum, str) and spectrum:
             spectrum = read_spectrum(spectrum, mz_digits, eps)
             self.mz = spectrum.atoms
             self.intensity = spectrum.masses
@@ -65,11 +66,11 @@ class Spectrum(Measure):
             self.sort()
         self.round_mz(self.mz_digits)
         self.low_spectrum = 0
-        if min_intensity > eps:
-            self.low_spectrum += self.split_measure(min_intensity)
+        if self.min_intensity > eps:
+            self.low_spectrum += self.split_measure(self.min_intensity)
         if 0 < percent_top_peaks < 1:
-            cut_off = self.get_P_set_cut_off(percent_top_peaks)
-            self.low_spectrum += self.split_measure(cut_off)
+            self.min_intensity = self.get_P_set_cut_off(percent_top_peaks)
+            self.low_spectrum += self.split_measure(self.min_intensity)
 
     def split_measure(self, cut_off):
         """Split measure into two according to the cut off on masses.

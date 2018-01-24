@@ -70,13 +70,13 @@ from math import ceil, log10
 import csv
 
 from MassTodonPy.Data.Constants import eps
+from MassTodonPy.Deconvolution.Deconvolve import deconvolve
 from MassTodonPy.MatchMaker.CzMatch import CzMatch
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Precursor.Precursor import Precursor
 from MassTodonPy.Spectra.Spectrum import Spectrum
-from MassTodonPy.Deconvolution.Deconvolve import deconvolve
-
+from MassTodonPy.Reporter.Reporter import Reporter
 
 class MassTodon(object):
     def __init__(self,
@@ -88,7 +88,8 @@ class MassTodon(object):
                  deconvolution_args={},
                  solver_args={},
                  simple_cz_match=False,
-                 _devel=False):
+                 _devel=False,
+                 _max_buffer_len=0.5):
         """Run a full session of the MassTodon.
 
         Parameters
@@ -137,6 +138,8 @@ class MassTodon(object):
                                      **deconvolution_args)
         if _devel:
             self._solutions = list(self._solutions)
+
+        self.reporter = Reporter(self, _max_buffer_len)
         self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps)) #TODO terminate
         if simple_cz_match:
             #TODO adjust input reading

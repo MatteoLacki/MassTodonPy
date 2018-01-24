@@ -3,12 +3,12 @@
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool
-from bokeh.palettes import viridis
+6
 from collections import Counter, defaultdict
 from operator import sub
 
 from Development.Plots.run_masstodon import get_masstodon_results
-from MassTodonPy.Plotting.plot_buffers import buffers
+from MassTodonPy.Reporer.buffers import buffers
 
 # TODO:
 #   parallelize the making of the plot if it takes a lot of time
