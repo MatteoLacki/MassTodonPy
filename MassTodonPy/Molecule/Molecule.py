@@ -34,6 +34,7 @@ class Molecule(object):
         self.formula = formula
         self.q = q
         self.g = g
+        self.estimate = 0.0
 
     @property
     def monoisotopic_mz(self):

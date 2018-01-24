@@ -2,8 +2,9 @@ from bokeh.core.properties import value
 from bokeh.io import show, output_file
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
+from bokeh.models import HoverTool
 
-output_file("stacked.html")
+output_file("stacked.html", mode='inline')
 
 fruits = [1,2, 5,6,7, 10]
 vegies = [21, 23, 25, 26, 29, 39]
@@ -28,18 +29,30 @@ data2 = {'vegies' : vegies,
 source1 = ColumnDataSource(data=data1)
 source2 = ColumnDataSource(data=data2)
 
-p = figure(plot_height=250, title="Fruit Counts by Year",
-           toolbar_location=None, tools="")
+TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(" ")
+p = figure(plot_height=250, title="Fruit Counts by Year", tools=TOOLS)
 
-p.vbar_stack(stackers=years, x='fruits', width='widths', color=colors, source=source1)
-p.vbar_stack(stackers=years, x='vegies', width='widths', color=colors2, source=source2)
+fruits = p.vbar_stack(stackers=years, x='fruits', width='widths',
+                      color=colors, source=source1)
 
+# vegies = p.vbar_stack(stackers=years, x='vegies', width='widths',
+#                       color=colors2, source=source2)
+
+help(HoverTool)
+
+# hover_invisible = HoverTool()
+hover_invisible = HoverTool(tooltips=[('x', "@fruits{0,0}"), ("@height")])
+
+# hover_invisible = HoverTool(renderers=[fruits],
+#                             tooltips=[('x', "@x{0,0}"),
+#                                       ('width', "@width{0,0}")],
+#                             mode='vline')
+
+p.add_tools(hover_invisible)
 p.y_range.start = 0
 p.x_range.range_padding = 0.1
 p.xgrid.grid_line_color = None
 p.axis.minor_tick_line_color = None
 p.outline_line_color = None
-p.legend.location = "top_left"
-p.legend.orientation = "horizontal"
 
 show(p)

@@ -32,7 +32,7 @@ def get_info_on_solution(sol, mz_digits):
                 min_mz = mz - base_width/2
                 max_mz = mz + base_width/2
             intensity = sol.node[G]['intensity']
-            if intensity > 0 or estimate > 0:
+            if intensity > 0:
                 intensity_d = intensity/(max_mz - min_mz)
                 estimate = sol.node[G]['estimate']
                 estimate_d = estimate/(max_mz - min_mz)
@@ -83,6 +83,20 @@ plot = figure(plot_width=800*_mult,
 plot.y_range.start = 0
 plot.xaxis.axis_label = 'mass/charge'
 plot.yaxis.axis_label = 'intensity'
+tolerance = 0.01
+
+experimental_bars = plot.vbar(x=masstodon.spectrum.mz,
+                              top=masstodon.spectrum.intensity,
+                              width=tolerance,
+                              color='black',
+                              alpha=.1)
+
+raw_spectrum = plot.square(x=masstodon.spectrum.mz,
+                           y=masstodon.spectrum.intensity,
+                           size=5,
+                           color='black',
+                           alpha=.5)
+
 
 sol = masstodon._solutions[0]
 aggregated = defaultdict(Counter)
@@ -121,6 +135,15 @@ for i, (_mol_tags, _data) in enumerate(zip(mol_tags, data)):
                         color=colors, source=source, alpha=0.04)
         plot.vbar_stack(stackers=_tags, x='mz', width='width',
                         color=colors, source=source)
+
+        # hover_invisible = HoverTool(renderers=[invisible_buffers],
+        #                             tooltips=[('observed I', "@top{0,0}"),
+        #                                       ('estimated I', "@estimated{0,0}"),
+        #                                       ('m/z', "[@left{0,0.000}, @right{0,0.000}]")],
+        #                             mode='vline')
+        #
+        # plot.add_tools(hover_invisible)
+
     except:
         print(i)
 
@@ -129,6 +152,8 @@ plot.segment(x0=buffers_L, x1=buffers_R, y0=I, y1=I,
 
 plot.segment(x0=buffers_L, x1=buffers_R, y0=E, y1=E,
              color='red', line_width=3)
+
+
 
 show(plot)
 

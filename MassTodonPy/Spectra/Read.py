@@ -92,7 +92,6 @@ def read_spectrum(path='',
     Returns
     -------
     out : Measure
-
     """
     assert path is not '', "Provide a spectrum to analyze!"
     file_path, file_name, file_ext = parse_path(path)
