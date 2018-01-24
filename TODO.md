@@ -28,6 +28,7 @@
 + Support multiple input precursors!!!
 
 # elegant
++ Implement recordtuple with metaclasses myself.
 + Memoization of isotopic distributions should be an option, not a must.
 + Automate devel set up
 + Add the invisible buffers to Measure.plot()

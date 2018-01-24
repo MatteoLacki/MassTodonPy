@@ -3,8 +3,9 @@
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool
-from bokeh.palettes import viridis
+from bokeh.palettes import viridis, Colorblind
 from collections import Counter, defaultdict, namedtuple
+from itertools import cycle
 from operator import sub
 from operator import attrgetter
 
@@ -35,35 +36,82 @@ mz_digits = masstodon.mz_digits
 #   TODO:
 #       1. write down the methods of the Results class.
 
+class Cluster(object):
+    __slots__ = ('mz_L', 'mz_R', 'mz_left', 'mz_right', 'intensity',
+                 'intensity_d', 'estimate', 'estimate_d')
 
-# General picture:
-# viridis(2)
-# ['#440154', '#FDE724']
+    def __init__(self, **kwds):
+        for s in self.__slots__:
+            setattr(self, s, kwds.get(s, None))
+
+    def __repr__(self):
+        res = []
+        for s in self.__slots__:
+            v = getattr(self, s)
+            res.append( "{0}={1}".format(s,v))
+        return "Cluster(" + ", ".join(res) + ")"
+
+
+class Brick(object):
+    __slots__ = ('cluster', 'top', 'buttom', 'color', 'intensity', 'molecule')
+
+    def __init__(self, **kwds):
+        for s in self.__slots__:
+            setattr(self, s, kwds.get(s, None))
+
+    def __repr__(self):
+        res = []
+        for s in self.__slots__:
+            v = getattr(self, s)
+            res.append( "{0}={1}".format(s,v))
+        return "Brick(" + ", ".join(res) + ")"
+
 
 class ColorGenerator(object):
-    def __init__(self):
+    """Generator of colors with memoization."""
+
+    def __init__(self, max_colors=8):
+        self.color = cycle(Colorblind[max_colors])
         self.colors = {}
 
-    def new_color(self):
+    def __call__(self, molecule):
         """Get the next color in sequence."""
-        pass
-
-    def get(self, brick):
-        info = (brick.formula, brick.q, brick.g)
         try:
-            return self.colors[info]
+            return self.colors[molecule]
         except KeyError:
-            color = self.new_color()
-            self.colors[info] = color
-            return color
+            self.colors[molecule] = next(self.color)
+            return self.colors[molecule]
 
-Cluster = namedtuple('Cluster',
-                     'mz_L mz_R mz_left mz_right intensity intensity_d estimate estimate_d')
-
-Brick = namedtuple('Brick', 'cluster top buttom color intensity molecule')
 
 class Results(object):
     """Retrieve results from the MassTodon deconvolution graph."""
+
+    def __init__(self, masstodon, max_buffer_len=0.5, max_colors=8):
+        self.masstodon = masstodon
+        self.bricks = []
+        self.clusters = []
+        for name, thing in self.get_bricks_clusters():
+            self.__dict__[name].append(thing)
+        self.clusters.sort(key=lambda c: c.mz_L) # order by m/z ratios
+        # adding left and right buffers needed for plot
+        mz_L, mz_R = list(zip(*((c.mz_L, c.mz_R) for c in self.clusters))) #TODO this is an overkill: smooth out the defintion of the buffers function.
+        mz_lefts, mz_rights = buffers(mz_L, mz_R, max_length=max_buffer_len)
+        for c, mz_left, mz_right in zip(self.clusters, mz_lefts, mz_rights):
+            c.mz_left = mz_left
+            c.mz_right = mz_right
+
+        self.color = ColorGenerator(max_colors)
+        # lexicographically order the bricks
+        self.bricks.sort(key=lambda b: (b.cluster.mz_L, -b.molecule.intensity))
+        # adjust brick heights
+        prev_b = Brick(top=0.0, buttom=0.0, cluster=Cluster(mz_L=0.0)) # guardian
+        for b in self.bricks:
+            if b.cluster.mz_L is prev_b.cluster.mz_L:
+                b.buttom = prev_b.top
+                b.top = prev_b.top + b.intensity
+            b.color = self.color(b.molecule)
+            prev_b = b
+
 
     def get_bricks_clusters(self):
         """Generate an unorderd flow of bricks and clusters for the plot."""
@@ -105,35 +153,13 @@ class Results(object):
                                                   intensity=estimate,
                                                   molecule=mol))
 
-    def __init__(self, masstodon):
-        self.masstodon = masstodon
-
-        self.bricks = []
-        self.clusters = []
-        for name, thing in self.get_bricks_clusters():
-            self.__dict__[name].append(thing)
-
-        # m/z ratio order
-        self.clusters.sort(key=lambda c: c.mz_L)
-        # lexicographic order
-        self.bricks.sort(key=lambda b: (b.cluster.mz_L, -b.molecule.intensity))
-
     def adjust_bricks(self, bricks):
         """Adjust the position of the bricks.
 
         The adjustement is based on their m/z ratio and intensity.
         Also, assign top, buttom, and color to the bricks.
         """
-        color = ColorGenerator()
-        prev_brick = brick(mz=0.0, intensity=0.0, top=0.0) # guardian
-        # while pq not empty:
-        #     brick = pq.pop()
-        #     brick.color = color.get(brick)
-        #     if brick.mz is prev_brick.mz:
-        #         brick.bottom = prev_brick.top
-        #         brick.top = brick.bottom + brick.intensity
-        #     prev_brick = brick
-        #     yield brick
+        pass
 
     def aggregate(self):
         """Aggregate the results of MassTodon."""
@@ -150,7 +176,7 @@ class Results(object):
         """
         pass
 
-    def plot_in_bokeh(self, file_path=""):
+    def plot_in_bokeh(self, file_path="", mode="inline"):
         """Make a bokeh plot.
 
         Parameters
@@ -166,91 +192,14 @@ results = Results(masstodon)
 bricks = results.bricks
 clusters = results.clusters
 
-# For making the other plots... probably not so necessary...
-mz_L, mz_R = list(zip(*((c.mz_L, c.mz_R) for c in clusters)))
-# check out the bokeh flow plotting
-mz_lefts, mz_rights = buffers(mz_L, mz_R, max_length=.5)
-for c, mz_left, mz_right in zip(clusters, mz_lefts, mz_rights):
-    c.mz_left = mz_left
-    c.mz_right = mz_right
 
+# Making the Plot
 
-T = namedtuple('T', 'a b')
-t = T(a=[1,2], b='aad')
-t.a[0] = 3
-t.a
-# Find a proper structure for storing mutable thing....
-# OK, a list will do. Do it with lists first.
-# unless there is a mutable tuple
-
-
-prev_brick = 0.0
-for brick in bricks:
-    if brick.mz_L is prev_mz_L:
-
-
-    prev_mz_L = brick.mz_L
-
-
-
-# Old Stuff
-def get_info_on_solution(sol, mz_digits):
-    base_width = 10**(-mz_digits)
-    for G in sol:
-        if G[0] is 'G':
-            try:
-                min_mz = sol.node[G]['min_mz'] - base_width/2
-                max_mz = sol.node[G]['max_mz'] + base_width/2
-            except KeyError:
-                mz = sol.node[G]['mz']
-                min_mz = mz - base_width/2
-                max_mz = mz + base_width/2
-            intensity = sol.node[G]['intensity']
-            if intensity > 0 or estimate > 0:
-                intensity_d = intensity/(max_mz - min_mz)
-                estimate = sol.node[G]['estimate']
-                estimate_d = estimate/(max_mz - min_mz)
-                out_counter = Counter({'intensity': intensity,
-                                       'intensity_d': intensity_d,
-                                       'estimate': estimate,
-                                       'estimate_d': estimate_d})
-                out_formulas = {}
-                for I in sol[G]:
-                    GM_estimate = sol[G][I]['estimate']
-                    for M in sol[I]:
-                        if M[0] is 'M':
-                            mol = sol.node[M]['molecule']
-                            mol = (str(mol.formula), mol.q, mol.g)
-                            out_formulas[mol] = GM_estimate
-                yield (min_mz, max_mz), (out_counter, out_formulas)
-
-
-def get_data_for_one_solution(sol, mz_digits):
-    precise = defaultdict(dict)
-    aggregated = defaultdict(Counter)
-    for interval, (data, formulas) in get_info_on_solution(sol, mz_digits):
-        aggregated[interval] += data
-        precise[interval].update(formulas)
-    molecule_tags = set([])
-    for interval in precise:
-        for mol, intensity in precise[interval].items():
-            molecule_tags.add(mol)
-    molecule_tags = list(molecule_tags)
-    data = defaultdict(list)
-    for L, R in precise:
-        for mol in molecule_tags:
-            data[mol].append(precise[(L, R)].get(mol, 0.0))
-        data['mz'].append((L + R)/2.0)
-        data['width'].append(R - L)
-    data_str = {}
-    for k, v in data.items():
-        data_str[str(k)] = v
-    return aggregated, molecule_tags, data_str
-
-output_file("big_plot.html", mode='inline')
-TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select lasso_select save".split(" ")
+file_path = "big_plot.html"
+mode = 'inline'
+output_file(file_path, mode=mode)
+TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select save".split(" ")
 _mult = 1
-intensity = True
 plot = figure(plot_width=800*_mult,
               plot_height=400*_mult,
               tools=TOOLS)
@@ -258,6 +207,7 @@ plot.y_range.start = 0
 plot.xaxis.axis_label = 'mass/charge'
 plot.yaxis.axis_label = 'intensity'
 tolerance = 0.01
+mz_representation = "@mz{0." + "".join(["0"] * mz_digits) + "}"
 
 experimental_bars = plot.vbar(x=masstodon.spectrum.mz,
                               top=masstodon.spectrum.intensity,
@@ -271,90 +221,96 @@ raw_spectrum = plot.square(x=masstodon.spectrum.mz,
                            color='black',
                            alpha=.5)
 
+# Plotting the bricks
+lists = zip(*((b.cluster.mz_L,
+               b.cluster.mz_R,
+               b.cluster.mz_left,
+               b.cluster.mz_right,
+               (b.cluster.mz_L + b.cluster.mz_R)/2.0,
+               b.buttom,
+               b.top,
+               b.color,
+               b.intensity,
+               b.molecule.name,
+               b.molecule.source,
+               str(b.molecule.formula),
+               b.molecule.q,
+               b.molecule.g,
+               b.molecule.intensity)
+              for b in bricks))
 
-sol = masstodon._solutions[0]
-aggregated = defaultdict(Counter)
-data = []
-mol_tags = []
-for sol in masstodon._solutions:
-    agg, _mol_tags, _data = get_data_for_one_solution(sol, mz_digits)
-    for interval, counter in agg.items():
-        aggregated[interval] += counter
-    data.append(_data)
-    mol_tags.append(_mol_tags)
+data = dict(zip(('mz_L',
+                 'mz_R',
+                 'mz_left',
+                 'mz_right',
+                 'mz',
+                 'buttom',
+                 'top',
+                 'color',
+                 'intensity',
+                 'molname',
+                 'molsource',
+                 'molformula',
+                 'molq',
+                 'molg',
+                 'molintensity'),
+                lists))
 
-mz_L, mz_R, I, I_d, E, E_d = list(zip(*sorted((
-    l, r,
-    c['intensity'],
-    c['intensity_d'],
-    c['estimate'],
-    c['estimate_d']) for (l, r), c in aggregated.items())))
+source = ColumnDataSource(data)
 
-buffers_L, buffers_R = buffers(mz_L, mz_R, max_length=.5)
-buffer_map = {}
-for L, R, bL, bR in zip(mz_L, mz_R, buffers_L, buffers_R):
-    buffer_map[(L + R)/2.0] = (bL, bR)
+fat_rectangles = plot.quad(top='top', bottom='buttom',
+                           left='mz_left', right='mz_right',
+                           color='color', source=source,
+                           alpha=.5)
 
-def get_colors(molecule_tags):
-    return viridis(len(molecule_tags))
+slim_rectangles = plot.quad(top='top', bottom='buttom',
+                           left='mz_L', right='mz_R',
+                           color='color', source=source)
 
-_mol_tags, _data = mol_tags[2], data[2]
-for i, (_mol_tags, _data) in enumerate(zip(mol_tags, data)):
-    try:
-        colors = get_colors(_mol_tags)
-        _data['buffers'] = [ -sub(*buffer_map[mz]) for mz in _data['mz'] ]
-        source = ColumnDataSource(_data)
-        _tags = [str(m) for m in _mol_tags]
-        plot.vbar_stack(stackers=_tags, x='mz', width='buffers',
-                        color=colors, source=source, alpha=0.04)
-        plot.vbar_stack(stackers=_tags, x='mz', width='width',
-                        color=colors, source=source)
+hover_fat = HoverTool(renderers=[fat_rectangles],
+                      tooltips=[('peak intensity', "@intensity{0,0}"),
+                                ('m/z interval', mz_representation),
+                                ('name', '@molname'),
+                                ('formula','@molformula'),
+                                ('q', '@molq'),
+                                ('g', '@molg'),
+                                ('total intensity', "@molintensity{0,0}")])
 
-        # hover_invisible = HoverTool(renderers=[invisible_buffers],
-        #                             tooltips=[('observed I', "@top{0,0}"),
-        #                                       ('estimated I', "@estimated{0,0}"),
-        #                                       ('m/z', "[@left{0,0.000}, @right{0,0.000}]")],
-        #                             mode='vline')
-        #
-        # plot.add_tools(hover_invisible)
+plot.add_tools(hover_fat)
 
-    except:
-        print(i)
+# Adding aggregate information
 
-plot.segment(x0=buffers_L, x1=buffers_R, y0=I, y1=I,
-             color='black', line_width=3)
+cluster_lists = zip(*((c.mz_left,
+                       c.mz_right,
+                       (c.mz_left + c.mz_right)/2.0,
+                       c.intensity,
+                       c.estimate,
+                       abs(c.intensity-c.estimate))
+                      for c in clusters))
 
-plot.segment(x0=buffers_L, x1=buffers_R, y0=E, y1=E,
-             color='red', line_width=3)
+data_clusters = dict(zip(('mz_left',
+                          'mz_right',
+                          'mz',
+                          'intensity',
+                          'estimate',
+                          'abserror'),
+                         cluster_lists))
 
+source_clusters = ColumnDataSource(data_clusters)
 
+cluster_intensities = plot.segment(x0='mz_left',
+                                   x1='mz_right',
+                                   y0='intensity',
+                                   y1='intensity',
+                                   color='red',
+                                   line_width=3, source=source_clusters)
+
+hover_clusters = HoverTool(renderers=[cluster_intensities],
+                           tooltips=[('total intensity', "@intensity{0,0}"),
+                                     ('total estimate', "@estimate{0,0}"),
+                                     ('absolute error', "@abserror{0,0}"),
+                                     ('m/z', mz_representation)])
+
+plot.add_tools(hover_clusters)
 
 show(plot)
-
-
-
-# class Brick(object):
-#     """Container for MassTodon's results."""
-#     __slots__ = ('mz_L', 'mz_R', 'mz_left', 'mz_right', 'formula', 'intensity',
-#                  'q', 'g', 'mol_intensity', 'mol_name',
-#                  'top', 'buttom', 'color')
-#
-#     def __init__(self, **kwds):
-#         """Initialize the brick.
-#
-#         Pass as many arguments as you know from the '__slots__' tuple,
-#         others will be initialized as 'None'.
-#         """
-#         for k in self.__slots__:
-#             setattr(self, k, kwds.get(k, None))
-#
-#     def __repr__(self):
-#         res = "Brick("
-#         for k in self.__slots__:
-#             res += str(k) + "=" + str(getattr(self, k)) + ", "
-#         res = res[0:-2] + ")"
-#         return res
-#
-#     def get_result(self):
-#         """Extract the information from the brick."""
-#         return self.formula, self.q, self.g, self.intensity
