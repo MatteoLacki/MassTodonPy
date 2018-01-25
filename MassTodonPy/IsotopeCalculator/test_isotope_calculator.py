@@ -10,7 +10,7 @@ class TestPeakPicker(unittest.TestCase):
     def test_isotope_calculator(self):
         print("Testing the get_envelope function.")
 
-        iso_calc = IsotopeCalculator(mz_precision=0,
+        iso_calc = IsotopeCalculator(mz_digits=0,
                                      _masses={'T': [1,1000]},
                                      _probabilities={'T': [0.5, 0.5]})
 

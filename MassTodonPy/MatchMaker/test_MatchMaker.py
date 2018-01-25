@@ -1,21 +1,26 @@
 from __future__ import absolute_import, division, print_function
-from collections import Counter
+from collections import Counter, namedtuple
 import unittest
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 from MassTodonPy.MatchMaker.CzMatch import CzMatch
+from MassTodonPy.Reporter.misc import Brick
+
 # TODO add test for the optimality of the fragment matching
 
 def node_to_tuple(node):
     return node.type + str(node.no), node.q
 
+class VoidClass(object):
+    pass
+
 class TestPeakPicker(unittest.TestCase):
     def setUp(self):
         """Set up a method."""
 
-        self.mol = get_dataset('substanceP')
-        mols = list(self.mol.precursor.molecules())
+        mol = get_dataset('substanceP')
+        mols = list(mol.precursor.molecules())
         mols_dict = {(m.name, m.q, m.g): m for m in mols}
         self.results = [
             {'alphas': [
@@ -43,6 +48,19 @@ class TestPeakPicker(unittest.TestCase):
                  'molecule': mols_dict[('precursor', 1, 0)]}],
              'status': 'optimal'}]
 
+        bricks = []
+        for res in self.results:
+            for x in res['alphas']:
+                x['molecule'].intensity = x['estimate']
+                brick = Brick(molecule=x['molecule'])
+                bricks.append(brick)
+
+        # Preparing a phoney MassTodon
+        masstodon = VoidClass()
+        masstodon.precursor = mol.precursor
+        masstodon.report = VoidClass()
+        masstodon.report._bricks = bricks
+        self.masstodon = masstodon
 
     def tearDown(self):
         """Tear down a method."""
@@ -50,8 +68,8 @@ class TestPeakPicker(unittest.TestCase):
 
     def test_SimpleCzMatch(self):
         print("Testing SimpleCzMatch graph creation.")
-        matches = SimpleCzMatch(self.results,
-                                self.mol.precursor)
+
+        matches = SimpleCzMatch(masstodon=self.masstodon)
 
         expected_nodes = set([('c4', 1), ('z7', 1), ('c5', 1),
                               ('z6', 1), ('c6', 1), ('z5', 1)])
@@ -77,8 +95,7 @@ class TestPeakPicker(unittest.TestCase):
 
     # def test_intermediate_matchmaker(self):
     #     print("Testing basic matchmaker: graph creation.")
-    #     matches = czMatchMakerIntermediate(self.results,
-    #                                        self.mol.precursor)
+    #     matches = czMatchMakerIntermediate(masstodon=self.masstodon)
 
     #     expected_nodes = set([('c4', 1, 0), ('z7', 1, 0), ('c5', 1, 0),
     #                           ('z6', 1, 0), ('c6', 1, 0), ('z5', 1, 0)])
