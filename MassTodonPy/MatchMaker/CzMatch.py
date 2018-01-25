@@ -8,9 +8,7 @@ from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 Node = namedtuple('node', ['type', 'no', 'bp', 'q', 'g'])
 
 class CzMatch(SimpleCzMatch):
-    def __init__(self,
-                 results,
-                 precursor):
+    def __init__(self, masstodon):
         """Match c and z ions' intensities.
 
         Parameters
@@ -23,12 +21,14 @@ class CzMatch(SimpleCzMatch):
         """
         self._I_ETnoD_fragments = 0
         self._I_PTR_fragments = 0
-        super().__init__(results, precursor)
+        super().__init__(masstodon)
 
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""
-        mol_type, no, bp, q, g = self._get_node_info(molecule)
-        return Node(mol_type, no, bp, q, g)
+        mt, po, cs = molecule._molType_position_cleavageSite()
+        return Node(mt, po, cs, molecule.q, molecule.g)
+        # mol_type, no, bp, q, g = self._get_node_info(molecule)
+        # return Node(mol_type, no, bp, q, g)
 
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""
@@ -46,10 +46,11 @@ class CzMatch(SimpleCzMatch):
         #       C.g + Z.g < precursor.q,
         #       but
         #       C.q + Z.q + C.g + Z.g < precursor.q
-        if C.bp == Z.bp and C.q + Z.q + C.g + Z.g < self._precursor.q:
-            self.graph.add_edge(C, Z, ETnoD=C.g + Z.g, 
-                                      PTR=self._precursor.q - 1 - C.g - Z.g - C.q - Z.q,
-                                      ETnoD_PTR=self._precursor.q - 1 - C.q - Z.q)
+        Q = self._masstodon.precursor.q
+        if C.bp == Z.bp and C.q + Z.q + C.g + Z.g < Q:
+            self.graph.add_edge(C, Z, ETnoD= C.g + Z.g,
+                                      PTR= Q-1 -C.g -Z.g -C.q -Z.q,
+                                      ETnoD_PTR= Q -1 -C.q -Z.q)
 
 
 ## These procedures are false for now. Need to report additionally the min and max intensities of PTR and ETnoD.
@@ -77,12 +78,12 @@ class CzMatch(SimpleCzMatch):
     #         self.P_ETnoD_bond = {k: v/self._I_ETnoD_frags for k, v in self._I_ETnoD_bond.items()}
     #     if self._I_PTR_frags > 0:
     #         self.P_PTR_bond = {k: v/self._I_PTR_frags for k, v in self._I_PTR_bond.items()}
-    
+
     # def _get_branching_ratios(self):
     #     """Estimate branching ratios."""
     #     super()._get_branching_ratios()
     #     if sum(self._I_ETnoD_bond.values()) > 0:
     #         self.branching_ratio['branching_ratio_bond'] = {
-    #             self._I_PTR_bond[k]/_I_ETnoD 
+    #             self._I_PTR_bond[k]/_I_ETnoD
     #             for k, _I_ETnoD in self._I_ETnoD_bond.items()
     #             if _I_ETnoD > 0}

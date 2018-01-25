@@ -36,8 +36,25 @@ class Cluster(object):
         return "Cluster(" + ", ".join(res) + ")"
 
 
+class PeakGroup(object):
+    """A class representing the outcomes for one experimental grouping."""
+    __slots__ = ('mz_L', 'mz_R', 'mz_left', 'mz_right', 'intensity',
+                 'intensity_d', 'estimate', 'estimate_d')
+
+    def __init__(self, **kwds):
+        for s in self.__slots__:
+            setattr(self, s, kwds.get(s, None))
+
+    def __repr__(self):
+        res = []
+        for s in self.__slots__:
+            v = getattr(self, s)
+            res.append( "{0}={1}".format(s,v))
+        return "PeakGroup(" + ", ".join(res) + ")"
+
+
 class Brick(object):
-    __slots__ = ('cluster', 'top', 'bottom', 'color', 'intensity', 'molecule')
+    __slots__ = ('peak_group', 'top', 'bottom', 'color', 'intensity', 'molecule')
 
     def __init__(self, **kwds):
         for s in self.__slots__:

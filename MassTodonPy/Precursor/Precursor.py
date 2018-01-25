@@ -174,4 +174,4 @@ class Precursor(object):
                     potential_charges_cnt += 1
                     # +0000 +0000 00+  at most 3 charges
                 if potential_charges_cnt >= q:
-                    yield Molecule(name, self.name, formula, q, g)
+                    yield Molecule(name, self, formula, q, g)

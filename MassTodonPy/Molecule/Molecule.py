@@ -20,6 +20,21 @@ from MassTodonPy.IsotopeCalculator.IsotopeCalculator import IsotopeCalculator
 
 
 class Molecule(object):
+    """A class representing reaction products.
+
+    Parameters
+    ==========
+    name : string
+        The conventional name of the molecule, e.g. precursor, c11, z23, a12.
+    source : Precursor
+        An instance of the Precursor object: the parent ion for this molecule.
+    formula : Formula
+        An instance of the Formula, a chemical formula object.
+    q : int
+        Charge of the reaction product.
+    g : int
+        Quenched charge of the reaction product.
+    """
     iso_calc = IsotopeCalculator(joint_probability=.999,
                                  mz_digits=infinity)
 
@@ -35,6 +50,14 @@ class Molecule(object):
         self.q = q
         self.g = g
         self.intensity = 0.0
+
+    def _molType_position_cleavageSite(self):
+        mt = self.name[0]
+        po = int(self.name[1:])
+        fasta_len = len(self.source.fasta)
+        cs = None if mt is 'p' else \
+               po if mt is 'c' else fasta_len - po
+        return mt, po, cs
 
     @property
     def monoisotopic_mz(self):

@@ -124,6 +124,7 @@ class MassTodon(object):
         # mz_precision = .005 --> prec_digits = 4
         mz_digits_tmp = int(ceil(-log10(mz_precision)))
         self.mz_digits = deconvolution_args.get('mz_digits', mz_digits_tmp)
+        self.min_interval_len = 10**(-self.mz_digits)
         self.precursor = Precursor(**precursor)
         self.spectrum = Spectrum(spectrum=spectrum,
                                  mz_digits=self.mz_digits,
@@ -139,12 +140,14 @@ class MassTodon(object):
         if _devel:
             self._solutions = list(self._solutions)
 
-        self.reporter = Reporter(self, _max_buffer_len)
-        self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps)) #TODO terminate
+        self.report = Reporter(self, _max_buffer_len)
+        # self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps)) #TODO terminate
         if simple_cz_match:
             #TODO adjust input reading
-            self.simple_cz_match = SimpleCzMatch(self._raw_estimates, self.precursor)
-        self.cz_match = CzMatch(self._raw_estimates, self.precursor)
+            # self.simple_cz_match = SimpleCzMatch(self._raw_estimates, self.precursor)
+            self.simple_cz_match = SimpleCzMatch(self)
+        # self.cz_match = CzMatch(self._raw_estimates, self.precursor)
+        self.cz_match = CzMatch(self)
 
     def get_raw_estimates(self, minimal_intensity=eps):
         """Iterate over estimates with intensity greater than the minimal_intensity."""

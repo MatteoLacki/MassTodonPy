@@ -33,13 +33,10 @@ class SimpleCzMatch(object):
         A precursor for the matching problem.
 
     """
-    def __init__(self,
-                 results,
-                 precursor):
+    def __init__(self, masstodon):
         solvers.options['show_progress'] = False
         solvers.options['maxiters'] = 1000
-        self._results = results
-        self._precursor = precursor
+        self._masstodon = masstodon
         # _I_ = Intensity
         self._I_ETD_bond = Counter()
         self._I_ETD = 0
@@ -54,40 +51,45 @@ class SimpleCzMatch(object):
         self.probabilities = self._get_probabilities()
         self.branching_ratio = self._I_PTR / self._I_ETnoD if self._I_ETnoD else None
 
-    def _get_node_info(self, molecule):
-        mol_type = molecule.name[0]
-        no = int(molecule.name[1:])
-        if mol_type is 'c':
-            bp = int(molecule.name[1:])
-        else:
-            bp = len(self._precursor.fasta) - int(molecule.name[1:])
-        return mol_type, no, bp, molecule.q, molecule.g
+    # def _get_node_info(self, molecule):
+    #     mol_type = molecule.name[0]
+    #     no = int(molecule.name[1:])
+    #     if mol_type is 'c':
+    #         bp = int(molecule.name[1:])
+    #     else:
+    #         bp = len(self._masstodon.precursor.fasta) - int(molecule.name[1:])
+    #     return mol_type, no, bp, molecule.q, molecule.g
 
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""
-        mol_type, no, bp, q, g = self._get_node_info(molecule)
-        return SimpleNode(mol_type, no, bp, q)
+        mt, po, cs = molecule._molType_position_cleavageSite()
+        return SimpleNode(mt, po, cs, molecule.q)
+        # mol_type, no, bp, q, g = self._get_node_info(molecule)
+        # return SimpleNode(mol_type, no, bp, q)
 
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""
-        if C.bp is Z.bp and C.q + Z.q < self._precursor.q:
-            self.graph.add_edge(C, Z, ETnoD_PTR=self._precursor.q-1-C.q-Z.q)
+        if C.bp is Z.bp and C.q + Z.q < self._masstodon.precursor.q:
+            self.graph.add_edge(C, Z, ETnoD_PTR=self._masstodon.precursor.q-1-C.q-Z.q)
 
     def _add_self_loop(self, N):
         """Add edge between a 'c' fragment and a 'z' fragment."""
-        self.graph.add_edge(N, N, ETnoD_PTR=self._precursor.q-1-N.q)
+        self.graph.add_edge(N, N, ETnoD_PTR=self._masstodon.precursor.q-1-N.q)
 
     def _make_graph(self):
         """Prepare the matching graph."""
-        Q = self._precursor.q
+        Q = self._masstodon.precursor.q
         self.graph = nx.Graph()
-        for mol, estimate in self._results:
-            if mol.name is 'precursor':
-                self._I_ETnoD += mol.g * estimate
-                self._I_PTR += (Q - mol.q - mol.g) * estimate
-                self._I_ETnoD_PTR_precursor[mol.g, Q - mol.q - mol.g] = estimate
+        for b in self._masstodon.report._bricks:
+            estimate = b.molecule.intensity
+            if b.molecule.name is 'precursor':
+                g = b.molecule.g
+                q = b.molecule.q
+                self._I_ETnoD += g * estimate
+                self._I_PTR += (Q - q - g) * estimate
+                self._I_ETnoD_PTR_precursor[g, Q - q - g] = estimate
             else:
-                frag = self._get_node(mol)
+                frag = self._get_node(b.molecule)
                 if not frag in self.graph:
                     self.graph.add_node(frag, intensity=0)
                     self.graph.node[frag]['intensity'] += estimate
@@ -99,18 +101,40 @@ class SimpleCzMatch(object):
         for N in self.graph:
             self._add_self_loop(N)
 
+    # def _make_graph(self):
+    #     """Prepare the matching graph."""
+    #     Q = self._masstodon.precursor.q
+    #     self.graph = nx.Graph()
+    #     for mol, estimate in self._results:
+    #         if mol.name is 'precursor':
+    #             self._I_ETnoD += mol.g * estimate
+    #             self._I_PTR += (Q - mol.q - mol.g) * estimate
+    #             self._I_ETnoD_PTR_precursor[mol.g, Q - mol.q - mol.g] = estimate
+    #         else:
+    #             frag = self._get_node(mol)
+    #             if not frag in self.graph:
+    #                 self.graph.add_node(frag, intensity=0)
+    #                 self.graph.node[frag]['intensity'] += estimate
+    #     for C in self.graph:
+    #         if C.type is 'c':
+    #             for Z in self.graph:
+    #                 if Z.type is 'z':
+    #                     self._add_edge(C, Z)
+    #     for N in self.graph:
+    #         self._add_self_loop(N)
+
     def _optimize(self, G):
         """Match the intensities in a cluster.
 
         Decorates the self.graph with flow values.
         """
-        Q = self._precursor.q
+        Q = self._masstodon.precursor.q
         # lavish: all fragments lose cofragments
         lavish = sum((Q - 1 - N.q) * I for N, I in G.nodes.data('intensity'))
         self._I_lavish += lavish
         if len(G) > 1:
             intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
-            costs = matrix([float(ETnoD_PTR) for N,M, ETnoD_PTR 
+            costs = matrix([float(ETnoD_PTR) for N,M, ETnoD_PTR
                             in G.edges.data('ETnoD_PTR')])
             edges_cnt = G.size()  # number of c-z pairings
             equalities = incidence_matrix(G, len(intensities), edges_cnt)

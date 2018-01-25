@@ -55,7 +55,7 @@ class TestPeakPicker(unittest.TestCase):
 
         expected_nodes = set([('c4', 1), ('z7', 1), ('c5', 1),
                               ('z6', 1), ('c6', 1), ('z5', 1)])
-        obtained_nodes = set(node_to_tuple(n) 
+        obtained_nodes = set(node_to_tuple(n)
                              for n in matches.graph.nodes)
         self.assertEqual(expected_nodes, obtained_nodes)
 
