@@ -209,6 +209,3 @@ class MassTodon(object):
                         writer.writerow([name + '_' + str(k), v])
                 else:
                     writer.writerow([name, intensity])
-
-    def plot(self, simple=True):
-        pass

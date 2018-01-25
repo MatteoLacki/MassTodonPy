@@ -19,14 +19,16 @@
 from bokeh.palettes import viridis, Colorblind, Paired, Set3, Set1
 from itertools import cycle
 
+from MassTodonPy.Data.Constants import infinity
 
 class Cluster(object):
-    __slots__ = ('mz_L', 'mz_R', 'mz_left', 'mz_right', 'intensity',
-                 'intensity_d', 'estimate', 'estimate_d')
+    __slots__ = ('mz', 'intensity', 'mol_intensity', 'mol_name')
 
-    def __init__(self, **kwds):
-        for s in self.__slots__:
-            setattr(self, s, kwds.get(s, None))
+    def __init__(self):
+        self.mz = 0.0
+        self.intensity = 0.0
+        self.mol_intensity = 0.0
+        self.mol_name = ""
 
     def __repr__(self):
         res = []
@@ -35,11 +37,21 @@ class Cluster(object):
             res.append( "{0}={1}".format(s,v))
         return "Cluster(" + ", ".join(res) + ")"
 
+    def update(self, brick):
+        intensity = max(brick.peak_group.estimate,
+                        brick.peak_group.intensity)
+        if intensity > self.intensity:
+            self.intensity = intensity
+            self.mz = (brick.peak_group.mz_L + brick.peak_group.mz_R)/2.0
+        if brick.molecule.intensity > self.mol_intensity:
+            self.mol_intensity = brick.molecule.intensity
+            self.mol_name = brick.molecule.name
+
 
 class PeakGroup(object):
     """A class representing the outcomes for one experimental grouping."""
     __slots__ = ('mz_L', 'mz_R', 'mz_left', 'mz_right', 'intensity',
-                 'intensity_d', 'estimate', 'estimate_d')
+                 'intensity_d', 'estimate', 'estimate_d', 'sol_id')
 
     def __init__(self, **kwds):
         for s in self.__slots__:

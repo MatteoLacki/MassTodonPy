@@ -25,8 +25,8 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       mz_precision=.05,
                       _devel=True)
 
-masstodon.cz_match.probabilities
-masstodon.cz_match.intensities
+# masstodon.cz_match.probabilities
+# masstodon.cz_match.intensities
 
 # Check the tests.
 
@@ -34,14 +34,9 @@ path = '/Users/matteo/Desktop/'
 path1= path + 'assigned_spectrum.html'
 path2= path + 'assigned_spectrum.csv'
 
-b = masstodon.report._bricks[0]
-b.molecule.name
-
-masstodon.report.plot(path=path1)
+masstodon.report.plot(path1)
 masstodon.report.write(path2)
 
 _bricks = masstodon.report._bricks
 _peak_groups = masstodon.report._peak_groups
-
-
-_peak_groups
+_clusters = masstodon.report._clusters

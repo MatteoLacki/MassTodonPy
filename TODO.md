@@ -28,7 +28,7 @@
 + Support multiple input precursors!!!
 
 # elegant
-+ Implement recordtuple with metaclasses myself.
++ implement the additional 1D-regression-test for fragment inclusion.
 + Memoization of isotopic distributions should be an option, not a must.
 + Automate devel set up
 + Add the invisible buffers to Measure.plot()

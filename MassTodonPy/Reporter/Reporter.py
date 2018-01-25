@@ -17,7 +17,7 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
-from bokeh.models import HoverTool, Span
+from bokeh.models import HoverTool, Span, LabelSet
 import csv
 
 from MassTodonPy.Parsers.Paths import parse_path
@@ -46,7 +46,9 @@ class Reporter(object):
             c.mz_right = mz_right
 
         # lexicographically order the bricks
-        self._bricks.sort(key=lambda b: (b.peak_group.mz_L, -b.molecule.intensity))
+        self._bricks.sort(key=lambda b: ( b.peak_group.mz_L,
+                                         -b.molecule.intensity) )
+
         # adjust brick top/bottom/color
         self.color = ColorGenerator()
         prev_b = Brick(top=0.0, bottom=0.0, peak_group=PeakGroup(mz_L=0.0)) # guardian
@@ -57,10 +59,15 @@ class Reporter(object):
             b.color = self.color(b.molecule)
             prev_b = b
 
+        # build up clusters: as many as solutions.
+        self._clusters = [Cluster() for _ in
+                          range(len(self._masstodon._solutions))]
+        for b in self._bricks:
+            self._clusters[b.peak_group.sol_id].update(b)
+
     def _peakGroups_bricks_clusters(self):
         """Generate a flow of peak groups, bricks, and clusters."""
-        for sol in self._masstodon._solutions:
-            # add a cluster
+        for sol_id, sol in enumerate(self._masstodon._solutions):
             for G in sol:
                 if G[0] is 'G':
                     d = self._masstodon.min_interval_len/2.0
@@ -71,28 +78,25 @@ class Reporter(object):
                         mz = sol.node[G]['mz']
                         min_mz = mz - d
                         max_mz = mz + d
-                    intensity = sol.node[G]['intensity']
-                    # if round(intensity) > 0:
-                    intensity_d = intensity/(max_mz - min_mz)
-                    estimate = sol.node[G]['estimate']
-                    estimate_d = estimate/(max_mz - min_mz)
                     peak_group = PeakGroup(mz_L=min_mz,
                                            mz_R=max_mz,
                                            mz_left=min_mz,     # updated later
                                            mz_right=max_mz,    # updated later
-                                           intensity=intensity,
-                                           intensity_d=intensity_d,
-                                           estimate=estimate,
-                                           estimate_d=estimate_d,
-                                           most_abundant_mol_name="")
-                    yield '_peak_groups', peak_group
+                                           intensity=sol.node[G]['intensity'],
+                                           intensity_d=sol.node[G]['intensity']/
+                                                       (max_mz - min_mz),
+                                           estimate=sol.node[G]['estimate'],
+                                           estimate_d=sol.node[G]['estimate']/
+                                                      (max_mz - min_mz),
+                                           sol_id=sol_id)
+                    yield ('_peak_groups', peak_group)
                     for I in sol[G]:
                         estimate = sol[G][I]['estimate']
                         for M in sol[I]:
                             if M[0] is 'M':
-                                mol = sol.node[M]['molecule']
                                 # CVXOPT sometimes returns results only
-                                # slightly smaller than zero
+                                # slightly smaller than zero: don't want them
+                                #                 |||||
                                 if round(estimate) > 0:
                                     yield ('_bricks',
                                             Brick(peak_group=peak_group,
@@ -100,7 +104,7 @@ class Reporter(object):
                                                   bottom=0.0,
                                                   color='#440154',# updated later
                                                   intensity=estimate,
-                                                  molecule=mol))
+                                                  molecule=sol.node[M]['molecule']))
 
 
     def aggregate(self):
@@ -172,6 +176,7 @@ class Reporter(object):
     def plot(self,
              path="assigned_spectrum.html",
              mode="inline",
+             show_plot=True,
              width=None,
              height=None,
              _mult=1):
@@ -333,5 +338,32 @@ class Reporter(object):
                                             ('m/z', x_representation)])
         plot.add_tools(hover_squares)
 
-        show(plot)
+        # Text labels
+        cluster_lists = zip(*((c.mz,
+                               c.intensity,
+                               c.mol_intensity,
+                               c.mol_name)
+                              for c in self._clusters))
+
+        cluster_data = dict(zip(('mz',
+                                 'intensity',
+                                 'mol_intensity',
+                                 'mol_name'),
+                                cluster_lists))
+
+        source_clusters = ColumnDataSource(cluster_data)
+
+        labels = LabelSet(x='mz',
+                          y='intensity',
+                          text='mol_name',
+                          level='glyph',
+                          x_offset=0,
+                          y_offset=1,
+                          source=source_clusters,
+                          render_mode='css')
+
+        plot.add_layout(labels)
+
+        if show_plot:
+            show(plot)
         return plot
