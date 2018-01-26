@@ -134,7 +134,7 @@ class MassTodon(object):
         isospec_args['mz_digits'] = self.mz_digits
         self.minimal_intensity = preprocessing_args.get('minimal_intensity', eps)
 
-        # references to the reaction products
+        # references to the reaction products, a.k.a. 'molecules'
         self.molecules = list(self.precursor.molecules())
 
         # annotated connected components of the deconvolution graph
@@ -149,8 +149,6 @@ class MassTodon(object):
         # precise report on the deconvolution
         self.report = Reporter(self, _max_buffer_len)
 
-        # self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps)) #TODO terminate
-
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors.
         if simple_cz_match:
@@ -161,22 +159,6 @@ class MassTodon(object):
 
 
         #================================
-
-
-    # def get_raw_estimates(self, minimal_intensity=eps):
-    #     """Iterate over estimates with intensity greater than the minimal_intensity."""
-    #     for sol in self._solutions:
-    #         res = sol.report()
-    #         if res['status'] is not 'ValueError':
-    #             for mol in res['alphas']:
-    #                 estimate = int(mol['estimate'])
-    #                 if estimate >= minimal_intensity:
-    #                     mol = mol['molecule']
-    #                     yield mol, estimate
-
-    # def get_estimates_for_plot(self, minimal_intensity=eps):
-    #     """Probably just like function above."""
-    #     pass
 
     def write(self, path):
         """Write the spectrum to a csv or tsv file.

@@ -23,16 +23,27 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       simple_cz_match=True,
                       _devel=True)
 
+negative_g_mols = [mol for mol in masstodon.molecules if mol.intensity > 0.0 and mol.g < 0]
+
+
 simple = masstodon.simple_cz_match.intensities
 adv = masstodon.cz_match.intensities
 
-path = '/Users/matteo/Desktop/'
-path1= path + 'assigned_spectrum.html'
-path2= path + 'assigned_spectrum.csv'
+simple['ETDorHTR_bond']
+adv['ETDorHTR_bond']
 
-masstodon.report.plot(path1, width= 1000)
-masstodon.report.write(path2)
+# There must be vastly
+for k in simple['ETDorHTR_bond']:
+    print("{0}\t{1}".format(k,
+                            adv['ETDorHTR_bond'][k] - simple['ETDorHTR_bond'][k]))
 
-_bricks = masstodon.report._bricks
-_peak_groups = masstodon.report._peak_groups
-_clusters = masstodon.report._clusters
+from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
+
+masstodon.molecules
+
+
+simple_cz_match = SimpleCzMatch(masstodon.molecules,
+                                masstodon.precursor.q)
+
+simple_cz_match.probabilities
+simple_cz_match.intensities

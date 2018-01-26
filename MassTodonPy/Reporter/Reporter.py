@@ -143,7 +143,9 @@ class Reporter(object):
             for b in self._bricks:
                 writer.writerow((b.molecule.name,
                                  b.molecule.source.name,
-                                 str(b.molecule.formula),
+                                 # str(b.molecule.formula),
+                                 b.molecule.formula.str_with_charges(b.molecule.q,
+                                                                     b.molecule.g),
                                  b.molecule.q,
                                  b.molecule.g,
                                  round(b.intensity),
@@ -243,7 +245,9 @@ class Reporter(object):
                        b.intensity,
                        b.molecule.name,
                        b.molecule.source.name,
-                       str(b.molecule.formula),
+                       # str(b.molecule.formula),
+                       b.molecule.formula.str_with_charges(b.molecule.q,
+                                                           b.molecule.g),
                        b.molecule.q,
                        b.molecule.g,
                        b.molecule.intensity)
