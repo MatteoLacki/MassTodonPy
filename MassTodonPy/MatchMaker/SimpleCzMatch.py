@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
+#
+#   This file is part of MassTodon.
+#
+#   MassTodon is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3.
+#
+#   MassTodon is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3 along with MassTodon.  If not, see
+#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
 from __future__ import absolute_import, division, print_function
 from collections import Counter, namedtuple
 from cvxopt import  matrix, spmatrix, sparse, spdiag, solvers
@@ -6,11 +23,11 @@ from networkx import connected_component_subgraphs as connected_components
 
 from MassTodonPy.Data.Constants import eps, infinity
 
-Node = namedtuple('Node', 'type no bp q')
 
 def diag(val, dim):
     """Make a sparse identity matrix multiplied by a scalar val."""
     return spdiag([spmatrix(val,[0],[0]) for i in range(dim)])
+
 
 def incidence_matrix(graph, row_cnt, col_cnt):
     """Make a sparse incidence matrix of the graph G."""
@@ -21,6 +38,8 @@ def incidence_matrix(graph, row_cnt, col_cnt):
         L[NodesNo[N1],j] = 1
     return L
 
+
+Node = namedtuple('Node', 'type no bp q')
 
 class SimpleCzMatch(object):
     """Match c and z ions' intensities neglecting the quenched charge.
@@ -73,10 +92,11 @@ class SimpleCzMatch(object):
         Q = self._Q
         self.graph = nx.Graph()
         for mol in self._molecules:
-            estimate = mol.intensity
-            if estimate > 0.0:
+            estimate = int(mol.intensity) # Small difference, but can make optimization more stable.
+            if estimate > 0:
                 if mol.name is 'precursor':
                     g = mol.g
+                    print(g)
                     q = mol.q
                     self._I_ETnoD += g * estimate
                     self._I_PTR += (Q - q - g) * estimate

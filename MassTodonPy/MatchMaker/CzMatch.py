@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
+#
+#   This file is part of MassTodon.
+#
+#   MassTodon is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3.
+#
+#   MassTodon is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3 along with MassTodon.  If not, see
+#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
 from __future__ import absolute_import, division, print_function
 from collections import Counter, namedtuple
 from future.builtins import super
@@ -27,9 +44,8 @@ class CzMatch(SimpleCzMatch):
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""
         mt, po, cs = molecule._molType_position_cleavageSite()
+
         return Node(mt, po, cs, molecule.q, molecule.g)
-        # mol_type, no, bp, q, g = self._get_node_info(molecule)
-        # return Node(mol_type, no, bp, q, g)
 
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""

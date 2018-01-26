@@ -24,20 +24,21 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       _devel=True)
 
 
-masstodon.simple_cz_match.probabilities
-masstodon.cz_match.probabilities
+masstodon.molecules
+
+
 
 
 simple = masstodon.simple_cz_match.intensities
-sum(v for k, v in simple['ETD_bond'].items())
-
-
 adv = masstodon.cz_match.intensities
+
 simple['ETD_bond']
 adv['ETD_bond']
 
-for k in simple:
-    print("".format(k, simple[k], adv[k]))
+for k in simple['ETD_bond']:
+    print("{0}\t{1}\t{2}".format(k, simple['ETD_bond'][k], adv['ETD_bond'][k]))
+
+
 
 
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
