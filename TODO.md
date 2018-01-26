@@ -1,6 +1,8 @@
 ### MassTodon todo list
 
 # important
++ implement back the multiprocessing version of the software.
+    + it is an argument for the graph representation
 + eliminate the alphas and raw estimates
     + we are saving them with the reporter class
 + csv:

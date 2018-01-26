@@ -5,23 +5,24 @@ from future.builtins import super
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 
 
-Node = namedtuple('node', ['type', 'no', 'bp', 'q', 'g'])
+Node = namedtuple('Node', 'type no bp q g')
+
 
 class CzMatch(SimpleCzMatch):
-    def __init__(self, masstodon):
+    def __init__(self, molecules, precursor_charge):
         """Match c and z ions' intensities.
 
         Parameters
         ==========
-        results : list
-            A list of raw results of **MassTodon.run()**.
-        precursor : Precursor
-            A precursor for the matching problem.
+        molecules : list of Molecule objects
+            A list containing reaction products from one precusor.
+        precursor_charge : int
+            The charge of the precursor molecule.
 
         """
         self._I_ETnoD_fragments = 0
         self._I_PTR_fragments = 0
-        super().__init__(masstodon)
+        super().__init__(molecules, precursor_charge)
 
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""
@@ -46,7 +47,7 @@ class CzMatch(SimpleCzMatch):
         #       C.g + Z.g < precursor.q,
         #       but
         #       C.q + Z.q + C.g + Z.g < precursor.q
-        Q = self._masstodon.precursor.q
+        Q = self._Q
         if C.bp == Z.bp and C.q + Z.q + C.g + Z.g < Q:
             self.graph.add_edge(C, Z, ETnoD= C.g + Z.g,
                                       PTR= Q-1 -C.g -Z.g -C.q -Z.q,

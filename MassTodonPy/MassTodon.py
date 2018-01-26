@@ -123,6 +123,7 @@ class MassTodon(object):
         # mz_precision = .05  --> prec_digits = 3
         # mz_precision = .005 --> prec_digits = 4
         mz_digits_tmp = int(ceil(-log10(mz_precision)))
+
         self.mz_digits = deconvolution_args.get('mz_digits', mz_digits_tmp)
         self.min_interval_len = 10**(-self.mz_digits)
         self.precursor = Precursor(**precursor)
@@ -132,7 +133,12 @@ class MassTodon(object):
 
         isospec_args['mz_digits'] = self.mz_digits
         self.minimal_intensity = preprocessing_args.get('minimal_intensity', eps)
-        self._solutions = deconvolve(self.precursor.molecules(),
+
+        # references to the reaction products
+        self.molecules = list(self.precursor.molecules())
+
+        # annotated connected components of the deconvolution graph
+        self._solutions = deconvolve(self.molecules,
                                      self.spectrum,
                                      isospec_args=isospec_args,
                                      solver_args=solver_args,
@@ -140,29 +146,37 @@ class MassTodon(object):
         if _devel:
             self._solutions = list(self._solutions)
 
+        # precise report on the deconvolution
         self.report = Reporter(self, _max_buffer_len)
+
         # self._raw_estimates = list(self.get_raw_estimates(minimal_intensity=eps)) #TODO terminate
+
+        #TODO: change the code below so that it could handle
+        #      reaction products from different precursors.
         if simple_cz_match:
-            #TODO adjust input reading
-            # self.simple_cz_match = SimpleCzMatch(self._raw_estimates, self.precursor)
-            self.simple_cz_match = SimpleCzMatch(self)
-        # self.cz_match = CzMatch(self._raw_estimates, self.precursor)
-        self.cz_match = CzMatch(self)
+            self.simple_cz_match = SimpleCzMatch(self.molecules,
+                                                 self.precursor.q)
+        self.cz_match = CzMatch(self.molecules,
+                                self.precursor.q)
 
-    def get_raw_estimates(self, minimal_intensity=eps):
-        """Iterate over estimates with intensity greater than the minimal_intensity."""
-        for sol in self._solutions:
-            res = sol.report()
-            if res['status'] is not 'ValueError':
-                for mol in res['alphas']:
-                    estimate = int(mol['estimate'])
-                    if estimate >= minimal_intensity:
-                        mol = mol['molecule']
-                        yield mol, estimate
 
-    def get_estimates_for_plot(self, minimal_intensity=eps):
-        """Probably just like function above."""
-        pass
+        #================================
+
+
+    # def get_raw_estimates(self, minimal_intensity=eps):
+    #     """Iterate over estimates with intensity greater than the minimal_intensity."""
+    #     for sol in self._solutions:
+    #         res = sol.report()
+    #         if res['status'] is not 'ValueError':
+    #             for mol in res['alphas']:
+    #                 estimate = int(mol['estimate'])
+    #                 if estimate >= minimal_intensity:
+    #                     mol = mol['molecule']
+    #                     yield mol, estimate
+
+    # def get_estimates_for_plot(self, minimal_intensity=eps):
+    #     """Probably just like function above."""
+    #     pass
 
     def write(self, path):
         """Write the spectrum to a csv or tsv file.
