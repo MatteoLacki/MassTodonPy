@@ -23,23 +23,19 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       simple_cz_match=True,
                       _devel=True)
 
-
-masstodon.molecules
-
-
+negative_g_mols = [mol for mol in masstodon.molecules if mol.intensity > 0.0 and mol.g < 0]
 
 
 simple = masstodon.simple_cz_match.intensities
 adv = masstodon.cz_match.intensities
 
-simple['ETD_bond']
-adv['ETD_bond']
+simple['ETDorHTR_bond']
+adv['ETDorHTR_bond']
 
-for k in simple['ETD_bond']:
-    print("{0}\t{1}\t{2}".format(k, simple['ETD_bond'][k], adv['ETD_bond'][k]))
-
-
-
+# There must be vastly
+for k in simple['ETDorHTR_bond']:
+    print("{0}\t{1}".format(k,
+                            adv['ETDorHTR_bond'][k] - simple['ETDorHTR_bond'][k]))
 
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
 

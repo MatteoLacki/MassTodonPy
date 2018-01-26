@@ -59,8 +59,8 @@ class SimpleCzMatch(object):
         self._molecules = molecules
         self._Q = precursor_charge
         # _I_ = Intensity
-        self._I_ETD_bond = Counter()
-        self._I_ETD = 0
+        self._I_ETDorHTR_bond = Counter()
+        self._I_ETDorHTR = 0
         self._I_ETnoD = 0
         self._I_PTR = 0
         self._I_ETnoD_PTR_precursor = Counter()  # len(ETnoD), len(PTR) -> Intensity
@@ -96,7 +96,6 @@ class SimpleCzMatch(object):
             if estimate > 0:
                 if mol.name is 'precursor':
                     g = mol.g
-                    print(g)
                     q = mol.q
                     self._I_ETnoD += g * estimate
                     self._I_PTR += (Q - q - g) * estimate
@@ -105,7 +104,9 @@ class SimpleCzMatch(object):
                     frag = self._get_node(mol)
                     if not frag in self.graph:
                         self.graph.add_node(frag, intensity=0)
-                        self.graph.node[frag]['intensity'] += estimate
+                        # the next line must be one indentation lower!!!
+                        # don't you forget about it!!!
+                    self.graph.node[frag]['intensity'] += estimate
         for C in self.graph:
             if C.type is 'c':
                 for Z in self.graph:
@@ -156,30 +157,30 @@ class SimpleCzMatch(object):
             But it equals {}".format(self._I_ETnoD_PTR_fragments)
 
         for N, M, intensity in self.graph.edges.data('flow'):
-            self._I_ETD_bond[M.bp] += intensity
+            self._I_ETDorHTR_bond[M.bp] += intensity
 
-        self._I_ETD = sum(v for k, v in self._I_ETD_bond.items())
-        self._I_reactions = self._I_ETnoD + self._I_PTR + self._I_ETD
+        self._I_ETDorHTR = sum(v for k, v in self._I_ETDorHTR_bond.items())
+        self._I_reactions = self._I_ETnoD + self._I_PTR + self._I_ETDorHTR
         self._I_unreacted_precursor = self._I_ETnoD_PTR_precursor[0,0]
-        self._I_ETD_ETnoD_PTR = self._I_ETnoD + self._I_PTR + self._I_ETD
+        self._I_ETDorHTR_ETnoD_PTR = self._I_ETnoD + self._I_PTR + self._I_ETDorHTR
         return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_I_'}
 
     def _get_probabilities(self):
         """Estimate probabilities."""
         # _P_ = Probability
-        if self._I_ETD > 0:
-            self._P_ETD_bond = {k: v/self._I_ETD for k, v in self._I_ETD_bond.items()}
+        if self._I_ETDorHTR > 0:
+            self._P_ETDorHTR_bond = {k: v/self._I_ETDorHTR for k, v in self._I_ETDorHTR_bond.items()}
 
         if self._I_reactions + self._I_unreacted_precursor > 0:
             self._P_reaction = self._I_reactions / (self._I_reactions + self._I_unreacted_precursor)
 
         if self._I_reactions > 0:
-            self._P_fragmentation = self._I_ETD / self._I_reactions
+            self._P_fragmentation = self._I_ETDorHTR / self._I_reactions
 
-        if self._I_ETD_ETnoD_PTR > 0:
-            self._P_ETD = self._I_ETD / self._I_ETD_ETnoD_PTR
-            self._P_ETnoD = self._I_ETnoD / self._I_ETD_ETnoD_PTR
-            self._P_PTR = self._I_PTR / self._I_ETD_ETnoD_PTR
+        if self._I_ETDorHTR_ETnoD_PTR > 0:
+            self._P_ETDorHTR = self._I_ETDorHTR / self._I_ETDorHTR_ETnoD_PTR
+            self._P_ETnoD = self._I_ETnoD / self._I_ETDorHTR_ETnoD_PTR
+            self._P_PTR = self._I_PTR / self._I_ETDorHTR_ETnoD_PTR
         return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_P_'}
 
     def _match(self):
