@@ -40,9 +40,9 @@ class DeconvolutionProblem(nx.Graph):
                  max_times=10,
                  show_progress=False,
                  maxiters=1000,
-                 **attr):
+                 **kwds):
         global solvers
-        super().__init__(data, **attr)
+        super().__init__(data, **kwds)
         self.count_nodes_and_edges()
         self.max_times = max_times
         self.L1_x = L1_x
