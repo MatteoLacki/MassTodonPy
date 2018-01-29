@@ -31,9 +31,8 @@ def deconvolve(molecules,
                method='Matteo',
                mz_tol=.05,
                min_prob_per_molecule=.7,
-               isospec_args={},
-               solver_args={},
-               _merge_sister_Is=True):
+               _merge_sister_Is=True,
+               **kwds):
     """Get the sequence of deconvolution problems.
 
     Parameters
@@ -43,7 +42,8 @@ def deconvolve(molecules,
     spectrum : Spectrum
         An instance of the Spectrum class.
     method: string
-        Either 'Matteo' or 'Wanda_Ciacho'.
+        Input 'Matteo' for MassTodon paper deconvolution.
+        Input 'Ciacho_Wanda' for gaussian kernel deconvolution.
     mz_tol : float or function
         The tolerance in the m/z axis.
         Ultimately turned into a function mz_tol(mz),
@@ -54,11 +54,8 @@ def deconvolve(molecules,
     min_prob_per_molecule : float
         The minimal probability an envelope has to scoop
         to be included in the deconvolution graph.
-    isospec_args: dict
-        Arguments for isospec: 'joint_probability' and 'mz_digits'.
-    solver_args : dictionary
-        A dictionary of values for the deconvolution solver.
-
+    kwds :
+        Contains arguments to other objects.
     """
     I_cnt = 0
     graph = nx.Graph()
@@ -79,7 +76,7 @@ def deconvolve(molecules,
         mol.graph_tag = M
 
         # add isotopologues
-        for mz_I, prob in mol.isotopologues(**isospec_args):
+        for mz_I, prob in mol.isotopologues(**kwds):
             I = 'I' + str(I_cnt)
             I_cnt += 1
             mol_graph.add_node(I, mz=mz_I, probability=prob)
@@ -116,13 +113,13 @@ def deconvolve(molecules,
         _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
-            problem = DeconvolutionProblem(graph, **solver_args)
+            problem = DeconvolutionProblem(graph, **kwds)
             problem.solve()
             yield problem
     elif method is 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
-            problem = GaussianDeconvolutionProblem(graph, **solver_args)
+            problem = GaussianDeconvolutionProblem(graph, **kwds)
             problem.solve()
             yield problem
     else:

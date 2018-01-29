@@ -81,14 +81,23 @@ from MassTodonPy.Reporter.Reporter import Reporter
 class MassTodon(object):
     def __init__(self,
                  spectrum,
-                 precursor,
                  mz_tol,
-                 preprocessing_args={},
-                 isospec_args={},
-                 deconvolution_args={},
-                 solver_args={},
+                 fasta,
+                 charge,
+                 mz_digits=-10,
+                 name="",
+                 modifications={},
+                 fragmentation_type="cz",
+                 blocked_fragments=set(['c0']),
+                 distance_charges=5,
+                 min_intensity=eps,
+                 percent_top_peaks=1.0,
+                 deconvolution_method='Matteo',
+                 joint_probability=.999,
+                 min_prob_per_molecule=.7,
+                 _max_buffer_len=0.5,
                  _devel=False,
-                 _max_buffer_len=0.5):
+                 **kwds):
         """Run a full session of the MassTodon.
 
         Parameters
@@ -101,65 +110,84 @@ class MassTodon(object):
             The tuple consists of two numpy arrays:
                 one with m over z ratios,
                 the other with intensities.
-            Details of the Spectrum can be found here [TODO add link].
-        precursor : dict
-            A dictionary with obligatory 'fasta' and 'charge' keys.
-            Additionally, MassTodon will also parse keys such as:
-                name : str
-                    The precursor's name.
-                modifications : dictionary
-                    A dictionary of modifications.
-                fragmentation_type : str
-                    Only 'cz' accepted for now.
-                    Planning to add other fragmentation schemes, including
-                    the inner fragments.
-                blocked_fragments : list
-                    Fragments you don't want to include, e.g. 'z5'.
-                distance_charges :
-                    The minimal distance between charges on the fasta sequence.
-                    Defaults to charges being 4 amino acids apart.
         mz_tol : float
-            The precision in the m/z domain: how far away [in Daltons] should
-            one search for peaks from the theoretical mass.
-        preprocessing_args : dict
-            Arguments for spectrum preprocessing, such as min_prob_per_molecule and mz_tol.
-        deconvolution_args : dict
-            Arguments for the deconvolution stage, such as: method, mz_tol, min_prob_per_molecule
-        solver_args : dict
-            Arguments for the solver.
+            The tolerance in the m/z axis.
+            Ultimately turned into a function mz_tol(mz),
+            reporting the tolerance interval - a tuple '(mz_L, mz_R)',
+            where mz_L = mz - mz_tol and mz_R = mz + mz_tol.
+            Accepts user-provided functions too: in that case, the header should be
+            'def mz_tol(mz):' and it should return a tuple '(mz_L, mz_R)'.
+            If providing a function, it is necessary to provide
+            mz_digits.
+        mz_digits : int
+            The number of significant digits used for m/z representation.
+            If not explicitly provided, set to 'int(ceil(-log10(mz_tol)))'.
+            Defaults to nonsensical -10.
+        name : str
+            The precursor's name.
+        modifications : dictionary
+            A dictionary of modifications.
+        fragmentation_type : str
+            Only 'cz' accepted for now.
+            Planning other fragmentation schemes, including inner fragments.
+        blocked_fragments : list
+            Fragments you don't want to include, e.g. 'z5'.
+        distance_charges :
+            The minimal distance between charges on the fasta sequence.
+            Defaults to charges being 4 amino acids apart.
+        min_intensity : float
+            Experimental peaks with lower height will be trimmed.
+        percent_top_peaks : float
+            Percentage of the heighest peaks in the spectrum to be included.
+        deconvolution_method : str
+            Input 'Matteo' for MassTodon paper deconvolution.
+            Input 'Ciacho_Wanda' for gaussian kernel deconvolution.
+        joint_probability : float
+            The joint probability of the calculated isotopic distribution.
+            Defaults to a decent '0.999'.
+        min_prob_per_molecule : float
+            The minimal probability an envelope has to scoop
+            to be included in the deconvolution graph.
+        kwds :
+            Some other arguments.
         """
+        if not isinstance(mz_tol, float):
+            assert isinstance(mz_digits, int) and mz_digits != -10
 
-        assert isinstance(mz_tol, float) and mz_tol >= 0.0
-        # precision one digit lower than the input precision of spectra, eg.
-        # mz_tol = .05  --> prec_digits = 3
-        # mz_tol = .005 --> prec_digits = 4
-        mz_digits_tmp = int(ceil(-log10(mz_tol)))
+        mz_digits = int(ceil(-log10(mz_tol))) if mz_digits==-10 else mz_digits
+        self.precursor = Precursor(name=name,
+                                   fasta=fasta,
+                                   charge=charge,
+                                   modifications=modifications)
 
-        self.mz_digits = deconvolution_args.get('mz_digits', mz_digits_tmp)
-        self.min_interval_len = 10**(-self.mz_digits)
-        self.precursor = Precursor(**precursor)
         self.spectrum = Spectrum(spectrum=spectrum,
-                                 mz_digits=self.mz_digits,
-                                 **preprocessing_args)
+                                 mz_digits=mz_digits,
+                                 min_intensity=min_intensity,
+                                 **kwds)
 
-        isospec_args['mz_digits'] = self.mz_digits
-        self.minimal_intensity = preprocessing_args.get('minimal_intensity', eps)
 
         # references to the reaction products, a.k.a. 'molecules'
         self.molecules = list(self.precursor.molecules())
 
         # annotated connected components of the deconvolution graph
-        self._solutions = deconvolve(self.molecules,
-                                     self.spectrum,
-                                     isospec_args=isospec_args,
-                                     solver_args=solver_args,
-                                     **deconvolution_args)
+        self.deconvolution_method = deconvolution_method
+        self._solutions = deconvolve(molecules=self.molecules,
+                                     spectrum=self.spectrum,
+                                     method=self.deconvolution_method,
+                                     mz_tol=mz_tol,
+                                     min_prob_per_molecule=min_prob_per_molecule,
+                                     joint_probability=joint_probability,
+                                     mz_digits=mz_digits)
 
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self._solutions = list(self._solutions)
 
         # precise report on the deconvolution
-        self.report = Reporter(self, _max_buffer_len)
+        self.report = Reporter(solutions=self._solutions,
+                               molecules=self.molecules,
+                               mz_digits=mz_digits,
+                               spectrum=self.spectrum,
+                               max_buffer_len=_max_buffer_len)
 
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors.

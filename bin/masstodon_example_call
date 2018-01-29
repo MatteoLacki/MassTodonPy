@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 from collections import defaultdict
+import os
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
 
 if __name__ == '__main__':
+    os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
+
     print("Welcome to MassTodon example call.")
 
     print("\t- reading data.")
@@ -12,15 +15,14 @@ if __name__ == '__main__':
     modifications = defaultdict(dict)
     for (number, group), mods in substanceP.precursor.modifications.items():
         modifications[number][group] = dict(mods)
-    precursor = {'name': 'substanceP',
-                 'fasta': substanceP.precursor.fasta,
-                 'charge': 3,
-                 'modifications': modifications}
 
     print("\t- running MassTodonPy.")
     masstodon = MassTodon(spectrum=substanceP.spectrum,
-                          precursor=precursor,
-                          mz_tol=.05)
+                          mz_tol=.05,
+                          fasta=substanceP.precursor.fasta,
+                          charge=3,
+                          name='substanceP',
+                          modifications=modifications)
 
     print("\t -making basic plot.")
     masstodon.report.plot('/Users/matteo/Desktop/assigned_spectrum.html',

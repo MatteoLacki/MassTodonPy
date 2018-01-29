@@ -28,10 +28,36 @@ from MassTodonPy.Reporter.misc import Brick, Cluster, PeakGroup, ColorGenerator,
 class Reporter(object):
     """Report MassTodon results."""
 
-    def __init__(self, masstodon, max_buffer_len=0.5):
-        self._masstodon = masstodon
+    def __init__(self,
+                 solutions,
+                 molecules,
+                 mz_digits,
+                 spectrum,
+                 max_buffer_len=0.5,
+                 **kwds):
+        """Reporting results of the MassTodon.
+
+        Parameters
+        ==========
+        solutions :
+            An iterable of solutions to the faced deconvolution problem.
+        molecules :
+            An iterable of generated molecules.
+        mz_digits : int
+            The number of significant digits used for m/z representation.
+        max_buffer_len : float
+            The maximal length of the visual buffer between peaks, i.e.
+            the big rectangle width.
+        kwds :
+            Arguments to other methods.
+        """
         self._bricks = []
+        self._solutions = solutions
+        self._molecules = molecules
         self._peak_groups = []
+        self._mz_digits = mz_digits
+        self._min_interval_len = 10**(-self._mz_digits)
+        self._spectrum = spectrum
         for name, thing in self._peakGroups_bricks_clusters():
             self.__dict__[name].append(thing)
 
@@ -61,16 +87,16 @@ class Reporter(object):
 
         # build up clusters: as many as solutions.
         self._clusters = [Cluster() for _ in
-                          range(len(self._masstodon._solutions))]
+                          range(len(self._solutions))]
         for b in self._bricks:
             self._clusters[b.peak_group.sol_id].update(b)
 
     def _peakGroups_bricks_clusters(self):
         """Generate a flow of peak groups, bricks, and clusters."""
-        for sol_id, sol in enumerate(self._masstodon._solutions):
+        for sol_id, sol in enumerate(self._solutions):
             for G in sol:
                 if G[0] is 'G':
-                    d = self._masstodon.min_interval_len/2.0
+                    d = self._min_interval_len / 2.0
                     try:
                         min_mz = sol.node[G]['min_mz'] - d
                         max_mz = sol.node[G]['max_mz'] + d
@@ -180,8 +206,7 @@ class Reporter(object):
                                                       file_name,
                                                       file_ext)
 
-        self._masstodon.molecules.sort(key=lambda m: m.intensity,
-                                       reverse=True)
+        self._molecules.sort(key=lambda m: m.intensity, reverse=True)
 
         with open(path_molecules, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=delimiter)
@@ -194,7 +219,7 @@ class Reporter(object):
                              'source fasta',
                              'source formula'))
 
-            for m in self._masstodon.molecules:
+            for m in self._molecules:
                 if round(m.intensity) > 0 or include_zero_intensities:
                     writer.writerow((m.name,
                                      m.formula.str_with_charges(m.q, m.g),
@@ -246,18 +271,18 @@ class Reporter(object):
 
         # add bars to experimentally observed peaks / overlay real spectrum
         mz_representation = make_string_represenation('mz',
-                                                      self._masstodon.mz_digits)
-        experimental_bars = plot.vbar(x=self._masstodon.spectrum.mz,
-                                      top=self._masstodon.spectrum.intensity,
-                                      width=self._masstodon.min_interval_len,
+                                                      self._mz_digits)
+        experimental_bars = plot.vbar(x=self._spectrum.mz,
+                                      top=self._spectrum.intensity,
+                                      width=self._min_interval_len,
                                       color='black',
                                       alpha=.1)
 
         # Horizontal threshold line
-        intensity_threshold = self._masstodon.spectrum.min_intensity
+        intensity_threshold = self._spectrum.min_intensity
         if intensity_threshold > 1.0:
-            min_mz = max(min(self._masstodon.spectrum.mz) - 50, 0)
-            max_mz = max(self._masstodon.spectrum.mz) + 50
+            min_mz = max(min(self._spectrum.mz) - 50, 0)
+            max_mz = max(self._spectrum.mz) + 50
 
             plot.line([min_mz, max_mz],
                       [intensity_threshold,intensity_threshold],
@@ -359,14 +384,13 @@ class Reporter(object):
         plot.add_tools(hover_peak_groups)
 
         # Experimental Squares
-        raw_spectrum = plot.square(x=self._masstodon.spectrum.mz,
-                                   y=self._masstodon.spectrum.intensity,
+        raw_spectrum = plot.square(x=self._spectrum.mz,
+                                   y=self._spectrum.intensity,
                                    size=5,
                                    color='black',
                                    alpha=.5)
 
-        x_representation = make_string_represenation('x',
-                                                     self._masstodon.mz_digits)
+        x_representation = make_string_represenation('x', self._mz_digits)
 
         hover_squares = HoverTool(renderers=[raw_spectrum],
                                   tooltips=[('intensity', "@y{0,0}"),

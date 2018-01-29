@@ -41,7 +41,15 @@ class Precursor(object):
         Value: a dictionary with group modifications.
             Keys : C_carbo, C_alpha, or N.
             Value: atom count in form of a linearCounter.
-
+    fragmentation_type: str
+        For now 'cz' only, but we are working on it.
+    blocked_fragments : list
+        Fragments you don't want to include, e.g. 'z5'.
+    distance_charges :
+        The minimal distance between charges on the fasta sequence.
+        Defaults to charges being 4 amino acids apart.
+    kwds :
+        Settings for other methods.
     """
     amino_acids = get_amino_acids()  # residues only!
 
@@ -52,7 +60,8 @@ class Precursor(object):
                  modifications={},
                  fragmentation_type="cz",
                  blocked_fragments=set(['c0']),
-                 distance_charges=5):
+                 distance_charges=5,
+                 **kwds):
         self.name = name
         self.fasta = fasta
         self.q = charge

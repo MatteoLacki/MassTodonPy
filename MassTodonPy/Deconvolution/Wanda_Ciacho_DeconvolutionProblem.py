@@ -38,12 +38,12 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
                  max_times=10,
                  show_progress=False,
                  maxiters=1000,
-                 sigma2=.1, 
+                 sigma2=.1,
                  ni2=.1,
-                 **attr):
+                 **kwds):
         # This is important to initiate a graph!!!!
         #   calls the grandparent class
-        super(DeconvolutionProblem, self).__init__(data, **attr)
+        super(DeconvolutionProblem, self).__init__(data, **kwds)
         self.L1 = L1
         self.L2 = L2
         self.sigma2 = sigma2

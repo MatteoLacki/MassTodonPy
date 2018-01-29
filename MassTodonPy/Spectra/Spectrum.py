@@ -35,7 +35,8 @@ class Spectrum(Measure):
                  mz_digits=infinity,
                  min_intensity=eps,
                  percent_top_peaks=1.0,
-                 sort=True):
+                 sort=True,
+                 **kwds):
         """Initialize the Spectrum."""
         self._store_names = ('m/z', 'intensity')
         self.mz_digits = mz_digits
