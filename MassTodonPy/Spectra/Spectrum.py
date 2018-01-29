@@ -40,7 +40,7 @@ class Spectrum(Measure):
         """Initialize the Spectrum."""
         self._store_names = ('m/z', 'intensity')
         self.mz_digits = mz_digits
-        self.min_intensity = min_intensity
+        self.min_intensity = float(min_intensity)
         if isinstance(spectrum, str) and spectrum:
             spectrum = read_spectrum(spectrum, mz_digits, eps)
             self.mz = spectrum.atoms

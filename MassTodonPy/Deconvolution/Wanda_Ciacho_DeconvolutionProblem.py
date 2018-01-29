@@ -68,13 +68,13 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
         # This is important to initiate a graph!!!!
         #   calls the grandparent class
         super(DeconvolutionProblem, self).__init__(data, **kwds)
-        self.L1_intensity = L1_intensity
-        self.L2_intensity = L2_intensity
-        self.sigma2 = sigma2
-        self.ni2 = ni2
-        self.max_times = max_times
-        solvers.options['show_progress'] = show_progress
-        solvers.options['maxiters'] = maxiters
+        self.L1_intensity = float(L1_intensity)
+        self.L2_intensity = float(L2_intensity)
+        self.sigma2 = float(sigma2)
+        self.ni2 = float(ni2)
+        self.max_times = int(max_times)
+        solvers.options['show_progress'] = bool(show_progress)
+        solvers.options['maxiters'] = int(maxiters)
         self.count_nodes_and_edges()
         self.get_P_q()
         self.get_G_h()

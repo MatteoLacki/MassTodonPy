@@ -20,15 +20,16 @@ import os
 from pprint import pprint
 import re
 
+from MassTodonPy.Data.Constants import eps
 
-def parse_name(name):
+def parse_str(name):
     return tuple(name)
 
-def parse_fasta(fasta):
-    return tuple(fasta)
+def parse_float(name):
+    return name[0], float(name[1])
 
-def parse_charge(charge):
-    return charge[0], int(charge[1])
+def parse_int(name):
+    return name[0], int(name[1])
 
 def parse_modification(mod):
     mod = mod[1:]
@@ -44,12 +45,11 @@ def parse_modification(mod):
         change[element] = int(diff)
     return (AA_No, group), change
 
-def parse_intensity_cut_off(intensity_cut_off):
-    return intensity_cut_off[0], float(intensity_cut_off[1])
+def parse_fragmentation_type(frags):
+    pass
 
-def parse_mz_tol(mz_tol):
-    return mz_tol[0], float(mz_tol[1])
-
+def parse_blocked_fragment(frags):
+    pass
 
 def parse_config_file(path):
     '''Parse a text file in a format similar to:
@@ -60,16 +60,51 @@ def parse_config_file(path):
     * modify AA=11 group=C_carbo H=1 O=-1 N=1
     * intensity_cut_off 100
     * mz_tol .05
+
+    The idea is actually trivial:
+        we treat each first string before space as
+        the name of the variable the value of which we want to set.
     '''
 
-    args = {'name': {'id': 'precursor', 'default':  True},
-            'fasta': {'id': 'precursor', 'default':  False},
-            'charge': {'id': 'precursor', 'default':  False},
-            'modification': {'id': 'precursor',
-                             'default': True,
-                             'value': defaultdict(dict)},
-            'intensity_cut_off': {'id': 'preprocessing_args', 'default': True},
-            'mz_tol': {'id': 'mz_tol', 'default': False} }
+    # Vars passed to MassTodon
+    defaults = {'mz_tol': '',   # phoney
+                'fasta': '',    # phoney
+                'charge': 0,    # phoney
+                'mz_digits':-10,
+                'name':'',
+                # 'modifications':{},
+                # 'fragmentation_type':"cz",
+                # 'blocked_fragments':set(['c0']),
+                'distance_charges':5,
+                'min_intensity':0.0,
+                'percent_top_peaks':1.0,
+                'deconvolution_method':'Matteo',
+                'joint_probability':.999,
+                'min_prob_per_molecule':.7,
+                '_max_buffer_len':0.5,
+                '_L1_flow':0.001,
+                '_L2_flow':0.001,
+                '_L1_intensity':0.001,
+                '_L2_intensity':0.001,
+                '_max_times':10,
+                '_show_progress':False,
+                '_maxiters':1000,
+                '_devel':False,
+                '_sigma2':.1,
+                '_ni2':.1}
+
+
+    types = { k: type(defaults[k]) for k in defaults }
+    complicated = ('modification', 'fragmentation_type', 'blocked_fragment')
+    for k in complicated:
+        types[k] = k
+
+    parser = {int: parse_int,
+              float: parse_float,
+              str: parse_string,
+              'modification': parse_modification,
+              'fragmentation_type': parse_fragmentation_type,
+              'blocked_fragment': parse_blocked_fragment}
 
     with open(path, 'r') as f:
         for line in f:
@@ -77,8 +112,12 @@ def parse_config_file(path):
             if line:
                 line = line.split(" ")
                 key = line[0]
-                assert key in args, "%s is not a valid key." % key
-                name, value = globals()['parse_' + key](line)
+                if key in complicated:
+
+                else:
+                    value = line[1]
+
+
                 if key=='modification':
                     AA_No, group = name
                     args['modification']['value'][AA_No][group] = value

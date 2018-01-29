@@ -84,12 +84,12 @@ class MassTodon(object):
                  mz_tol,
                  fasta,
                  charge,
-                 mz_digits=-10,
+                 mz_digits=-10.,
                  name="",
                  modifications={},
                  fragmentation_type="cz",
                  blocked_fragments=set(['c0']),
-                 distance_charges=5,
+                 distance_charges=5.,
                  min_intensity=eps,
                  percent_top_peaks=1.0,
                  deconvolution_method='Matteo',
@@ -100,9 +100,9 @@ class MassTodon(object):
                  _L2_flow=0.001,
                  _L1_intensity=0.001,
                  _L2_intensity=0.001,
-                 _max_times=10,
+                 _max_times=10.,
                  _show_progress=False,
-                 _maxiters=1000,
+                 _maxiters=1000.,
                  _devel=False,
                  _sigma2=.1,
                  _ni2=.1,
@@ -178,10 +178,13 @@ class MassTodon(object):
         kwds :
             Some other arguments.
         """
+        if isinstance(mz_tol, str):
+            mz_tol = float(mz_tol)
+
         if not isinstance(mz_tol, float):
             assert isinstance(mz_digits, int) and mz_digits != -10
 
-        mz_digits = int(ceil(-log10(mz_tol))) if mz_digits==-10 else mz_digits
+        mz_digits = int(ceil(-log10(mz_tol))) if mz_digits in (-10,'-10') else mz_digits
         self.precursor = Precursor(name=name,
                                    fasta=fasta,
                                    charge=charge,
@@ -213,7 +216,7 @@ class MassTodon(object):
                                      show_progress=_show_progress,
                                      maxiters=_maxiters,
                                      sigma2=_sigma2,
-                                     _ni2=ni2)
+                                     _ni2=_ni2)
 
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self._solutions = list(self._solutions)
@@ -227,11 +230,11 @@ class MassTodon(object):
 
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors.
-        self.simple_cz_match = SimpleCzMatch(self.molecules,
-                                             self.precursor.q)
+        self.simple_cz_match = SimpleCzMatch(molecules=self.molecules,
+                                             precursor_charge=self.precursor.q)
 
-        self.cz_match = CzMatch(self.molecules,
-                                self.precursor.q)
+        self.cz_match = CzMatch(molecules=self.molecules,
+                                precursor_charge=self.precursor.q)
 
 
         #================================

@@ -67,17 +67,17 @@ class DeconvolutionProblem(nx.Graph):
         global solvers
         super().__init__(data, **kwds)
         self.count_nodes_and_edges()
-        self.max_times = max_times
-        self.L1_flow = L1_flow
-        self.L2_flow = L2_flow
-        self.L1_intensity = L1_intensity
-        self.L2_intensity = L2_intensity
+        self.max_times = int(max_times)
+        self.L1_flow = float(L1_flow)
+        self.L2_flow = float(L2_flow)
+        self.L1_intensity = float(L1_intensity)
+        self.L2_intensity = float(L2_intensity)
         self.get_P_q()
         self.get_A_b()
         self.get_G_h()
         self.get_initvals()
-        solvers.options['show_progress'] = show_progress
-        solvers.options['maxiters'] = maxiters
+        solvers.options['show_progress'] = bool(show_progress)
+        solvers.options['maxiters'] = int(maxiters)
 
     def count_nodes_and_edges(self):
         """Tag nodes and edges with distinct id numbers."""

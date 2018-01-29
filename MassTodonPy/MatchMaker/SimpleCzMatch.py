@@ -50,14 +50,23 @@ class SimpleCzMatch(object):
         A list containing reaction products from one precusor.
     precursor_charge : int
         The charge of the precursor molecule.
+    show_progress : boolean
+        Show progress of the CVXOPT calculations.
+    maxiters : int
+        Maximum number of iterations for the CVXOPT algorithm.
 
     """
-    def __init__(self, molecules, precursor_charge):
-        solvers.options['show_progress'] = False
-        solvers.options['maxiters'] = 1000
+    def __init__(self,
+                 molecules,
+                 precursor_charge,
+                 show_progress=False,
+                 maxiters=1000,
+                 **kwds):
+        solvers.options['show_progress'] = bool(show_progress)
+        solvers.options['maxiters'] = int(maxiters)
 
         self._molecules = molecules
-        self._Q = precursor_charge
+        self._Q = int(precursor_charge)
         # _I_ = Intensity
         self._I_ETDorHTR_bond = Counter()
         self._I_ETDorHTR = 0

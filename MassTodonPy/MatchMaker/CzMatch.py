@@ -26,7 +26,7 @@ Node = namedtuple('Node', 'type no bp q g')
 
 
 class CzMatch(SimpleCzMatch):
-    def __init__(self, molecules, precursor_charge):
+    def __init__(self, **kwds):
         """Match c and z ions' intensities.
 
         Parameters
@@ -39,7 +39,7 @@ class CzMatch(SimpleCzMatch):
         """
         self._I_ETnoD_fragments = 0
         self._I_PTR_fragments = 0
-        super().__init__(molecules, precursor_charge)
+        super().__init__(**kwds)
 
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""

@@ -47,8 +47,8 @@ class Molecule(object):
         self.name = name
         self.source = source
         self.formula = formula
-        self.q = q
-        self.g = g
+        self.q = int(q)
+        self.g = int(g)
         self.intensity = 0.0
 
     def _molType_position_cleavageSite(self):
@@ -69,7 +69,8 @@ class Molecule(object):
 
     def isotopologues(self,
                       joint_probability=.999,
-                      mz_digits=infinity):
+                      mz_digits=infinity,
+                      **kwds):
         return self.iso_calc.get_envelope(self.formula,
                                           joint_probability,
                                           self.q,

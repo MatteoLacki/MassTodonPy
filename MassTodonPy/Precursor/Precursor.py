@@ -64,7 +64,7 @@ class Precursor(object):
                  **kwds):
         self.name = name
         self.fasta = fasta
-        self.q = charge
+        self.q = int(charge)
         self.groups = ('N', 'C_alpha', 'C_carbo')
         self.modifications = {(number - 1, group): Formula(atom_cnt)
                               for number, mods in modifications.items()
@@ -74,7 +74,7 @@ class Precursor(object):
                            for group in self.groups)
         self.blocked_fragments = blocked_fragments
         self.fragmentation_type = fragmentation_type
-        self.distance_charges = distance_charges
+        self.distance_charges = int(distance_charges)
         for i, f in enumerate(self.fasta):
             if f == 'P':
                 self.blocked_fragments.add('c' + str(i))

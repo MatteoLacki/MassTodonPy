@@ -55,9 +55,10 @@ class Reporter(object):
         self._solutions = solutions
         self._molecules = molecules
         self._peak_groups = []
-        self._mz_digits = mz_digits
+        self._mz_digits = int(mz_digits)
         self._min_interval_len = 10**(-self._mz_digits)
         self._spectrum = spectrum
+        self._max_buffer_len = float(max_buffer_len)
         for name, thing in self._peakGroups_bricks_clusters():
             self.__dict__[name].append(thing)
 
@@ -66,7 +67,8 @@ class Reporter(object):
 
         # adding left and right buffers needed for plot
         mz_L, mz_R = list(zip(*((c.mz_L, c.mz_R) for c in self._peak_groups))) #TODO this is an overkill: smooth out the defintion of the buffers function.
-        mz_lefts, mz_rights = buffers(mz_L, mz_R, max_length=max_buffer_len)
+        mz_lefts, mz_rights = buffers(mz_L, mz_R,
+                                      max_length=self._max_buffer_len)
         for c, mz_left, mz_right in zip(self._peak_groups, mz_lefts, mz_rights):
             c.mz_left = mz_left
             c.mz_right = mz_right
