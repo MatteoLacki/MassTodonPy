@@ -33,22 +33,45 @@ class DeconvolutionProblem(nx.Graph):
     """Prepare and solve one deconvolution problem."""
     def __init__(self,
                  data=None,
-                 L1_x=0.001,
-                 L2_x=0.001,
-                 L1_alpha=0.001,
-                 L2_alpha=0.001,
+                 L1_flow=0.001,
+                 L2_flow=0.001,
+                 L1_intensity=0.001,
+                 L2_intensity=0.001,
                  max_times=10,
                  show_progress=False,
                  maxiters=1000,
                  **kwds):
+        """Deconvolve the isotopic signal using the tolerance-interval-method.
+
+        Parameters
+        ==========
+        data : nx.Graph inputs
+            Necessary for compatibility with 'networkx.Graph'.
+        L1_flow : float
+            L1 penalty for high flows of intensities.
+        L2_flow : float
+            L2 penalty (a.k.a. ridge regression like) for high flows of intensities.
+        L1_intensity : float
+            L1 penalty for high intensity estimates.
+        L2_intensities : float
+            L2 penalty (a.k.a. ridge regression like) for high intensities.
+        max_times : int
+            The maximal number of times to run CVXOPT.
+        show_progress : boolean
+            Show progress of the CVXOPT calculations.
+        maxiters : int
+            Maximum number of iterations for the CVXOPT algorithm.
+        kwds
+            Arguments for other functions.
+        """
         global solvers
         super().__init__(data, **kwds)
         self.count_nodes_and_edges()
         self.max_times = max_times
-        self.L1_x = L1_x
-        self.L2_x = L2_x
-        self.L1_alpha = L1_alpha
-        self.L2_alpha = L2_alpha
+        self.L1_flow = L1_flow
+        self.L2_flow = L2_flow
+        self.L1_intensity = L1_intensity
+        self.L2_intensity = L2_intensity
         self.get_P_q()
         self.get_A_b()
         self.get_G_h()
@@ -88,24 +111,24 @@ class DeconvolutionProblem(nx.Graph):
 
         Notes
         =====
-        0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
+        0.5 <x|P|x> + <q|x> + L1_flow * sum x + L2_flow * sum x^2 + L1_intensity * sum alpha + L2_intensity * sum alpha^2
         """
         q_list = []
         P_list = []
         for G, intensity in self.node_iter('G', 'intensity'):
             degree = self.degree(G)
                                             # L1 penalty for x
-            q_list.append(matrix(-intensity + self.L1_x,
+            q_list.append(matrix(-intensity + self.L1_flow,
                                  size=(degree, 1)))
             ones = matrix(1.0, (degree, 1))
                                       # L2 penalty for x
-            P_g  = ones * ones.T + diag(self.L2_x, degree)
+            P_g  = ones * ones.T + diag(self.L2_flow, degree)
             P_list.append(P_g)
                            # L1 penalty for alphas
-        q_list.append(matrix(self.L1_alpha, (self.M_no, 1)))
+        q_list.append(matrix(self.L1_intensity, (self.M_no, 1)))
         self.q = matrix(q_list)
                          # L2 penalty for alphas
-        P_list.append(diag(self.L2_alpha, self.M_no))
+        P_list.append(diag(self.L2_intensity, self.M_no))
         self.P = spdiag(P_list)
 
     def get_initvals(self):

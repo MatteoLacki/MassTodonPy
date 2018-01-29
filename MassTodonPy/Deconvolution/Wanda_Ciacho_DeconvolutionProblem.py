@@ -24,8 +24,8 @@ import networkx as nx
 from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
 
 
-def l2_dot_prod(mean_0, mean_1, var_0, var_1):
-    """Get the L2 dot product of two Gaussians."""
+def L2_intensity_dot_prod(mean_0, mean_1, var_0, var_1):
+    """Get the L2_intensity dot product of two Gaussians."""
     out = log(2) + log(pi) + log(var_0 + var_1) - (mean_0 - mean_1)**2/(var_0 + var_1)
     return exp(-out/2.0)
 
@@ -33,19 +33,43 @@ def l2_dot_prod(mean_0, mean_1, var_0, var_1):
 class GaussianDeconvolutionProblem(DeconvolutionProblem):
     def __init__(self,
                  data=None,
-                 L1=0.001,
-                 L2=0.001,
+                 L1_intensity=0.001,
+                 L2_intensity=0.001,
                  max_times=10,
                  show_progress=False,
                  maxiters=1000,
                  sigma2=.1,
                  ni2=.1,
                  **kwds):
+        """Deconvolve the isotopic signal using the gaussian-kernel method.
+
+        Parameters
+        ==========
+        data : nx.Graph inputs
+            Necessary for compatibility with 'networkx.Graph'.
+        L1_intensity : float
+            L1 penalty for high intensity estimates.
+        L2_intensity : float
+            L2 penalty (a.k.a. ridge regression like) for high intensities.
+        max_times : int
+            The maximal number of times to run CVXOPT.
+        show_progress : boolean
+            Show progress of the CVXOPT calculations.
+        maxiters : int
+            Maximum number of iterations for the CVXOPT algorithm.
+        sigma2 : float
+            Variance of the experimental peak's m/z ratio.
+        ni2 : float
+            Variance of the theoretic isotopologue's m/z ratio.
+        kwds
+            Arguments for other functions.
+
+        """
         # This is important to initiate a graph!!!!
         #   calls the grandparent class
         super(DeconvolutionProblem, self).__init__(data, **kwds)
-        self.L1 = L1
-        self.L2 = L2
+        self.L1_intensity = L1_intensity
+        self.L2_intensity = L2_intensity
         self.sigma2 = sigma2
         self.ni2 = ni2
         self.max_times = max_times
@@ -71,7 +95,7 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
 
         Notes
         =====
-        0.5 <x|P|x> + <q|x> + L1_x * sum x + L2_x * sum x^2 + L1_alpha * sum alpha + L2_alpha * sum alpha^2
+        0.5 <x|P|x> + <q|x> + L1_intensity_x * sum x + L2_intensity_x * sum x^2 + L1_intensity_alpha * sum alpha + L2_intensity_alpha * sum alpha^2
         """
         q = [0.0] * self.M_no
         for M in self.node_iter('M'):
@@ -83,7 +107,7 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
                     if E[0] is 'E':  # automatically neglect M-I-∅
                         E_mz = self.node[E]['mz']
                         intensity = self.node[E]['intensity']
-                        product = l2_dot_prod(I_mz,
+                        product = L2_intensity_dot_prod(I_mz,
                                               E_mz,
                                               self.sigma2,
                                               self.ni2)

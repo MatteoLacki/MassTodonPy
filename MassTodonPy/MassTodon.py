@@ -96,7 +96,16 @@ class MassTodon(object):
                  joint_probability=.999,
                  min_prob_per_molecule=.7,
                  _max_buffer_len=0.5,
+                 _L1_flow=0.001,
+                 _L2_flow=0.001,
+                 _L1_intensity=0.001,
+                 _L2_intensity=0.001,
+                 _max_times=10,
+                 _show_progress=False,
+                 _maxiters=1000,
                  _devel=False,
+                 _sigma2=.1,
+                 _ni2=.1,
                  **kwds):
         """Run a full session of the MassTodon.
 
@@ -148,6 +157,24 @@ class MassTodon(object):
         min_prob_per_molecule : float
             The minimal probability an envelope has to scoop
             to be included in the deconvolution graph.
+        _L1_flow : float
+            L1 penalty for high flows of intensities.
+        _L2_flow : float
+            L2 penalty (a.k.a. ridge regression like) for high flows of intensities.
+        _L1_intensity : float
+            L1 penalty for high intensity estimates.
+        _L2_intensities : float
+            L2 penalty (a.k.a. ridge regression like) for high intensities.
+        _max_times : int
+            The maximal number of times to run CVXOPT.
+        _show_progress : boolean
+            Show progress of the CVXOPT calculations.
+        _maxiters : int
+            Maximum number of iterations for the CVXOPT algorithm.
+        _sigma2 : float
+            Variance of the experimental peak's m/z ratio.
+        _ni2 : float
+            Variance of the theoretic isotopologue's m/z ratio.
         kwds :
             Some other arguments.
         """
@@ -177,7 +204,16 @@ class MassTodon(object):
                                      mz_tol=mz_tol,
                                      min_prob_per_molecule=min_prob_per_molecule,
                                      joint_probability=joint_probability,
-                                     mz_digits=mz_digits)
+                                     mz_digits=mz_digits,
+                                     L1_flow=_L1_flow,
+                                     L2_flow=_L2_flow,
+                                     L1_intensity=_L1_intensity,
+                                     L2_intensity=_L2_intensity,
+                                     max_times=_max_times,
+                                     show_progress=_show_progress,
+                                     maxiters=_maxiters,
+                                     sigma2=_sigma2,
+                                     _ni2=ni2)
 
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self._solutions = list(self._solutions)

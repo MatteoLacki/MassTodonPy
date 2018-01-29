@@ -16,14 +16,10 @@ for (number, group), mods in substanceP.precursor.modifications.items():
 
 masstodon = MassTodon(spectrum=substanceP.spectrum,
                       mz_tol=.05,
-<<<<<<< HEAD
-                      _devel=True)
-=======
                       fasta=substanceP.precursor.fasta,
                       charge=3,
                       name='substanceP',
                       modifications=modifications)
->>>>>>> updates/changing_api
 
 simple = masstodon.simple_cz_match.intensities
 adv = masstodon.cz_match.intensities
