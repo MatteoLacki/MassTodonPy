@@ -7,7 +7,7 @@ from MassTodonPy.MassTodon import MassTodon
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
-    
+
     print("Welcome to MassTodon example call.")
 
     print("\t- reading data.")

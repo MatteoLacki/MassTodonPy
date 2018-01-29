@@ -279,10 +279,10 @@ class Reporter(object):
                                       alpha=.1)
 
         # Horizontal threshold line
-        intensity_threshold = self._masstodon.spectrum.min_intensity
+        intensity_threshold = self._spectrum.min_intensity
         if intensity_threshold > 1.0:
-            min_mz = max(min(self._masstodon.spectrum.mz) - 50, 0)
-            max_mz = max(self._masstodon.spectrum.mz) + 50
+            min_mz = max(min(self._spectrum.mz) - 50, 0)
+            max_mz = max(self._spectrum.mz) + 50
 
             plot.line([min_mz, max_mz],
                       [intensity_threshold,intensity_threshold],
@@ -384,8 +384,8 @@ class Reporter(object):
         plot.add_tools(hover_peak_groups)
 
         # Experimental Squares
-        raw_spectrum = plot.square(x=self._masstodon.spectrum.mz,
-                                   y=self._masstodon.spectrum.intensity,
+        raw_spectrum = plot.square(x=self._spectrum.mz,
+                                   y=self._spectrum.intensity,
                                    size=5,
                                    color='black',
                                    alpha=.5)
