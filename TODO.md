@@ -1,6 +1,7 @@
 ### MassTodon todo list
 
 # important
++ update docs and readmes.
 + implement back the multiprocessing version of the software.
     + it is an argument for the graph representation
 + eliminate the alphas and raw estimates

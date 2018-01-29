@@ -2,35 +2,31 @@
 import argparse
 import json
 import os
-from MassTodonPy.CLI import perform_calculations
-from MassTodonPy.Parsers import parse_path
-from MassTodonPy.Parsers.config_parser import parse_plain_config_file
 
+from MassTodonPy.Parsers.Paths import parse_path
+from MassTodonPy.CLI.config_parser import parse_config_file
+from MassTodonPy.CLI.MassTodon_wrapper import perform_calculations
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument(
-    "spectrum_path",
-    help="path to the spectrum file, with spectrum file extension:\
-    either .txt or .mzxml, case insensitive.")
+parser.add_argument("spectrum_path",
+                    help="path to the spectrum file, with spectrum file extension:\
+                          either .txt or .mzxml, case insensitive.")
 
-parser.add_argument(
-    "config_path",
-    help="path to the file with configuration")
+parser.add_argument("config_path",
+                    help="path to the file with configuration")
 
-parser.add_argument(
-    "-o", "--output_path",
-    help="Path to the output.\
-    If not provided, spectrum is used path by default.")
+parser.add_argument("-o",
+                    "--output_path",
+                    help="Path to the output.\
+                          If not provided, spectrum is used path by default.")
 
 args = parser.parse_args()
-
 
 def add_backslash(p):
     if p[-1] != '/':
         p += '/'
     return p
-
 
 # establish output path
 output_path, file_name, _ = parse_path(args.spectrum_path)
@@ -45,7 +41,6 @@ output_path = add_backslash(output_path)
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-
 # load config
 config_path, config_ext = os.path.splitext(args.config_path)
 
@@ -53,17 +48,23 @@ if config_ext == '.json':
     with open(args.config_path, 'r') as f:
         config = json.load(f)
 else:
-    config = parse_plain_config_file(args.config_path)
+    config = parse_config_file(args.config_path)
 
 # run MassTodon
-perform_calculations(spectrum_path=args.spectrum_path,
-                     output_path=output_path,
-                     config=config)
+# print(args.spectrum_path)
+# print(output_path)
+# print(config)
+# precursor
 
-print('')
-print('Thank you!')
-print('Please, be kind to MassTodons.')
-print('')
+
+# perform_calculations(spectrum_path=args.spectrum_path,
+#                      output_path=output_path,
+#                      config=config)
+
+# print('')
+# print('Thank you!')
+# print('Please, be kind to MassTodons.')
+# print('')
 
 
 # output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/output'

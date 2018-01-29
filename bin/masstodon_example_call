@@ -1,18 +1,31 @@
 #!/usr/bin/env python
-from MassTodonPy import MassTodonize, get_data
+from collections import defaultdict
+
+from MassTodonPy.Data.get_dataset import get_dataset
+from MassTodonPy.MassTodon import MassTodon
 
 if __name__ == '__main__':
-    mol = get_dataset('substanceP')
-    res = MassTodonize( fasta           = mol['fasta'],
-                        precursor_charge= mol['Q'],
-                        mz_prec         = .05,
-                        joint_probability_of_envelope = .999,
-                        modifications   = mol['modifications'],
-                        spectrum        = mol['spectrum'],
-                        opt_P           = .99,
-                        solver          = 'multiprocessing',
-                        multiprocesses_No = None,
-                        max_times_solve = 10,
-                        raw_data        = False,
-                        verbose         = True )
-    print res
+    print("Welcome to MassTodon example call.")
+
+    print("\t- reading data.")
+    substanceP = get_dataset('substanceP')
+    modifications = defaultdict(dict)
+    for (number, group), mods in substanceP.precursor.modifications.items():
+        modifications[number][group] = dict(mods)
+    precursor = {'name': 'substanceP',
+                 'fasta': substanceP.precursor.fasta,
+                 'charge': 3,
+                 'modifications': modifications}
+
+    print("\t- running MassTodonPy.")
+    masstodon = MassTodon(spectrum=substanceP.spectrum,
+                          precursor=precursor,
+                          mz_precision=.05,
+                          simple_cz_match=True,
+                          _devel=True)
+
+    print("\t -making basic plot.")
+    masstodon.report.plot('/Users/matteo/Desktop/assigned_spectrum.html',
+                          width= 1000)
+
+    print("Send us your money to save MassTodons!")

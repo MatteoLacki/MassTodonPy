@@ -1,22 +1,22 @@
-from MassTodonPy import MassTodonize, get_data
+from collections import defaultdict
+
+from MassTodonPy.Data.get_dataset import get_dataset
+from MassTodonPy.MassTodon import MassTodon
 
 substanceP = get_dataset('substanceP')
-ubiquitin  = get_dataset('ubiquitin')
-mol = substanceP.copy()
+modifications = defaultdict(dict)
+for (number, group), mods in substanceP.precursor.modifications.items():
+    modifications[number][group] = dict(mods)
 
-res = MassTodonize(fasta                           = mol['fasta'],
-                   precursor_charge                = mol['Q'],
-                   mz_prec                         = .05,
-                   joint_probability_of_envelope   = .999,
-                   modifications                   = mol['modifications'],
-                   spectrum                        = mol['spectrum'],
-                   opt_P                           = .99,
-                   solver                          = 'multiprocessing',
-                   multiprocesses_No               = None,
-                   distance_charges                = 5,
-                   max_times_solve                 = 10,
-                   raw_data                        = True,
-                   output_csv_path                 = '/Users/matteo/Documents/MassTodon/results/',
-                   verbose                         = False )
+precursor = {'name': 'substanceP',
+             'fasta': substanceP.precursor.fasta,
+             'charge': 3,
+             'modifications': modifications}
 
-res['summary']
+masstodon = MassTodon(spectrum=substanceP.spectrum,
+                      precursor=precursor,
+                      mz_tol=.05,
+                      _devel=True)
+
+masstodon.report.plot('/Users/matteo/Desktop/assigned_spectrum.html',
+                      width= 1000)

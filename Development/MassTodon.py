@@ -19,7 +19,7 @@ precursor = {'name': 'substanceP',
              'modifications': modifications}
 masstodon = MassTodon(spectrum=substanceP.spectrum,
                       precursor=precursor,
-                      mz_precision=.05,
+                      mz_tol=.05,
                       simple_cz_match=True,
                       _devel=True)
 
@@ -37,3 +37,9 @@ masstodon.report.write(path2)
 # Can inplace reordering screw anything? Think about it!
 
 masstodon.molecules.sort(key=lambda m: m.intensity, reverse=True)
+m = masstodon.molecules[0]
+m.name
+m.source.fasta
+
+m.source.formula.str_with_charges(3, 0)
+m.intensity

@@ -1,5 +1,7 @@
-from    MassTodonPy  import MassTodonize
-import  json
+import json
+
+from MassTodonPy.MassTodon import MassTodon
+
 
 def get_name(key):
     return "_".join(map(str,key))
@@ -29,7 +31,7 @@ def perform_calculations(spectrum_path, output_path, config):
     Parameters
     ----------
     spectrum_path : str
-        Path to the spectrum in a mzXml or tsv format.
+        Path to the spectrum in a mzXml, mzml, or tsv or csv format.
 
     output_path : str
         Path to the output.
@@ -37,17 +39,10 @@ def perform_calculations(spectrum_path, output_path, config):
     config : dict
         A dictionary with the parsed configuration of MassTodon.
     '''
-    config['highcharts'] = True
-    if 'csv' in config:
-        del config['csv']
-        config['output_csv_path'] = output_path
-
-    results     = MassTodonize(spectrum_path= spectrum_path, **config )
-    highcharts  = results['highcharts']
-    del results['highcharts']
-
-    with open(output_path+'output.json', 'w') as f:
-        json.dump(results,f)
-
-    with open(output_path+'highcharts.json', 'w') as f:
-        json.dump(highcharts,f)
+    print(config)
+    # if 'csv' in config:
+    #     del config['csv']
+    #     config['output_csv_path'] = output_path
+    #
+    # results = MassTodon(spectrum=spectrum_path, **config)
+    # #TODO how to output the Bokeh results?

@@ -82,12 +82,11 @@ class MassTodon(object):
     def __init__(self,
                  spectrum,
                  precursor,
-                 mz_precision,
+                 mz_tol,
                  preprocessing_args={},
                  isospec_args={},
                  deconvolution_args={},
                  solver_args={},
-                 simple_cz_match=False,
                  _devel=False,
                  _max_buffer_len=0.5):
         """Run a full session of the MassTodon.
@@ -104,25 +103,37 @@ class MassTodon(object):
                 the other with intensities.
             Details of the Spectrum can be found here [TODO add link].
         precursor : dict
-            A dictionary with fasta and charge. Also accepts the precursor's name,
-            modifications, fragmentation_type, blocked_fragments, and distance_charges.
-            Details can be found here.
-        mz_precision : float
+            A dictionary with obligatory 'fasta' and 'charge' keys.
+            Additionally, MassTodon will also parse keys such as:
+                name : str
+                    The precursor's name.
+                modifications : dictionary
+                    A dictionary of modifications.
+                fragmentation_type : str
+                    Only 'cz' accepted for now.
+                    Planning to add other fragmentation schemes, including
+                    the inner fragments.
+                blocked_fragments : list
+                    Fragments you don't want to include, e.g. 'z5'.
+                distance_charges :
+                    The minimal distance between charges on the fasta sequence.
+                    Defaults to charges being 4 amino acids apart.
+        mz_tol : float
             The precision in the m/z domain: how far away [in Daltons] should
             one search for peaks from the theoretical mass.
         preprocessing_args : dict
-            Arguments for spectrum preprocessing, such as min_prob_per_molecule and mz_precision.
+            Arguments for spectrum preprocessing, such as min_prob_per_molecule and mz_tol.
         deconvolution_args : dict
             Arguments for the deconvolution stage, such as: method, mz_tol, min_prob_per_molecule
         solver_args : dict
             Arguments for the solver.
         """
 
-        assert isinstance(mz_precision, float) and mz_precision >= 0.0
+        assert isinstance(mz_tol, float) and mz_tol >= 0.0
         # precision one digit lower than the input precision of spectra, eg.
-        # mz_precision = .05  --> prec_digits = 3
-        # mz_precision = .005 --> prec_digits = 4
-        mz_digits_tmp = int(ceil(-log10(mz_precision)))
+        # mz_tol = .05  --> prec_digits = 3
+        # mz_tol = .005 --> prec_digits = 4
+        mz_digits_tmp = int(ceil(-log10(mz_tol)))
 
         self.mz_digits = deconvolution_args.get('mz_digits', mz_digits_tmp)
         self.min_interval_len = 10**(-self.mz_digits)
@@ -151,9 +162,9 @@ class MassTodon(object):
 
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors.
-        if simple_cz_match:
-            self.simple_cz_match = SimpleCzMatch(self.molecules,
-                                                 self.precursor.q)
+        self.simple_cz_match = SimpleCzMatch(self.molecules,
+                                             self.precursor.q)
+
         self.cz_match = CzMatch(self.molecules,
                                 self.precursor.q)
 
