@@ -32,7 +32,8 @@ path2= path + 'assigned_spectrum.csv'
 
 masstodon.report.plot(path1, width= 1000)
 masstodon.report.write(path2)
+# Add an aggregated report based on the list of references of molecules.
+# Order by estimated intensity.
+# Can inplace reordering screw anything? Think about it!
 
-_bricks = masstodon.report._bricks
-_peak_groups = masstodon.report._peak_groups
-_clusters = masstodon.report._clusters
+masstodon.molecules.sort(key=lambda m: m.intensity, reverse=True)

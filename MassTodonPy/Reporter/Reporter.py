@@ -111,7 +111,7 @@ class Reporter(object):
         """Aggregate the results of MassTodon."""
         pass
 
-    def write(self, path):
+    def write(self, path, include_zero_intensities=True):
         """Write results to a file.
 
         Parameters
@@ -125,6 +125,7 @@ class Reporter(object):
         assert file_ext in ('.csv', '.tsv'), "Writing only to csv or tsv."
         delimiter = ',' if file_ext == '.csv' else '\t'
 
+        # detailed intormation on assignment
         path_details = "{0}{1}_precise{2}".format(file_path, file_name, file_ext)
         with open(path_details, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=delimiter)
@@ -156,6 +157,7 @@ class Reporter(object):
                                  b.peak_group.mz_L,
                                  b.peak_group.mz_R))
 
+        # precise quality of fit information: on G level basis
         path_local_fits = "{0}{1}_local_fits{2}".format(file_path, file_name, file_ext)
         with open(path_local_fits, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=delimiter)
@@ -173,6 +175,35 @@ class Reporter(object):
                                  int(c.estimate),
                                  abs(int(c.intensity) - int(c.estimate))))
 
+        # aggregated intormation on assignment
+        path_molecules = "{0}{1}_molecules{2}".format(file_path,
+                                                      file_name,
+                                                      file_ext)
+
+        self._masstodon.molecules.sort(key=lambda m: m.intensity,
+                                       reverse=True)
+
+        with open(path_molecules, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=delimiter)
+            writer.writerow(('name',
+                             'formula',
+                             'charge',
+                             'quenched charge',
+                             'estimated intensity',
+                             'source',
+                             'source fasta',
+                             'source formula'))
+
+            for m in self._masstodon.molecules:
+                if round(m.intensity) > 0 or include_zero_intensities:
+                    writer.writerow((m.name,
+                                     m.formula.str_with_charges(m.q, m.g),
+                                     m.q,
+                                     m.g,
+                                     round(m.intensity),
+                                     m.source.name,
+                                     m.source.fasta,
+                                     m.source.formula.str_with_charges(m.source.q)))
 
 
     def plot(self,
