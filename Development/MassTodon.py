@@ -20,7 +20,6 @@ precursor = {'name': 'substanceP',
 masstodon = MassTodon(spectrum=substanceP.spectrum,
                       precursor=precursor,
                       mz_tol=.05,
-                      simple_cz_match=True,
                       _devel=True)
 
 simple = masstodon.simple_cz_match.intensities
