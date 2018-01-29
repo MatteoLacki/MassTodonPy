@@ -20,9 +20,7 @@ if __name__ == '__main__':
     print("\t- running MassTodonPy.")
     masstodon = MassTodon(spectrum=substanceP.spectrum,
                           precursor=precursor,
-                          mz_precision=.05,
-                          simple_cz_match=True,
-                          _devel=True)
+                          mz_tol=.05)
 
     print("\t -making basic plot.")
     masstodon.report.plot('/Users/matteo/Desktop/assigned_spectrum.html',

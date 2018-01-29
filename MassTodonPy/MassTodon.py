@@ -154,8 +154,9 @@ class MassTodon(object):
                                      isospec_args=isospec_args,
                                      solver_args=solver_args,
                                      **deconvolution_args)
-        if _devel:
-            self._solutions = list(self._solutions)
+
+        #TODO: leaving as generator causes problems: no 'len' to call later on.
+        self._solutions = list(self._solutions)
 
         # precise report on the deconvolution
         self.report = Reporter(self, _max_buffer_len)
