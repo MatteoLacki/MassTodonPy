@@ -1,70 +1,137 @@
 #!/usr/bin/env python2
 import argparse
+from collections import defaultdict
 import json
 import os
+from pprint import pprint
+import re
 
+from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.CLI.config_parser import parse_config_file
-from MassTodonPy.CLI.MassTodon_wrapper import perform_calculations
 
+# Parsing arguments
 parser = argparse.ArgumentParser()
-
-parser.add_argument("spectrum_path",
-                    help="path to the spectrum file, with spectrum file extension:\
-                          either .txt or .mzxml, case insensitive.")
-
-parser.add_argument("config_path",
-                    help="path to the file with configuration")
-
+parser.add_argument("spectrum",
+                    help="path to the spectrum file, with spectrum file extension: either '.txt', '.mzxml', or '.mzml', case insensitive.")
+parser.add_argument("fasta",
+                    help="The FASTA sequence of the protein to study.")
+parser.add_argument("charge",
+                    help="The initial charge of the precursor filtered out in MS1.")
+parser.add_argument("mz_tol",
+                    help="The tolerance in the m/z axis.")
+parser.add_argument("-name",
+                    help="The precursor's name.")
+parser.add_argument("-modifications",
+                    help="String with modifications of individual amino acids.\n\
+                    Follows the scheme: '<amino acid number> <C_alpha|C_carbo|N> <element>=<integer difference> .. <element>=<integer difference> | ...'.\
+                    For example: '11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10'")
+# parser.add_argument("-fragmentation_type",
+#                     help="Only 'cz' accepted for now. Planning other fragmentation schemes, including inner fragments.")
+parser.add_argument("-blocked_fragments",
+                    help="Fragments you don't want to include, e.g. 'z5', or 'c13z21c12c53z1': no spaces between diffferent names.")
+parser.add_argument("-distance_charges",
+                    help="The minimal distance between charges on the fasta sequence. Defaults to charges being 4 amino acids apart.")
+parser.add_argument("-min_intensity",
+                    help="Experimental peaks with lower height will be trimmed.")
+parser.add_argument("-percent_top_peaks",
+                    help="Percentage of the heighest peaks in the spectrum to be included.")
+parser.add_argument("-deconvolution_method",
+                    help="Matteo = MassTodon paper deconvolution. Ciacho_Wanda = experimental gaussian kernel deconvolution.")
+parser.add_argument("-joint_probability",
+                    help="The joint probability of the calculated isotopic distribution. Defaults to a decent '0.999'.")
+parser.add_argument("-min_prob_per_molecule",
+                    help="The minimal probability an envelope has to scoop to be included in the deconvolution graph.")
+parser.add_argument("-_max_buffer_len",
+                    help="The maximal length of the visual buffer between peaks, i.e. the big rectangle width.")
+parser.add_argument("-_L1_flow",
+                    help="L1 penalty for high flows of intensities.")
+parser.add_argument("-_L2_flow",
+                    help="L2 penalty (a.k.a. ridge regression like) for high flows of intensities.")
+parser.add_argument("-_L1_intensity",
+                    help="L1 penalty for high intensity estimates.")
+parser.add_argument("-_L2_intensity",
+                    help="L2 penalty (a.k.a. ridge regression like) for high intensities.")
+parser.add_argument("-_max_times",
+                    help="The maximal number of times to run CVXOPT.")
+parser.add_argument("-_show_progress",
+                    help="Show progress of the CVXOPT calculations.")
+parser.add_argument("-_maxiters",
+                    help="Maximum number of iterations for the CVXOPT algorithm.")
+parser.add_argument("-sigma2",
+                    help="Variance of the experimental peak's m/z ratio.")
+parser.add_argument("-ni2",
+                    help="Variance of the theoretic isotopologue's m/z ratio.")
 parser.add_argument("-o",
                     "--output_path",
                     help="Path to the output.\
                           If not provided, spectrum is used path by default.")
-
+parser.add_argument("--verbose",
+                    dest='verbose',
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Print out the messages from MassTodon.")
 args = parser.parse_args()
+
+if args.verbose:
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print('Welcome to MassTodon!\n')
+
+masstodon_args = {}
+for arg in args.__dict__:
+    if arg not in ("output_path", "verbose") and args.__dict__[arg] is not None:
+        masstodon_args[arg] = args.__dict__[arg]
 
 def add_backslash(p):
     if p[-1] != '/':
         p += '/'
     return p
 
-# establish output path
-output_path, file_name, _ = parse_path(args.spectrum_path)
-output_path = add_backslash(output_path)
+# Parse modifications:
+if 'modifications' in masstodon_args:
+    # modifications = "11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10"
+    def parse_modifications(modifications):
+        output = defaultdict(dict)
+        modifications = modifications.split('|')
+        for mod in modifications:
+            mod = mod.split()
+            aa_no, aa_type = mod[0:2]
+            diffs = {}
+            for d in mod[2:]:
+                element, diff = d.split('=')
+                diffs[element] = int(diff)
+            output[int(aa_no)][aa_type] = diffs
+        return output
 
+    masstodon_args['modifications'] = parse_modifications(masstodon_args['modifications'])
+
+# Parse blocked_fragments:
+if 'blocked_fragments' in masstodon_args:
+    pattern = re.compile('([a-z])([0-9]*)')
+    blocked_fragments = masstodon_args['blocked_fragments']
+    blocked_fragments = set([e+c for e, c in re.findall(pattern,
+                                                        blocked_fragments)])
+    masstodon_args['blocked_fragments'] = blocked_fragments
+    del blocked_fragments
+
+# establish output path
+output_path, file_name, _ = parse_path(args.spectrum)
+output_path = add_backslash(output_path)
 if args.output_path:
     output_path = args.output_path
 else:
     output_path += 'output'
-
 output_path = add_backslash(output_path)
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-# load config
-config_path, config_ext = os.path.splitext(args.config_path)
+if args.verbose:
+    print('Running MassTodon.')
+    masstodon = MassTodon(**masstodon_args)
+    print(masstodon)
 
-if config_ext == '.json':
-    with open(args.config_path, 'r') as f:
-        config = json.load(f)
-else:
-    config = parse_config_file(args.config_path)
+print('\nThank you for using MassTodonPy!\nSupport us with your grant money!\n')
 
-# run MassTodon
-# print(args.spectrum_path)
-# print(output_path)
-# print(config)
-# precursor
-
-
-# perform_calculations(spectrum_path=args.spectrum_path,
-#                      output_path=output_path,
-#                      config=config)
-
-# print('')
-# print('Thank you!')
-# print('Please, be kind to MassTodons.')
-# print('')
 
 
 # output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/output'

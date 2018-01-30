@@ -78,7 +78,7 @@ def parse_config_file(path):
                 'distance_charges':5,
                 'min_intensity':0.0,
                 'percent_top_peaks':1.0,
-                'deconvolution_method':'Matteo',
+                'deconvolution_method': 'Matteo',
                 'joint_probability':.999,
                 'min_prob_per_molecule':.7,
                 '_max_buffer_len':0.5,
@@ -113,7 +113,7 @@ def parse_config_file(path):
                 line = line.split(" ")
                 key = line[0]
                 if key in complicated:
-
+                    pass
                 else:
                     value = line[1]
 

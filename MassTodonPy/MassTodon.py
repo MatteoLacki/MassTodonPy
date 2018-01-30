@@ -81,9 +81,9 @@ from MassTodonPy.Reporter.Reporter import Reporter
 class MassTodon(object):
     def __init__(self,
                  spectrum,
-                 mz_tol,
                  fasta,
                  charge,
+                 mz_tol,
                  mz_digits=-10.,
                  name="",
                  modifications={},
@@ -111,7 +111,7 @@ class MassTodon(object):
 
         Parameters
         ==========
-        spectrum : string, tuple of numpy arrays, or Spectrum
+        spectrum : st, tuple of numpy.arrays, or an instance of Spectrum
             The string path can end with:
                 *.txt, for spectra saved in tab separated format.
                 *.mzXml, for spectra saved in mzXml format.
@@ -119,6 +119,10 @@ class MassTodon(object):
             The tuple consists of two numpy arrays:
                 one with m over z ratios,
                 the other with intensities.
+        fasta : str
+            The FASTA sequence of the protein to study.
+        charge : int
+            The initial charge of the precursor filtered out in MS1.
         mz_tol : float
             The tolerance in the m/z axis.
             Ultimately turned into a function mz_tol(mz),
@@ -157,6 +161,9 @@ class MassTodon(object):
         min_prob_per_molecule : float
             The minimal probability an envelope has to scoop
             to be included in the deconvolution graph.
+        _max_buffer_len : float
+            The maximal length of the visual buffer between peaks, i.e.
+            the big rectangle width.
         _L1_flow : float
             L1 penalty for high flows of intensities.
         _L2_flow : float
@@ -171,9 +178,9 @@ class MassTodon(object):
             Show progress of the CVXOPT calculations.
         _maxiters : int
             Maximum number of iterations for the CVXOPT algorithm.
-        _sigma2 : float
+        sigma2 : float
             Variance of the experimental peak's m/z ratio.
-        _ni2 : float
+        ni2 : float
             Variance of the theoretic isotopologue's m/z ratio.
         kwds :
             Some other arguments.
