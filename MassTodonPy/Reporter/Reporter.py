@@ -239,7 +239,8 @@ class Reporter(object):
              show_plot=True,
              width=None,
              height=None,
-             _mult=1):
+             _mult=1,
+             **kwds):
         """Make a plot.
 
         Parameters

@@ -43,8 +43,6 @@ clean_masstodon_3: ## remove virtual environment with python2
 
 
 
-
-
 projectName = masstodon
 
 version = `cat server/package.json \

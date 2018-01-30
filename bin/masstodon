@@ -65,6 +65,18 @@ parser.add_argument("-o",
                     "--output_path",
                     help="Path to the output.\
                           If not provided, spectrum is used path by default.")
+parser.add_argument("--plot",
+                    dest='plot',
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Print out the messages from MassTodon.")
+parser.add_argument("-plot_width",
+                    dest='width',
+                    help="Width of the plot.")
+parser.add_argument("-plot_height",
+                    dest='height',
+                    help="Height of the plot.")
 parser.add_argument("--verbose",
                     dest='verbose',
                     action='store_const',
@@ -79,7 +91,8 @@ if args.verbose:
 
 masstodon_args = {}
 for arg in args.__dict__:
-    if arg not in ("output_path", "verbose") and args.__dict__[arg] is not None:
+    if arg not in ("output_path", "verbose", "plot_width", "plot_height") and \
+       args.__dict__[arg] is not None:
         masstodon_args[arg] = args.__dict__[arg]
 
 def add_backslash(p):
@@ -127,9 +140,20 @@ if not os.path.exists(output_path):
 
 if args.verbose:
     print('Running MassTodon.')
-    masstodon = MassTodon(**masstodon_args)
-    print(masstodon)
+masstodon = MassTodon(**masstodon_args)
 
+if args.verbose:
+    print('Saving results.')
+results_path = output_path + 'assigned_spectrum.csv'
+masstodon.report.write(results_path)
+
+if args.plot:
+    if args.verbose:
+        print('Plotting.')
+    plot_path = output_path + 'assigned_spectrum.html'
+    width = int(args.width) if args.width else None
+    height = int(args.height) if args.height else None
+    masstodon.report.plot(plot_path, width=width, height=height)
 print('\nThank you for using MassTodonPy!\nSupport us with your grant money!\n')
 
 
