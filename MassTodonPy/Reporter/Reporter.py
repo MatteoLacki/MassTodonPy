@@ -247,8 +247,7 @@ class Reporter(object):
         ==========
         path : string
             Path to where to save the output html file.
-            If not provided, MassTodon will use the default temporary location
-            used by the Bokeh module.
+            If not provided, MassTodon will use the folder it is called from.
         mode : string
             The mode of plotting a bokeh plot.
         width : integer

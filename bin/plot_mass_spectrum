@@ -1,0 +1,50 @@
+#!/usr/bin/env python2
+import argparse
+from pprint import pprint
+import os
+
+from MassTodonPy.Spectra.Spectrum import Spectrum
+
+parser = argparse.ArgumentParser()
+parser.add_argument("spectrum",
+                    help="path to the spectrum file, with spectrum file extension: either '.txt', '.mzxml', or '.mzml', case insensitive.")
+parser.add_argument("-mz_tol",
+                    help="The number of digits after which the floats get rounded. E.g. if set to 2, then number 3.141592 will be rounded to 3.14.")
+parser.add_argument("-min_intensity",
+                    help="Experimental peaks with lower height will be trimmed.")
+parser.add_argument("-percent_top_peaks",
+                    help="Percentage of the heighest peaks in the spectrum to be included.")
+parser.add_argument("-mode",
+                    help="The mode of plotting a bokeh plot, e.g. 'inline'.")
+parser.add_argument("-bar_width",
+                    help="The width of one peak.")
+parser.add_argument("-width",
+                    help="Width of the plot.")
+parser.add_argument("-height",
+                    help="Height of the plot.")
+parser.add_argument("-_simple",
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Simplified plot.")
+parser.add_argument("-_max_buffer_len",
+                    help="The maximal length of invisible buffer space between peaks. These extend the area that triggers the hover tool on.")
+parser.add_argument("-o",
+                    "--output_path",
+                    dest="path",
+                    help="Path to the output.\
+                          If not provided, spectrum is used path by default.")
+args = parser.parse_args()
+
+spectrum_args = {}
+for arg in args.__dict__:
+    if args.__dict__[arg] is not None:
+        spectrum_args[arg] = args.__dict__[arg]
+
+spectrum_args['path'] += '/mass_spectrum.html'
+
+if not os.path.exists(args.path):
+    os.makedirs(args.path)
+
+spectrum = Spectrum(**spectrum_args)
+spectrum.plot(**spectrum_args)

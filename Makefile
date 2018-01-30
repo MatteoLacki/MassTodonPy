@@ -17,11 +17,11 @@ masstodon_3:
 	$(PIP_3) install -e .
 	$(PIP_3) install ipykernel
 
-masstodon_2_again: ## reinstall MassTodonPy under python2
+masstodon_2_again:
 	$(PIP2) uninstall -y MassTodonPy
 	pip2 install -e .
 
-masstodon_3_again: ## reinstall MassTodonPy under python3
+masstodon_3_again:
 	$(PIP3) uninstall -y MassTodonPy
 	pip3 install -e .
 

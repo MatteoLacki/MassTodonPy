@@ -51,7 +51,8 @@ setup(
         'intervaltree'],
     scripts=[
         'bin/masstodon',
-        'bin/masstodon_example_call'],
+        'bin/masstodon_example_call',
+        'bin/plot_mass_spectrum'],
     include_package_data=True,
     package_data={
         "Data": ["Data/isotopes.json",

@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 from bisect import bisect_left
+from bokeh.plotting import ColumnDataSource, figure, output_file, show
+from bokeh.models import HoverTool
 import csv
 import numpy as np
 from operator import itemgetter
@@ -40,8 +42,8 @@ class Measure(object):
 
     def sort(self):
         """Sort measure by atomic values."""
-        self.atoms, self.masses = (np.array(x) for x in sort_by_first(self.atoms,
-                                                                      self.masses))
+        self.atoms, self.masses = (np.array(x) for x in \
+                                   sort_by_first(self.atoms, self.masses))
 
     def __has_type_of(self, other):
         """Assert that 'self' and 'other' have the same type."""
@@ -265,26 +267,49 @@ class Measure(object):
                 writer.writerow([atom, mass])
 
     def plot(self,
+             path="",
+             mode="inline",
              bar_width=.01,
-             plot_width=1000,
-             plot_height=600,
-             show=True,
+             width=800,
+             height=600,
+             show_plot=True,
              _simple=False,
-             _max_buffer_len=2):
+             _max_buffer_len=2,
+             **kwds):
         """Make an interactive Bokeh barplot.
 
         Parameters
         ==========
+        path : string
+            Path to where to save the output html file.
+            If not provided, MassTodon will use the folder it is called from.
+        mode : string
+            The mode of plotting a bokeh plot, e.g. 'inline'.
         bar_width : float
-            The width of the bar.
+            The width of one peak.
+        width : int
+            The width of the plot.
+        height : int
+            The height of the plot.
+        show_plot : bool
+            Show the plot in the default web browser.
+        _simple : bool
+            Show simpler version of the plot.
+        _max_buffer_len : float
+            The maximal length of invisible buffer space between peaks.
+            These extend the area that triggers the hover tool on.
         """
-        if len(self.atoms) > 0:
-            try:
-                from bokeh.plotting import figure, show, ColumnDataSource
-                from bokeh.models import HoverTool
-            except ImportError:
-                raise ImportError('Try installing/reinstalling the Bokeh module.')
+        output_file(path, mode=mode)
 
+        # this could be better handled in Python
+        bar_width = float(bar_width)
+        width = int(width)
+        height = int(height)
+        show_plot = bool(show_plot)
+        _simple = bool(_simple)
+        _max_buffer_len = int(_max_buffer_len)
+
+        if len(self.atoms) > 0:
             if _simple:  # a simple plot
                 if bar_width is 1:  # get minimal width - the minimal space between atoms
                     prev_atom = self.atoms[0]
@@ -302,8 +327,8 @@ class Measure(object):
 
             max_mass = self.masses.max() * 1.05
             plot = figure(tools=TOOLS,
-                          width=plot_width,
-                          height=plot_height,
+                          width=width,
+                          height=height,
                           y_range=(0, max_mass))
 
             raw_measure = plot.vbar(x=self.atoms,
@@ -331,11 +356,9 @@ class Measure(object):
                                   tooltips=[(self._store_names[1], "@top{0,0}"),
                                             (self._store_names[0], "@atoms{0,0.000}")],
                                   mode='vline')
-
             plot.add_tools(hover)
-            if show:
+            if show_plot:
                 show(plot)
-            else:
-                return plot
+            return plot
         else:
             print('You try to plot emptiness: look deeper into your heart.')
