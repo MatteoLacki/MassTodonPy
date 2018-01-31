@@ -7,7 +7,9 @@ from pprint import pprint
 import re
 
 from MassTodonPy.MassTodon import MassTodon
+from MassTodonPy.Parsers.blocked_fragments import parse_blocked_fragments
 from MassTodonPy.Parsers.Paths import parse_path
+
 
 # Parsing arguments
 parser = argparse.ArgumentParser()
@@ -120,12 +122,7 @@ if 'modifications' in masstodon_args:
 
 # Parse blocked_fragments:
 if 'blocked_fragments' in masstodon_args:
-    pattern = re.compile('([a-z])([0-9]*)')
-    blocked_fragments = masstodon_args['blocked_fragments']
-    blocked_fragments = set([e+c for e, c in re.findall(pattern,
-                                                        blocked_fragments)])
-    masstodon_args['blocked_fragments'] = blocked_fragments
-    del blocked_fragments
+    masstodon_args['blocked_fragments'] = parse_blocked_fragments(masstodon_args['blocked_fragments'])
 
 # establish output path
 output_path, file_name, _ = parse_path(args.spectrum)
@@ -154,9 +151,7 @@ if args.plot:
     width = int(args.width) if args.width else None
     height = int(args.height) if args.height else None
     masstodon.report.plot(plot_path, width=width, height=height)
-print('\nThank you for using MassTodonPy!\nSupport us with your grant money!\n')
-
-
+print('\nThank you for using MassTodonPy!\n')
 
 # output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/output'
 # spectrum_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt'

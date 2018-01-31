@@ -1,11 +1,81 @@
 #!/usr/bin/env python
 import argparse
 import json
+import os
 from pprint import pprint
 
-parser = argparse.ArgumentParser()
+from MassTodonPy.MassTodon import MassTodon
+from MassTodonPy.Parsers.blocked_fragments import parse_blocked_fragments
+from MassTodonPy.Parsers.Paths import parse_path
 
+# Parsing call
+parser = argparse.ArgumentParser()
 parser.add_argument("json",
                     help="json with arguments")
+parser.add_argument("--plot",
+                    dest='plot',
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Print out the messages from MassTodon.")
+parser.add_argument("--verbose",
+                    dest='verbose',
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Print out the messages from MassTodon.")
 args = parser.parse_args()
-pprint(args)
+
+if args.verbose:
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print('Welcome to MassTodon!\n')
+
+with open('masstodon_input.json', 'r') as f:
+    masstodon_args = json.load(f)
+
+def add_backslash(p):
+    if p[-1] != '/':
+        p += '/'
+    return p
+
+# Renaming
+if u'deconvolution_method' in masstodon_args:
+    method = masstodon_args.pop('deconvolution_method')
+    masstodon_args['method'] = method
+pprint(masstodon_args)
+
+# Parsing output file
+output = add_backslash(masstodon_args.pop('output'))
+if not os.path.exists(output):
+    os.makedirs(output)
+
+# Parsing modifications
+modifications = masstodon_args.pop('modifications')
+for k in modifications.keys():
+    v = modifications.pop(k)
+    modifications[int(k)] = v
+
+masstodon_args['modifications'] = modifications
+pprint(masstodon_args)
+
+# Parsing blocked_fragments:
+if 'blocked_fragments' in masstodon_args:
+    masstodon_args['blocked_fragments'] = parse_blocked_fragments(masstodon_args['blocked_fragments'])
+
+if args.verbose:
+    print('Running MassTodon.')
+masstodon = MassTodon(**masstodon_args)
+
+if args.verbose:
+    print('Saving results.')
+results_path = output + 'assigned_spectrum.csv'
+masstodon.report.write(results_path)
+
+if args.plot:
+    if args.verbose:
+        print('Plotting.')
+    plot_path = output + 'assigned_spectrum.html'
+    width = int(args.width) if args.width else None
+    height = int(args.height) if args.height else None
+    masstodon.report.plot(plot_path, width=width, height=height)
+print('\nThank you for using MassTodonPy!\n')

@@ -6,7 +6,7 @@ from MassTodonPy.Data.Constants import eps, infinity
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Spectra.Read import read_spectrum
 from MassTodonPy.Measure.Measure import Measure
-
+from MassTodonPy.Misc.unicode_compatibility import is_string
 
 class Spectrum(Measure):
     """Prepare experimental spectrum.
@@ -41,7 +41,7 @@ class Spectrum(Measure):
         self._store_names = ('m/z', 'intensity')
         self.mz_digits = mz_digits
         self.min_intensity = float(min_intensity)
-        if isinstance(spectrum, str) and spectrum:
+        if is_string(spectrum) and spectrum:
             spectrum = read_spectrum(spectrum, mz_digits, eps)
             self.mz = spectrum.atoms
             self.intensity = spectrum.masses

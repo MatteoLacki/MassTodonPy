@@ -222,8 +222,8 @@ class MassTodon(object):
                                      max_times=_max_times,
                                      show_progress=_show_progress,
                                      maxiters=_maxiters,
-                                     sigma2=_sigma2,
-                                     _ni2=_ni2)
+                                     sigma2=sigma2,
+                                     _ni2=ni2)
 
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self._solutions = list(self._solutions)
