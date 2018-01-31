@@ -22,7 +22,7 @@ class TestPeakPicker(unittest.TestCase):
         mol = get_dataset('substanceP')
         mols = list(mol.precursor.molecules())
         mols_dict = {(m.name, m.q, m.g): m for m in mols}
-        self.results = [
+        results = [
             {'alphas': [
                 {'estimate': 1000,
                  'molecule': mols_dict[('c4', 1, 0)]},
@@ -48,19 +48,19 @@ class TestPeakPicker(unittest.TestCase):
                  'molecule': mols_dict[('precursor', 1, 0)]}],
              'status': 'optimal'}]
 
-        bricks = []
-        for res in self.results:
-            for x in res['alphas']:
-                x['molecule'].intensity = x['estimate']
-                brick = Brick(molecule=x['molecule'])
-                bricks.append(brick)
-
-        # Preparing a phoney MassTodon
-        masstodon = VoidClass()
-        masstodon.precursor = mol.precursor
-        masstodon.report = VoidClass()
-        masstodon.report._bricks = bricks
-        self.masstodon = masstodon
+        molecules = [m['molecule'] for res in results for m in res['alphas']]
+        # for res in results:
+        #     for x in res['alphas']:
+        #         mol = VoidClass()
+        #         mol.intensity = x['estimate']
+        #         x['molecule'].intensity =
+        #         brick = Brick(molecule=x['molecule'])
+        #         bricks.append(brick)
+        #
+        # # Preparing a phoney MassTodon
+        # self.precursor = VoidClass()
+        self.precursor_charge = 3
+        self.molecules = molecules
 
     def tearDown(self):
         """Tear down a method."""
@@ -69,7 +69,9 @@ class TestPeakPicker(unittest.TestCase):
     def test_SimpleCzMatch(self):
         print("Testing SimpleCzMatch graph creation.")
 
-        matches = SimpleCzMatch(masstodon=self.masstodon)
+        # precursor_charge = 3
+        matches = SimpleCzMatch(molecules=self.molecules,
+                                precursor_charge=self.precursor_charge)
 
         expected_nodes = set([('c4', 1), ('z7', 1), ('c5', 1),
                               ('z6', 1), ('c6', 1), ('z5', 1)])

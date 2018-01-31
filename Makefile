@@ -1,28 +1,24 @@
 PYTHON_2   	= ../MassTodonVEpy2/bin/python2
-PIP_2 		= ../MassTodonVEpy2/bin/pip2
-
 PYTHON_3   	= ../MassTodonVEpy3/bin/python3
-PIP_3		= ../MassTodonVEpy3/bin/pip3
-
 NOSE_2 		= ../MassTodonVEpy2/bin/nosetests
 NOSE_3 		= ../MassTodonVEpy3/bin/nosetests
 
 masstodon_2: ## Install MassTodon virtual environment with python2
 	virtualenv -p python2 ../MassTodonVEpy2
-	$(PIP_2) install -e .
-	$(PIP_2) install ipykernel
+	../MassTodonVEpy2/bin/pip2 install -e .
+	../MassTodonVEpy2/bin/python2 install ipykernel
 
 masstodon_3:
 	virtualenv -p python3 ../MassTodonVEpy3
-	$(PIP_3) install -e .
-	$(PIP_3) install ipykernel
+	../MassTodonVEpy3/bin/pip3 install -e .
+	../MassTodonVEpy3/bin/python3 install ipykernel
 
-masstodon_2_again:
-	$(PIP2) uninstall -y MassTodonPy
+reinstall_2:
+	../MassTodonVEpy2/bin/pip2 uninstall -y MassTodonPy
 	pip2 install -e .
 
-masstodon_3_again:
-	$(PIP3) uninstall -y MassTodonPy
+reinstall_3:
+	../MassTodonVEpy3/bin/pip3 uninstall -y MassTodonPy
 	pip3 install -e .
 
 call_2: ## run an example session of the algorithm

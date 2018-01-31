@@ -1,6 +1,7 @@
 ### MassTodon todo list
 
 # important
++ add reading from '.json'
 + update docs and readmes.
 + implement back the multiprocessing version of the software.
     + it is an argument for the graph representation

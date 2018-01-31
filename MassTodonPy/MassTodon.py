@@ -104,8 +104,8 @@ class MassTodon(object):
                  _show_progress=False,
                  _maxiters=1000.,
                  _devel=False,
-                 _sigma2=.1,
-                 _ni2=.1,
+                 sigma2=.1,
+                 ni2=.1,
                  **kwds):
         """Run a full session of the MassTodon.
 

@@ -52,7 +52,8 @@ setup(
     scripts=[
         'bin/masstodon',
         'bin/masstodon_example_call',
-        'bin/plot_mass_spectrum'],
+        'bin/plot_mass_spectrum',
+        'bin/json2masstodon'],
     include_package_data=True,
     package_data={
         "Data": ["Data/isotopes.json",
