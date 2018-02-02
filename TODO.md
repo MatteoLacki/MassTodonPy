@@ -1,12 +1,16 @@
 ### MassTodon todo list
 
 # important
-+ add reading from '.json'
++ add the plots of
+    + fragments probability
+    + aggregated fragments intensity
++ save results of the procedures
+    + collect the errors in one file
+    + aggregate the information on precursors and save it
+    + save the estimated intensities and probabilities resulting from parsing
 + update docs and readmes.
 + implement back the multiprocessing version of the software.
     + it is an argument for the graph representation
-+ eliminate the alphas and raw estimates
-    + we are saving them with the reporter class
 + csv:
     + input spectrum
     * save results
@@ -17,29 +21,27 @@
 + Replace ubiquitin dataset
     * now, the intensity if monotonically increasing
 * RE must parse H-200 -> {'H': -200}
-+ Drawing of
-    * spectra
-    + deconvolution
-        + Add the simple plot (observed-predicted) to the module
-        + Add the complex plot (observed-predicted-per-molecule)
 + Have a look at IsotopeCalculator/simulator.py
     + DO WE USE SPECTRUM CLASS HERE? We certainly could.
 + Spectrum reader must be run without sorting the spectra all the time.
-+ Bash scripts:
-    + plot_spectrum to open any mzXml, mzMl, txt spectra file
-    + IsoSpecPy plot tools
 + Export data to ETDetective
 + Support multiple input precursors!!!
 
 # elegant
-+ implement the additional 1D-regression-test for fragment inclusion.
++ removing theoretical molecules
+    + implement an algorithm that establishes empirical clusters
+    + compare the empirical clusters with real datai
++ deconvolution:
+    + implement the L1 fit to data using the simplex algorithm
+    + implement gaussian kernel approach
+    + implement Bayesian setting
+    + implement EM settting
 + Memoization of isotopic distributions should be an option, not a must.
-+ Automate devel set up
-+ Add the invisible buffers to Measure.plot()
 + add another intensity-based criterion here.
     + basically, check how much of a substance could there be, if the was the only possible source of these ions. and accept if it is more than some number. This way silly solutions should be eliminated.
 
 # Don't forget
++ To write the results to file only write a method that will generate all the rows and then simply use the general write_from_buffer function.
 + The bloody Proline has precursor.get_AA(4,'C_alpha') == lCnt()
 + The +1H makes part of the c-fragment definition
     + think about the possible products.
@@ -59,9 +61,15 @@
             + check hashes
 
 
+# Deemed stupid
++ implement the additional 1D-regression-test for fragment inclusion.
+    + this is unlikely to result in some reduction of the number of possible formulas.
 
 ============================================================================
 # Done:
++ eliminate the alphas and raw estimates
+    + we are saving them with the reporter class
++ add reading from '.json'
 * Both:
     * D = Deconvolutor(molecules, spectrum, L1_x=0.002, L2_x=0.002, L1_alpha=0.002, L2_alpha=0.002)
     * D = Deconvolutor(molecules, spectrum)
@@ -74,3 +82,13 @@
     * e.g. mol.isotopologues(5, .99) seems to loop like hell.
     * might be because of some issues with aggregation.
 * Get rid of highcharts -> turn it into Bokeh
++ Drawing of
+    * spectra
+    + deconvolution
+        + Add the simple plot (observed-predicted) to the module
+        + Add the complex plot (observed-predicted-per-molecule)
+        + Bash scripts:
+            + plot_spectrum to open any mzXml, mzMl, txt spectra file
+            + IsoSpecPy plot tools
++ Automate devel set up
++ Add the invisible buffers to Measure.plot()
