@@ -19,6 +19,8 @@
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool, Span, LabelSet
 import csv
+import json
+import os
 
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Reporter.buffers import buffers
@@ -92,6 +94,9 @@ class Reporter(object):
                           range(len(self._solutions))]
         for b in self._bricks:
             self._clusters[b.peak_group.sol_id].update(b)
+
+        # make this once
+        self.assigned_spectrum_data = self.get_assigned_spectrum_data() # plot data
 
     def _peakGroups_bricks_clusters(self):
         """Generate a flow of peak groups, bricks, and clusters."""
@@ -232,7 +237,7 @@ class Reporter(object):
                                      m.source.fasta,
                                      m.source.formula.str_with_charges(m.source.q)))
 
-    def get_plot_data(self):
+    def get_assigned_spectrum_data(self):
         """Make data for the plot with assigned spectrum."""
 
         mz_repr = make_string_represenation('mz', self._mz_digits)
@@ -246,8 +251,8 @@ class Reporter(object):
         out['tools'] = "crosshair pan wheel_zoom box_zoom undo redo reset box_select save".split(" ")
 
         # vertical experimental bars
-        out['exp_vbar'] = {'x':     self._spectrum.mz,
-                           'top':   self._spectrum.intensity,
+        out['exp_vbar'] = {'x':     list(self._spectrum.mz),
+                           'top':   list(self._spectrum.intensity),
                            'width': self._min_interval_len,
                            'color': 'black',
                            'alpha': 0.1}
@@ -346,8 +351,8 @@ class Reporter(object):
                                        ('absolute error', "@abserror{0,0}"),
                                        ('m/z', mz_repr)]
         # Experimental Squares
-        out['experimental_squares'] = {'x': self._spectrum.mz,
-                                       'y': self._spectrum.intensity,
+        out['experimental_squares'] = {'x': list(self._spectrum.mz),
+                                       'y': list(self._spectrum.intensity),
                                        'size': 5,
                                        'color':
                                        'black',
@@ -376,6 +381,22 @@ class Reporter(object):
                          'render_mode': 'css'}
         return out
 
+    def to_json(self, path):
+        """Export plot data to json.
+
+        Parameters
+        ==========
+        path : str
+            Where to save the json.
+
+        """
+        out = {'assigned spectrum': self.assigned_spectrum_data}
+        output_path, file_name, _ = parse_path(path)
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        with open(path, 'w') as f:
+            json.dump(out, f)
+
     def plot(self,
              path="assigned_spectrum.html",
              mode="inline",
@@ -398,7 +419,7 @@ class Reporter(object):
         height : integer
             The height of the plot.
         """
-        PD = self.get_plot_data() # plot data
+        PD = self.assigned_spectrum_data
         output_file(path, mode=mode)
         if not width:
             width = 800 * _mult
