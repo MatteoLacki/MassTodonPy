@@ -390,7 +390,7 @@ class Reporter(object):
             Where to save the json.
 
         """
-        out = {'assigned spectrum': self.assigned_spectrum_data}
+        out = {'assigned_spectrum': self.assigned_spectrum_data}
         output_path, file_name, _ = parse_path(path)
         if not os.path.exists(output_path):
             os.makedirs(output_path)

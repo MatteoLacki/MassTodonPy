@@ -23,5 +23,4 @@ path = '/Users/matteo/Desktop/'
 path1= path + 'assigned_spectrum.html'
 path2= path + 'assigned_spectrum.csv'
 plot = masstodon.report.plot(path1, width= 1000)
-
-masstodon.report.to_json(path + 'dupa/test.json')
+masstodon.report.to_json(path + 'json_4_plot/test.json')
