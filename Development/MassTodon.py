@@ -3,8 +3,6 @@
 
 
 from collections import defaultdict
-import csv
-
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.Parsers.Paths import parse_path
@@ -21,12 +19,8 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       name='substanceP',
                       modifications=modifications)
 
-simple = masstodon.simple_cz_match.intensities
-adv = masstodon.cz_match.intensities
-
 path = '/Users/matteo/Desktop/'
 path1= path + 'assigned_spectrum.html'
 path2= path + 'assigned_spectrum.csv'
 
-masstodon.report.plot(path1, width= 1000)
-masstodon.report.write(path2)
+plot = masstodon.report.plot(path1, width= 1000)

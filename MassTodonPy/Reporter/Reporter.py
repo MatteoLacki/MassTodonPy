@@ -232,6 +232,149 @@ class Reporter(object):
                                      m.source.fasta,
                                      m.source.formula.str_with_charges(m.source.q)))
 
+    def get_plot_data(self):
+        """Make data for the plot with assigned spectrum."""
+
+        mz_repr = make_string_represenation('mz', self._mz_digits)
+        x_repr = make_string_represenation('x', self._mz_digits)
+
+        out = {'y_range_start':  0.0,
+               'x_label':       'mass/charge',
+               'y_label':       'intensity',
+               'mz_digits':      self._mz_digits}
+
+        out['tools'] = "crosshair pan wheel_zoom box_zoom undo redo reset box_select save".split(" ")
+
+        # vertical experimental bars
+        out['exp_vbar'] = {'x':     self._spectrum.mz,
+                           'top':   self._spectrum.intensity,
+                           'width': self._min_interval_len,
+                           'color': 'black',
+                           'alpha': 0.1}
+
+        # Horizontal threshold line
+        out['threshold_line'] = {'intensity': self._spectrum.min_intensity,
+                                 'args': [(max(min(self._spectrum.mz) - 50, 0),
+                                           max(self._spectrum.mz) + 50 ),
+                                          (self._spectrum.min_intensity,
+                                           self._spectrum.min_intensity)],
+                                 'kwds': {'line_width': 2, 'color': 'red'}}
+
+        # bricks: divisions of estimated peaks into constituents
+        lists = zip(*((b.peak_group.mz_L,
+                       b.peak_group.mz_R,
+                       b.peak_group.mz_left,
+                       b.peak_group.mz_right,
+                       (b.peak_group.mz_L + b.peak_group.mz_R)/2.0,
+                       b.bottom,
+                       b.top,
+                       b.color,
+                       b.intensity,
+                       b.molecule.name,
+                       b.molecule.source.name,
+                       # str(b.molecule.formula),
+                       b.molecule.formula.str_with_charges(b.molecule.q,
+                                                           b.molecule.g),
+                       b.molecule.q,
+                       b.molecule.g,
+                       b.molecule.intensity)
+                      for b in self._bricks))
+
+        out['rectangle_data'] = dict(zip(('mz_L',
+                                          'mz_R',
+                                          'mz_left',
+                                          'mz_right',
+                                          'mz',
+                                          'bottom',
+                                          'top',
+                                          'color',
+                                          'intensity',
+                                          'molname',
+                                          'molsource',
+                                          'molformula',
+                                          'molq',
+                                          'molg',
+                                          'molintensity'),
+                                         lists))
+
+        out['fat_rectangles'] = {'top':     'top',
+                                 'bottom':  'bottom',
+                                 'left':    'mz_left',
+                                 'right':   'mz_right',
+                                 'color':   'color',
+                                 'alpha':    0.5}
+
+        out['fat_rectangles_tooltips'] = [('peak intensity', "@intensity{0,0}"),
+                                          ('m/z interval', mz_repr),
+                                          ('name', '@molname'),
+                                          ('formula','@molformula'),
+                                          ('q', '@molq'),
+                                          ('g', '@molg'),
+                                          ('total intensity', "@molintensity{0,0}")]
+
+        out['slim_rectangles'] = {'top': 'top',
+                                  'bottom': 'bottom',
+                                  'left': 'mz_L',
+                                  'right': 'mz_R',
+                                  'color': 'color'}
+        # peak groups data: for local quality of fit
+        peak_group_lists = zip(*((pg.mz_left,
+                                  pg.mz_right,
+                                  (pg.mz_left + pg.mz_right)/2.0,
+                                  pg.intensity,
+                                  pg.estimate,
+                               abs(pg.intensity-pg.estimate))
+                              for pg in self._peak_groups))
+
+        out['peak_groups_data'] = dict(zip(('mz_left',
+                                            'mz_right',
+                                            'mz',
+                                            'intensity',
+                                            'estimate',
+                                            'abserror'),
+                                       peak_group_lists))
+
+        out['peak_groups'] = {'x0': 'mz_left',
+                              'x1': 'mz_right',
+                              'y0': 'intensity',
+                              'y1': 'intensity',
+                              'color': 'red',
+                              'line_width': 3}
+
+        out['peak_groups_tooltips'] = [('total intensity', "@intensity{0,0}"),
+                                       ('total estimate', "@estimate{0,0}"),
+                                       ('absolute error', "@abserror{0,0}"),
+                                       ('m/z', mz_repr)]
+        # Experimental Squares
+        out['experimental_squares'] = {'x': self._spectrum.mz,
+                                       'y': self._spectrum.intensity,
+                                       'size': 5,
+                                       'color':
+                                       'black',
+                                       'alpha': 0.5}
+        out['experimental_squares_tooltips'] = [('intensity', "@y{0,0}"),
+                                                ('m/z', x_repr)]
+        # Text Labels
+        cluster_lists = zip(*((c.mz,
+                               c.intensity,
+                               c.mol_intensity,
+                               c.mol_name)
+                              for c in self._clusters))
+
+        out['cluster_data'] = dict(zip(('mz',
+                                        'intensity',
+                                        'mol_intensity',
+                                        'mol_name'),
+                                        cluster_lists))
+
+        out['labels'] = {'x': 'mz',
+                         'y': 'intensity',
+                         'text': 'mol_name',
+                         'level': 'glyph',
+                         'x_offset': 0,
+                         'y_offset': 1,
+                         'render_mode': 'css'}
+        return out
 
     def plot(self,
              path="assigned_spectrum.html",
@@ -255,176 +398,59 @@ class Reporter(object):
         height : integer
             The height of the plot.
         """
+        PD = self.get_plot_data() # plot data
         output_file(path, mode=mode)
-
         if not width:
             width = 800 * _mult
         if not height:
             height = 600 * _mult
-
-        # set up plot
-        TOOLS = "crosshair pan wheel_zoom box_zoom undo redo reset box_select save".split(" ")
         plot = figure(plot_width=width,
                       plot_height=height,
-                      tools=TOOLS)
-        plot.y_range.start = 0
-        plot.xaxis.axis_label = 'mass/charge'
-        plot.yaxis.axis_label = 'intensity'
+                      tools=PD['tools'])
+        plot.y_range.start = PD['y_range_start']
+        plot.xaxis.axis_label = PD['x_label']
+        plot.yaxis.axis_label = PD['y_label']
 
-        # add bars to experimentally observed peaks / overlay real spectrum
-        mz_representation = make_string_represenation('mz',
-                                                      self._mz_digits)
-        experimental_bars = plot.vbar(x=self._spectrum.mz,
-                                      top=self._spectrum.intensity,
-                                      width=self._min_interval_len,
-                                      color='black',
-                                      alpha=.1)
+        # The experimental data bars
+        experimental_bars = plot.vbar(**PD['exp_vbar'])
 
         # Horizontal threshold line
-        intensity_threshold = self._spectrum.min_intensity
-        if intensity_threshold > 1.0:
-            min_mz = max(min(self._spectrum.mz) - 50, 0)
-            max_mz = max(self._spectrum.mz) + 50
+        if PD['threshold_line']['intensity'] > 1.0:
+            plot.line(*PD['threshold_line']['args'],
+                      **PD['threshold_line']['kwds'])
 
-            plot.line([min_mz, max_mz],
-                      [intensity_threshold,intensity_threshold],
-                      line_width=2,
-                      color = 'red')
+        # Plotting rectangles
+        source_rectangles = ColumnDataSource(PD['rectangle_data'])
+        fat_rectangles = plot.quad(source=source_rectangles,
+                                   **PD['fat_rectangles'])
 
-        # Plotting the bricks / divisions of estimated peaks into constituents
-        lists = zip(*((b.peak_group.mz_L,
-                       b.peak_group.mz_R,
-                       b.peak_group.mz_left,
-                       b.peak_group.mz_right,
-                       (b.peak_group.mz_L + b.peak_group.mz_R)/2.0,
-                       b.bottom,
-                       b.top,
-                       b.color,
-                       b.intensity,
-                       b.molecule.name,
-                       b.molecule.source.name,
-                       # str(b.molecule.formula),
-                       b.molecule.formula.str_with_charges(b.molecule.q,
-                                                           b.molecule.g),
-                       b.molecule.q,
-                       b.molecule.g,
-                       b.molecule.intensity)
-                      for b in self._bricks))
-
-        data = dict(zip(('mz_L',
-                         'mz_R',
-                         'mz_left',
-                         'mz_right',
-                         'mz',
-                         'bottom',
-                         'top',
-                         'color',
-                         'intensity',
-                         'molname',
-                         'molsource',
-                         'molformula',
-                         'molq',
-                         'molg',
-                         'molintensity'),
-                        lists))
-
-        source = ColumnDataSource(data)
-
-        fat_rectangles = plot.quad(top='top', bottom='bottom',
-                                   left='mz_left', right='mz_right',
-                                   color='color', source=source,
-                                   alpha=.5)
-
-        slim_rectangles = plot.quad(top='top', bottom='bottom',
-                                   left='mz_L', right='mz_R',
-                                   color='color', source=source)
+        slim_rectangles = plot.quad(source=source_rectangles,
+                                    **PD['slim_rectangles'])
 
         hover_fat = HoverTool(renderers=[fat_rectangles],
-                              tooltips=[('peak intensity', "@intensity{0,0}"),
-                                        ('m/z interval', mz_representation),
-                                        ('name', '@molname'),
-                                        ('formula','@molformula'),
-                                        ('q', '@molq'),
-                                        ('g', '@molg'),
-                                        ('total intensity', "@molintensity{0,0}")])
-
+                              tooltips=PD['fat_rectangles_tooltips'])
         plot.add_tools(hover_fat)
 
         # plotting peak_group / local quality of peak fitting
-        peak_group_lists = zip(*((pg.mz_left,
-                                  pg.mz_right,
-                                  (pg.mz_left + pg.mz_right)/2.0,
-                                  pg.intensity,
-                                  pg.estimate,
-                               abs(pg.intensity-pg.estimate))
-                              for pg in self._peak_groups))
-
-        data_peak_groups = dict(zip(('mz_left',
-                                     'mz_right',
-                                     'mz',
-                                     'intensity',
-                                     'estimate',
-                                     'abserror'),
-                                     peak_group_lists))
-
-        source_peak_groups = ColumnDataSource(data_peak_groups)
-
-        peak_group_intensities = plot.segment(x0='mz_left',
-                                              x1='mz_right',
-                                              y0='intensity',
-                                              y1='intensity',
-                                              color='red',
-                                              line_width=3,
-                                              source=source_peak_groups)
+        source_peak_groups = ColumnDataSource(PD['peak_groups_data'])
+        peak_group_intensities = plot.segment(source=source_peak_groups,
+                                              **PD['peak_groups'])
 
         hover_peak_groups = HoverTool(renderers=[peak_group_intensities],
-                                   tooltips=[('total intensity', "@intensity{0,0}"),
-                                             ('total estimate', "@estimate{0,0}"),
-                                             ('absolute error', "@abserror{0,0}"),
-                                             ('m/z', mz_representation)])
-
+                                      tooltips=PD['peak_groups_tooltips'])
         plot.add_tools(hover_peak_groups)
 
         # Experimental Squares
-        raw_spectrum = plot.square(x=self._spectrum.mz,
-                                   y=self._spectrum.intensity,
-                                   size=5,
-                                   color='black',
-                                   alpha=.5)
-
-        x_representation = make_string_represenation('x', self._mz_digits)
-
+        raw_spectrum = plot.square(**PD['experimental_squares'])
         hover_squares = HoverTool(renderers=[raw_spectrum],
-                                  tooltips=[('intensity', "@y{0,0}"),
-                                            ('m/z', x_representation)])
+                                  tooltips=PD['experimental_squares_tooltips'])
         plot.add_tools(hover_squares)
 
         # Text labels
-        cluster_lists = zip(*((c.mz,
-                               c.intensity,
-                               c.mol_intensity,
-                               c.mol_name)
-                              for c in self._clusters))
-
-        cluster_data = dict(zip(('mz',
-                                 'intensity',
-                                 'mol_intensity',
-                                 'mol_name'),
-                                cluster_lists))
-
-        source_clusters = ColumnDataSource(cluster_data)
-
-        labels = LabelSet(x='mz',
-                          y='intensity',
-                          text='mol_name',
-                          level='glyph',
-                          x_offset=0,
-                          y_offset=1,
-                          source=source_clusters,
-                          render_mode='css')
-
+        source_clusters = ColumnDataSource(PD['cluster_data'])
+        labels = LabelSet(source=source_clusters,
+                          **PD['labels'])
         plot.add_layout(labels)
-
         if show_plot:
             show(plot)
         return plot

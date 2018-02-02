@@ -201,7 +201,8 @@ class SimpleCzMatch(object):
         """Estimate probabilities."""
         # _P_ = Probability
         if self._I_ETDorHTR > 0:
-            self._P_ETDorHTR_bond = {k: v/self._I_ETDorHTR for k, v in self._I_ETDorHTR_bond.items()}
+            self._P_fragmentation_bond = {k: v/self._I_ETDorHTR for k, v in \
+                                          self._I_ETDorHTR_bond.items()}
 
         if self._I_reactions + self._I_unreacted_precursor > 0:
             self._P_reaction = self._I_reactions / (self._I_reactions + self._I_unreacted_precursor)
