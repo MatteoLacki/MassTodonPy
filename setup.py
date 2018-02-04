@@ -41,6 +41,7 @@ setup(
         'Topic :: Scientific/Engineering :: Chemistry',
         'Programming Language :: Python :: 2.7'],
     install_requires=[
+        'cffi',
         'numpy',
         'pyteomics>=3.4.1',
         'lxml',
@@ -48,7 +49,7 @@ setup(
         'IsoSpecPy',
         'networkx',
         'future',
-        'intervaltree'],
+        'six'],
     scripts=[
         'bin/masstodon',
         'bin/masstodon_example_call',

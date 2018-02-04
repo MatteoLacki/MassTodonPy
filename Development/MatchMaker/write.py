@@ -34,22 +34,11 @@ def write_from_buffer(things, path, name):
 
 path = '/Users/matteo/Desktop/pairing.csv'
 write_from_buffer(masstodon.simple_cz_match._iter_intensities(), path, '_intensities')
+
 masstodon.cz_match.intensities
 masstodon.cz_match.probabilities
 
-def _iter_probabilities(self):
-    """Generate rows for a csv/tsv file with estimated probabilities."""
-    yield ('probability')
-    bonds = list(self._P_fragmentation_bond.items())
-    bonds.sort()
-    for no, v in bonds:
-        yield ('', 'bond %d' % no, int(v) )
 
 
-
-
-path_probabilities = path.replace('.', '_probabilities.')
-with open(path_probabilities, 'w') as csvfile:
-    writer = csv.writer(csvfile, delimiter=delimiter)
-    for res in _iter_to_buffer(things):
-        writer.writerow(res)
+path_probs = '/Users/matteo/Desktop/pairing.csv'
+write_from_buffer(masstodon.simple_cz_match._iter_probabilities(), path_probs, '_probs')
