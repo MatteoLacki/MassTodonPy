@@ -216,7 +216,7 @@ class SimpleCzMatch(object):
             self._P_ETnoD_precursor = self._I_ETnoD_precursor / self._I_
             self._P_ETnoD = self._I_ETnoD_precursor / self._I_ETDorHTR_ETnoD_PTR
             self._P_PTR = self._I_PTR_precursor / self._I_ETDorHTR_ETnoD_PTR
-             self._I_ETDorHTR_ETnoD_PTR
+            # self._I_ETDorHTR_ETnoD_PTR
         return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_P_'}
 
     def _iter_probabilities(self):
