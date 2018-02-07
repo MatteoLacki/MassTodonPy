@@ -213,7 +213,7 @@ class SimpleCzMatch(object):
 
         if self._I_ETDorHTR_ETnoD_PTR > 0:
             self._P_ETDorHTR = self._I_ETDorHTR / self._I_ETDorHTR_ETnoD_PTR
-            self._P_ETnoD_precursor = self._I_ETnoD_precursor / self._I_
+            # self._P_ETnoD_precursor = self._I_ETnoD_precursor / self._I_
             self._P_ETnoD = self._I_ETnoD_precursor / self._I_ETDorHTR_ETnoD_PTR
             self._P_PTR = self._I_PTR_precursor / self._I_ETDorHTR_ETnoD_PTR
             # self._I_ETDorHTR_ETnoD_PTR
@@ -222,7 +222,7 @@ class SimpleCzMatch(object):
     def _iter_probabilities(self):
         """Generate rows for a csv/tsv file with estimated probabilities."""
         if self._I_reactions > 0:
-            yield ('probability', 'fragmentation' self._P_fragmentation)
+            yield ('probability', 'fragmentation', self._P_fragmentation)
             bonds = list(self._P_fragmentation_bond.items())
             bonds.sort()
             for no, v in bonds:
