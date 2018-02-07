@@ -4,23 +4,14 @@ import json
 from MassTodonPy.Formula.Formula import Formula
 
 
-def get_amino_acids_raw():
+def get_amino_acids(raw=True):
     """
     Retrieve the information on amino acidic bricks.
 
-    Returns
-    =======
-    res: a list
-    """
-    path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-    with open(path+"amino_acids.json", "rb") as f:
-        amino_acids = json.load(f)
-    return amino_acids
-
-
-def get_amino_acids():
-    """
-    Retrieve the information on amino acidic bricks.
+    Parameters
+    ==========
+    raw : boolean
+        Load data from amico_acids.py?
 
     Returns
     =======
@@ -28,7 +19,12 @@ def get_amino_acids():
     The values are linear counters storing atom counts.
     Possible backbone_atom_group include: N, C_carbo, C_alpha.
     """
-    amino_acids_raw = get_amino_acids_raw()
+    if raw:
+        from MassTodonPy.Data.amino_acids import amino_acids as amino_acids_raw
+    else:
+        path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
+        with open(path+"amino_acids.json", "rb") as f:
+            amino_acids_raw = json.load(f)
     amino_acids = {
         (aa_name, brick): Formula({a: c for a, c in atom_cnt})
         for aa_name, bricks in amino_acids_raw
