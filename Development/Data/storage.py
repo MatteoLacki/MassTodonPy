@@ -1,0 +1,4 @@
+from MassTodonPy.Data.get_isotopes import get_isotopic_masses_and_probabilities_raw
+
+
+get_isotopic_masses_and_probabilities_raw()

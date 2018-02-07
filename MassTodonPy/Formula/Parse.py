@@ -16,7 +16,7 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 import re
-from MassTodonPy.Data.get_isotopes import get_elements
+from MassTodonPy.Data.elements import elements
 
 
 def get_pattern(pattern='([A-Z][a-z]?)([0-9]*)'):
@@ -54,7 +54,7 @@ def parse(formula, pattern):
     """
     atomCnt = {}
     for elemTag, cnt in re.findall(pattern, formula):
-        if not elemTag in get_elements():
+        if not elemTag in elements:
             print("WARNING! Element tag {} ain't recognized.".format(elemTag))
         if cnt == '':
             cnt = 1
