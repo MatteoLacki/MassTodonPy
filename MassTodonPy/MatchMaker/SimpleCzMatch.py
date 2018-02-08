@@ -173,13 +173,13 @@ class SimpleCzMatch(object):
                 self._I_ETnoD_PTR_bond[M.bp] += ETnoD_or_PTR_fragment
 
         self._I_ETDorHTR = sum(v for k, v in self._I_ETDorHTR_bond.items())
-        self._I_reactions = self._I_ETnoD_precursor + \
-                            self._I_PTR_precursor + \
-                            self._I_ETnoD_PTR_fragments + \
+        self._I_total_ETnoDorPTR = self._I_ETnoD_precursor + \
+                                   self._I_PTR_precursor + \
+                                   self._I_ETnoD_PTR_fragments
+        self._I_reactions = self._I_total_ETnoDorPTR + \
                             self._I_ETDorHTR
-
         self._I_unreacted_precursor = self._I_ETnoD_PTR_precursor[0,0]
-        self._I_ETDorHTR_ETnoD_PTR = self._I_ETnoD_precursor + self._I_PTR_precursor + self._I_ETDorHTR
+
         return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_I_'}
 
     def _iter_intensities(self):
@@ -197,6 +197,7 @@ class SimpleCzMatch(object):
             yield ('', 'bond %d' % no, int(v) )
         yield ('ETnoD on precursors', 'total:', int(self._I_ETnoD_precursor))
         yield ('PTR on precursors', 'total:', int(self._I_PTR_precursor))
+        yield ('ETnoD or PTR', 'total:', int(self._I_total_ETnoDorPTR))
 
     def _get_probabilities(self):
         """Estimate probabilities."""
@@ -211,18 +212,29 @@ class SimpleCzMatch(object):
         if self._I_reactions > 0:
             self._P_fragmentation = self._I_ETDorHTR / self._I_reactions
 
-        if self._I_ETDorHTR_ETnoD_PTR > 0:
-            self._P_ETDorHTR = self._I_ETDorHTR / self._I_ETDorHTR_ETnoD_PTR
-            # self._P_ETnoD_precursor = self._I_ETnoD_precursor / self._I_
-            self._P_ETnoD = self._I_ETnoD_precursor / self._I_ETDorHTR_ETnoD_PTR
-            self._P_PTR = self._I_PTR_precursor / self._I_ETDorHTR_ETnoD_PTR
-            # self._I_ETDorHTR_ETnoD_PTR
+        ETnoD_prec = float(self._I_ETnoD_precursor)
+        PTR_prec = float(self._I_PTR_precursor)
+        if ETnoD_prec + PTR_prec > 0:
+            self._P_ETnoD_precursor = ETnoD_prec / (ETnoD_prec + PTR_prec)
+            self._P_PTR_precursor = 1.0 - self._P_ETnoD_precursor
+
+        if self._I_total_ETnoDorPTR > 0:
+            self._P_ETnoD_PTR = self._I_total_ETnoDorPTR / self._I_reactions
+
         return {k[3:]: v for k, v in self.__dict__.items() if k[0:3] == '_P_'}
 
     def _iter_probabilities(self):
         """Generate rows for a csv/tsv file with estimated probabilities."""
+
+        if self._I_ETnoD_precursor + self._I_PTR_precursor > 0:
+            yield ('probability', 'ETnoD (precusor)', "{:10.3f}%".format(100 * self._P_ETnoD_precursor))
+            yield ('probability', 'PTR (precusor)', "{:10.3f}%".format(100 * self._P_PTR_precursor))
+
+        if self._I_total_ETnoDorPTR > 0:
+            yield ('probability', 'ETnoD of PTR', "{:10.3f}%".format(100 * self._P_ETnoD_PTR))
+
         if self._I_reactions > 0:
-            yield ('probability', 'fragmentation', self._P_fragmentation)
+            yield ('probability', 'fragmentation', "{:10.3f}%".format(100 * self._P_fragmentation))
             bonds = list(self._P_fragmentation_bond.items())
             bonds.sort()
             for no, v in bonds:

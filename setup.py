@@ -42,6 +42,7 @@ setup(
         'Programming Language :: Python :: 2.7'],
     install_requires=[
         'cffi',
+        'bokeh',
         'numpy',
         'pyteomics>=3.4.1',
         'lxml',
