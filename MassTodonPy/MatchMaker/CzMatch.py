@@ -20,6 +20,7 @@ from collections import Counter, namedtuple
 from future.builtins import super
 
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
+from MassTodonPy.Write.csv_tsv import write_rows
 
 
 Node = namedtuple('Node', 'type no bp q g')
@@ -68,3 +69,8 @@ class CzMatch(SimpleCzMatch):
             self.graph.add_edge(C, Z, ETnoD= C.g + Z.g,
                                       PTR= Q-1 -C.g -Z.g -C.q -Z.q,
                                       ETnoD_PTR= Q -1 -C.q -Z.q)
+
+    def write(self, path):
+        """Write intensities and probabilities to a given path."""
+        write_rows(self._iter_intensities(), path + 'pairing_intensities.csv')
+        write_rows(self._iter_probabilities(), path + 'pairing_probabilities.csv')

@@ -243,8 +243,8 @@ class SimpleCzMatch(object):
 
     def write(self, path):
         """Write intensities and probabilities to a given path."""
-        write_rows(self._iter_intensities(), path + 'pairing_intensities.csv')
-        write_rows(self._iter_probabilities(), path + 'pairing_probabilities.csv')
+        write_rows(self._iter_intensities(), path + 'simple_pairing_intensities.csv')
+        write_rows(self._iter_probabilities(), path + 'simple_pairing_probabilities.csv')
 
     def _match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""

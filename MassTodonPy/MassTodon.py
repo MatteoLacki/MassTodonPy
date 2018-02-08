@@ -243,51 +243,8 @@ class MassTodon(object):
         self.cz_match = CzMatch(molecules=self.molecules,
                                 precursor_charge=self.precursor.q)
 
-
-        #================================
-
     def write(self, path):
-        """Write the spectrum to a csv or tsv file.
-
-        Parameters
-        ==========
-        path : str
-            A path to the file to write to.
-        """
-        file_path, file_name, file_ext = parse_path(path)
-        assert file_ext in ('.csv', '.tsv'), "Writing only to csv or tsv."
-        delimiter = ',' if file_ext == '.csv' else '\t'
-
-        # write intensities of molecules
-        path_intensities = path.replace('.', '_intensities.')
-        with open(path_intensities, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(['molecule', 'source', 'formula', 'charge', 'quenched charge',
-                             'monoisotopic m/z', 'average m/z', 'intensity'])
-            for m, intensity in self.get_estimates():
-                writer.writerow([m.name, m.source, str(m.formula), m.q, m.g,
-                                 m.monoisotopic_mz, m.mean_mz, intensity])
-
-        # write intensities of reactions
-        path_reactions = path.replace('.', '_reactions.')
-        with open(path_reactions, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(['reaction', 'intensity'])
-            for name, intensity in self.cz_match.intensities.items():
-                if isinstance(intensity, (Counter, dict)):
-                    for k, v in intensity.items():
-                        writer.writerow([name + str(k), v])
-                else:
-                    writer.writerow([name, intensity])
-
-        # write probabilities of reactions
-        path_probabilities = path.replace('.', '_probabilities.')
-        with open(path_probabilities, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(['reaction', 'probability'])
-            for name, intensity in self.cz_match.probabilities.items():
-                if isinstance(intensity, (Counter, dict)):
-                    for k, v in intensity.items():
-                        writer.writerow([name + '_' + str(k), v])
-                else:
-                    writer.writerow([name, intensity])
+        """Write results to path."""
+        self.report.write(path)
+        self.simple_cz_match.write(path)
+        self.cz_match.write(path)

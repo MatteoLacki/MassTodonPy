@@ -23,6 +23,4 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
 
 
 path = '/Users/matteo/Desktop/test/'
-masstodon.simple_cz_match.write(path)
-
-masstodon.report.write(path)
+masstodon.write(path)
