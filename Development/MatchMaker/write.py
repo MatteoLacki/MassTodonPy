@@ -2,7 +2,6 @@
 %autoreload 2
 
 from collections import defaultdict
-import csv
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
@@ -22,26 +21,8 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
 
 # Use this writer more often: only provide a flow of outcomes!!!
 
-def write_from_buffer(things, path, name):
-    file_path, file_name, file_ext = parse_path(path)
-    assert file_ext in ('.csv', '.tsv'), "Writing only to csv or tsv."
-    delimiter = ',' if file_ext == '.csv' else '\t'
-    path_things = path.replace('.', '_intensities.')
-    with open(path_things, 'w') as csvfile:
-        writer = csv.writer(csvfile, delimiter=delimiter)
-        for res in things:
-            writer.writerow(res)
 
-path = '/Users/matteo/Desktop/pairing.csv'
-write_from_buffer(masstodon.simple_cz_match._iter_intensities(), path, '_intensities')
+path = '/Users/matteo/Desktop/test/'
+masstodon.simple_cz_match.write(path)
 
-masstodon.cz_match.intensities
-masstodon.cz_match.probabilities
-
-list(masstodon.cz_match._iter_intensities())
-
-list(masstodon.cz_match._iter_probabilities())
-
-
-path_probs = '/Users/matteo/Desktop/pairing.csv'
-write_from_buffer(masstodon.simple_cz_match._iter_probabilities(), path_probs, '_probs')
+masstodon.report.write(path)

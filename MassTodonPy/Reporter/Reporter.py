@@ -25,6 +25,7 @@ import os
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Reporter.buffers import buffers
 from MassTodonPy.Reporter.misc import Brick, Cluster, PeakGroup, ColorGenerator, make_string_represenation
+from MassTodonPy.Write.csv_tsv import write_rows
 
 
 class Reporter(object):
@@ -144,98 +145,89 @@ class Reporter(object):
         """Aggregate the results of MassTodon."""
         pass
 
+    def iter_precise_estimates(self):
+        """Iterate over precise estimates.
+
+        Supply a flow of rows to write to a csv file with output."""
+
+        yield ('molecule',
+               'source',
+               'formula',
+               'charge',
+               'quenched charge',
+               'intensity',
+               'molecule intensity',
+               'isotopologues probability',
+               'monoisotopic m/z',
+               'average m/z',
+               'left peak group m/z',
+               'right peak group m/z')
+        for b in self._bricks:
+            yield (b.molecule.name,
+                   b.molecule.source.name,
+                   b.molecule.formula.str_with_charges(b.molecule.q, b.molecule.g),
+                   b.molecule.q,
+                   b.molecule.g,
+                   round(b.intensity),
+                   round(b.molecule.intensity),
+                   b.intensity/b.molecule.intensity,
+                   b.molecule.monoisotopic_mz,
+                   (b.peak_group.mz_L + b.peak_group.mz_R)/2.0,
+                   b.peak_group.mz_L,
+                   b.peak_group.mz_R)
+
+    def iter_local_fit_quality(self):
+        """Iterate over quality of fit to the experimental groups G."""
+        yield ('mz',
+               'left peak group m/z',
+               'right peak group m/z',
+               'intensity',
+               'estimate',
+               'absolute error')
+        for c in self._peak_groups:
+            if int(c.intensity) > 0 and int(c.estimate) > 0:
+                yield ((c.mz_L + c.mz_R)/2.0,
+                       c.mz_L,
+                       c.mz_R,
+                       int(c.intensity),
+                       int(c.estimate),
+                       abs(int(c.intensity) - int(c.estimate)))
+
+    def iter_molecule_estimates(self, include_zero_intensities=True):
+        """Iterate over the estimates of the intensity of molecules."""
+        self._molecules.sort(key=lambda m: m.intensity, reverse=True)
+        yield ('name',
+               'formula',
+               'charge',
+               'quenched charge',
+               'estimated intensity',
+               'source',
+               'source fasta',
+               'source formula')
+        for m in self._molecules:
+            if round(m.intensity) > 0 or include_zero_intensities:
+                yield (m.name,
+                       m.formula.str_with_charges(m.q, m.g),
+                       m.q,
+                       m.g,
+                       round(m.intensity),
+                       m.source.name,
+                       m.source.fasta,
+                       m.source.formula.str_with_charges(m.source.q))
+
     def write(self, path, include_zero_intensities=True):
         """Write results to a file.
 
         Parameters
         ==========
-        file_path : str
+        path : str
             Path to the output you want MassTodon to save its results.
-            Supported path extensions are .txt and .csv.
+
         """
-        file_path, file_name, file_ext = parse_path(path)
-
-        assert file_ext in ('.csv', '.tsv'), "Writing only to csv or tsv."
-        delimiter = ',' if file_ext == '.csv' else '\t'
-
-        # detailed intormation on assignment
-        path_details = "{0}{1}_precise{2}".format(file_path, file_name, file_ext)
-        with open(path_details, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(('molecule',
-                             'source',
-                             'formula',
-                             'charge',
-                             'quenched charge',
-                             'intensity',
-                             'molecule intensity',
-                             'isotopologues probability',
-                             'monoisotopic m/z',
-                             'average m/z',
-                             'left peak group m/z',
-                             'right peak group m/z'))
-            for b in self._bricks:
-                writer.writerow((b.molecule.name,
-                                 b.molecule.source.name,
-                                 # str(b.molecule.formula),
-                                 b.molecule.formula.str_with_charges(b.molecule.q,
-                                                                     b.molecule.g),
-                                 b.molecule.q,
-                                 b.molecule.g,
-                                 round(b.intensity),
-                                 round(b.molecule.intensity),
-                                 b.intensity/b.molecule.intensity,
-                                 b.molecule.monoisotopic_mz,
-                                 (b.peak_group.mz_L + b.peak_group.mz_R)/2.0,
-                                 b.peak_group.mz_L,
-                                 b.peak_group.mz_R))
-
-        # precise quality of fit information: on G level basis
-        path_local_fits = "{0}{1}_local_fits{2}".format(file_path, file_name, file_ext)
-        with open(path_local_fits, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(('mz',
-                             'left peak group m/z',
-                             'right peak group m/z',
-                             'intensity',
-                             'estimate',
-                             'absolute error'))
-            for c in self._peak_groups:
-                writer.writerow(((c.mz_L + c.mz_R)/2.0,
-                                 c.mz_L,
-                                 c.mz_R,
-                                 int(c.intensity),
-                                 int(c.estimate),
-                                 abs(int(c.intensity) - int(c.estimate))))
-
-        # aggregated intormation on assignment
-        path_molecules = "{0}{1}_molecules{2}".format(file_path,
-                                                      file_name,
-                                                      file_ext)
-
-        self._molecules.sort(key=lambda m: m.intensity, reverse=True)
-
-        with open(path_molecules, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=delimiter)
-            writer.writerow(('name',
-                             'formula',
-                             'charge',
-                             'quenched charge',
-                             'estimated intensity',
-                             'source',
-                             'source fasta',
-                             'source formula'))
-
-            for m in self._molecules:
-                if round(m.intensity) > 0 or include_zero_intensities:
-                    writer.writerow((m.name,
-                                     m.formula.str_with_charges(m.q, m.g),
-                                     m.q,
-                                     m.g,
-                                     round(m.intensity),
-                                     m.source.name,
-                                     m.source.fasta,
-                                     m.source.formula.str_with_charges(m.source.q)))
+        write_rows(self.iter_precise_estimates(), path + 'assigned_spectrum_precise.csv')
+        write_rows(self.iter_local_fit_quality(), path + 'assigned_spectrum_local_fits.csv')
+        write_rows(self.iter_molecule_estimates(include_zero_intensities),
+                                                path + 'estimates_of_molecule_intensities.csv')
 
     def get_assigned_spectrum_data(self):
         """Make data for the plot with assigned spectrum."""

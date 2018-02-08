@@ -22,6 +22,7 @@ import networkx as nx
 from networkx import connected_component_subgraphs as connected_components
 
 from MassTodonPy.Data.Constants import eps, infinity
+from MassTodonPy.Write.csv_tsv import write_rows
 
 
 def diag(val, dim):
@@ -240,6 +241,10 @@ class SimpleCzMatch(object):
             for no, v in bonds:
                 yield ('', 'bond %d' % no, "{:10.3f}%".format(100 * v) )
 
+    def write(self, path):
+        """Write intensities and probabilities to a given path."""
+        write_rows(self._iter_intensities(), path + 'pairing_intensities.csv')
+        write_rows(self._iter_probabilities(), path + 'pairing_probabilities.csv')
 
     def _match(self):
         """Pair molecules minimizing the number of reactions and calculate the resulting probabilities."""
