@@ -194,6 +194,7 @@ class SimpleCzMatch(object):
             yield ('', 'bond %d' % no, int(v) )
         yield ('ETnoD or PTR on fragments', 'total:', int(self._I_ETnoD_PTR_fragments))
         bonds = list(self._I_ETnoD_PTR_bond.items())
+        bonds.sort()
         for no, v in bonds:
             yield ('', 'bond %d' % no, int(v) )
         yield ('ETnoD on precursors', 'total:', int(self._I_ETnoD_precursor))

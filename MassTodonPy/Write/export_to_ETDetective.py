@@ -30,36 +30,36 @@ def get_subsequence(fasta, name, modifications):
         return '*' + fasta[ 0:int(name[1:]) ]
 
 
-def results_to_etdetective(masstodon_results, fasta, Q, modifications={}, threshold = 0.0 ):
-    '''Reorganize results of MassTodonPy to fit ETDetective format.
-
-    Parameters
-    ----------
-    masstodon_results : dict
-        A dictionary of MassTodonPy results.
-    fasta: str
-        The amino acid sequence.
-    modifications: dict
-        A dictionary containing the differences in atomic compositions between the target modified amino acid and the input amino acid.
-    threshold : float
-        Show outputs with estimates higher than that number.
-
-    Returns
-    -------
-        A dictionary with keys corresponding to tuples (<sequence>, <charge>, <quenched charge>, <name of molecule>) and values corresponding to the estimate.
-    '''
-
-    etdetective_input = {'products':{}}
-    for subproblem in masstodon_results['raw_estimates']:
-        for r in subproblem['alphas']:
-            if r['estimate'] > threshold:
-                seq = get_subsequence( fasta, r['molType'], modifications )
-                etdetective_input['products'][(seq, r['q'], r['g'], r['molType'])] =  r['estimate']
-
-    probs, counter = masstodon_results['basic_analysis']
-    etdetective_input['probabilities'] = probs
-    etdetective_input['fasta'] = fasta
-    etdetective_input['modifications'] = modifications
-    etdetective_input['precursor_charge'] = Q
-
-    return etdetective_input
+# def results_to_etdetective(masstodon_results, fasta, Q, modifications={}, threshold = 0.0 ):
+#     '''Reorganize results of MassTodonPy to fit ETDetective format.
+#
+#     Parameters
+#     ----------
+#     masstodon_results : dict
+#         A dictionary of MassTodonPy results.
+#     fasta: str
+#         The amino acid sequence.
+#     modifications: dict
+#         A dictionary containing the differences in atomic compositions between the target modified amino acid and the input amino acid.
+#     threshold : float
+#         Show outputs with estimates higher than that number.
+#
+#     Returns
+#     -------
+#         A dictionary with keys corresponding to tuples (<sequence>, <charge>, <quenched charge>, <name of molecule>) and values corresponding to the estimate.
+#     '''
+#
+#     etdetective_input = {'products':{}}
+#     for subproblem in masstodon_results['raw_estimates']:
+#         for r in subproblem['alphas']:
+#             if r['estimate'] > threshold:
+#                 seq = get_subsequence( fasta, r['molType'], modifications )
+#                 etdetective_input['products'][(seq, r['q'], r['g'], r['molType'])] =  r['estimate']
+#
+#     probs, counter = masstodon_results['basic_analysis']
+#     etdetective_input['probabilities'] = probs
+#     etdetective_input['fasta'] = fasta
+#     etdetective_input['modifications'] = modifications
+#     etdetective_input['precursor_charge'] = Q
+#
+#     return etdetective_input

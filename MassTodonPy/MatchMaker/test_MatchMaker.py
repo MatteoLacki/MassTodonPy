@@ -15,6 +15,8 @@ def node_to_tuple(node):
 class VoidClass(object):
     pass
 
+
+# no alphas now: rewrite test using graphs
 class TestPeakPicker(unittest.TestCase):
     def setUp(self):
         """Set up a method."""

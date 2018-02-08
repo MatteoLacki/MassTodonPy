@@ -159,28 +159,6 @@ class DeconvolutionProblem(nx.Graph):
         self.A = normalize_rows(self.A)
         self.b = matrix(0.0, (self.I_no, 1))
 
-    def get_L1_error(self):
-        """Get the L1 error.
-
-        The sum of absolute values of differences between estimates and real intensities."""
-        return sum(abs(i - e) for G, i, e in
-                   self.node_iter('G', 'intensity', 'estimate'))
-
-    def get_L2_error(self):
-        """Get the L2 error.
-
-        Get the Euclidean distance between estimates and real intensities."""
-        return sqrt(sum((i - e)**2 for G, i, e in
-                    self.node_iter('G', 'intensity', 'estimate')))
-
-    def get_L1_signed_error(self, sign=1.0):
-        """Get the L1 signed error.
-
-        If sign=1, returns how much estimates are above real values.
-        If sign=-1, returns how much estimates are below real values."""
-        return sum(max(sign*(e - i), 0) for G, i, e in
-                   self.node_iter('G', 'intensity', 'estimate'))
-
     def sum_intensities(self):
         """Sum real intensities in a graph."""
         return sum(i for G, i in self.node_iter('G', 'intensity'))
@@ -204,10 +182,8 @@ class DeconvolutionProblem(nx.Graph):
 
         # filling up the graph
         X = self.solution['x']
-        self.alphas = [] #TODO terminate
         for M, M_cnt in self.node_iter('M', 'cnt'):
             self.node[M]['estimate'] = X[self.GI_no + M_cnt]
-            self.alphas.append(self.node[M]) #TODO terminate
             self.node[M]['molecule'].intensity = X[self.GI_no + M_cnt]
         for G in self.node_iter('G'):
             self.node[G]['estimate'] = 0.0
@@ -216,16 +192,27 @@ class DeconvolutionProblem(nx.Graph):
                 self.node[G]['estimate'] += X[idx]
                 self[G][I]['estimate'] = X[idx]
 
-    def report(self):
-        if self.solution['status'] is 'optimal':
-            res = {'alphas': self.alphas, #TODO terminate
-                   'L1_error': self.get_L1_error(),
-                   'L2_error': self.get_L2_error(),
-                   'underestimates': self.get_L1_signed_error(sign=1.0),
-                   'overestimates': self.get_L1_signed_error(sign=-1.0),
-                   'status': self.solution['status']}
+        self.status = self.solution['status']
+        if self.status is 'optimal':
+            self.L1_error = sum(abs(i - e) for G, i, e in
+                                self.node_iter('G',
+                                               'intensity',
+                                               'estimate'))
+            self.L2_error = sqrt(sum((i - e)**2 for G, i, e in
+                                     self.node_iter('G',
+                                                    'intensity',
+                                                    'estimate')))
+            self.underestimates = sum(max(e - i, 0) for G, i, e in
+                                      self.node_iter('G',
+                                                     'intensity',
+                                                     'estimate'))
+            self.overestimates = sum(max(i - e, 0) for G, i, e in
+                                     self.node_iter('G',
+                                                    'intensity',
+                                                    'estimate'))
         else:
-            res = {'status': 'ValueError',
-                   'L1_error': self.sum_intensities(),
-                   'overestimates': 0.0}
-        return res
+            self.overestimates = 0.0
+            self.L1_error = self.sum_intensities()
+            self.L2_error = sqrt(sum(i**2 for G, i in
+                                     self.node_iter('G', 'intensity')))
+            self.underestimates = self.L1_error
