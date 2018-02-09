@@ -21,15 +21,14 @@ from bokeh.models import HoverTool, Span, LabelSet
 import os
 
 from MassTodonPy.Parsers.Paths import parse_path
+from MassTodonPy.Misc.os import create_folder_if_needed
 
-
-def bokeh_spectrum(data,
+def bokeh_spectrum(masstodon,
                    path="assigned_spectrum.html",
                    mode="inline",
                    show_plot=True,
-                   width=None,
-                   height=None,
-                   _mult=1,
+                   width=800,
+                   height=600,
                    **kwds):
     """Make a plot of the assigned spectrum.
 
@@ -46,15 +45,9 @@ def bokeh_spectrum(data,
         The height of the plot.
 
     """
-    D = data
-    file_path, file_name, file_ext = parse_path(path)
-    if not os.path.exists(file_path):
-        os.makedirs(file_path)
+    D = masstodon.report.assigned_spectrum_data
+    create_folder_if_needed(path)
     output_file(path, mode=mode)
-    if not width:
-        width = 800 * _mult
-    if not height:
-        height = 600 * _mult
     plot = figure(plot_width=width,
                   plot_height=height,
                   tools=D['tools'])

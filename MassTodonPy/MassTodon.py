@@ -247,38 +247,6 @@ class MassTodon(object):
         self.cz_match = CzMatch(molecules=self.molecules,
                                 precursor_charge=self.precursor.q)
 
-    def plot(self,
-             path_spectrum="assigned_spectrum.html",
-             mode_spectrum='inline',
-             show_spectrum=True,
-             width_spectrum=None,
-             height_spectrum=None,
-             _mult=1,
-             **kwds):
-        """Make result plots.
-
-        Parameters
-        ==========
-        path_spectrum : string
-            Path to where to save the output html file with the spectrum.
-            If not provided, MassTodon will use the folder it is called from.
-        mode_spectrum : string
-            The mode of plotting the bokeh spectrum plot.
-        width_spectrum : integer
-            The width of the spectrum plot.
-        height_spectrum : integer
-            The height of the spectrum plot.
-
-        """
-        spectrum = bokeh_spectrum(data=self.report.assigned_spectrum_data,
-                                  path=path_spectrum,
-                                  mode=mode_spectrum,
-                                  show_plot=show_spectrum,
-                                  width=width_spectrum,
-                                  height=height_spectrum,
-                                  _mult=_mult)
-
-
     def write(self, path):
         """Write results to path."""
         self.report.write(path)

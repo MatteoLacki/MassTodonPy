@@ -331,6 +331,19 @@ class Reporter(object):
         for c_n, c, z_n, z in  zip(*(afi['c_name'], afi['c'], afi['z_name'], afi['z'])):
             yield (c_n, int(c), z_n, int(z))
 
+    def get_aggregated_precursors(self):
+        precursors = [0.0] * self._precursor.q
+        for mol in self._molecules:
+            if mol.name[0] is 'p':
+                precursors[mol.q - 1] += mol.intensity
+        return precursors
+
+    def iter_aggregated_precursors_rows(self):
+        yield ('charge', 'estimate')
+        precursors = self.get_aggregated_precursors()
+        for q, prec in enumerate(precursors):
+            yield (q+1, int(prec))
+
     def write(self, path, include_zero_intensities=True):
         """Write results to a file.
 
@@ -352,7 +365,11 @@ class Reporter(object):
                    path + 'molecules_aggregated_estimates.csv')
         write_rows(self.iter_aggregated_fragment_intensities_rows(),
                    path + 'fragment_intensities.csv')
+        write_rows(self.iter_aggregated_precursors_rows(),
+                   path + 'aggregated_precusors.csv')
 
+    # TODO: remove colors -> it's part of the plotting library object
+    # TODO: divide into separate iterators
     def get_assigned_spectrum_data(self):
         """Make data for the plot with assigned spectrum."""
 
