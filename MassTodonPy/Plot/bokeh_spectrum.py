@@ -18,7 +18,6 @@
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool, Span, LabelSet
-import os
 
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Misc.os import create_folder_if_needed
@@ -45,9 +44,9 @@ def bokeh_spectrum(masstodon,
         The height of the plot.
 
     """
-    D = masstodon.report.assigned_spectrum_data
     create_folder_if_needed(path)
     output_file(path, mode=mode)
+    D = masstodon.report.assigned_spectrum_data
     plot = figure(plot_width=width,
                   plot_height=height,
                   tools=D['tools'])

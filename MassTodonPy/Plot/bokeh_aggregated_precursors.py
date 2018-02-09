@@ -4,7 +4,7 @@ from bokeh.models import HoverTool, Span, LabelSet
 from MassTodonPy.Misc.os import create_folder_if_needed
 
 
-def plot_aggregated_precursors(masstodon,
+def bokeh_aggregated_precursors(masstodon,
                                path='aggregated_precusors.html',
                                mode='inline',
                                show_plot=True,

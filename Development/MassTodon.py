@@ -23,18 +23,15 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       modifications=modifications)
 
 path = '/Users/matteo/Desktop/test/'
-path2= path + 'assigned_spectrum.csv'
+masstodon.write(path)
 
 from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Plot.bokeh_aggregated_precursors import plot_aggregated_precursors
+from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 
 bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
-plot_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
-
-
-
-
-
+bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
+bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
 
 
 
@@ -42,25 +39,34 @@ from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool, Span, LabelSet
 from MassTodonPy.Misc.os import create_folder_if_needed
 
+path3 = path + 'aggregeted_fragment_intensities.html'
+
 
 create_folder_if_needed(path3)
 output_file(path3)
 
-intensities = masstodon.report.get_aggregated_precursors()
+afi = masstodon.report.aggregeted_fragment_intensities()
+afi['z_minus'] = [-v for v in afi['z']]
 
-charges = list('q = {0}'.format(x) for x in range(1, 1+len(intensities)))
-p = figure(plot_width=400,
-           plot_height=400,
-           x_range=charges)
-p.xaxis.axis_label = 'Charge'
-p.yaxis.axis_label ='Estimated Intensity'
-
-data = ColumnDataSource({'intensity': intensities,
-                         'charge': charges})
-bars = p.vbar(source=data, x='charge', top='intensity', width=1)
-hover_bars = HoverTool(renderers=[bars],
-                       tooltips=[('charge', '@charge'),
-                                 ('intensity', "@intensity{0,0}")],
-                       mode='vline')
-p.add_tools(hover_bars)
+# p = figure(plot_width=1000,
+#            plot_height=400)
+p = figure()
+p.xaxis.axis_label = 'Cleavage Site'
+p.yaxis.axis_label = 'Estimated Intensity'
+afi['x'] = list(range(len(afi['z'])))
+data = ColumnDataSource(afi)
+bars_c = p.vbar(source=data, x='x', top='c', width=.8)
+hover_bars_c = HoverTool(renderers=[bars_c],
+                         tooltips=[('name', '@c_name'),
+                                   ('intensity', "@c{0,0}")])
+p.add_tools(hover_bars_c)
+bars_z = p.vbar(source=data, x='x', top='z_minus', width=.8, color='red')
+hover_bars_z = HoverTool(renderers=[bars_z],
+                         tooltips=[('name', '@z_name'),
+                                   ('intensity', "@z{0,0}")])
+p.add_tools(hover_bars_z)
+# labels_c = LabelSet(source=data, x='x', y='c')
+# p.add_layout(labels_c)
+# labels_z = LabelSet(source=data, x='x', y='z')
+# p.add_layout([labels_z, labels_c])
 show(p)
