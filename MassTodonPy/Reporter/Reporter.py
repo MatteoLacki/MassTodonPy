@@ -15,9 +15,6 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
-from bokeh.plotting import ColumnDataSource, figure, output_file, show
-from bokeh.models import HoverTool, Span, LabelSet
 import csv
 import json
 import os
@@ -54,9 +51,9 @@ class Reporter(object):
         kwds :
             Arguments to other methods.
         """
-        self._bricks = []
         self._solutions = solutions
         self._molecules = molecules
+        self._bricks = []
         self._peak_groups = []
         self._mz_digits = int(mz_digits)
         self._min_interval_len = 10**(-self._mz_digits)
@@ -388,82 +385,3 @@ class Reporter(object):
             os.makedirs(output_path)
         with open(path, 'w') as f:
             json.dump(out, f)
-
-    def plot(self,
-             path="assigned_spectrum.html",
-             mode="inline",
-             show_plot=True,
-             width=None,
-             height=None,
-             _mult=1,
-             **kwds):
-        """Make a plot.
-
-        Parameters
-        ==========
-        path : string
-            Path to where to save the output html file.
-            If not provided, MassTodon will use the folder it is called from.
-        mode : string
-            The mode of plotting a bokeh plot.
-        width : integer
-            The width of the plot.
-        height : integer
-            The height of the plot.
-        """
-        PD = self.assigned_spectrum_data
-        output_file(path, mode=mode)
-        if not width:
-            width = 800 * _mult
-        if not height:
-            height = 600 * _mult
-        plot = figure(plot_width=width,
-                      plot_height=height,
-                      tools=PD['tools'])
-        plot.y_range.start = PD['y_range_start']
-        plot.xaxis.axis_label = PD['x_label']
-        plot.yaxis.axis_label = PD['y_label']
-
-        # The experimental data bars
-        experimental_bars = plot.vbar(**PD['exp_vbar'])
-
-        # Horizontal threshold line
-        if PD['threshold_line']['intensity'] > 1.0:
-            plot.line(*PD['threshold_line']['args'],
-                      **PD['threshold_line']['kwds'])
-
-        # Plotting rectangles
-        source_rectangles = ColumnDataSource(PD['rectangle_data'])
-        fat_rectangles = plot.quad(source=source_rectangles,
-                                   **PD['fat_rectangles'])
-
-        slim_rectangles = plot.quad(source=source_rectangles,
-                                    **PD['slim_rectangles'])
-
-        hover_fat = HoverTool(renderers=[fat_rectangles],
-                              tooltips=PD['fat_rectangles_tooltips'])
-        plot.add_tools(hover_fat)
-
-        # plotting peak_group / local quality of peak fitting
-        source_peak_groups = ColumnDataSource(PD['peak_groups_data'])
-        peak_group_intensities = plot.segment(source=source_peak_groups,
-                                              **PD['peak_groups'])
-
-        hover_peak_groups = HoverTool(renderers=[peak_group_intensities],
-                                      tooltips=PD['peak_groups_tooltips'])
-        plot.add_tools(hover_peak_groups)
-
-        # Experimental Squares
-        raw_spectrum = plot.square(**PD['experimental_squares'])
-        hover_squares = HoverTool(renderers=[raw_spectrum],
-                                  tooltips=PD['experimental_squares_tooltips'])
-        plot.add_tools(hover_squares)
-
-        # Text labels
-        source_clusters = ColumnDataSource(PD['cluster_data'])
-        labels = LabelSet(source=source_clusters,
-                          **PD['labels'])
-        plot.add_layout(labels)
-        if show_plot:
-            show(plot)
-        return plot

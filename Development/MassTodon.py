@@ -24,15 +24,14 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
 path = '/Users/matteo/Desktop/'
 path1= path + 'assigned_spectrum.html'
 path2= path + 'assigned_spectrum.csv'
-# plot = masstodon.report.plot(path1, width= 1000)
+plot = masstodon.plot(path1, width= 1000)
+
+
 path = '/Users/matteo/Desktop/test/'
 masstodon.write(path)
 
 
 # masstodon.report.to_json(path + 'json_4_plot/test.json')
-sol = masstodon._solutions[0]
-
-
 
 
 masstodon.molecules

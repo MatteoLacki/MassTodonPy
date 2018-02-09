@@ -24,6 +24,7 @@ from math import sqrt
 import networkx as nx
 from random import randint
 
+from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.Misc import diag, normalize_rows
 
 #TODO: try to eliminate copying while instantiating
@@ -182,11 +183,17 @@ class DeconvolutionProblem(nx.Graph):
 
         # filling up the graph
         X = self.solution['x']
+        self.min_mz = infinity
         for M, M_cnt in self.node_iter('M', 'cnt'):
             self.node[M]['estimate'] = X[self.GI_no + M_cnt]
             self.node[M]['molecule'].intensity = X[self.GI_no + M_cnt]
         for G in self.node_iter('G'):
             self.node[G]['estimate'] = 0.0
+            try:
+                min_mz = self.node[G]['min_mz']
+            except KeyError:
+                min_mz = self.node[G]['mz']
+            self.min_mz = min(self.min_mz, min_mz)
             for I in self[G]:
                 idx = self[G][I]['cnt']
                 self.node[G]['estimate'] += X[idx]
