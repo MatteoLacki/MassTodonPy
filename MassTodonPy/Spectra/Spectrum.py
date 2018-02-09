@@ -36,8 +36,10 @@ class Spectrum(Measure):
                  min_intensity=eps,
                  percent_top_peaks=1.0,
                  sort=True,
+                 low_spectrum=False,
                  **kwds):
         """Initialize the Spectrum."""
+        self._low_spectrum = low_spectrum
         self._store_names = ('m/z', 'intensity')
         self.mz_digits = mz_digits
         self.min_intensity = float(min_intensity)
@@ -63,10 +65,16 @@ class Spectrum(Measure):
             self.mz = mz
             self.intensity = intensity
         self.trim_intensity(eps)  # intensity > 0
-        if sort:
+        try:
+            empty = spectrum and mz and intensity
+        except ValueError:
+            empty = False
+        if sort and empty:
+            print(sort and spectrum and mz and intensity)
             self.sort()
         self.round_mz(self.mz_digits)
-        self.low_spectrum = 0
+        if not self._low_spectrum:
+            self.low_spectrum = Spectrum(low_spectrum=True)
         if self.min_intensity > eps:
             self.low_spectrum += self.split_measure(self.min_intensity)
         self.percent_top_peaks = float(percent_top_peaks)
@@ -86,9 +94,16 @@ class Spectrum(Measure):
         other : Measure
             A measure with masses strictly below the cut off.
         """
-        mz = self.mz[self.intensity < cut_off]
-        intensity = self.intensity[self.intensity < cut_off]
-        return Spectrum(mz, intensity, '', self.mz_digits, eps, 1.0)
+        mz = self.mz
+        intensity = self.intensity
+        self.mz = self.mz[intensity >= cut_off]
+        self.intensity = self.intensity[intensity >= cut_off]
+        return Spectrum(mz=mz[intensity < cut_off],
+                        intensity=intensity[intensity < cut_off],
+                        mz_digits=self.mz_digits,
+                        min_intensity=eps,
+                        percent_top_peaks=1.0)
+
 
     @property
     def mz(self):
@@ -125,6 +140,14 @@ class Spectrum(Measure):
 
     def total_intensity(self):
         return self.intensity.sum()
+
+    def l1(self):
+        """Get l1 norm."""
+        return sum(self.intensity)
+
+    def l2(self):
+        """Get l2 norm."""
+        return np.linalg.norm(self.intensity)
 
     def trim_intensity(self, cut_off):
         """Trim intensities below the provided cut off.

@@ -79,6 +79,8 @@ class DeconvolutionProblem(nx.Graph):
         self.get_initvals()
         solvers.options['show_progress'] = bool(show_progress)
         solvers.options['maxiters'] = int(maxiters)
+        self.solve()
+        self._get_global_fit_quality()
 
     def count_nodes_and_edges(self):
         """Tag nodes and edges with distinct id numbers."""
@@ -199,6 +201,8 @@ class DeconvolutionProblem(nx.Graph):
                 self.node[G]['estimate'] += X[idx]
                 self[G][I]['estimate'] = X[idx]
 
+
+    def _get_global_fit_quality(self):
         self.status = self.solution['status']
         if self.status is 'optimal':
             self.L1_error = sum(abs(i - e) for G, i, e in
@@ -223,3 +227,13 @@ class DeconvolutionProblem(nx.Graph):
             self.L2_error = sqrt(sum(i**2 for G, i in
                                      self.node_iter('G', 'intensity')))
             self.underestimates = self.L1_error
+
+        self.total_intensity = sum(i for _, i in self.node_iter('G', 'intensity'))
+
+    def global_fit_quality(self):
+        return {'l1': self.L1_error,
+                'l2': self.L2_error,
+                'overestimates': self.overestimates,
+                'underestimates': self.underestimates,
+                'status': self.status,
+                'total intensity': self.total_intensity}

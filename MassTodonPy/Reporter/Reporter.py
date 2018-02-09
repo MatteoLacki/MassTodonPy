@@ -15,6 +15,7 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+from collections import Counter
 import csv
 import json
 import os
@@ -23,6 +24,19 @@ from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Reporter.buffers import buffers
 from MassTodonPy.Reporter.misc import Brick, Cluster, PeakGroup, ColorGenerator, make_string_represenation
 from MassTodonPy.Write.csv_tsv import write_rows
+
+
+def float2str(x):
+    if isinstance(x, float):
+        return "{:10.3f}".format(x)
+    else:
+        return x
+
+def float2strPerc(x):
+    if isinstance(x, float):
+        return "{:10.3f}%".format(x * 100)
+    else:
+        return x
 
 
 class Reporter(object):
@@ -50,6 +64,7 @@ class Reporter(object):
             the big rectangle width.
         kwds :
             Arguments to other methods.
+
         """
         self._solutions = solutions
         self._molecules = molecules
@@ -212,6 +227,68 @@ class Reporter(object):
                        m.source.fasta,
                        m.source.formula.str_with_charges(m.source.q))
 
+    def iter_global_quality_fits(self):
+        """Get global quality fits."""
+        for sol in self._solutions:
+            yield sol.global_fit_quality()
+
+    def global_quality_fits_stats(self):
+        """Iterate over statistics of global quality of fits."""
+        T = Counter()
+        for fq in self.iter_global_quality_fits():
+            status = fq.pop('status')
+            T += fq
+
+        within_tolerance = {}
+        within_tolerance['l1'] = T['l1'] / T['total intensity']
+        within_tolerance['overestimates'] = T['overestimates'] / T['total intensity']
+        within_tolerance['underestimates'] = T['underestimates'] / T['total intensity']
+
+        thresholding = {}
+        high = self._spectrum.l1()
+        thresholding['l1'] = (high + T['l1'] - T['total intensity']) / high
+        thresholding['overestimates'] = T['overestimates'] / high
+        thresholding['underestimates'] = (high - T['total intensity'] + T['underestimates']) / high
+
+        whole_spectrum = {}
+        total_intensity = self._spectrum.l1() + self._spectrum.low_spectrum.l1()
+        unassigned_intensity = total_intensity - T['total intensity']
+        whole_spectrum['l1'] = (T['l1'] + unassigned_intensity) / total_intensity
+        whole_spectrum['overestimates'] = T['overestimates'] / total_intensity
+        whole_spectrum['underestimates'] = (T['underestimates'] + unassigned_intensity) / total_intensity
+
+        return {'within tolerance': within_tolerance,
+                'after thresholding': thresholding,
+                'of the whole spectrum': whole_spectrum}
+
+
+    def iter_global_quality_fits_rows(self):
+        """Iterate over global fits quality information."""
+        col_names = ('l1', 'l2', 'overestimates','underestimates', 'total intensity', 'status')
+        yield col_names
+        T = Counter()
+        for fq in self.iter_global_quality_fits():
+            status = fq.pop('status')
+            T += fq
+            fq['status'] = status
+            yield tuple(float2str(fq[x]) for x in col_names)
+        yield ('Total','Total','Total','Total','Total')
+        yield tuple(float2str(T[x]) for x in col_names[0:-1])
+        yield (' ',)
+        yield ('Errors',)
+        yield ('l1', 'overestimates','underestimates')
+
+        stats = self.global_quality_fits_stats()
+        stats = [(t, stats[t]) for t in ('within tolerance',
+                                         'after thresholding',
+                                         'of the whole spectrum')]
+        for text, d in stats:
+            yield (float2strPerc(d['l1']),
+                   float2strPerc(d['overestimates']),
+                   float2strPerc(d['underestimates']),
+                   'relative to intensity',
+                   text)
+
     def write(self, path, include_zero_intensities=True):
         """Write results to a file.
 
@@ -225,6 +302,7 @@ class Reporter(object):
         write_rows(self.iter_local_fit_quality(), path + 'assigned_spectrum_local_fits.csv')
         write_rows(self.iter_molecule_estimates(include_zero_intensities),
                                                 path + 'estimates_of_molecule_intensities.csv')
+        write_rows(self.iter_global_quality_fits_rows(), path + 'global_fit_quality.csv')
 
     def get_assigned_spectrum_data(self):
         """Make data for the plot with assigned spectrum."""

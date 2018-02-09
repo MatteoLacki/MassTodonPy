@@ -28,6 +28,10 @@
 + Support multiple input precursors!!!
 
 # elegant
++ add l1 optmization for more robust optimization
++ the adding of spectra is far from optimal:
+    + should be some structure that will add them linearly (maintain the order)
+    + make it into a separate Python module
 + removing theoretical molecules
     + implement an algorithm that establishes empirical clusters
     + compare the empirical clusters with real datai

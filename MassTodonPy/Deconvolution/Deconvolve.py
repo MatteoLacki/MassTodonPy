@@ -115,7 +115,6 @@ def deconvolve(molecules,
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
             problem = DeconvolutionProblem(graph, **kwds)
-            problem.solve()
             yield problem
     elif method is 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
