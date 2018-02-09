@@ -45,6 +45,7 @@ class Reporter(object):
     def __init__(self,
                  solutions,
                  molecules,
+                 precursor,
                  mz_digits,
                  spectrum,
                  max_buffer_len=0.5,
@@ -68,6 +69,7 @@ class Reporter(object):
         """
         self._solutions = solutions
         self._molecules = molecules
+        self._precursor = precursor
         self._bricks = []
         self._peak_groups = []
         self._mz_digits = int(mz_digits)
@@ -261,6 +263,23 @@ class Reporter(object):
                 'after thresholding': thresholding,
                 'of the whole spectrum': whole_spectrum}
 
+    def aggregated_mols(self):
+        """Aggregated estimates of molecules."""
+        aggregated_mols = Counter()
+        for mol in self._molecules:
+            if mol.intensity > 0:
+                formula = mol.formula.str_with_charges(mol.q, mol.g)
+                aggregated_mols[(mol.name, formula)] += mol.intensity
+        out = list((k[0], k[1], v)for k, v in aggregated_mols.items())
+        out.sort(key=lambda x: x[2], reverse=True)
+        return out
+
+    def iter_aggregated_rows(self):
+        """Iter over rows with aggregated rows."""
+        agg_mols = self.aggregated_mols()
+        yield ('product', 'formula', 'estimate')
+        for info in agg_mols:
+            yield (info[0], info[1], float2str(info[-1]))
 
     def iter_global_quality_fits_rows(self):
         """Iterate over global fits quality information."""
@@ -289,6 +308,29 @@ class Reporter(object):
                    'relative to intensity',
                    text)
 
+    def aggregeted_fragment_intensities(self):
+        """Iterate over aggregated fragment results."""
+        fasta_len = len(self._precursor.fasta)
+        data = {'c': [0.0] * fasta_len,
+                'z': [0.0] * fasta_len,
+                'c_name': ['c{0}'.format(i) for i in range(fasta_len)],
+                'z_name': ['z{0}'.format(fasta_len - i) for i in range(fasta_len)]}
+
+        for name, formula, estimate in self.aggregated_mols():
+            frag_type = name[0]
+            if frag_type is not 'p':
+                no = int(name[1:])
+                frag_no = no if frag_type is 'c' else fasta_len - no
+                data[frag_type][frag_no] = estimate
+        return data
+
+    def iter_aggregated_fragment_intensities_rows(self):
+        """Get a sequence of rows for csv with aggregated fragment intensities."""
+        afi = self.aggregeted_fragment_intensities()
+        yield ('c fragment', 'intensity', 'z fragment', 'intensity')
+        for c_n, c, z_n, z in  zip(*(afi['c_name'], afi['c'], afi['z_name'], afi['z'])):
+            yield (c_n, int(c), z_n, int(z))
+
     def write(self, path, include_zero_intensities=True):
         """Write results to a file.
 
@@ -298,11 +340,18 @@ class Reporter(object):
             Path to the output you want MassTodon to save its results.
 
         """
-        write_rows(self.iter_precise_estimates(), path + 'assigned_spectrum_precise.csv')
-        write_rows(self.iter_local_fit_quality(), path + 'assigned_spectrum_local_fits.csv')
+        write_rows(self.iter_precise_estimates(),
+                   path + 'assigned_spectrum_precise.csv')
+        write_rows(self.iter_local_fit_quality(),
+                   path + 'assigned_spectrum_local_fits.csv')
         write_rows(self.iter_molecule_estimates(include_zero_intensities),
-                                                path + 'estimates_of_molecule_intensities.csv')
-        write_rows(self.iter_global_quality_fits_rows(), path + 'global_fit_quality.csv')
+                   path + 'estimates_of_molecule_intensities.csv')
+        write_rows(self.iter_global_quality_fits_rows(),
+                   path + 'global_fit_quality.csv')
+        write_rows(self.iter_aggregated_rows(),
+                   path + 'molecules_aggregated_estimates.csv')
+        write_rows(self.iter_aggregated_fragment_intensities_rows(),
+                   path + 'fragment_intensities.csv')
 
     def get_assigned_spectrum_data(self):
         """Make data for the plot with assigned spectrum."""

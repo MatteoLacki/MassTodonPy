@@ -234,6 +234,7 @@ class MassTodon(object):
         # precise report on the deconvolution
         self.report = Reporter(solutions=self._solutions,
                                molecules=self.molecules,
+                               precursor=self.precursor,
                                mz_digits=mz_digits,
                                spectrum=self.spectrum,
                                max_buffer_len=_max_buffer_len)
