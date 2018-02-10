@@ -12,7 +12,7 @@ from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-
+from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 # Parsing arguments
 parser = argparse.ArgumentParser()
@@ -129,8 +129,6 @@ if 'modifications' in masstodon_args:
 
     masstodon_args['modifications'] = parse_modifications(masstodon_args['modifications'])
 
-print(masstodon_args['modifications'])
-
 # Parse blocked_fragments:
 if 'blocked_fragments' in masstodon_args:
     masstodon_args['blocked_fragments'] = parse_blocked_fragments(masstodon_args['blocked_fragments'])
@@ -153,8 +151,9 @@ ok = False
 i = 0
 while not ok:
     try:
-        masstodon = MassTodon(**masstodon_args)
-        ok = True
+        with cvxopt_wrapper():
+            masstodon = MassTodon(**masstodon_args)
+            ok = True
     except ValueError as e:
         ok = False
         i += 1
