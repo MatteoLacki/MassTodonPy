@@ -171,7 +171,7 @@ class DeconvolutionProblem(nx.Graph):
         stop = False
         solved = False
         iteration = 1
-        while not stop or iteration is self.max_times:
+        while not stop or iteration <= self.max_times:
             setseed(randint(0, 1000000))
             try:
                 self.solution = solvers.qp(self.P, self.q, self.G,
@@ -181,7 +181,8 @@ class DeconvolutionProblem(nx.Graph):
                     stop = True
                     solved = True
             except ValueError:
-                pass
+                solved = False
+                print('Dupa')
             iteration += 1
         if not solved:
             print("Tried {} times and no optimum reached.".format(self.max_times))
