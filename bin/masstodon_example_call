@@ -28,12 +28,12 @@ if __name__ == '__main__':
     while not ok:
         try:
             with cvxopt_wrapper():
-            masstodon = MassTodon(spectrum=substanceP.spectrum,
-                                  mz_tol=.05,
-                                  fasta=substanceP.precursor.fasta,
-                                  charge=3,
-                                  name='substanceP',
-                                  modifications=modifications)
+                masstodon = MassTodon(spectrum=substanceP.spectrum,
+                                      mz_tol=.05,
+                                      fasta=substanceP.precursor.fasta,
+                                      charge=3,
+                                      name='substanceP',
+                                      modifications=modifications)
                 ok = True
         except ValueError as e:
             ok = False
