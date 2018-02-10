@@ -10,6 +10,7 @@ from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 # Parsing call
 parser = argparse.ArgumentParser()
@@ -75,7 +76,18 @@ if 'blocked_fragments' in masstodon_args:
 if args.verbose:
     print('Running MassTodon.')
     pprint(masstodon_args)
-masstodon = MassTodon(**masstodon_args)
+
+ok = False
+i = 0
+while not ok:
+    try:
+        with cvxopt_wrapper():
+            masstodon = MassTodon(**masstodon_args)
+            ok = True
+    except ValueError as e:
+        ok = False
+        i += 1
+        print('Failed '+str(i) +' times already. Fuck CVXOPT.')
 
 if args.verbose:
     print('Saving results.')
