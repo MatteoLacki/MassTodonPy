@@ -1,3 +1,5 @@
+import os
+
 class cvxopt_wrapper(object):
     """ A class that should set the number of threads used by BLAS to 1.
     Notes
