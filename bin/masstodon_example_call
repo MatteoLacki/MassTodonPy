@@ -4,6 +4,10 @@ import os
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
+from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
+
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
@@ -25,7 +29,10 @@ if __name__ == '__main__':
                           modifications=modifications)
 
     print("\t -making basic plot.")
-    masstodon.report.plot('/Users/matteo/Desktop/assigned_spectrum.html',
-                          width= 1000)
+    path = './test/'
+    masstodon.write(path)
+    bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
+    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
+    bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
 
     print("Send us your money to save MassTodons!")
