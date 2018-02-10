@@ -171,7 +171,6 @@ class DeconvolutionProblem(nx.Graph):
         stop = False
         solved = False
         iteration = 1
-        print(self.max_times)
         while not stop or iteration <= self.max_times:
             setseed(randint(0, 1000000))
             try:
@@ -183,7 +182,7 @@ class DeconvolutionProblem(nx.Graph):
                     solved = True
             except ValueError as e:
                 solved = False
-                print(self.nodes)
+                print(e)
             iteration += 1
         if not solved:
             print("Tried {} times and no optimum reached.".format(self.max_times))
