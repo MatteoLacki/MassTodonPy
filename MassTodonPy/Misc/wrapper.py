@@ -1,3 +1,5 @@
+import cvxopt
+import imp
 import os
 
 class cvxopt_wrapper(object):
