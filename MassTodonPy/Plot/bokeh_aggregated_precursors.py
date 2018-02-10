@@ -1,5 +1,7 @@
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool, Span, LabelSet
+from bokeh.resources import CDN
+from bokeh.embed import file_html
 
 from MassTodonPy.Misc.os import create_folder_if_needed
 
@@ -47,4 +49,7 @@ def bokeh_aggregated_precursors(masstodon,
     p.add_tools(hover_bars)
     if show_plot:
         show(p)
+    else:
+        with open(path, 'w') as f:
+            f.write(file_html(p, CDN, path))
     return p

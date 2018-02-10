@@ -1,5 +1,7 @@
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool, Span, LabelSet
+from bokeh.resources import CDN
+from bokeh.embed import file_html
 
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Misc.os import create_folder_if_needed
@@ -27,7 +29,9 @@ def bokeh_fragments_intensity(masstodon,
 
     """
     create_folder_if_needed(path)
-    output_file(path, mode=mode)
+    # output_file(path, mode=mode)
+    output_file(path, mode='cdn')
+
     afi = masstodon.report.aggregeted_fragment_intensities()
     afi['z_minus'] = [-v for v in afi['z']]
 
@@ -57,4 +61,7 @@ def bokeh_fragments_intensity(masstodon,
     # p.add_layout([labels_z, labels_c])
     if show_plot:
         show(p)
+    else:
+        with open(path, 'w') as f:
+            f.write(file_html(p, CDN, path))
     return p

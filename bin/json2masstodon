@@ -7,6 +7,9 @@ from pprint import pprint
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.Parsers.blocked_fragments import parse_blocked_fragments
 from MassTodonPy.Parsers.Paths import parse_path
+from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
+from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 
 # Parsing call
 parser = argparse.ArgumentParser()
@@ -17,7 +20,15 @@ parser.add_argument("--plot",
                     action='store_const',
                     const=True,
                     default=False,
-                    help="Print out the messages from MassTodon.")
+                    help="Make bokeh plots.")
+
+parser.add_argument("--show",
+                    dest='show',
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Show bokeh plots.")
+
 parser.add_argument("--verbose",
                     dest='verbose',
                     action='store_const',
@@ -42,7 +53,6 @@ def add_backslash(p):
 if u'deconvolution_method' in masstodon_args:
     method = masstodon_args.pop('deconvolution_method')
     masstodon_args['method'] = method
-pprint(masstodon_args)
 
 # Parsing output file
 output = add_backslash(masstodon_args.pop('output'))
@@ -56,7 +66,7 @@ for k in modifications.keys():
     modifications[int(k)] = v
 
 masstodon_args['modifications'] = modifications
-pprint(masstodon_args)
+
 
 # Parsing blocked_fragments:
 if 'blocked_fragments' in masstodon_args:
@@ -64,6 +74,7 @@ if 'blocked_fragments' in masstodon_args:
 
 if args.verbose:
     print('Running MassTodon.')
+    pprint(masstodon_args)
 masstodon = MassTodon(**masstodon_args)
 
 if args.verbose:
@@ -74,8 +85,15 @@ masstodon.report.write(results_path)
 if args.plot:
     if args.verbose:
         print('Plotting.')
-    plot_path = output + 'assigned_spectrum.html'
-    width = int(args.width) if args.width else None
-    height = int(args.height) if args.height else None
-    masstodon.report.plot(plot_path, width=width, height=height)
+        print(output)
+    spec = bokeh_spectrum(masstodon=masstodon,
+                          path=output + 'assigned_spectrum.html',
+                          show_plot=args.show)
+    prec = bokeh_aggregated_precursors(masstodon=masstodon,
+                                       path=output + 'aggregated_precusors.html',
+                                       show_plot=args.show)
+    frag = bokeh_fragments_intensity(masstodon=masstodon,
+                                     path=output + 'fragment_intensities.html',
+                                     show_plot=args.show)
+
 print('\nThank you for using MassTodonPy!\n')
