@@ -183,7 +183,7 @@ class DeconvolutionProblem(nx.Graph):
                     solved = True
             except ValueError as e:
                 solved = False
-                print('iteration')
+                print(self.nodes)
             iteration += 1
         if not solved:
             print("Tried {} times and no optimum reached.".format(self.max_times))
