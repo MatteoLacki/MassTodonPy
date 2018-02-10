@@ -148,7 +148,17 @@ if not os.path.exists(output_path):
 
 if args.verbose:
     print('Running MassTodon.')
-masstodon = MassTodon(**masstodon_args)
+
+ok = False
+i = 0
+while not ok:
+    try:
+        masstodon = MassTodon(**masstodon_args)
+        ok = True
+    except ValueError as e:
+        ok = False
+        i += 1
+        print('Failed {0} times already. Fuck CVXOPT.').format(i)
 
 if args.verbose:
     print('Saving results.')
