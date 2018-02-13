@@ -29,7 +29,7 @@ from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 
-bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
+bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', width=300, height=400)
 bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
 bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
 
