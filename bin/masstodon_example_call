@@ -10,6 +10,7 @@ from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 
+
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
 
@@ -25,26 +26,27 @@ if __name__ == '__main__':
 
     ok = False
     i = 0
-    while not ok:
-        try:
-            with cvxopt_wrapper():
-                masstodon = MassTodon(spectrum=substanceP.spectrum,
+    #while not ok:
+    #    try:
+    #        with cvxopt_wrapper():
+    masstodon = MassTodon(spectrum=substanceP.spectrum,
                                       mz_tol=.05,
                                       fasta=substanceP.precursor.fasta,
                                       charge=3,
                                       name='substanceP',
                                       modifications=modifications)
-                ok = True
-        except ValueError as e:
-            ok = False
-            i += 1
-            print('Failed '+str(i) +' times already. Fuck CVXOPT.')
+            #    ok = True
+        #except ValueError as e:
+         #   ok = False
+
+    #  i += 1
+    # print('Failed '+str(i) +' times already because of fucking CVXOPT.')
 
     print("\t -making basic plot.")
     path = './test/'
     masstodon.write(path)
-    bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
-    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
-    bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
+    bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', show_plot=False)
+    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html', show_plot=False)
+    bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html', show_plot=False)
 
     print("Send us your money to save MassTodons!")

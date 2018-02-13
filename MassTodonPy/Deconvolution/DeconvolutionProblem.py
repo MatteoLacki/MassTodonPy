@@ -18,14 +18,17 @@
 
 from __future__ import absolute_import, division, print_function
 from collections import Counter
+import cvxopt
 from cvxopt import matrix, spmatrix, sparse, spdiag, solvers, setseed
 from future.builtins import super
+import imp
 from math import sqrt
 import networkx as nx
 from random import randint
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.Misc import diag, normalize_rows
+from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 #TODO: try to eliminate copying while instantiating
 #TODO: turn the matrix generators into iterators
@@ -173,13 +176,21 @@ class DeconvolutionProblem(nx.Graph):
         iteration = 1
         while not stop or iteration <= self.max_times:
             setseed(randint(0, 1000000))
-            # try:
-            self.solution = solvers.qp(self.P, self.q, self.G,
-                                       self.h, self.A, self.b,
-                                       initvals=self.initvals)
-            if self.solution['status'] is 'optimal':
-                stop = True
-                solved = True
+            try:
+                imp.reload(cvxopt)
+                with cvxopt_wrapper():
+                    self.solution = solvers.qp(self.P, self.q, self.G,
+                                               self.h, self.A, self.b,
+                                               initvals=self.initvals)
+                    if self.solution['status'] is 'optimal':
+                        stop = True
+                        solved = True
+            except ValueError as e:
+                print(e)
+
+            #if self.solution['status'] is 'optimal':
+            #    stop = True
+            #    solved = True
             # except ValueError as e:
             #     pass
             iteration += 1
