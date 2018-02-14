@@ -122,16 +122,12 @@ def deconvolve(molecules,
             max_iters = 10
             while not solved and iters < max_iters:
                 try:
-                    #with cvxopt_wrapper():
-                    imp.reload(cvxopt)
-                    print(kwds)
                     problem = DeconvolutionProblem(graph, **kwds)
                     yield problem
                     solved = True
                 except ValueError:
                     print(iters)
                     solved = False
-                    print(graph.nodes)
                 iters += 1
             if not solved:
                 print('Fuck fuck fuck!!!')

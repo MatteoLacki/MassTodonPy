@@ -176,12 +176,22 @@ class DeconvolutionProblem(nx.Graph):
         iteration = 1
         while not stop and iteration <= self.max_times:
             setseed(randint(0, 1000000))
-             #try:
-   #             imp.reload(cvxopt)
-   #        <     with cvxopt_wrapper():
-            self.solution = solvers.qp(self.P, self.q, self.G,
+            try:
+                self.solution = solvers.qp(self.P, self.q, self.G,
                                                self.h, self.A, self.b,
                                                initvals=self.initvals)
+            except ValueError as e:
+                print('Nodes:\n', self.nodes)
+                print('Edges:\n', self.edges)
+                print('P\n', self.P)
+                print('q\n', self.q)
+                print('G\n', self.G)
+                print('h\n', self.h)
+                print('A\n', self.A)
+                print('b\n', self.b)
+                print('initvals:\n', self.initvals)
+                raise ValueError('Chuj numeryczny.')
+                print('Trying again: iteration', iteration)
             if self.solution['status'] is 'optimal':
                 stop = True
                 solved = True
