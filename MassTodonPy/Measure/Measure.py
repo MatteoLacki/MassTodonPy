@@ -184,12 +184,14 @@ class Measure(object):
             heighest masses.
 
         """
+        # TODO replace this with something brighter, as linearly operating heap.
         assert 0.0 <= P <= 1.0, "Wrong P for P-optimal set."
         total_value = self.masses.sum()
         i = 0
         S = 0.0
-        for intensity in self.masses:
-            S += intensity/total_value
+        masses = np.sort(self.masses)[::-1]
+        for intensity in masses:
+            S += intensity
             if S < P:
                 break
         return intensity

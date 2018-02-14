@@ -174,19 +174,20 @@ class DeconvolutionProblem(nx.Graph):
         stop = False
         solved = False
         iteration = 1
-        while not stop or iteration <= self.max_times:
+        while not stop and iteration <= self.max_times:
             setseed(randint(0, 1000000))
-            try:
-                imp.reload(cvxopt)
-                with cvxopt_wrapper():
-                    self.solution = solvers.qp(self.P, self.q, self.G,
+             #try:
+   #             imp.reload(cvxopt)
+   #        <     with cvxopt_wrapper():
+            self.solution = solvers.qp(self.P, self.q, self.G,
                                                self.h, self.A, self.b,
                                                initvals=self.initvals)
-                    if self.solution['status'] is 'optimal':
-                        stop = True
-                        solved = True
-            except ValueError as e:
-                print(e)
+            if self.solution['status'] is 'optimal':
+                stop = True
+                solved = True
+            #except ValueError as e:
+            #    print(e)
+            #    print(iteration, self.max_times)
 
             #if self.solution['status'] is 'optimal':
             #    stop = True

@@ -19,12 +19,15 @@
 
 from collections import Counter
 from collections import defaultdict
+import cvxopt
+import imp
 import networkx as nx
 from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
 from MassTodonPy.Deconvolution.Wanda_Ciacho_DeconvolutionProblem import GaussianDeconvolutionProblem
+# from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 def deconvolve(molecules,
                spectrum,
@@ -114,8 +117,24 @@ def deconvolve(molecules,
         _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
-            problem = DeconvolutionProblem(graph, **kwds)
-            yield problem
+            iters = 0
+            solved = False
+            max_iters = 10
+            while not solved and iters < max_iters:
+                try:
+                    #with cvxopt_wrapper():
+                    imp.reload(cvxopt)
+                    print(kwds)
+                    problem = DeconvolutionProblem(graph, **kwds)
+                    yield problem
+                    solved = True
+                except ValueError:
+                    print(iters)
+                    solved = False
+                    print(graph.nodes)
+                iters += 1
+            if not solved:
+                print('Fuck fuck fuck!!!')
     elif method is 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:

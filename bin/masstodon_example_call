@@ -26,19 +26,25 @@ if __name__ == '__main__':
 
     ok = False
     i = 0
-    #while not ok:
-    #    try:
-    #        with cvxopt_wrapper():
-    masstodon = MassTodon(spectrum=substanceP.spectrum,
+    while not ok:
+        try:
+            with cvxopt_wrapper():
+                masstodon = MassTodon(spectrum=substanceP.spectrum,
+                                      # min_intensity=50,
+                                      # percent_top_peaks=.99,
                                       mz_tol=.05,
                                       fasta=substanceP.precursor.fasta,
                                       charge=3,
                                       name='substanceP',
-                                      modifications=modifications)
-            #    ok = True
-        #except ValueError as e:
-         #   ok = False
+                                      modifications=modifications,
+                                      _L1_flow=.01,
+                                      _L2_flow=.01)
+                ok = True
+        except ValueError as e:
+            ok = False
+            print(e)
 
+    # print(masstodon.spectrum.min_intensity)
     #  i += 1
     # print('Failed '+str(i) +' times already because of fucking CVXOPT.')
 

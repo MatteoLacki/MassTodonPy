@@ -78,7 +78,7 @@ class Spectrum(Measure):
         if self.min_intensity > eps:
             self.low_spectrum += self.split_measure(self.min_intensity)
         self.percent_top_peaks = float(percent_top_peaks)
-        if 0 < self.percent_top_peaks < 1:
+        if 0 <= self.percent_top_peaks < 1:
             self.min_intensity = self.get_P_set_cut_off(self.percent_top_peaks)
             self.low_spectrum += self.split_measure(self.min_intensity)
 
