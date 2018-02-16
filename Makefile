@@ -31,6 +31,12 @@ tests:  ## run all possible tests.
 	$(NOSE_2) MassTodonPy
 	$(NOSE_3) MassTodonPy
 
+tests2:
+	$(NOSE_2)
+
+tests3:
+	$(NOSE_3)
+
 clean_masstodon_2: ## remove virtual environment with python2
 	rm -rf ../MassTodonVEpy2
 
