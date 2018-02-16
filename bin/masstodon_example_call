@@ -9,7 +9,7 @@ from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precur
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 
-
+devel = True
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
@@ -24,32 +24,38 @@ if __name__ == '__main__':
 
     print("\t- running MassTodonPy.")
 
-    ok = False
-    i = 0
-    while not ok:
-        try:
-            with cvxopt_wrapper():
-                masstodon = MassTodon(spectrum=substanceP.spectrum,
-                                      # min_intensity=50,
-                                      # percent_top_peaks=.99,
-                                      mz_tol=.05,
-                                      fasta=substanceP.precursor.fasta,
-                                      charge=3,
-                                      name='substanceP',
-                                      modifications=modifications,
-                                      _L1_flow=.01,
-                                      _L2_flow=.01)
-                ok = True
-        except ValueError as e:
-            ok = False
-            print(e)
-
-    # print(masstodon.spectrum.min_intensity)
-    #  i += 1
-    # print('Failed '+str(i) +' times already because of fucking CVXOPT.')
-
+    if not devel:
+        ok = False
+        i = 0
+        while not ok:
+            try:
+                with cvxopt_wrapper():
+                    masstodon = MassTodon(spectrum=substanceP.spectrum,
+                                          # min_intensity=50,
+                                          # percent_top_peaks=.99,
+                                          mz_tol=.05,
+                                          fasta=substanceP.precursor.fasta,
+                                          charge=3,
+                                          name='substanceP',
+                                          modifications=modifications,
+                                          _L1_flow=.01,
+                                          _L2_flow=.01)
+                    ok = True
+            except ValueError as e:
+                ok = False
+                print(e)
+    else:
+        print('DEVEL MODE')
+        masstodon = MassTodon(spectrum=substanceP.spectrum,
+                              mz_tol=.05,
+                              fasta=substanceP.precursor.fasta,
+                              charge=3,
+                              name='substanceP',
+                              modifications=modifications,
+                              _L1_flow=.01,
+                              _L2_flow=.01)
     print("\t- making basic plot.")
-    path = './test/'
+    path  = './test/'
     masstodon.write(path)
     bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', show_plot=False)
     bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html', show_plot=False)
