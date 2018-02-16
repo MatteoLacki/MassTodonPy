@@ -35,6 +35,7 @@ def deconvolve(molecules,
                mz_tol=.05,
                min_prob_per_molecule=.7,
                _merge_sister_Is=True,
+               _devel=False,
                **kwds):
     """Get the sequence of deconvolution problems.
 
@@ -114,23 +115,34 @@ def deconvolve(molecules,
 
     #TODO Here double copying. Optimize.
     if method is 'Matteo':
-        _add_G_remove_E(graph)
-        graphs = connected_component_subgraphs(graph)
-        for graph in graphs:
-            iters = 0
-            solved = False
-            max_iters = 10
-            while not solved and iters < max_iters:
-                try:
-                    problem = DeconvolutionProblem(graph, **kwds)
-                    yield problem
-                    solved = True
-                except ValueError:
-                    print(iters)
-                    solved = False
-                iters += 1
-            if not solved:
-                print('Fuck fuck fuck!!!')
+        if _devel:
+            print('DEVEL MODE: Deconvolve.py')
+            _add_G_remove_E(graph)
+            graphs = connected_component_subgraphs(graph)
+            for graph in graphs:
+                iters = 0
+                solved = False
+                max_iters = 10
+                problem = DeconvolutionProblem(graph, **kwds)
+                yield problem
+        else:
+            _add_G_remove_E(graph)
+            graphs = connected_component_subgraphs(graph)
+            for graph in graphs:
+                iters = 0
+                solved = False
+                max_iters = 10
+                while not solved and iters < max_iters:
+                    try:
+                        problem = DeconvolutionProblem(graph, **kwds)
+                        yield problem
+                        solved = True
+                    except ValueError:
+                        print(iters)
+                        solved = False
+                    iters += 1
+                if not solved:
+                    print('Fuck fuck fuck!!!')
     elif method is 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:

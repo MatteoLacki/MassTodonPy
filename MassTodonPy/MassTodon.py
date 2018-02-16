@@ -212,15 +212,14 @@ class MassTodon(object):
         # annotated connected components of the deconvolution graph
         self.deconvolution_method = deconvolution_method
         success = False
-        while not success:
-            try:
-                with cvxopt_wrapper():
-                    self._solutions = deconvolve(molecules=self.molecules,
-                                            spectrum=self.spectrum,
-                                            method=self.deconvolution_method,
-                                            mz_tol=mz_tol,
-                                            min_prob_per_molecule=min_prob_per_molecule,
-                                            joint_probability=joint_probability,
+        if _devel:
+            print('DEVEL MODE: MassTodon.py')
+            self._solutions = deconvolve(molecules=self.molecules,
+                                        spectrum=self.spectrum,
+                                        method=self.deconvolution_method,
+                                        mz_tol=mz_tol,
+                                        min_prob_per_molecule=min_prob_per_molecule,
+                                        joint_probability=joint_probability,
                                         mz_digits=mz_digits,
                                         L1_flow=_L1_flow,
                                         L2_flow=_L2_flow,
@@ -230,11 +229,33 @@ class MassTodon(object):
                                         show_progress=_show_progress,
                                         maxiters=_maxiters,
                                         sigma2=sigma2,
-                                        _ni2=ni2)
-                success = True
-            except ValueError as e:
-                print(e)
-                success = False
+                                        _ni2=ni2,
+                                        _devel=True)
+
+        else:
+            while not success:
+                try:
+                    with cvxopt_wrapper():
+                        self._solutions = deconvolve(molecules=self.molecules,
+                                                spectrum=self.spectrum,
+                                                method=self.deconvolution_method,
+                                                mz_tol=mz_tol,
+                                                min_prob_per_molecule=min_prob_per_molecule,
+                                                joint_probability=joint_probability,
+                                                mz_digits=mz_digits,
+                                                L1_flow=_L1_flow,
+                                                L2_flow=_L2_flow,
+                                                L1_intensity=_L1_intensity,
+                                                L2_intensity=_L2_intensity,
+                                            max_times=_max_times,
+                                            show_progress=_show_progress,
+                                            maxiters=_maxiters,
+                                            sigma2=sigma2,
+                                            _ni2=ni2)
+                    success = True
+                except ValueError as e:
+                    print(e)
+                    success = False
 
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self._solutions = list(self._solutions)

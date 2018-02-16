@@ -53,7 +53,8 @@ if __name__ == '__main__':
                               name='substanceP',
                               modifications=modifications,
                               _L1_flow=.01,
-                              _L2_flow=.01)
+                              _L2_flow=.01,
+                              _devel=True)
     print("\t- making basic plot.")
     path  = './test/'
     masstodon.write(path)

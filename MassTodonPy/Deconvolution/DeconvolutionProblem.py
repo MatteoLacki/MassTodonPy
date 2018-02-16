@@ -178,8 +178,8 @@ class DeconvolutionProblem(nx.Graph):
             setseed(randint(0, 1000000))
             try:
                 self.solution = solvers.qp(self.P, self.q, self.G,
-                                               self.h, self.A, self.b,
-                                               initvals=self.initvals)
+                                           self.h, self.A, self.b,
+                                           initvals=self.initvals)
             except ValueError as e:
                 print('Nodes:\n', self.nodes)
                 print('Edges:\n', self.edges)
@@ -195,16 +195,6 @@ class DeconvolutionProblem(nx.Graph):
             if self.solution['status'] is 'optimal':
                 stop = True
                 solved = True
-            #except ValueError as e:
-            #    print(e)
-            #    print(iteration, self.max_times)
-
-            #if self.solution['status'] is 'optimal':
-            #    stop = True
-            #    solved = True
-            # except ValueError as e:
-            #     pass
-            iteration += 1
         if not solved:
             print("Tried {} times and no optimum reached.".format(self.max_times))
 
