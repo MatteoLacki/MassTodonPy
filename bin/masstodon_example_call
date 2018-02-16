@@ -12,7 +12,7 @@ from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 devel = True
 
 if __name__ == '__main__':
-    os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
+    # os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
 
     print("Welcome to MassTodon example call.")
 
