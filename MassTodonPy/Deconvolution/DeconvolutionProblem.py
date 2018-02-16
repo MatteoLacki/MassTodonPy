@@ -28,7 +28,7 @@ from random import randint
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.Misc import diag, normalize_rows
-from MassTodonPy.Misc.wrapper import cvxopt_wrapper
+from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 
 #TODO: try to eliminate copying while instantiating
 #TODO: turn the matrix generators into iterators

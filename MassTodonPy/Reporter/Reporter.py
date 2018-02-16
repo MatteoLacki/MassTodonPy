@@ -239,7 +239,7 @@ class Reporter(object):
         T = Counter()
         for fq in self.iter_global_quality_fits():
             status = fq.pop('status')
-            T += fq
+            T += Counter(fq)
 
         within_tolerance = {}
         within_tolerance['l1'] = T['l1'] / T['total intensity']
@@ -288,7 +288,7 @@ class Reporter(object):
         T = Counter()
         for fq in self.iter_global_quality_fits():
             status = fq.pop('status')
-            T += fq
+            T += Counter(fq)
             fq['status'] = status
             yield tuple(float2str(fq[x]) for x in col_names)
         yield ('Total','Total','Total','Total','Total')

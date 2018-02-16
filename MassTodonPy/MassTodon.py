@@ -73,7 +73,7 @@ from MassTodonPy.Data.Constants import eps
 from MassTodonPy.Deconvolution.Deconvolve import deconvolve
 from MassTodonPy.MatchMaker.CzMatch import CzMatch
 from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
-from MassTodonPy.Misc.wrapper import cvxopt_wrapper
+from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 from MassTodonPy.Precursor.Precursor import Precursor

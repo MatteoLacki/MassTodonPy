@@ -10,10 +10,11 @@ class cvxopt_wrapper(object):
     This is important when running CVXOPT in any script that uses multiprocessing.
     """
     def __enter__(self):
-        self.old = os.environ.get('OMP_NUM_THREADS', None)
-        os.environ['OMP_NUM_THREADS'] = "1"
+        #self.old = os.environ.get('OMP_NUM_THREADS', None)
+        #os.environ['OMP_NUM_THREADS'] = "1"
         imp.reload(cvxopt)
 
     def __exit__(self, type, value, traceback):
-        if self.old:
-            os.environ['OMP_NUM_THREADS'] = self.old
+        pass
+        #if self.old:
+        #    os.environ['OMP_NUM_THREADS'] = self.old

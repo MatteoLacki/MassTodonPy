@@ -7,7 +7,7 @@ from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
-from MassTodonPy.Misc.wrapper import cvxopt_wrapper
+from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 
 
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     #  i += 1
     # print('Failed '+str(i) +' times already because of fucking CVXOPT.')
 
-    print("\t -making basic plot.")
+    print("\t- making basic plot.")
     path = './test/'
     masstodon.write(path)
     bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', show_plot=False)

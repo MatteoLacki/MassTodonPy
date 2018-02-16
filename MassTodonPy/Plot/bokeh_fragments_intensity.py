@@ -4,7 +4,7 @@ from bokeh.resources import CDN
 from bokeh.embed import file_html
 
 from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.Misc.os import create_folder_if_needed
+from MassTodonPy.Misc.io import create_folder_if_needed
 
 def bokeh_fragments_intensity(masstodon,
                               path="assigned_spectrum.html",

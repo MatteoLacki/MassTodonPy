@@ -3,7 +3,7 @@ from bokeh.models import HoverTool, Span, LabelSet
 from bokeh.resources import CDN
 from bokeh.embed import file_html
 
-from MassTodonPy.Misc.os import create_folder_if_needed
+from MassTodonPy.Misc.io import create_folder_if_needed
 
 
 def bokeh_aggregated_precursors(masstodon,
