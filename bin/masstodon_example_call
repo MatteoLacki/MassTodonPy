@@ -10,7 +10,7 @@ from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 
 if __name__ == '__main__':
-    print("\nWelcome to MassTodon example call.\n")
+    print("\nWelcome to MassTodon example call.")
 
     print("\t- reading data.")
     substanceP = get_dataset('substanceP')

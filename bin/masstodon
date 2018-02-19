@@ -157,7 +157,7 @@ while not ok:
     except ValueError as e:
         ok = False
         i += 1
-        print('Failed '+str(i) +' times already. Fuck CVXOPT.')
+        print('Failed '+str(i) +' times already. Try to install devel version of CVXOPT.')
 
 if args.verbose:
     print('Saving results.')
