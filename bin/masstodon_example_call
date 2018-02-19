@@ -9,12 +9,8 @@ from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precur
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
 
-devel = True
-
 if __name__ == '__main__':
-    # os.system('cls' if os.name == 'nt' else 'clear') #TODO: remove later on.
-
-    print("Welcome to MassTodon example call.")
+    print("\nWelcome to MassTodon example call.\n")
 
     print("\t- reading data.")
     substanceP = get_dataset('substanceP')
@@ -24,37 +20,15 @@ if __name__ == '__main__':
 
     print("\t- running MassTodonPy.")
 
-    if not devel:
-        ok = False
-        i = 0
-        while not ok:
-            try:
-                with cvxopt_wrapper():
-                    masstodon = MassTodon(spectrum=substanceP.spectrum,
-                                          # min_intensity=50,
-                                          # percent_top_peaks=.99,
-                                          mz_tol=.05,
-                                          fasta=substanceP.precursor.fasta,
-                                          charge=3,
-                                          name='substanceP',
-                                          modifications=modifications,
-                                          _L1_flow=.01,
-                                          _L2_flow=.01)
-                    ok = True
-            except ValueError as e:
-                ok = False
-                print(e)
-    else:
-        print('DEVEL MODE')
-        masstodon = MassTodon(spectrum=substanceP.spectrum,
-                              mz_tol=.05,
-                              fasta=substanceP.precursor.fasta,
-                              charge=3,
-                              name='substanceP',
-                              modifications=modifications,
-                              _L1_flow=.01,
-                              _L2_flow=.01,
-                              _devel=True)
+    masstodon = MassTodon(spectrum=substanceP.spectrum,
+                          mz_tol=.05,
+                          fasta=substanceP.precursor.fasta,
+                          charge=3,
+                          name='substanceP',
+                          modifications=modifications,
+                          _L1_flow=.01,
+                          _L2_flow=.01)
+    
     print("\t- making basic plot.")
     path  = './test/'
     masstodon.write(path)

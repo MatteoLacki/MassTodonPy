@@ -115,34 +115,14 @@ def deconvolve(molecules,
 
     #TODO Here double copying. Optimize.
     if method is 'Matteo':
-        if _devel:
-            print('DEVEL MODE: Deconvolve.py')
-            _add_G_remove_E(graph)
-            graphs = connected_component_subgraphs(graph)
-            for graph in graphs:
-                iters = 0
-                solved = False
-                max_iters = 10
-                problem = DeconvolutionProblem(graph, **kwds)
-                yield problem
-        else:
-            _add_G_remove_E(graph)
-            graphs = connected_component_subgraphs(graph)
-            for graph in graphs:
-                iters = 0
-                solved = False
-                max_iters = 10
-                while not solved and iters < max_iters:
-                    try:
-                        problem = DeconvolutionProblem(graph, **kwds)
-                        yield problem
-                        solved = True
-                    except ValueError:
-                        print(iters)
-                        solved = False
-                    iters += 1
-                if not solved:
-                    print('Fuck fuck fuck!!!')
+        _add_G_remove_E(graph)
+        graphs = connected_component_subgraphs(graph)
+        for graph in graphs:
+            iters = 0
+            solved = False
+            max_iters = 10
+            problem = DeconvolutionProblem(graph, **kwds)
+            yield problem
     elif method is 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
