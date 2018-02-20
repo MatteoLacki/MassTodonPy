@@ -1,10 +1,19 @@
 import json
-from MassTodonPy.MassTodon import MassTodon
 
-def run_masstodon(args,
-                  output_path,
-                  _max_times=10,
-                  verbose=False):
+from MassTodonPy.MassTodon import MassTodon
+from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
+
+
+def run_masstodon(masstodon_args,
+                  output,
+                  spectrum_plot_args={},
+                  aggregated_precursors_plot_args={},
+                  fragments_intensity_plot_args={},
+                  _max_times_run_masstodon=10,
+                  _verbose=False,
+                  **kwds):
     '''Run MassTodonPy.
 
     Parameters
@@ -19,34 +28,33 @@ def run_masstodon(args,
     '''
     i = 0
     Finished = False
-    while i < _max_times or Finished:
+    while not Finished and i < _max_times_run_masstodon:
         try:
-            masstodon = MassTodon(**args)
-            if args.verbose:
-                print('Saving results.')
-            results_path = output_path + 'assigned_spectrum.csv'
+            masstodon = MassTodon(**masstodon_args)
+            if _verbose:
+                print('\tSaving results.')
+            results_path = output + 'assigned_spectrum.csv'
             masstodon.report.write(results_path)
-            masstodon.write(output_path)
-            if verbose:
-                print('Plotting.')
-            plot_path = output_path + 'assigned_spectrum.html'
-            if args.spectrum_plot:
+            masstodon.write(output)
+            if _verbose:
+                print('\tPlotting.')
+            plot_path = output + 'assigned_spectrum.html'
+            if spectrum_plot_args:
                 spec = bokeh_spectrum(masstodon=masstodon,
-                                      path=output_path + 'assigned_spectrum.html',
-                                      **args)
-            if aggregated_precusors_plot_args:
+                                      path=output+'assigned_spectrum.html',
+                                      **spectrum_plot_args)
+            if aggregated_precursors_plot_args:
                 prec = bokeh_aggregated_precursors(masstodon=masstodon,
-                                                   path=output_path + 'aggregated_precusors.html',
-                                                   **aggregated_precusors_plot_args)
+                                                   path=output+'aggregated_precusors.html',
+                                                   **aggregated_precursors_plot_args)
             if fragments_intensity_plot_args:
                 frag = bokeh_fragments_intensity(masstodon=masstodon,
-                                                 path=output_path + 'fragment_intensities.html',
+                                                 path=output+'fragment_intensities.html',
                                                  **fragments_intensity_plot_args)
-            print('\nThank you for using MassTodonPy!\n')
             Finished = True
         except ValueError:
             i += 1
-            print('Failed '+str(i) +' times out of {0} already due to CVXOPT.'.format(_max_times))
+            print('Failed '+str(i) +' times out of {0} already due to CVXOPT.'.format(_max_times_run_masstodon))
     if not Finished:
-        print('We tried {0} times to run MassTodon, but CVXOPT always crushed.'.format(_max_times))
+        print('We tried {0} times to run MassTodon, but CVXOPT always crushed.'.format(_max_times_run_masstodon))
         print('Switch to more stable Python2.7.')

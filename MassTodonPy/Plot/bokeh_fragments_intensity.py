@@ -27,9 +27,9 @@ from MassTodonPy.Misc.io import create_folder_if_needed
 def bokeh_fragments_intensity(masstodon,
                               path="fragments_intensity.html",
                               mode="inline",
-                              show_plot=True,
-                              plot_width=1000,
-                              plot_height=400,
+                              show=True,
+                              width=1000,
+                              height=400,
                               **kwds):
     """Make a plot of the intensity of fragments.
 
@@ -52,12 +52,8 @@ def bokeh_fragments_intensity(masstodon,
     output_file(path, mode='cdn')
     afi = masstodon.report.aggregeted_fragment_intensities()
     afi['z_minus'] = [-v for v in afi['z']]
-    if width and height:
-        p = figure(plot_width=int(plot_width),
-                   plot_height=int(plot_height))
-    else:
-        p = figure()
-
+    p = figure(plot_width=int(width),
+               plot_height=int(height))
     p.xaxis.axis_label = 'Cleavage Site'
     p.yaxis.axis_label = 'Estimated Intensity'
     afi['x'] = list(range(len(afi['z'])))
