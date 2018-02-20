@@ -41,7 +41,7 @@ class Precursor(object):
         Value: a dictionary with group modifications.
             Keys : C_carbo, C_alpha, or N.
             Value: atom count in form of a linearCounter.
-    fragmentation_type: str
+    fragments: str
         For now 'cz' only, but we are working on it.
     blocked_fragments : list
         Fragments you don't want to include, e.g. 'z5'.
@@ -58,7 +58,7 @@ class Precursor(object):
                  charge,
                  name="",
                  modifications={},
-                 fragmentation_type="cz",
+                 fragments="cz",
                  blocked_fragments=set(['c0']),
                  distance_charges=5,
                  **kwds):
@@ -73,7 +73,7 @@ class Precursor(object):
                            for number in range(len(self))
                            for group in self.groups)
         self.blocked_fragments = blocked_fragments
-        self.fragmentation_type = fragmentation_type
+        self.fragments = fragments
         self.distance_charges = int(distance_charges)
         for i, f in enumerate(self.fasta):
             if f == 'P':
@@ -161,10 +161,10 @@ class Precursor(object):
     def uncharged_molecules(self):
         """Generate uncharged molecules."""
         yield ('precursor', self.formula.copy())
-        if 'c' in self.fragmentation_type:
+        if 'c' in self.fragments:
             for c_frags in self.c_fragments():
                 yield c_frags
-        if 'z' in self.fragmentation_type:
+        if 'z' in self.fragments:
             for z_frags in self.z_fragments():
                 yield z_frags
 

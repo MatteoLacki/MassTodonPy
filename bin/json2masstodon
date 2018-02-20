@@ -77,35 +77,31 @@ if args.verbose:
     print('Running MassTodon.')
     pprint(masstodon_args)
 
-ok = False
 i = 0
-while not ok:
+while i < 10:
     try:
-        with cvxopt_wrapper():
-            masstodon = MassTodon(**masstodon_args)
-            ok = True
+        masstodon = MassTodon(**masstodon_args)
+        if args.verbose:
+            print('Saving results.')
+        results_path = output + 'assigned_spectrum.csv'
+        masstodon.report.write(results_path)
+
+        if args.plot:
+            if args.verbose:
+                print('Plotting.')
+                print(output)
+            spec = bokeh_spectrum(masstodon=masstodon,
+                                  path=output + 'assigned_spectrum.html',
+                                  show_plot=args.show)
+            prec = bokeh_aggregated_precursors(masstodon=masstodon,
+                                               path=output + 'aggregated_precusors.html',
+                                               show_plot=args.show)
+            frag = bokeh_fragments_intensity(masstodon=masstodon,
+                                             path=output + 'fragment_intensities.html',
+                                             show_plot=args.show)
+
+        print('\nThank you for using MassTodonPy!\n')
+
     except ValueError as e:
-        ok = False
         i += 1
-        print('Failed '+str(i) +' times already. Fuck CVXOPT.')
-
-if args.verbose:
-    print('Saving results.')
-results_path = output + 'assigned_spectrum.csv'
-masstodon.report.write(results_path)
-
-if args.plot:
-    if args.verbose:
-        print('Plotting.')
-        print(output)
-    spec = bokeh_spectrum(masstodon=masstodon,
-                          path=output + 'assigned_spectrum.html',
-                          show_plot=args.show)
-    prec = bokeh_aggregated_precursors(masstodon=masstodon,
-                                       path=output + 'aggregated_precusors.html',
-                                       show_plot=args.show)
-    frag = bokeh_fragments_intensity(masstodon=masstodon,
-                                     path=output + 'fragment_intensities.html',
-                                     show_plot=args.show)
-
-print('\nThank you for using MassTodonPy!\n')
+        print('Failed '+str(i) +' times already. CVXOPT crushed: use Python2.7.')

@@ -25,7 +25,7 @@ path = '/Users/matteo/Desktop/test/'
 
 agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
 agg_mols
-
+masstodon.
 
 
 masstodon.report.aggregeted_fragment_intensities()
@@ -33,15 +33,13 @@ masstodon.report.aggregeted_fragment_intensities()
 masstodon.write(path)
 
 
-
-
 # from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 # from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 # from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
-#
-# bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
-# bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
-# bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
+
+bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
+bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
+bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool, Span, LabelSet, FactorRange

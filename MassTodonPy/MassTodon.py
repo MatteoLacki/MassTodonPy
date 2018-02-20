@@ -90,7 +90,7 @@ class MassTodon(object):
                  mz_digits=-10.,
                  name="",
                  modifications={},
-                 fragmentation_type="cz",
+                 fragments="cz",
                  blocked_fragments=set(['c0']),
                  distance_charges=5.,
                  min_intensity=eps,
@@ -143,7 +143,7 @@ class MassTodon(object):
             The precursor's name.
         modifications : dictionary
             A dictionary of modifications.
-        fragmentation_type : str
+        fragments : str
             Only 'cz' accepted for now.
             Planning other fragmentation schemes, including inner fragments.
         blocked_fragments : list
@@ -198,7 +198,10 @@ class MassTodon(object):
         self.precursor = Precursor(name=name,
                                    fasta=fasta,
                                    charge=charge,
-                                   modifications=modifications)
+                                   modifications=modifications,
+                                   fragments=fragments,
+                                   blocked_fragments=blocked_fragments,
+                                   distance_charges=distance_charges)
 
         self.spectrum = Spectrum(spectrum=spectrum,
                                  mz_digits=mz_digits,

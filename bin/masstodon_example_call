@@ -28,7 +28,7 @@ if __name__ == '__main__':
                           modifications=modifications,
                           _L1_flow=.01,
                           _L2_flow=.01)
-    
+
     print("\t- making basic plot.")
     path  = './test/'
     masstodon.write(path)

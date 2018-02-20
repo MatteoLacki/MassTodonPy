@@ -30,8 +30,8 @@ parser.add_argument("-modifications",
                     help="String with modifications of individual amino acids.\n\
                     Follows the scheme: '<amino acid number> <C_alpha|C_carbo|N> <element>=<integer difference> .. <element>=<integer difference> | ...'.\
                     For example: '11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10'")
-# parser.add_argument("-fragmentation_type",
-#                     help="Only 'cz' accepted for now. Planning other fragmentation schemes, including inner fragments.")
+parser.add_argument("-fragments",
+                    help="Only 'cz' accepted for now. Planning other fragmentation schemes, including inner fragments.")
 parser.add_argument("-blocked_fragments",
                     help="Fragments you don't want to include, e.g. 'z5', or 'c13z21c12c53z1': no spaces between diffferent names.")
 parser.add_argument("-distance_charges",
@@ -147,44 +147,36 @@ if not os.path.exists(output_path):
 if args.verbose:
     print('Running MassTodon.')
 
-ok = False
 i = 0
-while not ok:
+while i < 10:
     try:
-        with cvxopt_wrapper():
-            masstodon = MassTodon(**masstodon_args)
-            ok = True
-    except ValueError as e:
-        ok = False
+        masstodon = MassTodon(**masstodon_args)
+        if args.verbose:
+            print('Saving results.')
+        results_path = output_path + 'assigned_spectrum.csv'
+        masstodon.report.write(results_path)
+        masstodon.write(output_path)
+        if args.plot:
+            if args.verbose:
+                print('Plotting.')
+            plot_path = output_path + 'assigned_spectrum.html'
+            width = int(args.width) if args.width else None
+            height = int(args.height) if args.height else None
+            spec = bokeh_spectrum(masstodon=masstodon,
+                                  path=output_path + 'assigned_spectrum.html',
+                                  show_plot=args.show,
+                                  width=width,
+                                  height=height)
+            prec = bokeh_aggregated_precursors(masstodon=masstodon,
+                                               path=output_path + 'aggregated_precusors.html',
+                                               show_plot=args.show)
+            frag = bokeh_fragments_intensity(masstodon=masstodon,
+                                             path=output_path + 'fragment_intensities.html',
+                                             show_plot=args.show)
+        print('\nThank you for using MassTodonPy!\n')
+    except ValueError:
         i += 1
-        print('Failed '+str(i) +' times already. Try to install devel version of CVXOPT.')
-
-if args.verbose:
-    print('Saving results.')
-results_path = output_path + 'assigned_spectrum.csv'
-masstodon.report.write(results_path)
-
-masstodon.write(output_path)
-
-if args.plot:
-    if args.verbose:
-        print('Plotting.')
-    plot_path = output_path + 'assigned_spectrum.html'
-    width = int(args.width) if args.width else None
-    height = int(args.height) if args.height else None
-
-    spec = bokeh_spectrum(masstodon=masstodon,
-                          path=output_path + 'assigned_spectrum.html',
-                          show_plot=args.show,
-                          width=width,
-                          height=height)
-    prec = bokeh_aggregated_precursors(masstodon=masstodon,
-                                       path=output_path + 'aggregated_precusors.html',
-                                       show_plot=args.show)
-    frag = bokeh_fragments_intensity(masstodon=masstodon,
-                                     path=output_path + 'fragment_intensities.html',
-                                     show_plot=args.show)
-print('\nThank you for using MassTodonPy!\n')
-
-# output_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/output'
-# spectrum_path = '/Users/matteo/Documents/MassTodon/MassTodonPy/Tests/data/FRL-010513-SUBP-WH000-WV300.txt'
+        print('Failed '+str(i) +' times already due to CVXOPT.')
+if i is 10:
+    print('We tried 10 times to run MassTodon, but CVXOPT always crushed.')
+    print('Switch to more stable Python2.7.')
