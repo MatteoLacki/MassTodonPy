@@ -212,7 +212,7 @@ class MassTodon(object):
         # annotated connected components of the deconvolution graph
         self.deconvolution_method = deconvolution_method
         success = False
-        
+
         self._solutions = deconvolve(molecules=self.molecules,
                                     spectrum=self.spectrum,
                                     method=self.deconvolution_method,

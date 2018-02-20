@@ -11,7 +11,6 @@ substanceP = get_dataset('substanceP')
 modifications = defaultdict(dict)
 for (number, group), mods in substanceP.precursor.modifications.items():
     modifications[number][group] = dict(mods)
-
 # substanceP.spectrum.plot('plot.html', width=1000, height=500)
 
 masstodon = MassTodon(spectrum=substanceP.spectrum,
@@ -23,31 +22,55 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       modifications=modifications)
 
 path = '/Users/matteo/Desktop/test/'
+
+agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
+agg_mols
+
+
+
+masstodon.report.aggregeted_fragment_intensities()
+
 masstodon.write(path)
 
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
-from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
-
-bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', width=300, height=400)
-bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
-bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
 
 
+
+# from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+# from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+# from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
+#
+# bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
+# bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')
+# bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html')
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
-from bokeh.models import HoverTool, Span, LabelSet
-from MassTodonPy.Misc.os import create_folder_if_needed
+from bokeh.models import HoverTool, Span, LabelSet, FactorRange
+from bokeh.transform import factor_cmap
+from MassTodonPy.Misc.io import create_folder_if_needed
 
 path3 = path + 'aggregeted_fragment_intensities.html'
-
 
 create_folder_if_needed(path3)
 output_file(path3)
 
-afi = masstodon.report.aggregeted_fragment_intensities()
-afi['z_minus'] = [-v for v in afi['z']]
 
+afi = masstodon.report.aggregeted_fragment_intensities()
+
+
+list(zip(afi['c_name'], afi['z_name']))
+
+
+for c_name, z_name in zip(afi['c_name'], afi['z_name']):
+    yield ('', c_name)
+
+
+x = [ ('', ) for for _ in range(len(afi['c'])) ]
+
+p = figure(x_range=)
+
+
+p.vbar('x')
+# Old plot
 # p = figure(plot_width=1000,
 #            plot_height=400)
 p = figure()

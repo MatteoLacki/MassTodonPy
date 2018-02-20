@@ -311,16 +311,23 @@ class Reporter(object):
     def aggregeted_fragment_intensities(self):
         """Iterate over aggregated fragment results."""
         fasta_len = len(self._precursor.fasta)
-        data = {'c': [0.0] * fasta_len,
-                'z': [0.0] * fasta_len,
-                'c_name': ['c{0}'.format(i) for i in range(fasta_len)],
-                'z_name': ['z{0}'.format(fasta_len - i) for i in range(fasta_len)]}
+        data = dict(c=[0.0] * fasta_len,
+                    z=[0.0] * fasta_len,
+                    c_name=['c{0}'.format(i) for i in range(fasta_len)],
+                    z_name=['z{0}'.format(fasta_len - i) for i in range(fasta_len)])
 
         for name, formula, estimate in self.aggregated_mols():
             frag_type = name[0]
             if frag_type is not 'p':
                 no = int(name[1:])
-                frag_no = no if frag_type is 'c' else fasta_len - no
+                if frag_type is 'c':
+                    frag_no = no
+                elif frag_type in ('a', 'b'):
+                    frag_no = no-1
+                elif frag_type is 'z':
+                    frag_no = fasta_len - no
+                elif frag_type in ('x', 'y'):
+                    frag_no = fasta_len - no + 1
                 data[frag_type][frag_no] = estimate
         return data
 
