@@ -92,6 +92,7 @@ class MassTodon(object):
                  modifications={},
                  fragments="cz",
                  blocked_fragments=set(['c0']),
+                 block_prolines=True,
                  distance_charges=5.,
                  min_intensity=eps,
                  percent_top_peaks=1.0,
@@ -99,10 +100,10 @@ class MassTodon(object):
                  joint_probability=.999,
                  min_prob_per_molecule=.7,
                  _max_buffer_len=0.5,
-                 _L1_flow=0.001,
-                 _L2_flow=0.001,
-                 _L1_intensity=0.001,
-                 _L2_intensity=0.001,
+                 _L1_flow=0.01,
+                 _L2_flow=0.01,
+                 _L1_intensity=0.01,
+                 _L2_intensity=0.01,
                  _max_times=10.,
                  _show_progress=False,
                  _maxiters=1000.,
@@ -148,6 +149,8 @@ class MassTodon(object):
             Planning other fragmentation schemes, including inner fragments.
         blocked_fragments : list
             Fragments you don't want to include, e.g. 'z5'.
+        block_prolines : boolean
+            Should we block prolines?
         distance_charges :
             The minimal distance between charges on the fasta sequence.
             Defaults to charges being 4 amino acids apart.
@@ -201,6 +204,7 @@ class MassTodon(object):
                                    modifications=modifications,
                                    fragments=fragments,
                                    blocked_fragments=blocked_fragments,
+                                   block_prolines=block_prolines,
                                    distance_charges=distance_charges)
 
         self.spectrum = Spectrum(spectrum=spectrum,

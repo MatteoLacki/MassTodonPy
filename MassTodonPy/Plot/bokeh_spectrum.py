@@ -16,7 +16,7 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-from bokeh.plotting import ColumnDataSource, figure, output_file, show
+from bokeh.plotting import ColumnDataSource, figure, output_file, show as show_plot
 from bokeh.models import HoverTool, Span, LabelSet
 from bokeh.resources import CDN
 from bokeh.embed import file_html
@@ -27,7 +27,7 @@ from MassTodonPy.Misc.io import create_folder_if_needed
 def bokeh_spectrum(masstodon,
                    path="assigned_spectrum.html",
                    mode="inline",
-                   show_plot=True,
+                   show=False,
                    width=800,
                    height=600,
                    **kwds):
@@ -40,17 +40,18 @@ def bokeh_spectrum(masstodon,
         If not provided, MassTodon will use the folder it is called from.
     mode : string
         The mode of plotting a bokeh plot.
+    show : boolean
+        Should we show the plot in your default browser?
     width : integer
         The width of the plot.
     height : integer
         The height of the plot.
-
     """
     create_folder_if_needed(path)
     output_file(path, mode=mode)
     D = masstodon.report.assigned_spectrum_data
-    plot = figure(plot_width=width,
-                  plot_height=height,
+    plot = figure(plot_width=int(width),
+                  plot_height=int(height),
                   tools=D['tools'])
     plot.y_range.start = D['y_range_start']
     plot.xaxis.axis_label = D['x_label']
@@ -96,8 +97,8 @@ def bokeh_spectrum(masstodon,
     labels = LabelSet(source=source_clusters,
                       **D['labels'])
     plot.add_layout(labels)
-    if show_plot:
-        show(plot)
+    if show:
+        show_plot(plot)
     else:
         with open(path, 'w') as f:
             f.write(file_html(plot, CDN, path))

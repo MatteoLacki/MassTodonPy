@@ -45,6 +45,8 @@ class Precursor(object):
         For now 'cz' only, but we are working on it.
     blocked_fragments : list
         Fragments you don't want to include, e.g. 'z5'.
+    block_prolines : boolean
+        Should we block prolines?
     distance_charges :
         The minimal distance between charges on the fasta sequence.
         Defaults to charges being 4 amino acids apart.
@@ -60,6 +62,7 @@ class Precursor(object):
                  modifications={},
                  fragments="cz",
                  blocked_fragments=set(['c0']),
+                 block_prolines=True,
                  distance_charges=5,
                  **kwds):
         self.name = name
@@ -75,11 +78,12 @@ class Precursor(object):
         self.blocked_fragments = blocked_fragments
         self.fragments = fragments
         self.distance_charges = int(distance_charges)
-        for i, f in enumerate(self.fasta):
-            if f == 'P':
-                self.blocked_fragments.add('c' + str(i))
-                z_frag_No = len(self) - i
-                self.blocked_fragments.add('z' + str(z_frag_No))
+        if block_prolines:
+            for i, f in enumerate(self.fasta):
+                if f == 'P':
+                    self.blocked_fragments.add('c' + str(i))
+                    z_frag_No = len(self) - i
+                    self.blocked_fragments.add('z' + str(z_frag_No))
 
     def _get_amino_acid(self, number, group):
         """Get amino acid of the precursor."""
@@ -134,6 +138,14 @@ class Precursor(object):
             for g in range(b, self.q - q + c):
                 yield (q, g)
 
+    def a_fragments(self):
+        """Generate a fragments."""
+        pass
+
+    def b_fragments(self):
+        """Generate b fragments."""
+        pass
+
     def c_fragments(self):
         """Generate c fragments."""
         # 'H1' to be a 'c' fragment, not the H on the N terminus
@@ -145,6 +157,14 @@ class Precursor(object):
                 yield (name, formula.copy())
             formula += self[number, 'C_alpha']
             formula += self[number, 'C_carbo']
+
+    def x_fragments(self):
+        """Generate x fragments."""
+        pass
+
+    def y_fragments(self):
+        """Generate y fragments."""
+        pass
 
     def z_fragments(self):
         """Generate z fragments."""
@@ -161,12 +181,10 @@ class Precursor(object):
     def uncharged_molecules(self):
         """Generate uncharged molecules."""
         yield ('precursor', self.formula.copy())
-        if 'c' in self.fragments:
-            for c_frags in self.c_fragments():
-                yield c_frags
-        if 'z' in self.fragments:
-            for z_frags in self.z_fragments():
-                yield z_frags
+        for frag_type in self.fragments:
+            frags = getattr(self, frag_type + '_fragments')()
+            for frag in frags:
+                yield frag
 
     def molecules(self):
         """Generate charged molecules."""

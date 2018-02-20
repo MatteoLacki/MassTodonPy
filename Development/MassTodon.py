@@ -28,14 +28,18 @@ agg_mols
 masstodon.
 
 
+x = dict(a=10, b=20)
+y = x.pop('c', 200)
+
+
 masstodon.report.aggregeted_fragment_intensities()
 
 masstodon.write(path)
 
 
-# from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-# from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
-# from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
+from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 
 bokeh_spectrum(masstodon, path + 'assigned_spectrum.html')
 bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html')

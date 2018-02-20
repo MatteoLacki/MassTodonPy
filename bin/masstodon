@@ -6,13 +6,11 @@ import os
 from pprint import pprint
 import re
 
+from MassTodonPy.Data.Constants import eps
+from MassTodonPy.CLI.MassTodon_wrapper import run_masstodon
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.Parsers.blocked_fragments import parse_blocked_fragments
 from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
-from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 # Parsing arguments
 parser = argparse.ArgumentParser()
@@ -21,8 +19,10 @@ parser.add_argument("spectrum",
 parser.add_argument("fasta",
                     help="The FASTA sequence of the protein to study.")
 parser.add_argument("charge",
+                    type=int,
                     help="The initial charge of the precursor filtered out in MS1.")
 parser.add_argument("mz_tol",
+                    type=float,
                     help="The tolerance in the m/z axis.")
 parser.add_argument("-name",
                     help="The precursor's name.")
@@ -31,152 +31,277 @@ parser.add_argument("-modifications",
                     Follows the scheme: '<amino acid number> <C_alpha|C_carbo|N> <element>=<integer difference> .. <element>=<integer difference> | ...'.\
                     For example: '11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10'")
 parser.add_argument("-fragments",
-                    help="Only 'cz' accepted for now. Planning other fragmentation schemes, including inner fragments.")
+                    help="Only 'cz' accepted for now. Planning other fragmentation schemes, including inner fragments.",
+                    default='cz')
 parser.add_argument("-blocked_fragments",
-                    help="Fragments you don't want to include, e.g. 'z5', or 'c13z21c12c53z1': no spaces between diffferent names.")
+                    help="Fragments you don't want to include, e.g. 'z5', or 'c13z21c12c53z1': no spaces between diffferent names.",
+                    default='c0')
+parser.add_argument("--unblock_prolines",
+                    dest='block_prolines',
+                    action='store_const',
+                    const=False,
+                    default=True,
+                    help="Stop blocking prolines from fragmenting.")
 parser.add_argument("-distance_charges",
-                    help="The minimal distance between charges on the fasta sequence. Defaults to charges being 4 amino acids apart.")
+                    help="The minimal distance between charges on the fasta sequence. Defaults to charges being 4 amino acids apart.",
+                    type=int,
+                    default=5)
 parser.add_argument("-min_intensity",
-                    help="Experimental peaks with lower height will be trimmed.")
+                    help="Experimental peaks with lower height will be trimmed.",
+                    type=float,
+                    default=eps)
 parser.add_argument("-percent_top_peaks",
-                    help="Percentage of the heighest peaks in the spectrum to be included.")
+                    help="Percentage of the heighest peaks in the spectrum to be included.",
+                    type=float,
+                    default=1.0)
 parser.add_argument("-deconvolution_method",
-                    help="Matteo = MassTodon paper deconvolution. Ciacho_Wanda = experimental gaussian kernel deconvolution.")
+                    help="Matteo = MassTodon paper deconvolution. Ciacho_Wanda = experimental gaussian kernel deconvolution.",
+                    default='Matteo')
 parser.add_argument("-joint_probability",
-                    help="The joint probability of the calculated isotopic distribution. Defaults to a decent '0.999'.")
+                    help="The joint probability of the calculated isotopic distribution. Defaults to a decent '0.999'.",
+                    type=float,
+                    default=.999)
 parser.add_argument("-min_prob_per_molecule",
-                    help="The minimal probability an envelope has to scoop to be included in the deconvolution graph.")
-parser.add_argument("-_max_buffer_len",
-                    help="The maximal length of the visual buffer between peaks, i.e. the big rectangle width.")
-parser.add_argument("-_L1_flow",
-                    help="L1 penalty for high flows of intensities.")
-parser.add_argument("-_L2_flow",
-                    help="L2 penalty (a.k.a. ridge regression like) for high flows of intensities.")
-parser.add_argument("-_L1_intensity",
-                    help="L1 penalty for high intensity estimates.")
-parser.add_argument("-_L2_intensity",
-                    help="L2 penalty (a.k.a. ridge regression like) for high intensities.")
-parser.add_argument("-_max_times",
-                    help="The maximal number of times to run CVXOPT.")
-parser.add_argument("-_show_progress",
+                    help="The minimal probability an envelope has to scoop to be included in the deconvolution graph.",
+                    type=float,
+                    default=.7)
+parser.add_argument("-max_buffer_len",
+                    dest='max_buffer_len',
+                    help="The maximal length of the visual buffer between peaks, i.e. the big rectangle width.",
+                    type=float,
+                    default=.5)
+parser.add_argument("-L1_flow",
+                    dest='_L1_flow'
+                    help="L1 penalty for high flows of intensities.",
+                    type=float,
+                    default=.01)
+parser.add_argument("-L2_flow",
+                    dest="_L1_flow",
+                    help="L2 penalty (a.k.a. ridge regression like) for high flows of intensities.",
+                    type=float,
+                    default=.01)
+parser.add_argument("-L1_intensity",
+                    dest="_L1_intensity",
+                    help="L1 penalty for high intensity estimates.",
+                    type=float,
+                    default=.01)
+parser.add_argument("-L2_intensity",
+                    dest="_L2_intensity",
+                    help="L2 penalty (a.k.a. ridge regression like) for high intensities.",
+                    type=float,
+                    default=.01)
+parser.add_argument("-max_times",
+                    dest="_max_times",
+                    help="The maximal number of times to run CVXOPT.",
+                    type=int,
+                    default=10)
+parser.add_argument("--show_progress",
+                    dest="show_progress",
+                    action='store_const',
+                    const=True,
+                    default=False,
                     help="Show progress of the CVXOPT calculations.")
-parser.add_argument("-_maxiters",
-                    help="Maximum number of iterations for the CVXOPT algorithm.")
+parser.add_argument("-maxiters",
+                    dest='_maxiters',
+                    type=int,
+                    help="Maximum number of iterations for the CVXOPT algorithm.",
+                    default=1000)
 parser.add_argument("-sigma2",
-                    help="Variance of the experimental peak's m/z ratio.")
+                    help="Variance of the experimental peak's m/z ratio.",
+                    type=float,
+                    default=.1)
 parser.add_argument("-ni2",
-                    help="Variance of the theoretic isotopologue's m/z ratio.")
+                    help="Variance of the theoretic isotopologue's m/z ratio.",
+                    type=float,
+                    default=.1)
 parser.add_argument("-o",
                     "--output_path",
                     help="Path to the output.\
                           If not provided, spectrum is used path by default.")
-parser.add_argument("--plot",
-                    dest='plot',
+# spectrum plot args
+parser.add_argument("--no_spectrum_plot",
+                    dest='spectrum_plot',
+                    action='store_const',
+                    const=False,
+                    default=True,
+                    help="Skip the spectrum plot.")
+parser.add_argument("--show_spectrum_plot",
+                    dest='show_spectrum_plot',
                     action='store_const',
                     const=True,
                     default=False,
-                    help="Print out the messages from MassTodon.")
-parser.add_argument("--show",
-                    dest='show',
+                    help="Show spectrum plot.")
+parser.add_argument("-spectrum_plot_width",
+                    dest='width_spectrum_plot',
+                    default=800,
+                    type=int,
+                    help="Width of the spectrum plot.")
+parser.add_argument("-spectrum_plot_height",
+                    dest='height_spectrum_plot',
+                    default=600,
+                    type=int,
+                    help="Height of the spectrum plot.")
+# aggregated precursors plot
+parser.add_argument("--no_aggregated_precursors_plot",
+                    dest='aggregated_precursors_plot',
+                    action='store_const',
+                    const=False,
+                    default=True,
+                    help="Skip the plot of aggregated precursors.")
+parser.add_argument("--show_aggregated_precursors_plot",
+                    dest='show_aggregated_precursors_plot',
                     action='store_const',
                     const=True,
                     default=False,
-                    help="Show bokeh plots.")
-parser.add_argument("-plot_width",
-                    dest='width',
-                    help="Width of the plot.")
-parser.add_argument("-plot_height",
-                    dest='height',
-                    help="Height of the plot.")
+                    help="Do not show the aggregated precursors plot.")
+parser.add_argument("-aggregated_precursors_plot_width",
+                    dest='width_aggregated_precursors_plot',
+                    default=800,
+                    type=int,
+                    help="Width of the plot of aggregated precursors.")
+parser.add_argument("-spectrum_height",
+                    dest='height_aggregated_precursors_plot',
+                    default=600,
+                    type=int,
+                    help="Height of the plot of aggregated precursors.")
+# fragments intensity plot
+parser.add_argument("--no_fragments_intensity_plot",
+                    dest='fragments_intensity_plot',
+                    action='store_const',
+                    const=False,
+                    default=True,
+                    help="Do not show the fragments intensity plot.")
+parser.add_argument("--show_fragments_intensity_plot",
+                    dest='show_fragments_intensity_plot',
+                    action='store_const',
+                    const=True,
+                    default=False,
+                    help="Show the plot of the fragments' intensity.")
+parser.add_argument("-fragments_intensity_plot_width",
+                    dest='width_fragments_intensity_plot',
+                    help="Width of the fragments intensity plot.",
+                    default=1000,
+                    type=int)
+parser.add_argument("-fragments_intensity_plot_height",
+                    dest='height_fragments_intensity_plot',
+                    help="Height of the fragments intensity plot.",
+                    default=400,
+                    type=int)
+# verbosity
 parser.add_argument("--verbose",
                     dest='verbose',
                     action='store_const',
                     const=True,
                     default=False,
                     help="Print out the messages from MassTodon.")
-args = parser.parse_args()
+args = parser.parse_args().__dict__
 
-if args.verbose:
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print('Welcome to MassTodon!\n')
 
-masstodon_args = {}
-for arg in args.__dict__:
-    if arg not in ("output_path", "verbose", "plot_width", "plot_height") and \
-       args.__dict__[arg] is not None:
-        masstodon_args[arg] = args.__dict__[arg]
+if args['spectrum_plot']:
+    args['spectrum_plot'] = dict(width=args.pop('width_spectrum_plot'),
+                                 height=args.pop('height_spectrum_plot'),
+                                 show=args.pop('show_spectrum_plot'))
+if args['aggregated_precursors_plot']:
+    args['aggregated_precursors_plot'] = dict(width=args.pop('width_aggregated_precursors_plot'),
+                                              height=args.pop('height_aggregated_precursors_plot'),
+                                              show=args.pop('show_aggregated_precursors_plot'))
+if args['fragments_intensity_plot']:
+    args['fragments_intensity_plot'] = dict(width=args.pop('width_fragments_intensity_plot'),
+                                            height=args.pop('height_fragments_intensity_plot'),
+                                            show=args.pop('show_fragments_intensity_plot'))
+pprint(args)
 
-def add_backslash(p):
-    if p[-1] != '/':
-        p += '/'
-    return p
-
-# Parse modifications:
-if 'modifications' in masstodon_args:
-    # modifications = "11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10"
-    def parse_modifications(modifications):
-        output = defaultdict(dict)
-        modifications = modifications.split('|')
-        for mod in modifications:
-            mod = mod.split()
-            aa_no, aa_type = mod[0:2]
-            diffs = {}
-            for d in mod[2:]:
-                element, diff = d.split('=')
-                diffs[element] = int(diff)
-            output[int(aa_no)][aa_type] = diffs
-        return output
-
-    masstodon_args['modifications'] = parse_modifications(masstodon_args['modifications'])
-
-# Parse blocked_fragments:
-if 'blocked_fragments' in masstodon_args:
-    masstodon_args['blocked_fragments'] = parse_blocked_fragments(masstodon_args['blocked_fragments'])
-
-# establish output path
-output_path, file_name, _ = parse_path(args.spectrum)
-output_path = add_backslash(output_path)
-if args.output_path:
-    output_path = args.output_path
-else:
-    output_path += 'output'
-output_path = add_backslash(output_path)
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
-
-if args.verbose:
-    print('Running MassTodon.')
-
-i = 0
-while i < 10:
-    try:
-        masstodon = MassTodon(**masstodon_args)
-        if args.verbose:
-            print('Saving results.')
-        results_path = output_path + 'assigned_spectrum.csv'
-        masstodon.report.write(results_path)
-        masstodon.write(output_path)
-        if args.plot:
-            if args.verbose:
-                print('Plotting.')
-            plot_path = output_path + 'assigned_spectrum.html'
-            width = int(args.width) if args.width else None
-            height = int(args.height) if args.height else None
-            spec = bokeh_spectrum(masstodon=masstodon,
-                                  path=output_path + 'assigned_spectrum.html',
-                                  show_plot=args.show,
-                                  width=width,
-                                  height=height)
-            prec = bokeh_aggregated_precursors(masstodon=masstodon,
-                                               path=output_path + 'aggregated_precusors.html',
-                                               show_plot=args.show)
-            frag = bokeh_fragments_intensity(masstodon=masstodon,
-                                             path=output_path + 'fragment_intensities.html',
-                                             show_plot=args.show)
-        print('\nThank you for using MassTodonPy!\n')
-    except ValueError:
-        i += 1
-        print('Failed '+str(i) +' times already due to CVXOPT.')
-if i is 10:
-    print('We tried 10 times to run MassTodon, but CVXOPT always crushed.')
-    print('Switch to more stable Python2.7.')
+#
+# show_spectrum = args.pop('show_spectrum')
+# if args.verbose:
+#     os.system('cls' if os.name == 'nt' else 'clear')
+#     print('Welcome to MassTodon!\n')
+#
+# masstodon_args = {}
+# for arg in args.__dict__:
+#     if arg not in ("output_path", "verbose", "plot_width", "plot_height") and \
+#        args.__dict__[arg] is not None:
+#         masstodon_args[arg] = args.__dict__[arg]
+#
+# def add_backslash(p):
+#     if p[-1] != '/':
+#         p += '/'
+#     return p
+#
+# # Parse modifications:
+# if 'modifications' in masstodon_args:
+#     # modifications = "11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10"
+#     def parse_modifications(modifications):
+#         output = defaultdict(dict)
+#         modifications = modifications.split('|')
+#         for mod in modifications:
+#             mod = mod.split()
+#             aa_no, aa_type = mod[0:2]
+#             diffs = {}
+#             for d in mod[2:]:
+#                 element, diff = d.split('=')
+#                 diffs[element] = int(diff)
+#             output[int(aa_no)][aa_type] = diffs
+#         return output
+#
+#     masstodon_args['modifications'] = parse_modifications(masstodon_args['modifications'])
+#
+# # Parse blocked_fragments:
+# if 'blocked_fragments' in masstodon_args:
+#     masstodon_args['blocked_fragments'] = parse_blocked_fragments(masstodon_args['blocked_fragments'])
+#
+# # establish output path
+# output_path, file_name, _ = parse_path(args.spectrum)
+# output_path = add_backslash(output_path)
+# if args.output_path:
+#     output_path = args.output_path
+# else:
+#     output_path += 'output'
+# output_path = add_backslash(output_path)
+# if not os.path.exists(output_path):
+#     os.makedirs(output_path)
+#
+# if args.verbose:
+#     print('Running MassTodon.')
+#
+# run_masstodon(masstodon_args=masstodon_args,
+#               output_path=output_path,
+#               spectrum_plot_args=dict(show_plot=show_spectrum,
+#                                       ))
+#
+# # i = 0
+# # Finished = False
+# # while i < 10 or Finished:
+# #     try:
+# #         masstodon = MassTodon(**masstodon_args)
+# #         if args.verbose:
+# #             print('Saving results.')
+# #         results_path = output_path + 'assigned_spectrum.csv'
+# #         masstodon.report.write(results_path)
+# #         masstodon.write(output_path)
+# #         if args.plot:
+# #             if args.verbose:
+# #                 print('Plotting.')
+# #             plot_path = output_path + 'assigned_spectrum.html'
+# #             width = int(args.width) if args.width else None
+# #             height = int(args.height) if args.height else None
+# #             spec = bokeh_spectrum(masstodon=masstodon,
+# #                                   path=output_path + 'assigned_spectrum.html',
+# #                                   show_plot=args.show,
+# #                                   width=width,
+# #                                   height=height)
+# #             prec = bokeh_aggregated_precursors(masstodon=masstodon,
+# #                                                path=output_path + 'aggregated_precusors.html',
+# #                                                show_plot=args.show)
+# #             frag = bokeh_fragments_intensity(masstodon=masstodon,
+# #                                              path=output_path + 'fragment_intensities.html',
+# #                                              show_plot=args.show)
+# #         print('\nThank you for using MassTodonPy!\n')
+# #         Finished = True
+# #     except ValueError:
+# #         i += 1
+# #         print('Failed '+str(i) +' times already due to CVXOPT.')
+#
+# # if not Finished:
+# #     print('We tried 10 times to run MassTodon, but CVXOPT always crushed.')
+# #     print('Switch to more stable Python2.7.')

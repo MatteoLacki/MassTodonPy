@@ -1,4 +1,22 @@
-from bokeh.plotting import ColumnDataSource, figure, output_file, show
+# -*- coding: utf-8 -*-
+#
+#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
+#
+#   This file is part of MassTodon.
+#
+#   MassTodon is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3.
+#
+#   MassTodon is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3 along with MassTodon.  If not, see
+#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
+from bokeh.plotting import ColumnDataSource, figure, output_file, show as show_plot
 from bokeh.models import HoverTool, Span, LabelSet
 from bokeh.resources import CDN
 from bokeh.embed import file_html
@@ -7,11 +25,11 @@ from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Misc.io import create_folder_if_needed
 
 def bokeh_fragments_intensity(masstodon,
-                              path="assigned_spectrum.html",
+                              path="fragments_intensity.html",
                               mode="inline",
                               show_plot=True,
-                              width=0,
-                              height=0,
+                              plot_width=1000,
+                              plot_height=400,
                               **kwds):
     """Make a plot of the intensity of fragments.
 
@@ -22,22 +40,21 @@ def bokeh_fragments_intensity(masstodon,
         If not provided, MassTodon will use the folder it is called from.
     mode : string
         The mode of plotting a bokeh plot.
-    width : integer
+    show : boolean
+        Should we show the plot in your default browser?
+    plot_width : integer
         The width of the plot.
-    height : integer
+    plot_height : integer
         The height of the plot.
 
     """
     create_folder_if_needed(path)
-    # output_file(path, mode=mode)
     output_file(path, mode='cdn')
-
     afi = masstodon.report.aggregeted_fragment_intensities()
     afi['z_minus'] = [-v for v in afi['z']]
-
     if width and height:
-        p = figure(plot_width=1000,
-                   plot_height=400)
+        p = figure(plot_width=int(plot_width),
+                   plot_height=int(plot_height))
     else:
         p = figure()
 
@@ -59,8 +76,8 @@ def bokeh_fragments_intensity(masstodon,
     # p.add_layout(labels_c)
     # labels_z = LabelSet(source=data, x='x', y='z')
     # p.add_layout([labels_z, labels_c])
-    if show_plot:
-        show(p)
+    if show:
+        show_plot(p)
     else:
         with open(path, 'w') as f:
             f.write(file_html(p, CDN, path))
