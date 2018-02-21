@@ -1,107 +1,42 @@
 #!/usr/bin/env python
+
+# -*- coding: utf-8 -*-
+#   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
+#
+#   This file is part of MassTodon.
+#
+#   MassTodon is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3.
+#
+#   MassTodon is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+#   Version 3 along with MassTodon.  If not, see
+#   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+
 import argparse
-import json
-import os
-from pprint import pprint
 
 from MassTodonPy.MassTodon import MassTodon
-from MassTodonPy.Parsers.blocked_fragments import parse_blocked_fragments
-from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
-from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Misc.wrapper import cvxopt_wrapper
+from MassTodonPy.CLI.AdditionalParsers import add_max_times_parsing
+from MassTodonPy.CLI.AdditionalParsers import add_output_parsing
+from MassTodonPy.CLI.AdditionalParsers import add_spectra_plots_parsing
+from MassTodonPy.CLI.AdditionalParsers import add_verbosity_parsing
+from MassTodonPy.CLI.MassTodon_wrapper import run_masstodon
+from MassTodonPy.CLI.JsonParser import parse_json
 
 # Parsing call
 parser = argparse.ArgumentParser()
 parser.add_argument("json",
-                    help="json with arguments")
-parser.add_argument("--plot",
-                    dest='plot',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Make bokeh plots.")
+                    help="Path to json with arguments",
+                    type=parse_json)
+add_output_parsing(parser)
+add_spectra_plots_parsing(parser)
+add_verbosity_parsing(parser)
+add_max_times_parsing(parser)
 
-parser.add_argument("--show",
-                    dest='show',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Show bokeh plots.")
-
-parser.add_argument("--verbose",
-                    dest='verbose',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Print out the messages from MassTodon.")
-args = parser.parse_args()
-
-if args.verbose:
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print('Welcome to MassTodon!\n')
-
-with open('masstodon_input.json', 'r') as f:
-    masstodon_args = json.load(f)
-
-def add_backslash(p):
-    if p[-1] != '/':
-        p += '/'
-    return p
-
-# Renaming
-if u'deconvolution_method' in masstodon_args:
-    method = masstodon_args.pop('deconvolution_method')
-    masstodon_args['method'] = method
-
-# Parsing output file
-output = add_backslash(masstodon_args.pop('output'))
-if not os.path.exists(output):
-    os.makedirs(output)
-
-# Parsing modifications
-modifications = masstodon_args.pop('modifications')
-for k in modifications.keys():
-    v = modifications.pop(k)
-    modifications[int(k)] = v
-
-masstodon_args['modifications'] = modifications
-
-
-# Parsing blocked_fragments:
-if 'blocked_fragments' in masstodon_args:
-    masstodon_args['blocked_fragments'] = parse_blocked_fragments(masstodon_args['blocked_fragments'])
-
-if args.verbose:
-    print('Running MassTodon.')
-    pprint(masstodon_args)
-
-i = 0
-while i < 10:
-    try:
-        masstodon = MassTodon(**masstodon_args)
-        if args.verbose:
-            print('Saving results.')
-        results_path = output + 'assigned_spectrum.csv'
-        masstodon.report.write(results_path)
-
-        if args.plot:
-            if args.verbose:
-                print('Plotting.')
-                print(output)
-            spec = bokeh_spectrum(masstodon=masstodon,
-                                  path=output + 'assigned_spectrum.html',
-                                  show_plot=args.show)
-            prec = bokeh_aggregated_precursors(masstodon=masstodon,
-                                               path=output + 'aggregated_precusors.html',
-                                               show_plot=args.show)
-            frag = bokeh_fragments_intensity(masstodon=masstodon,
-                                             path=output + 'fragment_intensities.html',
-                                             show_plot=args.show)
-
-        print('\nThank you for using MassTodonPy!\n')
-
-    except ValueError as e:
-        i += 1
-        print('Failed '+str(i) +' times already. CVXOPT crushed: use Python2.7.')
+args = parser.parse_args().__dict__ # parsing & making a dictionary
+args.update(args.pop('json'))
+run_masstodon(args)

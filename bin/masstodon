@@ -65,7 +65,6 @@
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
 
-
 import argparse
 from collections import defaultdict
 import json
@@ -73,31 +72,21 @@ import os
 from pprint import pprint
 import re
 
-from MassTodonPy.Data.Constants import eps
+from MassTodonPy.CLI.AdditionalParsers import add_max_times_parsing
+from MassTodonPy.CLI.AdditionalParsers import add_output_parsing
+from MassTodonPy.CLI.AdditionalParsers import add_spectra_plots_parsing
+from MassTodonPy.CLI.AdditionalParsers import add_verbosity_parsing
 from MassTodonPy.CLI.MassTodon_wrapper import run_masstodon
+from MassTodonPy.Data.Constants import eps
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.Parsers.blocked_fragments import parse_blocked_fragments
 from MassTodonPy.Parsers.Paths import parse_path
 
 
-def add_backslash(p):
-    if p[-1] != '/':
-        p += '/'
-    return p
-
 parser = argparse.ArgumentParser()
-
-# Spectrum & Output
 parser.add_argument("spectrum",
                     help="path to the spectrum file, with spectrum file extension: either '.txt', '.mzxml', or '.mzml', case insensitive.")
-parser.add_argument("-o",
-                    "--output_path",
-                    dest='output',
-                    help="Path to the output.\
-                          If not provided, spectrum is used path by default.",
-                    default='output/',
-                    type=add_backslash)
-
+add_output_parsing(parser)
 parser.add_argument("fasta",
                     help="The FASTA sequence of the protein to study.")
 parser.add_argument("charge",
@@ -109,8 +98,6 @@ parser.add_argument("mz_tol",
 parser.add_argument("-name",
                     help="The precursor's name.",
                     default='')
-
-# Handling the modifications
 # modifications = "11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10"
 def modification(modifications):
     """Parses modifications.
@@ -131,14 +118,11 @@ def modification(modifications):
             diffs[element] = int(diff)
         output[int(aa_no)][aa_type] = diffs
     return dict(output)
-
 parser.add_argument("-modifications",
                     help="String with modifications of individual amino acids.\n\
                     Follows the scheme: '<amino acid number> <C_alpha|C_carbo|N> <element>=<integer difference> .. <element>=<integer difference> | ...'.\
                     For example: '11 C_carbo H=-1 N=1 O=-1|10 C_carbo H=-1 N=1 O=-10'",
                     type=modification)
-
-# Fragments
 parser.add_argument("-fragments",
                     help="Only 'cz' accepted for now. Planning other fragmentation schemes, including inner fragments.",
                     default='cz')
@@ -152,13 +136,10 @@ parser.add_argument("--unblock_prolines",
                     const=False,
                     default=True,
                     help="Stop blocking prolines from fragmenting.")
-# Precursor settings
 parser.add_argument("-distance_charges",
                     help="The minimal distance between charges on the fasta sequence. Defaults to charges being 4 amino acids apart.",
                     type=int,
                     default=5)
-
-# Spectrum Thresholds
 parser.add_argument("-min_intensity",
                     help="Experimental peaks with lower height will be trimmed.",
                     type=float,
@@ -167,7 +148,6 @@ parser.add_argument("-percent_top_peaks",
                     help="Percentage of the heighest peaks in the spectrum to be included.",
                     type=float,
                     default=1.0)
-# Graph Construction and Deconvolution
 parser.add_argument("-deconvolution_method",
                     help="Matteo = MassTodon paper deconvolution. Ciacho_Wanda = experimental gaussian kernel deconvolution.",
                     default='Matteo')
@@ -204,11 +184,6 @@ parser.add_argument("-L2_intensity",
                     help="L2 penalty (a.k.a. ridge regression like) for high intensities.",
                     type=float,
                     default=.01)
-parser.add_argument("-max_times",
-                    dest="_max_times",
-                    help="The maximal number of times to run CVXOPT.",
-                    type=int,
-                    default=10)
 parser.add_argument("--show_progress",
                     dest="show_progress",
                     action='store_const',
@@ -228,109 +203,9 @@ parser.add_argument("-ni2",
                     help="Variance of the theoretic isotopologue's m/z ratio.",
                     type=float,
                     default=.1)
-# spectrum plot args
-parser.add_argument("--no_spectrum_plot",
-                    dest='spectrum_plot',
-                    action='store_const',
-                    const=False,
-                    default=True,
-                    help="Skip the spectrum plot.")
-parser.add_argument("--show_spectrum_plot",
-                    dest='show_spectrum_plot',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Show spectrum plot.")
-parser.add_argument("-spectrum_plot_width",
-                    dest='width_spectrum_plot',
-                    default=800,
-                    type=int,
-                    help="Width of the spectrum plot.")
-parser.add_argument("-spectrum_plot_height",
-                    dest='height_spectrum_plot',
-                    default=600,
-                    type=int,
-                    help="Height of the spectrum plot.")
-# aggregated precursors plot
-parser.add_argument("--no_aggregated_precursors_plot",
-                    dest='aggregated_precursors_plot',
-                    action='store_const',
-                    const=False,
-                    default=True,
-                    help="Skip the plot of aggregated precursors.")
-parser.add_argument("--show_aggregated_precursors_plot",
-                    dest='show_aggregated_precursors_plot',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Do not show the aggregated precursors plot.")
-parser.add_argument("-aggregated_precursors_plot_width",
-                    dest='width_aggregated_precursors_plot',
-                    default=800,
-                    type=int,
-                    help="Width of the plot of aggregated precursors.")
-parser.add_argument("-spectrum_height",
-                    dest='height_aggregated_precursors_plot',
-                    default=600,
-                    type=int,
-                    help="Height of the plot of aggregated precursors.")
-# fragments intensity plot
-parser.add_argument("--no_fragments_intensity_plot",
-                    dest='fragments_intensity_plot',
-                    action='store_const',
-                    const=False,
-                    default=True,
-                    help="Do not show the fragments intensity plot.")
-parser.add_argument("--show_fragments_intensity_plot",
-                    dest='show_fragments_intensity_plot',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Show the plot of the fragments' intensity.")
-parser.add_argument("-fragments_intensity_plot_width",
-                    dest='width_fragments_intensity_plot',
-                    help="Width of the fragments intensity plot.",
-                    default=1000,
-                    type=int)
-parser.add_argument("-fragments_intensity_plot_height",
-                    dest='height_fragments_intensity_plot',
-                    help="Height of the fragments intensity plot.",
-                    default=400,
-                    type=int)
-# verbosity
-parser.add_argument("--verbose",
-                    dest='verbose',
-                    action='store_const',
-                    const=True,
-                    default=False,
-                    help="Print out the messages from MassTodon.")
-# parsing & making a dictionary
-args = parser.parse_args().__dict__
-# Renaming variables for plotting
-plots = {}
-if args.pop('spectrum_plot'):
-    plots['spectrum_plot_args'] = dict(width=args.pop('width_spectrum_plot'),
-                                       height=args.pop('height_spectrum_plot'),
-                                       show=args.pop('show_spectrum_plot'))
-if args.pop('aggregated_precursors_plot'):
-    plots['aggregated_precursors_plot_args'] = dict(width=args.pop('width_aggregated_precursors_plot'),
-                                                    height=args.pop('height_aggregated_precursors_plot'),
-                                                    show=args.pop('show_aggregated_precursors_plot'))
-if args.pop('fragments_intensity_plot'):
-    plots['fragments_intensity_plot_args'] = dict(width=args.pop('width_fragments_intensity_plot'),
-                                                  height=args.pop('height_fragments_intensity_plot'),
-                                                  show=args.pop('show_fragments_intensity_plot'))
-# Running the bloody software . . .
-if args['verbose']:
-    print('\nWelcome to MassTodon!')
-    print('\tRunning MassTodon.')
-output = args.pop('output')
-if not os.path.exists(output):
-    os.makedirs(output)
-max_times = args.pop("_max_times")
-run_masstodon(masstodon_args=args,
-              output=output,
-              _max_times_run_masstodon=max_times,
-              _verbose=args['verbose'],
-              **plots)
-print('\nThank you for using MassTodonPy!\n')
+add_spectra_plots_parsing(parser)
+add_verbosity_parsing(parser)
+add_max_times_parsing(parser)
+
+args = parser.parse_args().__dict__ # parsing & making a dictionary
+run_masstodon(args)
