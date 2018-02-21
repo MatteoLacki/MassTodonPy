@@ -32,8 +32,8 @@ if __name__ == '__main__':
     print("\t- making basic plot.")
     path  = './test/'
     masstodon.write(path)
-    bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', show_plot=False)
-    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html', show_plot=False)
-    bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html', show_plot=False)
+    bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', show=True)
+    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html', show=True)
+    bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html', show=True)
 
     print("Send us your money to save MassTodons!")

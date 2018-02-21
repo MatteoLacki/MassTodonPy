@@ -27,7 +27,7 @@ from MassTodonPy.Misc.io import create_folder_if_needed
 def bokeh_fragments_intensity(masstodon,
                               path="fragments_intensity.html",
                               mode="inline",
-                              show=True,
+                              show=False,
                               width=1000,
                               height=400,
                               **kwds):

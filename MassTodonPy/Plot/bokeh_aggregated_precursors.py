@@ -26,7 +26,7 @@ from MassTodonPy.Misc.io import create_folder_if_needed
 def bokeh_aggregated_precursors(masstodon,
                                 path='aggregated_precusors.html',
                                 mode='inline',
-                                show=True,
+                                show=False,
                                 width=400,
                                 height=400,
                                 **kwds):
