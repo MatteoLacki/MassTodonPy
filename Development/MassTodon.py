@@ -26,8 +26,18 @@ path = '/Users/matteo/Desktop/test/'
 agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
 agg_mols
 self = masstodon.report
-for i, aa in enumerate(self._fasta):
-    
+masstodon.report.M
+list(self.M.precursor.molecules())
+self.M.precursor._get_amino_acid(4, 'N')
+
+
+def iter_fragment_tags(precursor):
+    for i, aa in enumerate(precursor.fasta):
+        for precise_cleavage_site in precursor.groups:
+            yield i, aa, precise_cleavage_site
+
+list(iter_fragment_tags(self.M.precursor))
+
 
 masstodon.report.aggregeted_fragment_intensities()
 

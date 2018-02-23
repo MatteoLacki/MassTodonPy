@@ -28,10 +28,10 @@ class Precursor(object):
 
     Parameters
     ==========
-    name : str
-        The name of the precursor molecule.
     fasta : str
         The fasta of the studied molecular species.
+    name : str
+        The name of the precursor molecule.
     charge : int
         The charge of the precursor ion.
     modifications : dictionary
@@ -69,6 +69,8 @@ class Precursor(object):
         self.fasta = fasta
         self.q = int(charge)
         self.groups = ('N', 'C_alpha', 'C_carbo')
+        self.group2frag = dict(start=dict(N='y', C_alpha='z', C_carbo='x'),
+                               end=dict(N='c', C_alpha='a', C_carbo='b'))
         self.modifications = {(number - 1, group): Formula(atom_cnt)
                               for number, mods in modifications.items()
                               for group, atom_cnt in mods.items()}
@@ -189,12 +191,12 @@ class Precursor(object):
     def molecules(self):
         """Generate charged molecules."""
         for name, formula in self.uncharged_molecules():
-            p_c_z = name[0]
-            if p_c_z is not 'p':
+            if name[0] is not 'p':
                 side_chain_len = int(name[1:])
             else:
                 side_chain_len = len(self)
-            for q, g in self._protonate(p_c_z):
+            #TODO: derive rules for protonation of fragments other than cz
+            for q, g in self._protonate(name[0]):
                 potential_charges_cnt = \
                     side_chain_len // self.distance_charges
                 if side_chain_len % self.distance_charges > 0:

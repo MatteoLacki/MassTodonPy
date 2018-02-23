@@ -232,6 +232,8 @@ class MassTodon(object):
                                max_buffer_len=_max_buffer_len)
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors.
+
+        #TODO: make these procedures work also with other fragment types.
         self.simple_cz_match = SimpleCzMatch(molecules=self.molecules,
                                              precursor_charge=self.precursor.q)
         self.cz_match = CzMatch(molecules=self.molecules,
