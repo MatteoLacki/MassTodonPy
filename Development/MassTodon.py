@@ -22,13 +22,32 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       modifications=modifications)
 path = '/Users/matteo/Desktop/test/'
 
-
-agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
-agg_mols
+# agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
+# agg_mols
 self = masstodon.report
-masstodon.report.M
-list(self.M.precursor.molecules())
-self.M.precursor._get_amino_acid(4, 'N')
+# masstodon.report.M
+# list(self.M.precursor.molecules())
+# self.M.precursor._get_amino_acid(4, 'N')
+self.M.cz_match.intensities['ETDorHTR_bond']
+self.M.molecules
+
+
+
+
+flatten_modification(self.M.precursor.modifications)
+
+
+from collections import defaultdict, namedtuple
+
+data_chunks = defaultdict(dict)
+for mol in self.M.molecules:
+    if mol.name is not 'precursor':
+        mT, pos, cS = mol._molType_position_cleavageSite()
+        data_chunks[cS][]
+
+
+mol._molType_position_cleavageSite()
+
 
 
 def iter_fragment_tags(precursor):
@@ -44,7 +63,7 @@ masstodon.report.aggregeted_fragment_intensities()
 masstodon.write(path)
 
 
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+ from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 

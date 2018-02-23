@@ -23,6 +23,11 @@ from MassTodonPy.Formula.Formula import Formula
 from MassTodonPy.Molecule.Molecule import Molecule
 
 
+def flatten_modification(mod):
+    return ''.join(''.join((str(n), t, str(v)))
+                   for (n, t), v in mod.items())
+
+
 class Precursor(object):
     """Make precursor.
 
@@ -122,11 +127,8 @@ class Precursor(object):
             raise KeyError("Supply '(number, group)' or just 'group'.")
 
     def __repr__(self):
-        out = "Precursor:\n\tname:\t{}\n".format(self.name)
-        out += "\tfasta:\t{}\n".format(self.fasta)
-        out += "\t{}\n".format(self.formula.__repr__())
-        out += "\tcharge:\t{}\n".format(self.q)
-        out += "\tmodifications:\t{}".format(self.modifications.__repr__())
+        out = "({name} {fasta} q={q}".format(**self.__dict__)
+        out += ' modified)' if self.modifications else ')'
         return out
 
     def __len__(self):
@@ -204,3 +206,12 @@ class Precursor(object):
                     # +0000 +0000 00+  at most 3 charges
                 if potential_charges_cnt >= q:
                     yield Molecule(name, self, formula, q, g)
+
+    def __hash__(self):
+        """Get a hash from the precursor's unique id.
+
+        Unique id consists of a name, fasta, charge, and modifications.
+        """
+        return hash((self.name,
+                     self.fasta,
+                     self.q, flatten_modification(self.modifications)))

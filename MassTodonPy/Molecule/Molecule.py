@@ -51,6 +51,7 @@ class Molecule(object):
         self.g = int(g)
         self.intensity = 0.0
 
+    #TODO generalize to abxy
     def _molType_position_cleavageSite(self):
         mt = self.name[0]
         po = int(self.name[1:])
@@ -79,10 +80,9 @@ class Molecule(object):
                                           memoize=True)
 
     def __repr__(self):
-        out = "Molecule {name} out of {source}:\n".format(**self.__dict__)
-        out += "\t{}\n".format(self.formula.__repr__())
-        out += "\tq = {q}\n\tg = {g}\n\tintensity = {intensity}\n".format(**self.__dict__)
-        return out
+        return "({name} {source.name} q={q} g={g} I={I_int})".format(
+            I_int=int(self.intensity),
+            **self.__dict__)
 
     def __hash__(self):
         return hash((self.name,
