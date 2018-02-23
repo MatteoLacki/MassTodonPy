@@ -3,7 +3,6 @@
 
 from bokeh.plotting import ColumnDataSource, figure, output_file, show
 from bokeh.models import HoverTool
-6
 from collections import Counter, defaultdict
 from operator import sub
 

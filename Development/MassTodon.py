@@ -20,17 +20,14 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       charge=3,
                       name='substanceP',
                       modifications=modifications)
-
 path = '/Users/matteo/Desktop/test/'
+
 
 agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
 agg_mols
-masstodon.
-
-
-x = dict(a=10, b=20)
-y = x.pop('c', 200)
-
+self = masstodon.report
+for i, aa in enumerate(self._fasta):
+    
 
 masstodon.report.aggregeted_fragment_intensities()
 

@@ -11,10 +11,6 @@
 + update docs and readmes.
 + implement back the multiprocessing version of the software.
     + it is an argument for the graph representation
-+ csv:
-    + input spectrum
-    * save results
-    * no pandas
 + Update to IsoSpec 2.0
 + check different modes of isotopic calculations under IsoSpec2.0
 + add assertions to read_mzxml_spectrum
@@ -28,6 +24,7 @@
 + Support multiple input precursors!!!
 
 # elegant
++ Set the defaults to the spectrum plot parsing from bash, and types too.
 + add l1 optmization for more robust optimization
 + the adding of spectra is far from optimal:
     + should be some structure that will add them linearly (maintain the order)
@@ -96,3 +93,7 @@
             + IsoSpecPy plot tools
 + Automate devel set up
 + Add the invisible buffers to Measure.plot()
++ csv:
+    + input spectrum
+    * save results
+    * no pandas

@@ -43,23 +43,15 @@ class Reporter(object):
     """Report MassTodon results."""
 
     def __init__(self,
-                 solutions,
-                 molecules,
-                 precursor,
-                 mz_digits,
-                 spectrum,
+                 masstodon,
                  max_buffer_len=0.5,
                  **kwds):
         """Reporting results of the MassTodon.
 
         Parameters
         ==========
-        solutions :
-            An iterable of solutions to the faced deconvolution problem.
-        molecules :
-            An iterable of generated molecules.
-        mz_digits : int
-            The number of significant digits used for m/z representation.
+        masstodon : MassTodon
+            An instance of the MassTodon class.
         max_buffer_len : float
             The maximal length of the visual buffer between peaks, i.e.
             the big rectangle width.
@@ -67,14 +59,10 @@ class Reporter(object):
             Arguments to other methods.
 
         """
-        self._solutions = solutions
-        self._molecules = molecules
-        self._precursor = precursor
+        self.masstodon = masstodon
         self._bricks = []
         self._peak_groups = []
-        self._mz_digits = int(mz_digits)
-        self._min_interval_len = 10**(-self._mz_digits)
-        self._spectrum = spectrum
+        self._min_interval_len = 10**(-self.masstodon.mz_digits)
         self._max_buffer_len = float(max_buffer_len)
         for name, thing in self._peakGroups_bricks_clusters():
             self.__dict__[name].append(thing)
@@ -106,7 +94,7 @@ class Reporter(object):
 
         # build up clusters: as many as solutions.
         self._clusters = [Cluster() for _ in
-                          range(len(self._solutions))]
+                          range(len(self.masstodon.solutions))]
         for b in self._bricks:
             self._clusters[b.peak_group.sol_id].update(b)
 
@@ -115,7 +103,7 @@ class Reporter(object):
 
     def _peakGroups_bricks_clusters(self):
         """Generate a flow of peak groups, bricks, and clusters."""
-        for sol_id, sol in enumerate(self._solutions):
+        for sol_id, sol in enumerate(self.masstodon.solutions):
             for G in sol:
                 if G[0] is 'G':
                     d = self._min_interval_len / 2.0
@@ -190,7 +178,7 @@ class Reporter(object):
                    b.peak_group.mz_L,
                    b.peak_group.mz_R)
 
-    def iter_local_fit_quality(self):
+    def iter_local_fit_quality(self, minimal_intensity=1.0):
         """Iterate over quality of fit to the experimental groups G."""
         yield ('mz',
                'left peak group m/z',
@@ -199,17 +187,18 @@ class Reporter(object):
                'estimate',
                'absolute error')
         for c in self._peak_groups:
-            if int(c.intensity) > 0 and int(c.estimate) > 0:
+            if c.intensity >= minimal_intensity and \
+               c.estimate  >= minimal_intensity:
                 yield ((c.mz_L + c.mz_R)/2.0,
                        c.mz_L,
                        c.mz_R,
                        int(c.intensity),
                        int(c.estimate),
-                       abs(int(c.intensity) - int(c.estimate)))
+                       int(abs(c.intensity - c.estimate)))
 
     def iter_molecule_estimates(self, include_zero_intensities=True):
         """Iterate over the estimates of the intensity of molecules."""
-        self._molecules.sort(key=lambda m: m.intensity, reverse=True)
+        self.masstodon.molecules.sort(key=lambda m: m.intensity, reverse=True)
         yield ('name',
                'formula',
                'charge',
@@ -218,7 +207,7 @@ class Reporter(object):
                'source',
                'source fasta',
                'source formula')
-        for m in self._molecules:
+        for m in self.masstodon.molecules:
             if round(m.intensity) > 0 or include_zero_intensities:
                 yield (m.name,
                        m.formula.str_with_charges(m.q, m.g),
@@ -231,7 +220,7 @@ class Reporter(object):
 
     def iter_global_quality_fits(self):
         """Get global quality fits."""
-        for sol in self._solutions:
+        for sol in self.masstodon.solutions:
             yield sol.global_fit_quality()
 
     def global_quality_fits_stats(self):
@@ -247,13 +236,13 @@ class Reporter(object):
         within_tolerance['underestimates'] = T['underestimates'] / T['total intensity']
 
         thresholding = {}
-        high = self._spectrum.l1()
+        high = self.masstodon.spectrum.l1()
         thresholding['l1'] = (high + T['l1'] - T['total intensity']) / high
         thresholding['overestimates'] = T['overestimates'] / high
         thresholding['underestimates'] = (high - T['total intensity'] + T['underestimates']) / high
 
         whole_spectrum = {}
-        total_intensity = self._spectrum.l1() + self._spectrum.low_spectrum.l1()
+        total_intensity = self.masstodon.spectrum.l1() + self.masstodon.spectrum.low_spectrum.l1()
         unassigned_intensity = total_intensity - T['total intensity']
         whole_spectrum['l1'] = (T['l1'] + unassigned_intensity) / total_intensity
         whole_spectrum['overestimates'] = T['overestimates'] / total_intensity
@@ -263,11 +252,11 @@ class Reporter(object):
                 'after thresholding': thresholding,
                 'of the whole spectrum': whole_spectrum}
 
-    def aggregated_mols(self):
+    def aggregated_mols(self, minimal_intensity=1.0):
         """Aggregated estimates of molecules."""
         aggregated_mols = Counter()
-        for mol in self._molecules:
-            if mol.intensity > 0:
+        for mol in self.masstodon.molecules:
+            if mol.intensity >= minimal_intensity:
                 formula = mol.formula.str_with_charges(mol.q, mol.g)
                 aggregated_mols[(mol.name, formula)] += mol.intensity
         out = list((k[0], k[1], v)for k, v in aggregated_mols.items())
@@ -310,7 +299,7 @@ class Reporter(object):
 
     def aggregeted_fragment_intensities(self):
         """Iterate over aggregated fragment results."""
-        fasta_len = len(self._precursor.fasta)
+        fasta_len = len(self.masstodon.precursor.fasta)
         data = dict(c=[0.0] * fasta_len,
                     z=[0.0] * fasta_len,
                     c_name=['c{0}'.format(i) for i in range(fasta_len)],
@@ -339,8 +328,8 @@ class Reporter(object):
             yield (c_n, int(c), z_n, int(z))
 
     def get_aggregated_precursors(self):
-        precursors = [0.0] * self._precursor.q
-        for mol in self._molecules:
+        precursors = [0.0] * self.masstodon.precursor.q
+        for mol in self.masstodon.molecules:
             if mol.name[0] is 'p':
                 precursors[mol.q - 1] += mol.intensity
         return precursors
@@ -379,32 +368,26 @@ class Reporter(object):
     # TODO: divide into separate iterators
     def get_assigned_spectrum_data(self):
         """Make data for the plot with assigned spectrum."""
-
-        mz_repr = make_string_represenation('mz', self._mz_digits)
-        x_repr = make_string_represenation('x', self._mz_digits)
-
+        mz_repr = make_string_represenation('mz', self.masstodon.mz_digits)
+        x_repr = make_string_represenation('x', self.masstodon.mz_digits)
         out = {'y_range_start':  0.0,
                'x_label':       'mass/charge',
                'y_label':       'intensity',
-               'mz_digits':      self._mz_digits}
-
+               'mz_digits':      self.masstodon.mz_digits}
         out['tools'] = "crosshair pan wheel_zoom box_zoom undo redo reset box_select save".split(" ")
-
         # vertical experimental bars
-        out['exp_vbar'] = {'x':     list(self._spectrum.mz),
-                           'top':   list(self._spectrum.intensity),
+        out['exp_vbar'] = {'x':     list(self.masstodon.spectrum.mz),
+                           'top':   list(self.masstodon.spectrum.intensity),
                            'width': self._min_interval_len,
                            'color': 'black',
                            'alpha': 0.1}
-
         # Horizontal threshold line
-        out['threshold_line'] = {'intensity': self._spectrum.min_intensity,
-                                 'args': [(max(min(self._spectrum.mz) - 50, 0),
-                                           max(self._spectrum.mz) + 50 ),
-                                          (self._spectrum.min_intensity,
-                                           self._spectrum.min_intensity)],
+        out['threshold_line'] = {'intensity': self.masstodon.spectrum.min_intensity,
+                                 'args': [(max(min(self.masstodon.spectrum.mz) - 50, 0),
+                                           max(self.masstodon.spectrum.mz) + 50 ),
+                                          (self.masstodon.spectrum.min_intensity,
+                                           self.masstodon.spectrum.min_intensity)],
                                  'kwds': {'line_width': 2, 'color': 'red'}}
-
         # bricks: divisions of estimated peaks into constituents
         lists = zip(*((b.peak_group.mz_L,
                        b.peak_group.mz_R,
@@ -417,9 +400,7 @@ class Reporter(object):
                        b.intensity,
                        b.molecule.name,
                        b.molecule.source.name,
-                       # str(b.molecule.formula),
-                       b.molecule.formula.str_with_charges(b.molecule.q,
-                                                           b.molecule.g),
+                       b.molecule.formula.str_with_charges(b.molecule.q, b.molecule.g),
                        b.molecule.q,
                        b.molecule.g,
                        b.molecule.intensity)
@@ -491,8 +472,8 @@ class Reporter(object):
                                        ('absolute error', "@abserror{0,0}"),
                                        ('m/z', mz_repr)]
         # Experimental Squares
-        out['experimental_squares'] = {'x': list(self._spectrum.mz),
-                                       'y': list(self._spectrum.intensity),
+        out['experimental_squares'] = {'x': list(self.masstodon.spectrum.mz),
+                                       'y': list(self.masstodon.spectrum.intensity),
                                        'size': 5,
                                        'color':
                                        'black',

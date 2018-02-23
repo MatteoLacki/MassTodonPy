@@ -66,8 +66,8 @@
 # ................................................................................
 from __future__ import absolute_import, division, print_function
 from collections import Counter
-from math import ceil, log10
 import csv
+from math import ceil, log10
 
 from MassTodonPy.Data.Constants import eps
 from MassTodonPy.Deconvolution.Deconvolve import deconvolve
@@ -193,11 +193,9 @@ class MassTodon(object):
         """
         if isinstance(mz_tol, str):
             mz_tol = float(mz_tol)
-
         if not isinstance(mz_tol, float):
             assert isinstance(mz_digits, int) and mz_digits != -10
-
-        mz_digits = int(ceil(-log10(mz_tol))) if mz_digits in (-10,'-10') else mz_digits
+        self.mz_digits = int(ceil(-log10(mz_tol))) if mz_digits in (-10,'-10') else mz_digits
         self.precursor = Precursor(name=name,
                                    fasta=fasta,
                                    charge=charge,
@@ -206,27 +204,19 @@ class MassTodon(object):
                                    blocked_fragments=blocked_fragments,
                                    block_prolines=block_prolines,
                                    distance_charges=distance_charges)
-
+        self.molecules = list(self.precursor.molecules())
         self.spectrum = Spectrum(spectrum=spectrum,
-                                 mz_digits=mz_digits,
+                                 mz_digits=self.mz_digits,
                                  min_intensity=min_intensity,
                                  percent_top_peaks=percent_top_peaks)
-
-
-        # references to the reaction products, a.k.a. 'molecules'
-        self.molecules = list(self.precursor.molecules())
-
-        # annotated connected components of the deconvolution graph
         self.deconvolution_method = deconvolution_method
-        success = False
-
-        self._solutions = deconvolve(molecules=self.molecules,
+        self.solutions = deconvolve(molecules=self.molecules,
                                     spectrum=self.spectrum,
                                     method=self.deconvolution_method,
                                     mz_tol=mz_tol,
                                     min_prob_per_molecule=min_prob_per_molecule,
                                     joint_probability=joint_probability,
-                                    mz_digits=mz_digits,
+                                    mz_digits=self.mz_digits,
                                     L1_flow=_L1_flow,
                                     L2_flow=_L2_flow,
                                     L1_intensity=_L1_intensity,
@@ -236,23 +226,14 @@ class MassTodon(object):
                                     maxiters=_maxiters,
                                     sigma2=sigma2,
                                     _ni2=ni2)
-
         #TODO: leaving as generator causes problems: no 'len' to call later on.
-        self._solutions = list(self._solutions)
-
-        # precise report on the deconvolution
-        self.report = Reporter(solutions=self._solutions,
-                               molecules=self.molecules,
-                               precursor=self.precursor,
-                               mz_digits=mz_digits,
-                               spectrum=self.spectrum,
+        self.solutions = list(self.solutions)
+        self.report = Reporter(masstodon=self,
                                max_buffer_len=_max_buffer_len)
-
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors.
         self.simple_cz_match = SimpleCzMatch(molecules=self.molecules,
                                              precursor_charge=self.precursor.q)
-
         self.cz_match = CzMatch(molecules=self.molecules,
                                 precursor_charge=self.precursor.q)
 
