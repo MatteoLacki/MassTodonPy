@@ -74,6 +74,7 @@ class Precursor(object):
         self.fasta = fasta
         self.q = int(charge)
         self.groups = ('N', 'C_alpha', 'C_carbo')
+                             # include N, C_alpha, C_carbo in start and end.
         self.group2frag = dict(start=dict(N='y', C_alpha='z', C_carbo='x'),
                                end=dict(N='c', C_alpha='a', C_carbo='b'))
         self.modifications = {(number - 1, group): Formula(atom_cnt)
@@ -154,7 +155,7 @@ class Precursor(object):
         """Generate c fragments."""
         # 'H1' to be a 'c' fragment, not the H on the N terminus
         formula = Formula('H1')
-        for number in range(len(self)):
+        for number in range(len(self.fasta)):
             formula += self[number, 'N']
             name = 'c' + str(number)
             if name not in self.blocked_fragments:

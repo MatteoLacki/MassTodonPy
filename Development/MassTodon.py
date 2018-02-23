@@ -22,43 +22,37 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       modifications=modifications)
 path = '/Users/matteo/Desktop/test/'
 
-# agg_mols = {name: intensity for name, _, intensity in masstodon.report.aggregated_mols()}
-# agg_mols
+from MassTodonPy.Data.amino_acids import aa2name
+
 self = masstodon.report
-# masstodon.report.M
-# list(self.M.precursor.molecules())
-# self.M.precursor._get_amino_acid(4, 'N')
 self.M.cz_match.intensities['ETDorHTR_bond']
-self.M.molecules
-
-
-
-
-flatten_modification(self.M.precursor.modifications)
-
+self.M.cz_match.probabilities['fragmentation_bond']
 
 from collections import defaultdict, namedtuple
+
+
+
 
 data_chunks = defaultdict(dict)
 for mol in self.M.molecules:
     if mol.name is not 'precursor':
-        mT, pos, cS = mol._molType_position_cleavageSite()
-        data_chunks[cS][]
+        if mol.intensity >= 1:
+            mT, pos, cS = mol._molType_position_cleavageSite()
+            direction = 'left' if mT in 'abc' else 'right'
+            data_chunks[cS][direction] = mol
+            data_chunks[cS]['probability'] = self.M.cz_match.probabilities['fragmentation_bond'][cS]
+            data_chunks[cS]['probability_simple'] = self.M.simple_cz_match.probabilities['fragmentation_bond'][cS]
+            data_chunks[cS]['intensity'] =self.M.cz_match.intensities['ETDorHTR_bond'][cS]
+            data_chunks[cS]['intensity_simple'] =self.M.simple_cz_match.intensities['ETDorHTR_bond'][cS]
+            data_chunks[cS]['aa']=self.M.precursor.fasta[cS]
+
+data_chunks = dict(data_chunks)
+
+for i, aa in enumerate(self.M.precursor.fasta):
+    data_chunks[i]
 
 
-mol._molType_position_cleavageSite()
 
-
-
-def iter_fragment_tags(precursor):
-    for i, aa in enumerate(precursor.fasta):
-        for precise_cleavage_site in precursor.groups:
-            yield i, aa, precise_cleavage_site
-
-list(iter_fragment_tags(self.M.precursor))
-
-
-masstodon.report.aggregeted_fragment_intensities()
 
 masstodon.write(path)
 

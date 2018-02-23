@@ -22,6 +22,8 @@
 + Spectrum reader must be run without sorting the spectra all the time.
 + Export data to ETDetective
 + Support multiple input precursors!!!
++ To each deconvolution problem add a measure of the problem's complexity
+    + for instance in terms of the conditional number of the Gramm matrix.
 
 # elegant
 + Set the defaults to the spectrum plot parsing from bash, and types too.
