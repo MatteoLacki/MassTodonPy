@@ -26,6 +26,9 @@
     + for instance in terms of the conditional number of the Gramm matrix.
 
 # elegant
++ there should be a structure taking care of the molecules
+    + it might be the precursor itself, but think if it should not be something
+    + more general, that could encompass more than one precursor.
 + Set the defaults to the spectrum plot parsing from bash, and types too.
 + add l1 optmization for more robust optimization
 + the adding of spectra is far from optimal:

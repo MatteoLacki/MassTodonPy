@@ -23,41 +23,41 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
 path = '/Users/matteo/Desktop/test/'
 
 from MassTodonPy.Data.amino_acids import aa2name
+from collections import defaultdict, Counter
 
 self = masstodon.report
-self.M.cz_match.intensities['ETDorHTR_bond']
-self.M.cz_match.probabilities['fragmentation_bond']
-
-from collections import defaultdict, namedtuple
 
 
-
-
-data_chunks = defaultdict(dict)
-for mol in self.M.molecules:
-    if mol.name is not 'precursor':
-        if mol.intensity >= 1:
-            mT, pos, cS = mol._molType_position_cleavageSite()
-            direction = 'left' if mT in 'abc' else 'right'
-            data_chunks[cS][direction] = mol
-            data_chunks[cS]['probability'] = self.M.cz_match.probabilities['fragmentation_bond'][cS]
-            data_chunks[cS]['probability_simple'] = self.M.simple_cz_match.probabilities['fragmentation_bond'][cS]
-            data_chunks[cS]['intensity'] =self.M.cz_match.intensities['ETDorHTR_bond'][cS]
-            data_chunks[cS]['intensity_simple'] =self.M.simple_cz_match.intensities['ETDorHTR_bond'][cS]
-            data_chunks[cS]['aa']=self.M.precursor.fasta[cS]
-
+roepstorffMap = dict(a='left', b='left', c='left',
+                     x='right', y='right', z='right')
+data_chunks = defaultdict(Counter)
+min_intensity = 1.0
+for m in masstodon.molecules:
+    if m.name[0] is not 'p' and m.intensity >= min_intensity:
+        mt, po, cs = m._molType_position_cleavageSite()
+        data_chunks[cs][roepstorffMap[m.name[0]]] += m.intensity
 data_chunks = dict(data_chunks)
+for cS, v in data_chunks.items():
+    data_chunks[cS] = dict(v)
+    data_chunks[cS]['probability'] = self.M.cz_match.probabilities['fragmentation_bond'].get(cS, 0.0)
+    data_chunks[cS]['intensity'] = self.M.cz_match.intensities['ETDorHTR_bond'].get(cS, 0.0)
+    data_chunks[cS]['aa'] = self.M.precursor.fasta[cS]
+    # data_chunks[cS]['probability_simple'] = self.M.simple_cz_match.probabilities['fragmentation_bond'].get(cS, 0.0)
+    # data_chunks[cS]['intensity_simple'] = self.M.simple_cz_match.intensities['ETDorHTR_bond'].get(cS, 0.0)
 
-for i, aa in enumerate(self.M.precursor.fasta):
-    data_chunks[i]
+#TODO make this into a defaultdict!
+data_chunks
+
+
+
+
 
 
 
 
 masstodon.write(path)
 
-
- from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 

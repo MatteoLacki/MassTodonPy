@@ -103,7 +103,7 @@ class SimpleCzMatch(object):
         Q = self._Q
         self.graph = nx.Graph()
         for mol in self._molecules:
-            estimate = int(mol.intensity) # Small difference, but can make optimization more stable.
+            estimate = mol.intensity
             if estimate > 0:
                 if mol.name is 'precursor':
                     g = mol.g
@@ -185,21 +185,21 @@ class SimpleCzMatch(object):
 
     def _iter_intensities(self):
         """Generate rows for a csv/tsv file with estimated intensities."""
-        yield ('unreacted', 'total:', int(self._I_unreacted_precursor))
-        yield ('reacted', 'total:', int(self._I_reactions))
-        yield ('ETD or HTR', 'total:', int(self._I_ETDorHTR))
+        yield ('unreacted', 'total:', self._I_unreacted_precursor)
+        yield ('reacted', 'total:', self._I_reactions)
+        yield ('ETD or HTR', 'total:', self._I_ETDorHTR)
         bonds = list(self._I_ETDorHTR_bond.items())
         bonds.sort()
         for no, v in bonds:
-            yield ('', 'bond %d' % no, int(v) )
-        yield ('ETnoD or PTR on fragments', 'total:', int(self._I_ETnoD_PTR_fragments))
+            yield ('', 'bond %d' % no, v)
+        yield ('ETnoD or PTR on fragments', 'total:', self._I_ETnoD_PTR_fragments)
         bonds = list(self._I_ETnoD_PTR_bond.items())
         bonds.sort()
         for no, v in bonds:
-            yield ('', 'bond %d' % no, int(v) )
-        yield ('ETnoD on precursors', 'total:', int(self._I_ETnoD_precursor))
-        yield ('PTR on precursors', 'total:', int(self._I_PTR_precursor))
-        yield ('ETnoD or PTR', 'total:', int(self._I_total_ETnoDorPTR))
+            yield ('', 'bond %d' % no, v)
+        yield ('ETnoD on precursors', 'total:', self._I_ETnoD_precursor)
+        yield ('PTR on precursors', 'total:', self._I_PTR_precursor)
+        yield ('ETnoD or PTR', 'total:', self._I_total_ETnoDorPTR)
 
     def _get_probabilities(self):
         """Estimate probabilities."""
