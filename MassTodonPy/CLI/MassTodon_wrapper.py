@@ -4,6 +4,8 @@ import os
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.CLI.PlotParser import plot_parser
 from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
+from MassTodonPy.Plot.bokeh_aggregated_fragments import bokeh_aggregated_fragments
+from MassTodonPy.Plot.bokeh_aggregated_fragments_estimated import bokeh_aggregated_fragments_estimated
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
 from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 
@@ -49,10 +51,14 @@ def run_masstodon(args):
                 prec = bokeh_aggregated_precursors(masstodon=masstodon,
                                                    path=output+'aggregated_precusors.html',
                                                    **plots['aggregated_precursors_plot_args'])
-            if plots['fragments_intensity_plot_args']:
-                frag = bokeh_fragments_intensity(masstodon=masstodon,
-                                                 path=output+'fragment_intensities.html',
-                                                 **plots['fragments_intensity_plot_args'])
+            if plots['aggregated_fragments_plot_args']:
+                frag = bokeh_aggregated_fragments(masstodon=masstodon,
+                                                  path=output+'aggregated_fragments.html',
+                                                  **plots['aggregated_fragments_plot_args'])
+            if plots['estimated_aggregated_fragments_plot_args']:
+                frag = bokeh_aggregated_fragments(masstodon=masstodon,
+                                                  path=output+'estimated_aggregated_fragments.html',
+                                                  **plots['estimated_aggregated_fragments_plot_args'])
             Finished = True
         except ValueError:
             i += 1

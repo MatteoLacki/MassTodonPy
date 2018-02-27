@@ -64,28 +64,51 @@ def add_spectra_plots_parsing(parser):
                         default=600,
                         type=int,
                         help="Height of the plot of aggregated precursors.")
-    # fragments intensity plot
-    parser.add_argument("--no_fragments_intensity_plot",
-                        dest='fragments_intensity_plot',
+    # aggregated fragments plot
+    parser.add_argument("--no_aggregated_fragments_plot",
+                        dest='aggregated_fragments_plot',
                         action='store_const',
                         const=False,
                         default=True,
-                        help="Do not show the fragments intensity plot.")
-    parser.add_argument("--show_fragments_intensity_plot",
-                        dest='show_fragments_intensity_plot',
+                        help="Skip the aggregated fragments plot.")
+    parser.add_argument("--show_aggregated_fragments_plot",
+                        dest='show_aggregated_fragments_plot',
                         action='store_const',
                         const=True,
                         default=False,
-                        help="Show the plot of the fragments' intensity.")
-    parser.add_argument("-fragments_intensity_plot_width",
-                        dest='width_fragments_intensity_plot',
-                        help="Width of the fragments intensity plot.",
-                        default=1000,
+                        help="Do not show the aggregated fragments plot.")
+    parser.add_argument("-aggregated_fragments_plot_width",
+                        dest='width_aggregated_fragments_plot',
+                        help="Width of the aggregated fragments plot.",
+                        default=0,
                         type=int)
-    parser.add_argument("-fragments_intensity_plot_height",
-                        dest='height_fragments_intensity_plot',
-                        help="Height of the fragments intensity plot.",
-                        default=400,
+    parser.add_argument("-aggregated_fragments_plot_height",
+                        dest='height_aggregated_fragments_plot',
+                        help="Height of the aggregated fragments plot.",
+                        default=0,
+                        type=int)
+    # estimated aggregated fragments plot
+    parser.add_argument("--no_estimated_aggrageted_fragments_plot",
+                        dest='estimated_aggregated_fragments_plot',
+                        action='store_const',
+                        const=False,
+                        default=True,
+                        help="Skip the estimated aggregated fragments plot.")
+    parser.add_argument("--show_estimated_aggregated_fragments_plot",
+                        dest='show_estimated_aggregated_fragments_plot',
+                        action='store_const',
+                        const=True,
+                        default=False,
+                        help="Do not show the aggregated fragments plot.")
+    parser.add_argument("-estimated_aggregated_fragments_plot_width",
+                        dest='width_estimated_aggrageted_fragments_plot',
+                        help="Width of the estimated aggregated fragments plot.",
+                        default=0,
+                        type=int)
+    parser.add_argument("-estimated_aggregated_fragments_plot_height",
+                        dest='height_estimated_aggregated_fragments_plot',
+                        help="Height of the estimated aggregated fragments plot.",
+                        default=0,
                         type=int)
 
 
