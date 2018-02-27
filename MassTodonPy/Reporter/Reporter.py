@@ -15,11 +15,12 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-from collections import Counter
+from collections import Counter, defaultdict
 import csv
 import json
 import os
 
+from MassTodonPy.Misc.ExtensionOfCommonDataStructures import DefaultDict
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Reporter.buffers import buffers
 from MassTodonPy.Reporter.misc import Brick, Cluster, PeakGroup, ColorGenerator, make_string_represenation
@@ -67,6 +68,7 @@ class Reporter(object):
         for name, thing in self._peakGroups_bricks_clusters():
             self.__dict__[name].append(thing)
 
+        self._fragments_intensity = defaultdict(Counter)
         # order peak groups by m/z ratios
         self._peak_groups.sort(key=lambda c: c.mz_L)
 
@@ -339,6 +341,36 @@ class Reporter(object):
         precursors = self.get_aggregated_precursors()
         for q, prec in enumerate(precursors):
             yield (q+1, int(prec))
+
+    def iter_aggregated_fragments_intensity(self):
+        """Iterate over data over fragments."""
+        if not self._fragments_intensity:
+            roepstorffMap = dict(a='left', b='left', c='left',
+                                 x='right', y='right', z='right')
+            self._fragments_intensity = DefaultDict(lambda cS:
+                dict(aa=self.M.precursor.fasta[cS],
+                     probability=self.M.cz_match.probabilities['fragmentation_bond'].get(cS, 0.0),
+                     intensity=self.M.cz_match.intensities['ETDorHTR_bond'].get(cS, 0.0),
+                     right=0.0,
+                     left=0.0,
+                     right_name='',
+                     left_name=''))
+            min_intensity = 1.0
+            for m in self.M.molecules:
+                if m.name[0] is not 'p' and m.intensity >= min_intensity:
+                    mt, po, cS = m._molType_position_cleavageSite()
+                    self._fragments_intensity[cS][roepstorffMap[m.name[0]]] += m.intensity
+                    if m.name[0] in 'abc':
+                        self._fragments_intensity[cS]['left_name'] = m.name
+                    elif m.name[0] in 'xyz':
+                        self._fragments_intensity[cS]['right_name'] = m.name
+        for i in range(len(self.M.precursor.fasta)):
+            chunk = self._fragments_intensity[i]
+            if not chunk['left']:
+                chunk['left'] = float('nan')
+            if not chunk['right']:
+                chunk['right'] = float('nan')
+            yield chunk
 
     def write(self, path, include_zero_intensities=True):
         """Write results to a file.
