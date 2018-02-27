@@ -16,7 +16,7 @@
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
-
+from __future__ import absolute_import, division, print_function
 from collections import Counter
 from collections import defaultdict
 import cvxopt
@@ -36,6 +36,7 @@ def deconvolve(molecules,
                min_prob_per_molecule=.7,
                _merge_sister_Is=True,
                _devel=False,
+               _verbose=False,
                **kwds):
     """Get the sequence of deconvolution problems.
 
@@ -115,6 +116,8 @@ def deconvolve(molecules,
 
     #TODO Here double copying. Optimize.
     if method is 'Matteo':
+        if _verbose:
+            print(Counter(n[0] for n in graph.nodes))
         _add_G_remove_E(graph)
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:

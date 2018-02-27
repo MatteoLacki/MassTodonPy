@@ -15,7 +15,7 @@
 #   You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3 along with MassTodon.  If not, see
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
-
+from __future__ import absolute_import, division, print_function
 from six.moves import range
 
 from MassTodonPy.Data.get_amino_acids import get_amino_acids
@@ -80,6 +80,7 @@ class Precursor(object):
         self.modifications = {(number - 1, group): Formula(atom_cnt)
                               for number, mods in modifications.items()
                               for group, atom_cnt in mods.items()}
+        print(self.modifications)
         self.formula = sum(self[number, group]
                            for number in range(len(self))
                            for group in self.groups)
@@ -98,9 +99,9 @@ class Precursor(object):
         formula = self.amino_acids[(self.fasta[number], group)] +\
                   self.modifications.get((number, group), 0)
         # Modifying termini: Kaltashov O., Mass Spectrometry in Biophysics
-        if number is 0 and group is 'N':
+        if number == 0 and group is 'N':
             formula['H'] += 1  #  H for N terminus
-        if number is len(self)-1 and group is 'C_carbo':
+        if number == (len(self.fasta)-1) and group is 'C_carbo':
             formula['O'] += 1  # additional H and O
             formula['H'] += 1  # for the C terminus
         formula.check_positivity()

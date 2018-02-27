@@ -1,5 +1,6 @@
 import json
 import os
+from pprint import pprint
 
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.CLI.PlotParser import plot_parser
@@ -7,7 +8,7 @@ from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
 from MassTodonPy.Plot.bokeh_aggregated_fragments import bokeh_aggregated_fragments
 from MassTodonPy.Plot.bokeh_aggregated_fragments_estimated import bokeh_aggregated_fragments_estimated
 from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
-from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
+
 
 
 def run_masstodon(args):
@@ -23,6 +24,8 @@ def run_masstodon(args):
     if args['verbose']:
         print('Welcome to MassTodon!\n')
         print('Running MassTodon.')
+
+    pprint(args)
 
     output = args.pop('output')
     if not os.path.exists(output):
@@ -62,7 +65,7 @@ def run_masstodon(args):
             Finished = True
         except ValueError:
             i += 1
-            print('Failed '+str(i) +' times out of {0} already due to CVXOPT.'.format(_max_times_run_masstodon))
+            print('Failed '+ str(i) +' times out of {0} already due to CVXOPT.'.format(_max_times_run_masstodon))
 
     if not Finished:
         print('We tried {0} times to run MassTodon, but CVXOPT always crushed.'.format(_max_times_run_masstodon))

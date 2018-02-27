@@ -108,6 +108,7 @@ class MassTodon(object):
                  _show_progress=False,
                  _maxiters=1000.,
                  _devel=False,
+                 _verbose=False,
                  sigma2=.1,
                  ni2=.1,
                  **kwds):
@@ -184,6 +185,8 @@ class MassTodon(object):
             Show progress of the CVXOPT calculations.
         _maxiters : int
             Maximum number of iterations for the CVXOPT algorithm.
+        _verbose : boolean
+            Should we show the content in a verbose mode?
         sigma2 : float
             Variance of the experimental peak's m/z ratio.
         ni2 : float
@@ -225,7 +228,8 @@ class MassTodon(object):
                                     show_progress=_show_progress,
                                     maxiters=_maxiters,
                                     sigma2=sigma2,
-                                    _ni2=ni2)
+                                    _ni2=ni2,
+                                    _verbose=_verbose)
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self.solutions = list(self.solutions)
         self.report = Reporter(masstodon=self,
