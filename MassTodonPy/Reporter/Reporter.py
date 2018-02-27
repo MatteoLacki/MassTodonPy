@@ -349,7 +349,7 @@ class Reporter(object):
                                  x='right', y='right', z='right')
             self._fragments_intensity = DefaultDict(lambda cS:
                 dict(aa=self.M.precursor.fasta[cS],
-                     probability=self.M.cz_match.probabilities['fragmentation_bond'].get(cS, 0.0),
+                     probability=100 * self.M.cz_match.probabilities['fragmentation_bond'].get(cS, 0.0),
                      intensity=self.M.cz_match.intensities['ETDorHTR_bond'].get(cS, 0.0),
                      right=0.0,
                      left=0.0,

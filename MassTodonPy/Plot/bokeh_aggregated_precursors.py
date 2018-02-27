@@ -49,7 +49,6 @@ def bokeh_aggregated_precursors(masstodon,
         The height of the plot.
 
     """
-    plot_width = kwds.get('')
     intensities = masstodon.report.get_aggregated_precursors()
     create_folder_if_needed(path)
     output_file(path, mode=mode)
