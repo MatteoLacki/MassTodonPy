@@ -8,14 +8,14 @@ from MassTodonPy.Misc.io import create_folder_if_needed
 from MassTodonPy.Plot.Misc import aggregate_fragments
 
 
-def bokeh_aggregated_fragments_estimated(masstodon,
-                               path='aggregated_estimated_fragments.html',
-                               mode='inline',
-                               show=False,
-                               width=0,
-                               height=0,
-                               _offset=.2,
-                               **kwds):
+def bokeh_estimated_aggregated_fragments(masstodon,
+                                         path='aggregated_estimated_fragments.html',
+                                         mode='inline',
+                                         show=False,
+                                         width=0,
+                                         height=0,
+                                         _offset=.2,
+                                         **kwds):
     """Plot intensity of precursors, neglecting the quenched charge.
 
     Parameters

@@ -1,13 +1,12 @@
 import json
 import os
-from pprint import pprint
 
 from MassTodonPy.MassTodon import MassTodon
 from MassTodonPy.CLI.PlotParser import plot_parser
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Plot.bokeh_aggregated_fragments import bokeh_aggregated_fragments
-from MassTodonPy.Plot.bokeh_aggregated_fragments_estimated import bokeh_aggregated_fragments_estimated
-from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
+from MassTodonPy.Plot import bokeh_spectrum
+from MassTodonPy.Plot import bokeh_aggregated_fragments
+from MassTodonPy.Plot import bokeh_estimated_aggregated_fragments
+from MassTodonPy.Plot import bokeh_aggregated_precursors
 
 
 
@@ -24,8 +23,6 @@ def run_masstodon(args):
     if args['verbose']:
         print('Welcome to MassTodon!\n')
         print('Running MassTodon.')
-
-    pprint(args)
 
     output = args.pop('output')
     if not os.path.exists(output):
@@ -45,23 +42,32 @@ def run_masstodon(args):
             masstodon.write(output)
             if args['verbose']:
                 print('\tPlotting.')
-            plot_path = output + 'assigned_spectrum.html'
-            if plots['spectrum_plot_args']:
-                spec = bokeh_spectrum(masstodon=masstodon,
-                                      path=output+'assigned_spectrum.html',
-                                      **plots['spectrum_plot_args'])
-            if plots['aggregated_precursors_plot_args']:
-                prec = bokeh_aggregated_precursors(masstodon=masstodon,
-                                                   path=output+'aggregated_precusors.html',
-                                                   **plots['aggregated_precursors_plot_args'])
-            if plots['aggregated_fragments_plot_args']:
-                frag = bokeh_aggregated_fragments(masstodon=masstodon,
-                                                  path=output+'aggregated_fragments.html',
-                                                  **plots['aggregated_fragments_plot_args'])
-            if plots['estimated_aggregated_fragments_plot_args']:
-                frag = bokeh_aggregated_fragments(masstodon=masstodon,
-                                                  path=output+'estimated_aggregated_fragments.html',
-                                                  **plots['estimated_aggregated_fragments_plot_args'])
+
+            for x in ('spectrum', 'aggregated_precursors',
+                      'aggregated_fragments', 'estimated_aggregated_fragments'):
+                x_args = x + '_plot_args'
+                if plots[x_args]:
+                    plot_fun = globals()['bokeh_' + x]
+                    plot_fun(masstodon=masstodon,
+                             path=output + x + '.html',
+                             **plots[x_args])
+
+            # if plots['spectrum_plot_args']:
+            #     bokeh_spectrum(masstodon=masstodon,
+            #                           path=output+'assigned_spectrum.html',
+            #                           **plots['spectrum_plot_args'])
+            # if plots['aggregated_precursors_plot_args']:
+            #     prec = bokeh_aggregated_precursors(masstodon=masstodon,
+            #                                        path=output+'aggregated_precusors.html',
+            #                                        **plots['aggregated_precursors_plot_args'])
+            # if plots['aggregated_fragments_plot_args']:
+            #     frag = bokeh_aggregated_fragments(masstodon=masstodon,
+            #                                       path=output+'aggregated_fragments.html',
+            #                                       **plots['aggregated_fragments_plot_args'])
+            # if plots['estimated_aggregated_fragments_plot_args']:
+            #     frag = bokeh_aggregated_fragments_estimated(masstodon=masstodon,
+            #                                                 path=output+'estimated_aggregated_fragments.html',
+            #                                                 **plots['estimated_aggregated_fragments_plot_args'])
             Finished = True
         except ValueError:
             i += 1

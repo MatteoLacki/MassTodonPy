@@ -75,12 +75,11 @@ class Precursor(object):
         self.q = int(charge)
         self.groups = ('N', 'C_alpha', 'C_carbo')
                              # include N, C_alpha, C_carbo in start and end.
-        self.group2frag = dict(start=dict(N='y', C_alpha='z', C_carbo='x'),
-                               end=dict(N='c', C_alpha='a', C_carbo='b'))
+        self.group2frag = dict(start = dict(N='y', C_alpha='z', C_carbo='x'),
+                                 end = dict(N='c', C_alpha='a', C_carbo='b'))
         self.modifications = {(number - 1, group): Formula(atom_cnt)
                               for number, mods in modifications.items()
                               for group, atom_cnt in mods.items()}
-        print(self.modifications)
         self.formula = sum(self[number, group]
                            for number in range(len(self))
                            for group in self.groups)
@@ -99,9 +98,9 @@ class Precursor(object):
         formula = self.amino_acids[(self.fasta[number], group)] +\
                   self.modifications.get((number, group), 0)
         # Modifying termini: Kaltashov O., Mass Spectrometry in Biophysics
-        if number == 0 and group is 'N':
+        if number == 0 and group == 'N':
             formula['H'] += 1  #  H for N terminus
-        if number == (len(self.fasta)-1) and group is 'C_carbo':
+        if number == (len(self.fasta)-1) and group == 'C_carbo':
             formula['O'] += 1  # additional H and O
             formula['H'] += 1  # for the C terminus
         formula.check_positivity()
@@ -195,7 +194,7 @@ class Precursor(object):
     def molecules(self):
         """Generate charged molecules."""
         for name, formula in self.uncharged_molecules():
-            if name[0] is not 'p':
+            if name[0] != 'p':
                 side_chain_len = int(name[1:])
             else:
                 side_chain_len = len(self)
