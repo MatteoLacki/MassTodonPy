@@ -4,10 +4,11 @@ import os
 
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Plot.bokeh_aggregated_precursors import bokeh_aggregated_precursors
-from MassTodonPy.Plot.bokeh_fragments_intensity import bokeh_fragments_intensity
 from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
+from MassTodonPy.Plot import bokeh_spectrum
+from MassTodonPy.Plot import bokeh_aggregated_precursors
+from MassTodonPy.Plot import bokeh_aggregated_fragments
+from MassTodonPy.Plot import bokeh_estimated_aggregated_fragments
 
 if __name__ == '__main__':
     print("\nWelcome to MassTodon example call.")
@@ -30,10 +31,11 @@ if __name__ == '__main__':
                           _L2_flow=.01)
 
     print("\t- making basic plot.")
-    path  = './test/'
+    path  = './test_output/'
     masstodon.write(path)
-    bokeh_spectrum(masstodon, path + 'assigned_spectrum.html', show=True)
-    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precusors.html', show=True)
-    bokeh_fragments_intensity(masstodon, path + 'fragment_intensities.html', show=True)
+    bokeh_spectrum(masstodon, path + 'spectrum.html')
+    bokeh_aggregated_precursors(masstodon, path + 'aggregated_precursors.html')
+    bokeh_aggregated_fragments(masstodon, path + 'aggregated_fragments.html')
+    bokeh_estimated_aggregated_fragments(masstodon, path + 'estimated_aggregated_fragments.html')
 
-    print("Send us your money to save MassTodons!")
+    print("Send us your money to save MassTodons!\n")
