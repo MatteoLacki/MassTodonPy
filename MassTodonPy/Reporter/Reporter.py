@@ -23,21 +23,8 @@ import os
 from MassTodonPy.Misc.ExtensionOfCommonDataStructures import DefaultDict
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Reporter.buffers import buffers
-from MassTodonPy.Reporter.misc import Brick, Cluster, PeakGroup, ColorGenerator, make_string_represenation
+from MassTodonPy.Reporter.misc import *
 from MassTodonPy.Write.csv_tsv import write_rows
-
-
-def float2str(x):
-    if isinstance(x, float):
-        return "{:10.3f}".format(x)
-    else:
-        return x
-
-def float2strPerc(x):
-    if isinstance(x, float):
-        return "{:10.3f}%".format(x * 100)
-    else:
-        return x
 
 
 class Reporter(object):
@@ -88,7 +75,7 @@ class Reporter(object):
         self.color = ColorGenerator()
         prev_b = Brick(top=0.0, bottom=0.0, peak_group=PeakGroup(mz_L=0.0)) # guardian
         for b in self._bricks:
-            if b.peak_group.mz_L is prev_b.peak_group.mz_L:
+            if b.peak_group.mz_L == prev_b.peak_group.mz_L:
                 b.bottom = prev_b.top
                 b.top = prev_b.top + b.intensity
             b.color = self.color(b.molecule)
@@ -107,7 +94,7 @@ class Reporter(object):
         """Generate a flow of peak groups, bricks, and clusters."""
         for sol_id, sol in enumerate(self.M.solutions):
             for G in sol:
-                if G[0] is 'G':
+                if G[0] == 'G':
                     d = self._min_interval_len / 2.0
                     try:
                         min_mz = sol.node[G]['min_mz'] - d
@@ -131,7 +118,7 @@ class Reporter(object):
                     for I in sol[G]:
                         estimate = sol[G][I]['estimate']
                         for M in sol[I]:
-                            if M[0] is 'M':
+                            if M[0] == 'M':
                                 # CVXOPT sometimes returns results only
                                 # slightly smaller than zero: don't want them
                                 #                 |||||
@@ -309,13 +296,13 @@ class Reporter(object):
 
         for name, formula, estimate in self.aggregated_mols():
             frag_type = name[0]
-            if frag_type is not 'p':
+            if frag_type != 'p':
                 no = int(name[1:])
-                if frag_type is 'c':
+                if frag_type == 'c':
                     frag_no = no
                 elif frag_type in ('a', 'b'):
                     frag_no = no-1
-                elif frag_type is 'z':
+                elif frag_type == 'z':
                     frag_no = fasta_len - no
                 elif frag_type in ('x', 'y'):
                     frag_no = fasta_len - no + 1
@@ -332,7 +319,7 @@ class Reporter(object):
     def get_aggregated_precursors(self):
         precursors = [0.0] * self.M.precursor.q
         for mol in self.M.molecules:
-            if mol.name[0] is 'p':
+            if mol.name[0] == 'p':
                 precursors[mol.q - 1] += mol.intensity
         return precursors
 
@@ -357,7 +344,7 @@ class Reporter(object):
                      left_name=''))
             min_intensity = 1.0
             for m in self.M.molecules:
-                if m.name[0] is not 'p' and m.intensity >= min_intensity:
+                if m.name[0] != 'p' and m.intensity >= min_intensity:
                     mt, po, cS = m._molType_position_cleavageSite()
                     self._fragments_intensity[cS][roepstorffMap[m.name[0]]] += m.intensity
                     if m.name[0] in 'abc':

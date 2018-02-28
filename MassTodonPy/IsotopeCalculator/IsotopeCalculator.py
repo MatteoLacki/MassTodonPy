@@ -179,7 +179,7 @@ class IsotopeCalculator(object):
             mass, probability = self._make_envelope(formula,
                                                     joint_probability,
                                                     memoize)
-        if q is 0:
+        if q == 0:
             measure = Measure(atoms=mass, masses=probability)
             measure.round_atoms(mz_digits)
             return measure

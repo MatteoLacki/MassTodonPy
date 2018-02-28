@@ -99,7 +99,7 @@ def deconvolve(molecules,
         # total probability of isotopologues around experimental peaks
         total_prob = sum(d['probability']
                          for n, d in mol_graph.nodes(data=True)
-                         if n[0] is 'I' and mol_graph.degree[n] > 1)
+                         if n[0] == 'I' and mol_graph.degree[n] > 1)
 
         # plant the mol_graph into the graph?
         if total_prob >= min_prob_per_molecule:
@@ -108,14 +108,14 @@ def deconvolve(molecules,
             #      if the was the only possible source of these ions.
             #      and accept if it is more than some number.
             #      This way silly solutions should be eliminated.
-            if method is 'Matteo' and _merge_sister_Is:
+            if method == 'Matteo' and _merge_sister_Is:
                 # Glue Is sharing common Es.
                 _glue_sister_isotopologues(mol_graph)
             graph.add_nodes_from(mol_graph.nodes(data=True))
             graph.add_edges_from(mol_graph.edges(data=True))
 
     #TODO Here double copying. Optimize.
-    if method is 'Matteo':
+    if method == 'Matteo':
         if _verbose:
             print(Counter(n[0] for n in graph.nodes))
         _add_G_remove_E(graph)
@@ -126,7 +126,7 @@ def deconvolve(molecules,
             max_iters = 10
             problem = DeconvolutionProblem(graph, **kwds)
             yield problem
-    elif method is 'Ciacho_Wanda':
+    elif method == 'Ciacho_Wanda':
         graphs = connected_component_subgraphs(graph)
         for graph in graphs:
             problem = GaussianDeconvolutionProblem(graph, **kwds)
@@ -151,8 +151,8 @@ def _glue_sister_isotopologues(graph):
     visited = {}
     I_2_delete = []
     for I in graph:
-        if I[0] is 'I':
-            Gs = frozenset(G for G in graph[I] if G[0] is not 'M')
+        if I[0] == 'I':
+            Gs = frozenset(G for G in graph[I] if G[0] != 'M')
             if Gs:
                 if not Gs in visited:
                     visited[Gs] = I
@@ -183,14 +183,14 @@ def _add_G_remove_E(graph):
     G_min_mz = defaultdict(lambda: infinity)
     G_max_mz = defaultdict(lambda: 0.0)
     for E, E_data in graph.nodes(data=True):
-        if E[0] is 'E':
+        if E[0] == 'E':
             isotopologues = frozenset(graph[E]) # unmutable!
             G_intensity[isotopologues] += E_data['intensity']
             G_min_mz[isotopologues] = min(G_min_mz[isotopologues], E_data['mz'])
             G_max_mz[isotopologues] = max(G_max_mz[isotopologues], E_data['mz'])
 
     # removing experimental peaks 'E'
-    graph.remove_nodes_from([E for E in graph.nodes() if E[0] is 'E'])
+    graph.remove_nodes_from([E for E in graph.nodes() if E[0] == 'E'])
 
     # add G nodes with positive intensity
     G_cnt = 0
@@ -208,7 +208,7 @@ def _add_G_remove_E(graph):
     new_nodes = []  # to avoid "changing dict size" during iteration
     new_edges = []  # explicitly construct lists of nodes and edges
     for I in graph.nodes():
-        if I[0] is 'I' and graph.degree[I] is 1: # no experimental support
+        if I[0] == 'I' and graph.degree[I] == 1: # no experimental support
             G = 'G' + str(G_cnt)
             G_cnt += 1
             new_nodes.append((G, {'mz': graph.node[I]['mz'],

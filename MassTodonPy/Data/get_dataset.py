@@ -74,12 +74,12 @@ def get_dataset(dataset_name, json=False):
                           fragmentation_type="cz")
 
     instrument = {}
-    if dataset_name is 'substanceP':
+    if dataset_name == 'substanceP':
         instrument['name'] = 'synapt'
         instrument['wave height'] = 0
         instrument['wave velocity'] = 300
 
-    elif dataset_name is 'ubiquitin':
+    elif dataset_name == 'ubiquitin':
         instrument['name'] = 'orbitrap'
         instrument['acquisition time'] = '10 ms'
 

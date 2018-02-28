@@ -91,7 +91,7 @@ class DeconvolutionProblem(nx.Graph):
         for N in self:
             self.node[N]['cnt'] = cnts[N[0]]
             cnts[N[0]] += 1
-            if N[0] is not 'I':  # N-I in { M-I, G-I }
+            if N[0] != 'I':  # N-I in { M-I, G-I }
                 for I in self[N]:
                     self[N][I]['cnt'] = cnts[N[0] + I[0]]
                     cnts[N[0] + I[0]] += 1
@@ -103,13 +103,13 @@ class DeconvolutionProblem(nx.Graph):
         """Iterate over the nodes of a given type."""
         if args:
             for N, N_data in self.nodes(data=True):
-                if N[0] is node_type:
+                if N[0] == node_type:
                     out = [N]
                     out.extend(N_data.get(a, None) for a in args)
                     yield tuple(out)
         else:
             for N in self:
-                if N[0] is node_type:
+                if N[0] == node_type:
                     yield N
 
     def get_P_q(self):
@@ -192,7 +192,7 @@ class DeconvolutionProblem(nx.Graph):
                 print('initvals:\n', self.initvals)
                 raise ValueError('Chuj numeryczny.')
                 print('Trying again: iteration', iteration)
-            if self.solution['status'] is 'optimal':
+            if self.solution['status'] == 'optimal':
                 stop = True
                 solved = True
         if not solved:
@@ -219,7 +219,7 @@ class DeconvolutionProblem(nx.Graph):
 
     def _get_global_fit_quality(self):
         self.status = self.solution['status']
-        if self.status is 'optimal':
+        if self.status == 'optimal':
             self.L1_error = sum(abs(i - e) for G, i, e in
                                 self.node_iter('G',
                                                'intensity',

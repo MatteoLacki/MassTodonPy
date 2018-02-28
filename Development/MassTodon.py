@@ -21,12 +21,14 @@ masstodon = MassTodon(spectrum=substanceP.spectrum,
                       charge=3,
                       name='substanceP',
                       modifications=modifications,
-                      _verbose=True)
+                      _verbose=False)
 
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Plot.bokeh_aggregated_fragments import bokeh_aggregated_fragments
-from MassTodonPy.Plot.bokeh_aggregated_fragments_estimated import bokeh_aggregated_fragments_estimated
+from MassTodonPy.Plot import bokeh_spectrum
+from MassTodonPy.Plot import bokeh_aggregated_precursors
+from MassTodonPy.Plot import bokeh_aggregated_fragments
+from MassTodonPy.Plot import bokeh_aggregated_fragments_estimated
 
 bokeh_spectrum(masstodon, show=True)
 bokeh_aggregated_fragments(masstodon, show=True)
 bokeh_aggregated_fragments_estimated(masstodon, show=True)
+bokeh_aggregated_precursors(masstodon, show=True)

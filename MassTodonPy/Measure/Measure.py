@@ -47,7 +47,7 @@ class Measure(object):
 
     def __has_type_of(self, other):
         """Assert that 'self' and 'other' have the same type."""
-        assert self.__class__.__name__ is other.__class__.__name__,\
+        assert self.__class__.__name__ == other.__class__.__name__,\
              "\tIllegal to add class {0} to class {1}.\n".format(
                 other.__class__.__name__,\
                 self.__class__.__name__)
@@ -77,7 +77,7 @@ class Measure(object):
             A measure we want to stack on top of this one.
 
         """
-        if other is 0:
+        if other == 0:
             return self
         else:
             return self.__add__(other)
@@ -104,23 +104,23 @@ class Measure(object):
 
     def __mul__(self, scalar):
         """Multiply by a scalar."""
-        if scalar is 0:
+        if scalar == 0:
             return self.__class__()
-        elif scalar is 1:
+        elif scalar == 1:
             return self.copy()
         else:
             return self.__class__(self.atoms, scalar * self.masses)
 
     def __rmul__(self, scalar):
         """Multiply by a scalar."""
-        if scalar is 1:
+        if scalar == 1:
             return self
         else:
             return self.__mul__(scalar)
 
     def __imul__(self, scalar):
         """Multiply by a scalar."""
-        if scalar is not 1:
+        if scalar != 1:
             self.masses = self.masses * scalar
         return self
 
@@ -140,7 +140,7 @@ class Measure(object):
             Defaults to 'inf', which prevents any rounding.
 
         """
-        if precision is not infinity:
+        if precision != infinity:
             self.atoms = np.around(self.atoms, precision)
             self.__aggregate()
 
@@ -234,10 +234,10 @@ class Measure(object):
 
         """
         try:
-            if len(key) is 2:
+            if len(key) == 2:
                 L, R = key
                 provide_idx = False
-            elif len(key) is 3:
+            elif len(key) == 3:
                 L, R, provide_idx = key
             idx = bisect_left(self.atoms, L)
             while self.atoms[idx] <= R:
@@ -313,7 +313,7 @@ class Measure(object):
 
         if len(self.atoms) > 0:
             if _simple:  # a simple plot
-                if bar_width is 1:  # get minimal width - the minimal space between atoms
+                if bar_width == 1:  # get minimal width - the minimal space between atoms
                     prev_atom = self.atoms[0]
                     bw = infinity
                     for i in range(1, len(self.atoms)):

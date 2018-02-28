@@ -38,7 +38,7 @@ def read_mz_file(path,
         for spectrum in info:
             spectrum = Measure(spectrum['m/z array'], spectrum['intensity array'])
             spectrum.trim(intensity_cut_off)
-            if mz_precision is not infinity:
+            if mz_precision != infinity:
                 spectrum.round_atoms(mz_precision)
             yield spectrum
 
@@ -70,7 +70,7 @@ def read_txt_file(path,
             intensities.append(float(line[1]))
     spectrum = Measure(mzs, intensities)
     spectrum.trim(intensity_cut_off)
-    if mz_precision is not infinity:
+    if mz_precision != infinity:
         spectrum.round_atoms(mz_precision)
     return spectrum
 
@@ -93,7 +93,7 @@ def read_spectrum(path='',
     -------
     out : Measure
     """
-    assert path is not '', "Provide a spectrum to analyze!"
+    assert not path, "Provide a spectrum to analyze!"
     file_path, file_name, file_ext = parse_path(path)
     file_ext = file_ext.lower()
     if file_ext in ('.txt', ''):

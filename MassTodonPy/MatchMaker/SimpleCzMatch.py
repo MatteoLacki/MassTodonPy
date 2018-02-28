@@ -91,7 +91,7 @@ class SimpleCzMatch(object):
     def _add_edge(self, C, Z):
         """Add edge between a 'c' fragment and a 'z' fragment."""
         Q = self._Q
-        if C.bp is Z.bp and C.q + Z.q < Q:
+        if C.bp == Z.bp and C.q + Z.q < Q:
             self.graph.add_edge(C, Z, ETnoD_PTR = Q - 1 - C.q - Z.q)
 
     def _add_self_loop(self, N):
@@ -105,7 +105,7 @@ class SimpleCzMatch(object):
         for mol in self._molecules:
             estimate = mol.intensity
             if estimate > 0:
-                if mol.name is 'precursor':
+                if mol.name == 'precursor':
                     g = mol.g
                     q = mol.q
                     self._I_ETnoD_precursor += g * estimate
@@ -119,9 +119,9 @@ class SimpleCzMatch(object):
                         # don't you forget about it!!!
                     self.graph.node[frag]['intensity'] += estimate
         for C in self.graph:
-            if C.type is 'c':
+            if C.type == 'c':
                 for Z in self.graph:
-                    if Z.type is 'z':
+                    if Z.type == 'z':
                         self._add_edge(C, Z)
         for N in self.graph:
             self._add_self_loop(N)

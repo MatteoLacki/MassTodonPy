@@ -56,13 +56,13 @@ class Molecule(object):
     #TODO generalize to abxy
     def _molType_position_cleavageSite(self):
         mt = self.name[0]
-        if mt is 'p':
+        if mt == 'p':
             return None
         else:
             po = int(self.name[1:])
             fasta_len = len(self.source.fasta)
-            cs = None if mt is 'p' else \
-                   po if mt is 'c' else fasta_len - po
+            cs = None if mt == 'p' else \
+                   po if mt == 'c' else fasta_len - po
             return mt, po, cs
 
     @property

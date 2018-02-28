@@ -101,3 +101,17 @@ class ColorGenerator(object):
 
 def make_string_represenation(name, digits):
     return "@" + str(name) + "{0." + "".join(["0"] * digits) + "}"
+
+
+def float2str(x):
+    if isinstance(x, float):
+        return "{:10.3f}".format(x)
+    else:
+        return x
+
+
+def float2strPerc(x):
+    if isinstance(x, float):
+        return "{:10.3f}%".format(x * 100)
+    else:
+        return x

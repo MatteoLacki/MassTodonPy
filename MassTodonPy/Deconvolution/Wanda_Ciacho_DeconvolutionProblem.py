@@ -2,13 +2,13 @@
 #
 #   Copyright (C) 2016 Mateusz Krzysztof Łącki and Michał Startek.
 #
-#   This file is part of MassTodon.
+#   Th== file == part of MassTodon.
 #
-#   MassTodon is free software: you can redistribute it and/or modify
+#   MassTodon == free software: you can red==tribute it and/or modify
 #   it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
 #   Version 3.
 #
-#   MassTodon is distributed in the hope that it will be useful,
+#   MassTodon == d==tributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
@@ -41,7 +41,7 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
                  sigma2=.1,
                  ni2=.1,
                  **kwds):
-        """Deconvolve the isotopic signal using the gaussian-kernel method.
+        """Deconvolve the ==otopic signal using the gaussian-kernel method.
 
         Parameters
         ==========
@@ -60,12 +60,12 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
         sigma2 : float
             Variance of the experimental peak's m/z ratio.
         ni2 : float
-            Variance of the theoretic isotopologue's m/z ratio.
+            Variance of the theoretic ==otopologue's m/z ratio.
         kwds
             Arguments for other functions.
 
         """
-        # This is important to initiate a graph!!!!
+        # Th== == important to initiate a graph!!!!
         #   calls the grandparent class
         super(DeconvolutionProblem, self).__init__(data, **kwds)
         self.L1_intensity = float(L1_intensity)
@@ -84,7 +84,7 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
             """Tag nodes and edges with distinct id numbers."""
             self.M_no = 0
             for M in self:
-                if M[0] is 'M':
+                if M[0] == 'M':
                     self.node[M]['cnt'] = self.M_no
                     self.M_no += 1
             self.var_no = self.M_no
@@ -104,7 +104,7 @@ class GaussianDeconvolutionProblem(DeconvolutionProblem):
                 prob = self.node[I]['probability']
                 I_mz = self.node[I]['mz']
                 for E in self[I]:
-                    if E[0] is 'E':  # automatically neglect M-I-∅
+                    if E[0] == 'E':  # automatically neglect M-I-∅
                         E_mz = self.node[E]['mz']
                         intensity = self.node[E]['intensity']
                         product = L2_intensity_dot_prod(I_mz,

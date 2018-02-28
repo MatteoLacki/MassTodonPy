@@ -33,7 +33,7 @@ class LinearDict(MutableMapping):
             return self.__add__(other)
 
     def __iadd__(self, other):
-        if other is not 0:
+        if other != 0:
             try:
                 for key in set().union(self._storage, other._storage):
                     self._storage[key] = self._storage.get(key, 0) + \
