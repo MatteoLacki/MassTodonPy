@@ -46,7 +46,6 @@ clean_masstodon_3: ## remove virtual environment with python2
 pypi: ## send to pypi
 	 git tag -d GutenTag
 	 git push gh :refs/tags/GutenTag
-	 python setup.py sdist
 
 projectName = masstodon
 
