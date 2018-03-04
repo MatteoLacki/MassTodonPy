@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 setup(
     name='MassTodonPy',
     packages=find_packages(),
-    version='0.3.4',
+    version='0.3.5',
     description='Estimate the products of Electron Transfer Dissociation in \
     Mass Spectrometry for a given biological substance and \
     the chemical reaction probabilities that lead to these products.',
@@ -39,10 +39,12 @@ setup(
         'License :: OSI Approved :: GNU Affero General Public License v3',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Chemistry',
-        'Programming Language :: Python :: 2.7'],
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.4'],
     install_requires=[
         'cffi',
-        'bokeh',
         'numpy',
         'pyteomics>=3.4.1',
         'lxml',
@@ -50,17 +52,11 @@ setup(
         'IsoSpecPy==1.05',
         'networkx',
         'future',
-        'six'],
+        'six',
+        'bokeh'],
     scripts=[
         'bin/masstodon',
         'bin/masstodon_example_call',
         'bin/plot_mass_spectrum',
-        'bin/json2masstodon'],
-    include_package_data=True,
-    package_data={
-        "Data": ["Data/isotopes.json",
-                 "Data/amino_acids.json",
-                 "Data/substanceP.json",
-                 "Data/ubiquitin.json"],
-    }
+        'bin/json2masstodon']
 )
