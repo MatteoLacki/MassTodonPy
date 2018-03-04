@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 setup(
     name='MassTodonPy',
     packages=find_packages(),
-    version='0.3.6',
+    version='0.3.7',
     description='Estimate the products of Electron Transfer Dissociation in \
     Mass Spectrometry for a given biological substance and \
     the chemical reaction probabilities that lead to these products.',
@@ -50,7 +50,7 @@ setup(
         'lxml',
         'cvxopt',
         'IsoSpecPy==1.0.5',
-        'networkx',
+        'networkx>=2.0',
         'future',
         'six',
         'bokeh'],
