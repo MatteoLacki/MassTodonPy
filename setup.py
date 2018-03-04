@@ -28,7 +28,7 @@ setup(
     author=u'Mateusz Krzysztof Łącki',
     author_email='matteo.lacki@gmail.com',
     url='https://github.com/MatteoLacki/MassTodonPy',
-    download_url='https://github.com/MatteoLacki/MassTodonPy/archive/0.3.4.tar.gz',
+    download_url='https://github.com/MatteoLacki/MassTodonPy/tree/GutenTag',
     keywords=[
         'Mass Spectrometry',
         'ETD',

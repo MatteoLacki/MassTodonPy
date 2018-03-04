@@ -3,14 +3,8 @@ import json
 from collections import defaultdict
 
 
-def get_isotopic_masses_and_probabilities(json=False):
-    """
-    Retrieve the information on masses and frequencies of isotopes.
-
-    Parameters
-    ==========
-    json : boolean
-        Should we read in data from json file instead of a python file?
+def get_isotopic_masses_and_probabilities():
+    """Retrieve the information on masses and frequencies of isotopes.
 
     Returns
     =======
@@ -19,12 +13,7 @@ def get_isotopic_masses_and_probabilities(json=False):
     The values of the first dictionary are lists of masses of elements.
     The values of the first dictionary are lists of probabilities of elements.
     """
-    if json:
-        path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-        with open(path + "isotopes.json", "rb") as f:
-            isotopes_raw = json.load(f)
-    else:
-        from MassTodonPy.Data.isotopes import isotopes as isotopes_raw
+    from MassTodonPy.Data.isotopes import isotopes as isotopes_raw
     iso_masses = defaultdict(list)
     iso_probs = defaultdict(list)
     for element, isos in isotopes_raw:

@@ -19,9 +19,8 @@ class Dataset(object):
         out += "----------------"
         return out
 
-def get_dataset(dataset_name, json=False):
-    """
-    Retrieve examplary spectra informations.
+def get_dataset(dataset_name):
+    """Retrieve examplary spectra informations.
 
     Parameters
     ==========
@@ -50,18 +49,10 @@ def get_dataset(dataset_name, json=False):
     spectrum:
         A list of lists of floats corresponding to masses and intensities.
     """
-    assert dataset_name in ['substanceP',]
-    # ['substanceP', 'ubiquitin'] # TODO fix ubiquitin example
-
-    if json:
-        path = pkg_resources.resource_filename('MassTodonPy', 'Data/')
-        with open(path + dataset_name + '.json', 'rb') as f:
-            mol = json.load(f)
+    if dataset_name is 'substanceP':
+        from MassTodonPy.Data.substanceP import substanceP as mol
     else:
-        if dataset_name is 'substanceP':
-            from MassTodonPy.Data.substanceP import substanceP as mol
-        else:
-            raise AttributeError("No data set of that name.")
+        raise AttributeError("No data set of that name.")
     spectrum = Spectrum(spectrum=mol['spectrum'])
 
     modifications = {int(k): v for k, v in
