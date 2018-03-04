@@ -47,7 +47,7 @@ setup(
         'pyteomics>=3.4.1',
         'lxml',
         'cvxopt',
-        'IsoSpecPy',
+        'IsoSpecPy==1.05',
         'networkx',
         'future',
         'six'],
