@@ -23,13 +23,13 @@ Submodules
 
 .. automodule:: MassTodonPy.MassTodon
     :members:
-    :undoc-members:
-    :show-inheritance:
+    
+    
 
 .. automodule:: MassTodonPy.test_masstodon
     :members:
-    :undoc-members:
-    :show-inheritance:
+    
+    
 
 
 Module contents
@@ -37,5 +37,5 @@ Module contents
 
 .. automodule:: MassTodonPy
     :members:
-    :undoc-members:
-    :show-inheritance:
+    
+    
