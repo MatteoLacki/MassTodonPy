@@ -26,7 +26,7 @@ from networkx import connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
-from MassTodonPy.Deconvolution.Wanda_Ciacho_DeconvolutionProblem import GaussianDeconvolutionProblem
+# from MassTodonPy.Deconvolution.Wanda_Ciacho_DeconvolutionProblem import GaussianDeconvolutionProblem
 # from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 def deconvolve(molecules,

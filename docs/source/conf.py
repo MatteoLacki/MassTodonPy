@@ -28,12 +28,25 @@ sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return MagicMock()
+        return MagicMock()
 
 
-MOCK_MODULES = ['numpy', 'numpy.random', 'matplotlib.pyplot',
-                'linearCounter', 'lxml', 'cvxopt', 'IsoSpecPy',
-                'IsoSpecPy.IsoSpecPy', 'networkx', 'intervaltree',
+MOCK_MODULES = ['numpy', 
+                'numpy.random', 
+                'matplotlib.pyplot',
+                'linearCounter', 
+                'lxml', 
+                'cvxopt',
+                'IsoSpecPy',
+                'IsoSpecPy.IsoSpecPy',
+                'networkx',
+                'pandas',
+                'bokeh',
+                'bokeh.plotting',
+                'bokeh.models',
+                'bokeh.resources',
+                'bokeh.embed',
+                '__future__',
                 'pyteomics']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
@@ -101,7 +114,6 @@ add_function_parentheses    = False
 add_module_names            = False
 
 # -- Options for HTML output ----------------------------------------------
-
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme

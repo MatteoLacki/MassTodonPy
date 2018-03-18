@@ -43,6 +43,10 @@ clean_masstodon_2: ## remove virtual environment with python2
 clean_masstodon_3: ## remove virtual environment with python2
 	rm -rf ../MassTodonVEpy3
 
+delete_pyc: ## delete pyc files
+	find MassTodonPy -name \*.pyc -delete
+	
+
 pypi: ## send to pypi
 	 git tag -d GutenTag
 	 git push gh :refs/tags/GutenTag

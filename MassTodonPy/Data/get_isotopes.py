@@ -8,10 +8,11 @@ def get_isotopic_masses_and_probabilities():
 
     Returns
     =======
-    Two dictionaries, both with keys set to element encodings,
-    such as Ag, Al, Ar, ...
-    The values of the first dictionary are lists of masses of elements.
-    The values of the first dictionary are lists of probabilities of elements.
+    out : tuple
+        Two dictionaries, both with keys set to element encodings,
+        such as Ag, Al, Ar, ...
+        The values of the first dictionary are lists of masses of elements.
+        The values of the first dictionary are lists of probabilities of elements.
     """
     from MassTodonPy.Data.isotopes import isotopes as isotopes_raw
     iso_masses = defaultdict(list)

@@ -33,21 +33,7 @@ def get_dataset(dataset_name):
 
     Returns
     =======
-    A dictionary with fields:
-    Q: int
-        The charge of the precursor.
-    WH: int
-        Wave height.
-    WV: int
-        Wave velocity.
-    fasta: string
-        The chain of amino acids that make up the precursor.
-    modifications: dictionary of dictionaries
-        Atom diffs of modifications of the atomic content.
-    name: string
-        The name of the dataset.
-    spectrum:
-        A list of lists of floats corresponding to masses and intensities.
+    A dictionary.
     """
     if dataset_name is 'substanceP':
         from MassTodonPy.Data.substanceP import substanceP as mol

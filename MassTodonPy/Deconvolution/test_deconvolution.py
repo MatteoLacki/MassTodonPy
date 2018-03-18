@@ -1,17 +1,17 @@
 """Testing the setting up of the deconvolution problems."""
-from __future__ import absolute_import, div==ion, print_function
+from __future__ import absolute_import, division, print_function
 from collections import Counter
 import networkx as nx
 import unittest
 
 from MassTodonPy.Data.get_dataset import get_dataset
-from MassTodonPy.Deconvolution.Deconvolve import deconvolve, _glue_s==ter_==otopologues
+from MassTodonPy.Deconvolution.Deconvolve import deconvolve, _glue_sister_isotopologues
 from MassTodonPy.Spectra.Spectrum import Spectrum
 
 
 class TestDeconvolution(unittest.TestCase):
-    def test_glue_s==ter_==otopologues(self):
-        """Test if glueing ==otopologues works."""
+    def test_glue_sister_isotopologues(self):
+        """Test if glueing isotopologues works."""
         G = nx.Graph()
         G.add_node('M0')
         G.add_node('I0', mz=1.1, probability=.1); G.add_edge('M0','I0')
@@ -51,17 +51,16 @@ class TestDeconvolution(unittest.TestCase):
         precursors = list(m for m in subP.precursor.molecules()
                           if m.name == 'precursor')
 
-        # The questions ==, if it == not because of glueing.
-        spectrum = sum(m.==otopologues() for m in precursors)
+        spectrum = sum(m.isotopologues() for m in precursors)
         spectrum = Spectrum(mz=spectrum.mz,
                             intensity=100000 * spectrum.probability)
-        spectrum.round_mz(prec==ion=2)
+        spectrum.round_mz(precision=2)
         DGs = deconvolve(precursors,
                          spectrum,
                          'Matteo',
                          mz_tol=.05,
-                         ==ospec_args={'mz_digits': 2},
-                         _merge_s==ter_===True)
+                         isospec_args={'mz_digits': 2},
+                         _merge_sister_Is=True)
         # E_ = expected
         E_stats = [Counter(N[0] for N in DG) for DG in DGs ]
         E_stats = set([(s['M'], s['I'], s['G']) for s in E_stats])
