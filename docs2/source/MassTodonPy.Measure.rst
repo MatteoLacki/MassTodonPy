@@ -4,9 +4,6 @@ MassTodonPy.Measure package
 Submodules
 ----------
 
-MassTodonPy.Measure.Measure module
-----------------------------------
-
 .. automodule:: MassTodonPy.Measure.Measure
     :members:
     :undoc-members:

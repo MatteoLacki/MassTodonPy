@@ -16,10 +16,11 @@ def read_mz_file(path,
 
     Generate a sequence of rounded and trimmed spectra from
     individual runs of the instrument.
+    
     Parameters
     ----------
     path : str
-        Path to the mass spectrum file (*.mzxml, *.mzml, *.txt).
+        Path to the mass spectrum file (mzxml, mzml, txt).
     mz_precision : integer
         The number of digits after which the support values get rounded.
         E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
@@ -51,7 +52,7 @@ def read_txt_file(path,
     Parameters
     ----------
     path : str
-        Path to the mass spectrum file (*.mzxml, *.mzml, *.txt).
+        Path to the mass spectrum file (mzxml, mzml, txt).
     mz_precision : integer
         The number of digits after which the support values get rounded.
         E.g. if set to 2, then number 3.141592 will be rounded to 3.14.
@@ -83,7 +84,7 @@ def read_spectrum(path='',
     Parameters
     ----------
     path : str
-        Path to the mass spectrum file (*.mzxml, *.mzml, *.txt).
+        Path to the mass spectrum file (mzxml, mzml, txt).
     mz_precision : integer
         The number of digits after which the support values get rounded.
         E.g. if set to 2, then number 3.141592 will be rounded to 3.14.

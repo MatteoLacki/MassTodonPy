@@ -3,6 +3,7 @@ from cvxopt import matrix, spmatrix, sparse, spdiag, solvers, setseed
 from six.moves import range
 
 def diag(val, dim):
+    """Create a spars matrix with val on the diagonal and zeros elsewhere."""
     return spdiag([spmatrix(val,[0],[0]) for i in range(dim)])
 
 def normalize_rows(M):

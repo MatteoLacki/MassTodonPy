@@ -14,9 +14,9 @@ class Spectrum(Measure):
     Parameters
     ----------
     spectrum : string, tuple, list, or Spectrum
-        The path can end up with extension:
-            *.txt, for spectra saved in tab separated format.
-            *.mzXml, for spectra saved with mxXml format.
+        The path can end up with two extension:
+        * txt, for spectra saved in tab separated format.
+        * mzXml, for spectra saved with mxXml format.
         The tuple or list consist of two numpy arrays,
         one with m over z ratios and the other with intensities.
     mz_digits : float or int

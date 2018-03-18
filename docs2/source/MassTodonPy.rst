@@ -16,22 +16,15 @@ Subpackages
     MassTodonPy.Molecule
     MassTodonPy.Plot
     MassTodonPy.Spectra
-    MassTodonPy.Summarator
     MassTodonPy.Write
 
 Submodules
 ----------
 
-MassTodonPy.MassTodon module
-----------------------------
-
 .. automodule:: MassTodonPy.MassTodon
     :members:
     :undoc-members:
     :show-inheritance:
-
-MassTodonPy.test\_masstodon module
-----------------------------------
 
 .. automodule:: MassTodonPy.test_masstodon
     :members:

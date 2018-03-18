@@ -40,12 +40,12 @@ class Precursor(object):
     charge : int
         The charge of the precursor ion.
     modifications : dictionary
-        A dictionary of modifications of amino acids.
-        Key: amino acid number in fasta sequence
-             (from N to C termini).
-        Value: a dictionary with group modifications.
-            Keys : C_carbo, C_alpha, or N.
-            Value: atom count in form of a linearCounter.
+        A dictionary of modifications of amino acids,
+        with key equal to amino acid number in fasta sequence
+        (from N to C termini), and value equal to the dictionary 
+        with group modifications.
+        The modifications have keys equalt to C_carbo, C_alpha, or N, 
+        and values equal to atom count in form of a linearCounter.
     fragments: str
         For now 'cz' only, but we are working on it.
     blocked_fragments : list

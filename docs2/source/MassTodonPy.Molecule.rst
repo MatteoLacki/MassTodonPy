@@ -4,9 +4,6 @@ MassTodonPy.Molecule package
 Submodules
 ----------
 
-MassTodonPy.Molecule.Molecule module
-------------------------------------
-
 .. automodule:: MassTodonPy.Molecule.Molecule
     :members:
     :undoc-members:
