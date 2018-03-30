@@ -1,7 +1,3 @@
-%load_ext autoreload
-%autoreload 2
-
-
 from collections import defaultdict
 from MassTodonPy.Data.get_dataset import get_dataset
 from MassTodonPy.MassTodon import MassTodon
@@ -13,6 +9,8 @@ for (number, group), mods in substanceP.precursor.modifications.items():
     modifications[number][group] = dict(mods)
 modifications = dict(modifications)
 # substanceP.spectrum.plot('plot.html', width=1000, height=500)
+
+print(modifications)
 
 masstodon = MassTodon(spectrum=substanceP.spectrum,
                       min_intensity=10.0,
