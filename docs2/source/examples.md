@@ -1,9 +1,5 @@
 Examples
 ========
-There are now two ways to run the program:
-
-1. In terminal.
-2. As part of another Python script.
 
 ### Terminal Call
 

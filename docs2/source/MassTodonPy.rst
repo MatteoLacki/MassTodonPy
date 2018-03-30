@@ -23,13 +23,13 @@ Submodules
 
 .. automodule:: MassTodonPy.MassTodon
     :members:
-    
-    
+
+
 
 .. automodule:: MassTodonPy.test_masstodon
     :members:
-    
-    
+
+
 
 
 Module contents
@@ -37,5 +37,5 @@ Module contents
 
 .. automodule:: MassTodonPy
     :members:
-    
-    
+
+

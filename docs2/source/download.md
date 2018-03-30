@@ -34,8 +34,12 @@ masstodon_example_call
 Ideally, you will run an example session of MassTodon and see output in your browser.
 
 
+
+
 ##### Virtual Environment
-If you cannot install dependencies on your machine, but you have access to virtualenv, or you just like virtualenv, because it's neet, then run:
+
+To install the MassTodon with Virtual Environment, run:
+
 ```bash
 virtualenv masstodon_ve
 source masstodon_ve/bin/activate
@@ -43,8 +47,30 @@ pip install MassTodonPy
 masstodon_example_call
 deactivate
 ```
-[(More on Virtual Environments)](https://python-guide-cn.readthedocs.io/en/latest/dev/virtualenvs.html).
+
+This way you might bypass lack of super user privileges.
+
+
 
 ##### GitHub
 
-The package is hosted on [GitHub](https://github.com/MatteoLacki/MassTodonPy/tree/devel): check out the latest devel version!
+The package is hosted on [GitHub](https://github.com/MatteoLacki/MassTodonPy/tree/devel).
+To download from github, you will need git.
+To get to the *devel* version:
+
+```bash
+git clone https://github.com/MatteoLacki/MassTodonPy.git
+cd MassTodonPy
+git checkout devel
+pip install .
+```
+
+If you want to install a version that you would locally pimp yourself on branch "my_pimped_masstodon":
+```bash
+git clone https://github.com/MatteoLacki/MassTodonPy.git
+cd MassTodonPy
+git checkout -b my_pimped_masstodon
+pip install -e .
+```
+
+This will only soft-link the MassTodonPy folder with the default folder PIP installs into.

@@ -6,18 +6,18 @@ Submodules
 
 .. automodule:: MassTodonPy.MatchMaker.CzMatch
     :members:
-    
-    
+
+
 
 .. automodule:: MassTodonPy.MatchMaker.SimpleCzMatch
     :members:
-    
-    
+
+
 
 .. automodule:: MassTodonPy.MatchMaker.test_MatchMaker
     :members:
-    
-    
+
+
 
 
 Module contents
@@ -25,5 +25,5 @@ Module contents
 
 .. automodule:: MassTodonPy.MatchMaker
     :members:
-    
-    
+
+
