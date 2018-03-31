@@ -1,6 +1,6 @@
 # MassTodonPy
 
-![Alt](/Webpage/masstodon2.jpg)
+![Alt](/docs2/source/figs/logo.png)
 
 A Python module investigating the Electron Transfer Dissociation in Mass Spectrometry
 
