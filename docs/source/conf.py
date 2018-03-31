@@ -12,23 +12,25 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+
 import os
 import sys
 from recommonmark.parser import CommonMarkParser
-# from recommonmark.transform import AutoStructify
+from mock import Mock as MagicMock
 
+# from recommonmark.transform import AutoStructify
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
-from mock import Mock as MagicMock
+
 
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
         return MagicMock()
 
-
-MOCK_MODULES = ['numpy', 
-                'numpy.random', 
+MOCK_MODULES = [
+                # 'numpy', 
+                # 'numpy.random', 
                 'lxml', 
                 'cvxopt',
                 'IsoSpecPy',
@@ -45,7 +47,7 @@ MOCK_MODULES = ['numpy',
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
-# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 
