@@ -28,9 +28,8 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = [
-                # 'numpy', 
-                # 'numpy.random', 
+MOCK_MODULES = ['numpy', 
+                'numpy.random', 
                 'lxml', 
                 'cvxopt',
                 'IsoSpecPy',
@@ -42,7 +41,6 @@ MOCK_MODULES = [
                 'bokeh.models',
                 'bokeh.resources',
                 'bokeh.embed',
-                '__future__',
                 'pyteomics']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
