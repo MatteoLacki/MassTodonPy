@@ -34,8 +34,6 @@ masstodon_example_call
 Ideally, you will run an example session of MassTodon and see output in your browser.
 
 
-
-
 ##### Virtual Environment
 
 To install the MassTodon with Virtual Environment, run:
@@ -73,4 +71,4 @@ git checkout -b my_pimped_masstodon
 pip install -e .
 ```
 
-This will only soft-link the MassTodonPy folder with the default folder PIP installs into.
+

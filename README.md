@@ -42,18 +42,17 @@ There are now two ways to run the program:
 1. In terminal.
 2. As part of another Python script.
 
-# Terminal Call
+### Terminal Call
 
 To run MassTodonPy in terminal, simply type
 
-```{bash}
-masstodon <spectrum_path> <config_path> -o <results_path>
 ```
-where <spectrum_path> and config file is in <config_path> and output needs to be written to <results_path>.
+masstodon <spectrum> <fasta> <charge> <mz_tol> -o <output_path>
+```
+where: 
+* <spectrum> is the path to the file containing the spectrum: *mzXml*, *mzml*, or a raw txt file with two columns (recorded m/z and intensities):
 
-The spectrum path can either lead to an mzXml spectrum, or to a simple tab separated text file containing the spectrum that in the first column contains m/z values and in second columns -- intensities. If you follow the latter option, the file could look somewhat like this:
-
-```{bash}
+```bash
 191.932 17.36
 271.183 98.33
 415.8 17.23
@@ -66,53 +65,84 @@ The spectrum path can either lead to an mzXml spectrum, or to a simple tab separ
 ... ...
 ```
 
-The config file should look like this:
+* <fasta> is the fasta amino acidic sequence, e.g. AAA of the molecule you look for in the spectrum.
+* <charge> is the charge of the observed precursor
+* <mz_tol> is the distance from the theoretical m/z that MassTodon will look around for signals.
+* <output_path> is the path to where you want to write the output of the software.
 
-```{bash}
-fasta = RPKPQQFFGLM
-precursor_charge = 3
-modification C11 = H:1, O:-1, N:1
-cut_off = 100
-mz_prec = .05
-verbose = True
+
+For a full list of possibilities type:
+```bash
+masstodon -h
 ```
 
-If you want to save a csv file with results for later inspection, add the following line to the config:
+Say you want to add a modification to your fasta specified protein.
+Suppose that the original peptide was AAAGGGVVAGV, had 2 charges, and included a C-terminal amidation,
+i.e. a replacement of -COOH with -CONH2. 
+The modification diff consists of a change we can symbolically write as O=-1, N=1, H=-1.
+The C-terminal is on the right valine, which is the eleventh amino acid counting from the N-terminal.
+We label the atoms included in the backbone of any amino acid as N, C\_alpha, and C\_carbo. 
+The amidation only modifies the C_carbo atom, i.e. the one present in the carboxyl group -COOH.
+Calling masstodon would look like:
 
-```{bash}
-csv = True
+```bash
+masstodon spectrum.mzXml AAAGGGVVAGV 2 .01 -modifications '11 C_carbo H=-1 N=1 O=-1'.
 ```
 
+It is crucial to specify the positionment of modification w.r.t. correct backbone atom,
+as the fragmentations severes bonds between them.
+If you specify it wrongly, then the diff will modify part of the resulting fragments.
 
-# Python Scripting
-
-Using MassTodonPy in scripts is straight-forward: simply import the MassTodonize function from the MassTodonPy module. Then, provide the parameters. For instance:
-
-```{python}
-from MassTodonPy import MassTodonize
-from MassTodonPy.TestScripts.substanceP import substanceP
-
-mol = substanceP.copy() # some data to compare
-
-res = MassTodonize( fasta           = mol['fasta'],
-                    precursor_charge= mol['Q'],
-                    mz_prec         = .05,
-                    joint_probability_of_envelope = .999,
-                    modifications   = mol['modifications'],
-                    spectrum        = mol['spectrum'],
-                    opt_P           = .99,
-                    solver          = 'multiprocessing',
-                    multiprocesses_No = None,
-                    max_times_solve = 10,
-                    raw_data        = True,
-                    output_csv_path = '/Users/matteo/Documents/MassTodon/results/',
-                    highcharts      = False,
-                    verbose         = False )
-
+MassTodonPy supports the insertion of multiple modifications:
+```bash
+masstodon spectrum.mzXml AAAGGGVVAGV 2 .01 -modifications '11 C_carbo H=-1 N=1 O=-1 | 2 N H=-1 Li=1'.
 ```
 
-# Web Service
+The above silly modification replaces a hydrogen atom with a lithium atom (pardon my chem-lish).
 
-We are currently working on simplifying your life even more, by making the MassTodon project available online. The project will be available soon!
 
-Remember: be nice to MassTodons.
+### Visualizing Spectra
+MassTodonPy includes a seperate submodule to plot raw spectra using Bokeh library.
+By default, it is added to the *bin* folder, and can be called:
+
+```bash
+plot_mass_spectrum <spectrum>
+```
+
+For more options (including properties of the browser plot), type 
+```bash
+plot_mass_spectrum -h
+```
+
+### Python Scripting
+
+The simplest way to use the MassTodon in your Python script is to import the **MassTodon** function from the MassTodonPy module. 
+A simple script used to run the previous example peptide, would look like this:
+
+```python
+from MassTodonPy import MassTodon
+
+res = MassTodonize( fasta           = AAAGGGVVAGV,
+                    precursor_charge= 2,
+                    mz_prec         = .01,
+                    spectrum        = "spectrum.mzXml",
+                    modifications   = {11: {'C_carbo': {'H': 1, 'O': -1, 'N': 1}}} )
+
+res.write('output_path')
+```
+
+This will run the software and save the results to 'output_path'.
+
+To visualize the outputs, add:
+
+```python
+from MassTodonPy.Plot import bokeh_spectrum
+from MassTodonPy.Plot import bokeh_aggregated_precursors
+from MassTodonPy.Plot import bokeh_aggregated_fragments
+from MassTodonPy.Plot import bokeh_estimated_aggregated_fragments
+
+bokeh_spectrum(res)
+bokeh_aggregated_precursors(res)
+bokeh_aggregated_fragments(res)
+bokeh_estimated_aggregated_fragments(res)
+```
