@@ -6,27 +6,30 @@ Subpackages
 
 .. toctree::
 
+    MassTodonPy.AminoAcid
     MassTodonPy.CLI
-    MassTodonPy.Deconvolutor
-    MassTodonPy.Formulator
+    MassTodonPy.Data
+    MassTodonPy.Deconvolution
     MassTodonPy.IsotopeCalculator
     MassTodonPy.MatchMaker
     MassTodonPy.Misc
-    MassTodonPy.Outputting
-    MassTodonPy.Parsers
-    MassTodonPy.PeakPicker
-    MassTodonPy.Solver
+    MassTodonPy.Molecule
+    MassTodonPy.Plot
     MassTodonPy.Spectra
-    MassTodonPy.Summarator
+    MassTodonPy.Write
 
 Submodules
 ----------
 
-MassTodonPy\.MassTodon module
------------------------------
-
 .. automodule:: MassTodonPy.MassTodon
     :members:
+
+
+
+.. automodule:: MassTodonPy.test_masstodon
+    :members:
+
+
 
 
 Module contents
@@ -34,3 +37,5 @@ Module contents
 
 .. automodule:: MassTodonPy
     :members:
+
+

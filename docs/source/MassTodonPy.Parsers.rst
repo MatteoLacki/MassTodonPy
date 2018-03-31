@@ -1,21 +1,22 @@
-MassTodonPy\.Parsers package
-============================
+MassTodonPy.Parsers package
+===========================
 
 Submodules
 ----------
 
-MassTodonPy\.Parsers\.config\_parser module
--------------------------------------------
-
-.. automodule:: MassTodonPy.Parsers.config_parser
+.. automodule:: MassTodonPy.Parsers.Paths
     :members:
 
 
-MassTodonPy\.Parsers\.parser module
------------------------------------
 
-.. automodule:: MassTodonPy.Parsers.parser
+.. automodule:: MassTodonPy.Parsers.blocked_fragments
     :members:
+
+
+
+.. automodule:: MassTodonPy.Parsers.parse_output
+    :members:
+
 
 
 
@@ -24,3 +25,5 @@ Module contents
 
 .. automodule:: MassTodonPy.Parsers
     :members:
+
+

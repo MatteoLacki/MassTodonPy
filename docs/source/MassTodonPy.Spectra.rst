@@ -1,14 +1,18 @@
-MassTodonPy\.Spectra package
-============================
+MassTodonPy.Spectra package
+===========================
 
 Submodules
 ----------
 
-MassTodonPy\.Spectra\.operations module
----------------------------------------
-
-.. automodule:: MassTodonPy.Spectra.operations
+.. automodule:: MassTodonPy.Spectra.Read
     :members:
+
+
+
+.. automodule:: MassTodonPy.Spectra.Spectrum
+    :members:
+
+
 
 
 Module contents
@@ -16,3 +20,5 @@ Module contents
 
 .. automodule:: MassTodonPy.Spectra
     :members:
+
+

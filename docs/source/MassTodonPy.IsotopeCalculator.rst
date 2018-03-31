@@ -1,24 +1,34 @@
-MassTodonPy\.IsotopeCalculator package
-======================================
+MassTodonPy.IsotopeCalculator package
+=====================================
 
 Submodules
 ----------
 
-MassTodonPy\.IsotopeCalculator\.formulaParser module
-----------------------------------------------------
-
-.. automodule:: MassTodonPy.IsotopeCalculator.formulaParser
-    :members: 
-
-MassTodonPy\.IsotopeCalculator\.isotopeCalculator module
---------------------------------------------------------
-
-.. automodule:: MassTodonPy.IsotopeCalculator.isotopeCalculator
+.. automodule:: MassTodonPy.IsotopeCalculator.IsotopeCalculator
     :members:
-    :exclude-members: multinomial, normal
+
+
+
+.. automodule:: MassTodonPy.IsotopeCalculator.IsotopeDistribution
+    :members:
+
+
+
+.. automodule:: MassTodonPy.IsotopeCalculator.Misc
+    :members:
+
+
+
+.. automodule:: MassTodonPy.IsotopeCalculator.test_isotope_calculator
+    :members:
+
+
+
 
 Module contents
 ---------------
 
 .. automodule:: MassTodonPy.IsotopeCalculator
     :members:
+
+

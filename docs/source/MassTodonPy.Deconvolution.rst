@@ -1,18 +1,39 @@
-MassTodonPy\.Deconvolution package
+MassTodonPy.Deconvolution package
 =================================
 
 Submodules
 ----------
 
-MassTodonPy\.Deconvolution\.deconvolution module
-----------------------------------------------
-
-.. automodule:: MassTodonPy.Deconvolution.deconvolve
+.. automodule:: MassTodonPy.Deconvolution.DeconvolutionProblem
     :members:
-    :exclude-members: get_A_b, get_G_h, get_initvals, get_P_q, number_graph, normalize_rows, diag
+
+
+
+.. automodule:: MassTodonPy.Deconvolution.Deconvolve
+    :members:
+
+
+
+.. automodule:: MassTodonPy.Deconvolution.Misc
+    :members:
+
+
+
+.. automodule:: MassTodonPy.Deconvolution.Wanda_Ciacho_DeconvolutionProblem
+    :members:
+
+
+
+.. automodule:: MassTodonPy.Deconvolution.test_deconvolution
+    :members:
+
+
+
 
 Module contents
 ---------------
 
-.. automodule:: MassTodonPy.Deconvolutor
+.. automodule:: MassTodonPy.Deconvolution
     :members:
+
+

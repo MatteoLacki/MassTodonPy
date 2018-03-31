@@ -4,39 +4,71 @@ Download
 Prerequisites
 -------------
 
-To play with MassTodonPy you need:
-1. UNIX based operating system, either:
-    * Linux, e.g. Ubuntu, Fedora, Gentoo, ...
-    * macOS, e.g. Sierra
-2. python2.7
+MassTodonPy can be used with any UNIX operating system.
+It was tested on 
+* macOS HighSierra
+* Ubuntu 16.04
+* Ubuntu 17.10
+* Gentoo
 
-To check if you have python2.7 (or later, but not 3 something yet), open your terminal and type
-```
-python2.7
-```
-
-You should see:
-![Alt](/figs/python_terminal.png)
+It requires a python interpreter.
+Both Python 2 and 3 are supported.
+However, CVXOPT optimization behaves more stable on Python 2.7.
 
 Installation
 -------------
 
 ##### PIP
 
-To install globally MassTodonPy, run in terminal
-```
-pip2 install MassTodonPy
+To install MassTodonPy globally, run:
+```bash
+pip install MassTodonPy
 ```
 
-This will install MassTodonPy and the required dependencies.
-To check the installation, simply write now:
+To check the installation, type:
 
-```
+```bash
 masstodon_example_call
 ```
 
-This will run an example session of the program to check that you are able to get any output. By no means is it necessary to run it more than once, just after installation.
+Ideally, you will run an example session of MassTodon and see output in your browser.
+
+
+##### Virtual Environment
+
+To install the MassTodon with Virtual Environment, run:
+
+```bash
+virtualenv masstodon_ve
+source masstodon_ve/bin/activate
+pip install MassTodonPy
+masstodon_example_call
+deactivate
+```
+
+This way you might bypass lack of super user privileges.
+
+
 
 ##### GitHub
 
-Sources are also available on [GitHub](https://github.com/MatteoLacki/MassTodonPy/archive/0.3.2.zip).
+The package is hosted on [GitHub](https://github.com/MatteoLacki/MassTodonPy/tree/devel).
+To download from github, you will need git.
+To get to the *devel* version:
+
+```bash
+git clone https://github.com/MatteoLacki/MassTodonPy.git
+cd MassTodonPy
+git checkout devel
+pip install .
+```
+
+If you want to install a version that you would locally pimp yourself on branch "my_pimped_masstodon":
+```bash
+git clone https://github.com/MatteoLacki/MassTodonPy.git
+cd MassTodonPy
+git checkout -b my_pimped_masstodon
+pip install -e .
+```
+
+
