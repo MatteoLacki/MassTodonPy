@@ -43,7 +43,9 @@ MOCK_MODULES = ['numpy',
                 '__future__',
                 'pyteomics']
 
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 
