@@ -17,19 +17,44 @@ import sys
 from recommonmark.parser import CommonMarkParser
 # from recommonmark.transform import AutoStructify
 
-sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../../MassTodonPy'))
+from mock import Mock as MagicMock
 
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+
+MOCK_MODULES = ['numpy', 
+                'numpy.random', 
+                'lxml', 
+                'cvxopt',
+                'IsoSpecPy',
+                'IsoSpecPy.IsoSpecPy',
+                'networkx',
+                'pandas',
+                'bokeh',
+                'bokeh.plotting',
+                'bokeh.models',
+                'bokeh.resources',
+                'bokeh.embed',
+                '__future__',
+                'pyteomics']
+
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 
 project = u'MassTodon'
-copyright = u'2018, MatteoLack'
-author = u'MatteoLack'
+copyright = u'2018, MatteoLacki'
+author = u'Mateusz Krzysztof Łącki'
 
 # The short X.Y version
-version = u''
+version = u'0.3.7'
 # The full version, including alpha/beta/rc tags
-release = u'1.0.0'
+release = u'0.3.7'
 
 
 # -- General configuration ---------------------------------------------------
