@@ -206,6 +206,7 @@ class MassTodon(object):
                                    blocked_fragments=blocked_fragments,
                                    block_prolines=block_prolines,
                                    distance_charges=distance_charges)
+
         self.molecules = list(self.precursor.molecules())
         t1 = time()
         spec_t = t1 - t0
@@ -216,9 +217,10 @@ class MassTodon(object):
         t2 = time()
         mole_t = t2 - t1
         self.deconvolution_method = deconvolution_method
+
         self.deconvolution_graph = \
-            build_deconvolution_graph(molecules=molecules, 
-                                      spectrum=spectrum,
+            build_deconvolution_graph(molecules=self.molecules, 
+                                      spectrum=self.spectrum,
                                       mz_tol=mz_tol,
                                       min_prob_per_molecule=min_prob_per_molecule,
                                      _verbose=_verbose,
@@ -226,6 +228,7 @@ class MassTodon(object):
                                       # IsoSpec arguments:
                                       joint_probability=joint_probability, 
                                       mz_digits=self.mz_digits)
+
         self.solutions = \
             deconvolve(deconvolution_graph=self.deconvolution_graph,
                        method=self.deconvolution_method,
@@ -235,9 +238,10 @@ class MassTodon(object):
                        L2_flow=_L2_flow,
                        L1_intensity=_L1_intensity,
                        L2_intensity=_L2_intensity,
-                       max_times=2,
-                       show_progress=False,
-                       maxiters=200)
+                       max_times=_max_times,
+                       show_progress=_show_progress,
+                       maxiters=_maxiters)
+
         self.solutions = deconvolve(molecules=self.molecules,
                                     spectrum=self.spectrum,
                                     method=self.deconvolution_method,
@@ -255,18 +259,21 @@ class MassTodon(object):
                                     sigma2=sigma2,
                                     _ni2=ni2,
                                     _verbose=_verbose)
+
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self.solutions = list(self.solutions)
         self.report = Reporter(masstodon=self,
                                max_buffer_len=_max_buffer_len)
-        #TODO: change the code below so that it could handle
-        #      reaction products from different precursors.
 
-        #TODO: make these procedures work also with other fragment types.
-        self.simple_cz_match = SimpleCzMatch(molecules=self.molecules,
-                                             precursor_charge=self.precursor.q)
-        self.cz_match = CzMatch(molecules=self.molecules,
-                                precursor_charge=self.precursor.q)
+        #TODO: change the code below so that it could handle
+        #      reaction products from different precursors
+        #TODO: make it work with a,b,x,y fragment types
+        self.simple_cz_match = \
+            SimpleCzMatch(molecules=self.molecules,
+                          precursor_charge=self.precursor.q)
+        self.cz_match = \
+            CzMatch(molecules=self.molecules,
+                    precursor_charge=self.precursor.q)
 
     def write(self, path):
         """Write results to path."""

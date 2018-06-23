@@ -27,6 +27,7 @@
 + Support multiple input precursors!!!
 + To each deconvolution problem add a measure of the problem's complexity
     + for instance in terms of the conditional number of the Gramm matrix.
++ simplify MassTodon Api
 
 # elegant
 + there should be a structure taking care of the molecules
