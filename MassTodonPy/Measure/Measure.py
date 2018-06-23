@@ -9,13 +9,13 @@ from six.moves import range, zip
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Misc.strings import repr_long_list
-from MassTodonPy.Misc.sorting import sort_by_first
+# from MassTodonPy.Misc.sorting import sort_by_first
 from MassTodonPy.Parsers.Paths import parse_path
 from MassTodonPy.Reporter.buffers import buffers
 
 
 class Measure(object):
-    """Store a discrete finite measure with atoms in R."""
+    """Store a discrete finite measure with atoms on the real line."""
 
     def __init__(self, atoms=np.array([]),
                        masses=np.array([]),
@@ -41,9 +41,10 @@ class Measure(object):
         self._store_names = ('atom', 'mass')
 
     def sort(self):
-        """Sort measure by atomic values."""
+        """Sort measure by atomic values."""       
         self.atoms, self.masses = (np.array(x) for x in \
                                    sort_by_first(self.atoms, self.masses))
+
 
     def __has_type_of(self, other):
         """Assert that 'self' and 'other' have the same type."""

@@ -8,6 +8,8 @@ from MassTodonPy.Spectra.Read import read_spectrum
 from MassTodonPy.Measure.Measure import Measure
 from MassTodonPy.Misc.unicode_compatibility import is_string
 
+
+# TODO: add support for passing in 2D numpy arrays.
 class Spectrum(Measure):
     """Prepare experimental spectrum.
 
@@ -69,8 +71,7 @@ class Spectrum(Measure):
             empty = spectrum and mz and intensity
         except ValueError:
             empty = False
-        if sort and empty:
-            print(sort and spectrum and mz and intensity)
+        if sort:
             self.sort()
         self.round_mz(self.mz_digits)
         if not self._low_spectrum:

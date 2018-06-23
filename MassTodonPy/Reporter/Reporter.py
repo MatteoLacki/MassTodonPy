@@ -56,6 +56,7 @@ class Reporter(object):
             self.__dict__[name].append(thing)
 
         self._fragments_intensity = defaultdict(Counter)
+        print(self._fragments_intensity)
         # order peak groups by m/z ratios
         self._peak_groups.sort(key=lambda c: c.mz_L)
 

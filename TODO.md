@@ -1,9 +1,12 @@
 ### MassTodon todo list
 
 # important
-+ add the plots of
-    + fragments probability
-    + aggregated fragments intensity
++ divide the project into smaller modules:
+    + masstodon_bokeh
+    + spectrum_bokeh
+    + something like that
+    + add support for tinker on Linux
+    so that it is easier to actually plot the spectrum
 + save results of the procedures
     + collect the errors in one file
     + aggregate the information on precursors and save it
@@ -73,6 +76,9 @@
 
 ============================================================================
 # Done:
++ add the plots of
+    + fragments probability
+    + aggregated fragments intensity
 + eliminate the alphas and raw estimates
     + we are saving them with the reporter class
 + add reading from '.json'

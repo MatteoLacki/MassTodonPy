@@ -106,6 +106,7 @@ class Precursor(object):
         formula.check_positivity()
         return formula
 
+    # TODO this should work with sequences, e.g. 1:10 
     def __getitem__(self, key):
         """Get amino acid of the precursor.
 

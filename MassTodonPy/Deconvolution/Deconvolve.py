@@ -29,6 +29,10 @@ from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
 # from MassTodonPy.Deconvolution.Wanda_Ciacho_DeconvolutionProblem import GaussianDeconvolutionProblem
 # from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
+
+#TODO: decouple into two functions: 
+    # one for graph construction
+    # second for the deconvolution of the connected components of graph
 def deconvolve(molecules,
                spectrum,
                method='Matteo',
@@ -62,7 +66,6 @@ def deconvolve(molecules,
     kwds :
         Contains arguments to other objects.
     """
-
     I_cnt = 0
     graph = nx.Graph()
     if isinstance(mz_tol, float):
@@ -88,7 +91,8 @@ def deconvolve(molecules,
             mol_graph.add_node(I, mz=mz_I, probability=prob)
             mol_graph.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
-
+            if 582.92 <= mz_L and mz_R <= 582.94:
+                print(mz_L, mz_R)
             # link with real peaks ---------------> show indices ↓ ?
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:
                 # get E_cnt additionally to m/z and intensity <--|
@@ -114,26 +118,27 @@ def deconvolve(molecules,
             graph.add_nodes_from(mol_graph.nodes(data=True))
             graph.add_edges_from(mol_graph.edges(data=True))
 
+    return(graph)
     #TODO Here double copying. Optimize.
-    if method == 'Matteo':
-        if _verbose:
-            print(Counter(n[0] for n in graph.nodes))
-        _add_G_remove_E(graph)
-        graphs = connected_component_subgraphs(graph)
-        for graph in graphs:
-            iters = 0
-            solved = False
-            max_iters = 10
-            problem = DeconvolutionProblem(graph, **kwds)
-            yield problem
-    elif method == 'Ciacho_Wanda':
-        graphs = connected_component_subgraphs(graph)
-        for graph in graphs:
-            problem = GaussianDeconvolutionProblem(graph, **kwds)
-            problem.solve()
-            yield problem
-    else:
-        raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
+    # if method == 'Matteo':
+    #     if _verbose:
+    #         print(Counter(n[0] for n in graph.nodes))
+    #     _add_G_remove_E(graph)
+    #     graphs = connected_component_subgraphs(graph)
+    #     for graph in graphs:
+    #         iters = 0
+    #         solved = False
+    #         max_iters = 10
+    #         problem = DeconvolutionProblem(graph, **kwds)
+    #         yield problem
+    # elif method == 'Ciacho_Wanda':
+    #     graphs = connected_component_subgraphs(graph)
+    #     for graph in graphs:
+    #         problem = GaussianDeconvolutionProblem(graph, **kwds)
+    #         problem.solve()
+    #         yield problem
+    # else:
+    #     raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
 
 
 def _glue_sister_isotopologues(graph):
