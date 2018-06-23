@@ -64,23 +64,25 @@
 # .7.......7...O....O...O... I.......Z.....Z....Z... $...O...O...$....O...O....Z..
 # .7.......7....OOOOO....ZOZI....:ZOZ......Z.....ZOZ7.....OZZ.....7ZOZ....Z....Z..
 # ................................................................................
-from __future__ import absolute_import, division, print_function
-from collections import Counter
+from __future__     import absolute_import, division, print_function
+from collections    import Counter
+from math           import ceil, log10
+from time           import time
 import csv
-from math import ceil, log10
 
-from MassTodonPy.Data.Constants import eps
-from MassTodonPy.Deconvolution.Deconvolve import deconvolve
-from MassTodonPy.MatchMaker.CzMatch import CzMatch
-from MassTodonPy.MatchMaker.SimpleCzMatch import SimpleCzMatch
-from MassTodonPy.Misc.cvxopt_wrapper import cvxopt_wrapper
-from MassTodonPy.Parsers.Paths import parse_path
-from MassTodonPy.Plot.bokeh_spectrum import bokeh_spectrum
-from MassTodonPy.Precursor.Precursor import Precursor
-from MassTodonPy.Spectra.Spectrum import Spectrum
-from MassTodonPy.Reporter.Reporter import Reporter
+from MassTodonPy.Data.Constants             import eps
+from MassTodonPy.Deconvolution.Deconvolve   import build_deconvolution_graph
+from MassTodonPy.Deconvolution.Deconvolve   import deconvolve
+from MassTodonPy.MatchMaker.CzMatch         import CzMatch
+from MassTodonPy.MatchMaker.SimpleCzMatch   import SimpleCzMatch
+from MassTodonPy.Misc.cvxopt_wrapper        import cvxopt_wrapper
+from MassTodonPy.Parsers.Paths              import parse_path
+from MassTodonPy.Plot.bokeh_spectrum        import bokeh_spectrum
+from MassTodonPy.Precursor.Precursor        import Precursor
+from MassTodonPy.Spectra.Spectrum           import Spectrum
+from MassTodonPy.Reporter.Reporter          import Reporter
 
-
+#TODO: simplify this call: there are way too many explicit arguments
 class MassTodon(object):
     def __init__(self,
                  spectrum,
@@ -107,11 +109,9 @@ class MassTodon(object):
                  _max_times=10.,
                  _show_progress=False,
                  _maxiters=1000.,
-                 _devel=False,
                  _verbose=False,
                  sigma2=.1,
-                 ni2=.1,
-                 **kwds):
+                 ni2=.1):
         """Run a full session of the MassTodon.
 
         Parameters
@@ -191,9 +191,8 @@ class MassTodon(object):
             Variance of the experimental peak's m/z ratio.
         ni2 : float
             Variance of the theoretic isotopologue's m/z ratio.
-        kwds :
-            Some other arguments.
         """
+        t0 = time()
         if isinstance(mz_tol, str):
             mz_tol = float(mz_tol)
         if not isinstance(mz_tol, float):
@@ -208,11 +207,37 @@ class MassTodon(object):
                                    block_prolines=block_prolines,
                                    distance_charges=distance_charges)
         self.molecules = list(self.precursor.molecules())
+        t1 = time()
+        spec_t = t1 - t0
         self.spectrum = Spectrum(spectrum=spectrum,
                                  mz_digits=self.mz_digits,
                                  min_intensity=min_intensity,
                                  percent_top_peaks=percent_top_peaks)
+        t2 = time()
+        mole_t = t2 - t1
         self.deconvolution_method = deconvolution_method
+        self.deconvolution_graph = \
+            build_deconvolution_graph(molecules=molecules, 
+                                      spectrum=spectrum,
+                                      mz_tol=mz_tol,
+                                      min_prob_per_molecule=min_prob_per_molecule,
+                                     _verbose=_verbose,
+                                      method=deconvolution_method,
+                                      # IsoSpec arguments:
+                                      joint_probability=joint_probability, 
+                                      mz_digits=self.mz_digits)
+        self.solutions = \
+            deconvolve(deconvolution_graph=self.deconvolution_graph,
+                       method=self.deconvolution_method,
+                      _verbose=_verbose,
+                       # deconvutor arguments
+                       L1_flow=_L1_flow,
+                       L2_flow=_L2_flow,
+                       L1_intensity=_L1_intensity,
+                       L2_intensity=_L2_intensity,
+                       max_times=2,
+                       show_progress=False,
+                       maxiters=200)
         self.solutions = deconvolve(molecules=self.molecules,
                                     spectrum=self.spectrum,
                                     method=self.deconvolution_method,

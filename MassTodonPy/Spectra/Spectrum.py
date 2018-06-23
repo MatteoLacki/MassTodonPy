@@ -159,3 +159,7 @@ class Spectrum(Measure):
 
         """
         self.trim(cut_off)
+
+    def plot(self):
+        import matplotlib.pyplot as plt
+        plt.vlines(self.mz, [0], self.intensity)

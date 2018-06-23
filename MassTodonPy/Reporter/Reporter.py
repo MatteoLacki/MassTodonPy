@@ -54,9 +54,8 @@ class Reporter(object):
         self._max_buffer_len = float(max_buffer_len)
         for name, thing in self._peakGroups_bricks_clusters():
             self.__dict__[name].append(thing)
-
         self._fragments_intensity = defaultdict(Counter)
-        print(self._fragments_intensity)
+
         # order peak groups by m/z ratios
         self._peak_groups.sort(key=lambda c: c.mz_L)
 
@@ -64,6 +63,7 @@ class Reporter(object):
         mz_L, mz_R = list(zip(*((c.mz_L, c.mz_R) for c in self._peak_groups))) #TODO this is an overkill: smooth out the defintion of the buffers function.
         mz_lefts, mz_rights = buffers(mz_L, mz_R,
                                       max_length=self._max_buffer_len)
+
         for c, mz_left, mz_right in zip(self._peak_groups, mz_lefts, mz_rights):
             c.mz_left = mz_left
             c.mz_right = mz_right
@@ -90,6 +90,7 @@ class Reporter(object):
 
         # make this once
         self.assigned_spectrum_data = self.get_assigned_spectrum_data() # plot data
+
 
     def _peakGroups_bricks_clusters(self):
         """Generate a flow of peak groups, bricks, and clusters."""

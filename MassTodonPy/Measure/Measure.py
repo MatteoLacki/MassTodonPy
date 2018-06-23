@@ -41,9 +41,10 @@ class Measure(object):
         self._store_names = ('atom', 'mass')
 
     def sort(self):
-        """Sort measure by atomic values."""       
-        self.atoms, self.masses = (np.array(x) for x in \
-                                   sort_by_first(self.atoms, self.masses))
+        """Sort measure by atomic values."""
+        atom_sorted = np.argsort(self.atoms)
+        self.atoms = self.atoms[atom_sorted]
+        self.masses = self.masses[atom_sorted]
 
 
     def __has_type_of(self, other):
@@ -217,6 +218,8 @@ class Measure(object):
         """Iterate over pairs (atom, mass)."""
         return zip(self.atoms, self.masses)
 
+    #TODO: 
+        # extend to any slice
     def __getitem__(self, key):
         """Filter atoms between 'L' and 'R'.
 

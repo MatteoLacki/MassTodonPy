@@ -30,19 +30,19 @@ from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem
 # from MassTodonPy.Misc.wrapper import cvxopt_wrapper
 
 
-#TODO: decouple into two functions: 
-    # one for graph construction
-    # second for the deconvolution of the connected components of graph
-def deconvolve(molecules,
-               spectrum,
-               method='Matteo',
-               mz_tol=.05,
-               min_prob_per_molecule=.7,
-               _merge_sister_Is=True,
-               _devel=False,
-               _verbose=False,
-               **kwds):
-    """Get the sequence of deconvolution problems.
+#TODO: build it in parts! Change it to supplier of 
+# connected components?
+def build_deconvolution_graph(molecules,
+                              spectrum,
+                              mz_tol=.05,
+                              min_prob_per_molecule=.7,
+                              method="Matteo",
+                              _merge_sister_Is=True,
+                              _verbose=False,
+                              **isospec_args):
+    """Build a deconvolution graph.
+
+    It will later on get trimmed to reasonable sizes.
 
     Parameters
     ==========
@@ -50,9 +50,6 @@ def deconvolve(molecules,
         An iterable of the Molecule objects.
     spectrum : Spectrum
         An instance of the Spectrum class.
-    method: string
-        Input 'Matteo' for MassTodon paper deconvolution.
-        Input 'Ciacho_Wanda' for gaussian kernel deconvolution.
     mz_tol : float or function
         The tolerance in the m/z axis.
         Ultimately turned into a function mz_tol(mz),
@@ -63,11 +60,16 @@ def deconvolve(molecules,
     min_prob_per_molecule : float
         The minimal probability an envelope has to scoop
         to be included in the deconvolution graph.
-    kwds :
-        Contains arguments to other objects.
+    method: string
+        Input 'Matteo' for MassTodon paper deconvolution.
+        Input 'Ciacho_Wanda' for gaussian kernel deconvolution (not yet implemented)
+    Returns
+    =======
+    deconvolution_graph: networkx.Graph
+        A graph build of molecule: nodes M, isotopologues I, experimental peaks E.
     """
     I_cnt = 0
-    graph = nx.Graph()
+    deconvolution_graph = nx.Graph()
     if isinstance(mz_tol, float):
         _mz_tol = mz_tol
         def mz_tol(mz):
@@ -76,23 +78,23 @@ def deconvolve(molecules,
 
     # build up the deconvolution graph
     for M_cnt, mol in enumerate(molecules):
+        if _verbose:
+            print(mol)
         M = 'M' + str(M_cnt)
         # mol_graph represents how a molecule links to the spectrum
         # and might be included in the deconvolution graph
         mol_graph = nx.Graph()
         mol_graph.add_node(M, molecule=mol)
-        # this is the reverse mapping between molecules and the graph
+        # this is the reverse mapping between molecules and the deconvolution_graph
         mol.graph_tag = M
 
         # add isotopologues
-        for mz_I, prob in mol.isotopologues(**kwds):
+        for mz_I, prob in mol.isotopologues(**isospec_args):
             I = 'I' + str(I_cnt)
             I_cnt += 1
             mol_graph.add_node(I, mz=mz_I, probability=prob)
             mol_graph.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
-            if 582.92 <= mz_L and mz_R <= 582.94:
-                print(mz_L, mz_R)
             # link with real peaks ---------------> show indices ↓ ?
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:
                 # get E_cnt additionally to m/z and intensity <--|
@@ -105,7 +107,7 @@ def deconvolve(molecules,
                          for n, d in mol_graph.nodes(data=True)
                          if n[0] == 'I' and mol_graph.degree[n] > 1)
 
-        # plant the mol_graph into the graph?
+        # plant the mol_graph into the deconvolution_graph?
         if total_prob >= min_prob_per_molecule:
             #TODO: add another intensity-based criterion here.
             #TODO: basically, check how much of a substance could there be,
@@ -115,109 +117,128 @@ def deconvolve(molecules,
             if method == 'Matteo' and _merge_sister_Is:
                 # Glue Is sharing common Es.
                 _glue_sister_isotopologues(mol_graph)
-            graph.add_nodes_from(mol_graph.nodes(data=True))
-            graph.add_edges_from(mol_graph.edges(data=True))
+            deconvolution_graph.add_nodes_from(mol_graph.nodes(data=True))
+            deconvolution_graph.add_edges_from(mol_graph.edges(data=True))
 
-    return(graph)
-    #TODO Here double copying. Optimize.
-    # if method == 'Matteo':
-    #     if _verbose:
-    #         print(Counter(n[0] for n in graph.nodes))
-    #     _add_G_remove_E(graph)
-    #     graphs = connected_component_subgraphs(graph)
-    #     for graph in graphs:
-    #         iters = 0
-    #         solved = False
-    #         max_iters = 10
-    #         problem = DeconvolutionProblem(graph, **kwds)
-    #         yield problem
-    # elif method == 'Ciacho_Wanda':
-    #     graphs = connected_component_subgraphs(graph)
-    #     for graph in graphs:
-    #         problem = GaussianDeconvolutionProblem(graph, **kwds)
-    #         problem.solve()
-    #         yield problem
-    # else:
-    #     raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
+    return deconvolution_graph
 
 
-def _glue_sister_isotopologues(graph):
-    """Merge I nodes that share parents.
-
-    The final graph will have I with the id of the smallest I in the group
-    of Is that share common E nodes.
+def deconvolve(deconvolution_graph,
+               method="Matteo",
+              _verbose=False,
+             **deconvolution_problem_kwds):
+    """Get the sequence of deconvolution problems.
 
     Parameters
     ==========
-    graph: networkx.Graph
-        The graph consisting of a molecule node M,
-        its isotopologues I, and their experimental peaks E.
+    deconvolution_graph: networkx.Graph
+        A graph build of molecule: nodes M, isotopologues I, experimental peaks E.
+    method: string
+        Input 'Matteo' for MassTodon paper deconvolution.
+        Input 'Ciacho_Wanda' for gaussian kernel deconvolution (not yet implemented)
+    deconvolution_problem_kwds : dict
+        Arguments for the deconvolution solver.
+    """
+    if method == 'Matteo':
+        if _verbose:
+            print(Counter(n[0] for n in deconvolution_graph.nodes))
+        _add_G_remove_E(deconvolution_graph)
+        graphs = connected_component_subgraphs(deconvolution_graph)
+        for g in graphs:
+            iters = 0
+            solved = False
+            max_iters = 10
+            problem = DeconvolutionProblem(g, 
+                                         **deconvolution_problem_kwds)
+            yield problem
+    elif method == 'Ciacho_Wanda':
+        graphs = connected_component_subgraphs(deconvolution_graph)
+        for g in graphs:
+            problem = GaussianDeconvolutionProblem(g,
+                                                 **deconvolution_problem_kwds)
+            problem.solve()
+            yield problem
+    else:
+        raise NotImplemented("Choose 'Matteo' or 'Ciacho_Wanda'.")
+
+
+def _glue_sister_isotopologues(deconvolution_graph):
+    """Merge I nodes that share parents.
+
+    The final deconvolution graph has I with the id of the smallest I in the group
+    of Is that share common E nodes. I know it could be made more clear, but trust me,
+    I know what I'm doing (https://cdn-images-1.medium.com/max/455/1*snTXFElFuQLSFDnvZKJ6IA.png).
+
+    Parameters
+    ==========
+    deconvolution_graph: networkx.Graph
+        A graph build of molecule: nodes M, isotopologues I, experimental peaks E.
     """
     visited = {}
     I_2_delete = []
-    for I in graph:
+    for I in deconvolution_graph:
         if I[0] == 'I':
-            Gs = frozenset(G for G in graph[I] if G[0] != 'M')
+            Gs = frozenset(G for G in deconvolution_graph[I] if G[0] != 'M')
             if Gs:
                 if not Gs in visited:
                     visited[Gs] = I
-                    graph.node[I]['min_mz'] = graph.node[I]['mz']
-                    graph.node[I]['max_mz'] = graph.node[I]['mz']
-                    del graph.node[I]['mz']
+                    deconvolution_graph.node[I]['min_mz'] = deconvolution_graph.node[I]['mz']
+                    deconvolution_graph.node[I]['max_mz'] = deconvolution_graph.node[I]['mz']
+                    del deconvolution_graph.node[I]['mz']
                 else:
                     _I = visited[Gs]
-                    graph.node[_I]['min_mz'] = min(graph.node[_I]['min_mz'],
-                                                       graph.node[I]['mz'])
-                    graph.node[_I]['max_mz'] = max(graph.node[_I]['max_mz'],
-                                                       graph.node[I]['mz'])
-                    graph.node[_I]['probability'] += graph.node[I]['probability']
+                    deconvolution_graph.node[_I]['min_mz'] = min(deconvolution_graph.node[_I]['min_mz'],
+                                                       deconvolution_graph.node[I]['mz'])
+                    deconvolution_graph.node[_I]['max_mz'] = max(deconvolution_graph.node[_I]['max_mz'],
+                                                       deconvolution_graph.node[I]['mz'])
+                    deconvolution_graph.node[_I]['probability'] += deconvolution_graph.node[I]['probability']
                     I_2_delete.append(I)
-    graph.remove_nodes_from(I_2_delete)
+    deconvolution_graph.remove_nodes_from(I_2_delete)
 
 
-def _add_G_remove_E(graph):
+def _add_G_remove_E(deconvolution_graph):
     """Merge experimental nodes E into experimental group nodes G.
 
     Parameters
     ==========
-    graph: networkx.Graph
+    deconvolution_graph: networkx.Graph
         The graph consisting of a molecule node M,
         its isotopologues I, and their experimental peaks E.
     """
     G_intensity = Counter()
     G_min_mz = defaultdict(lambda: infinity)
     G_max_mz = defaultdict(lambda: 0.0)
-    for E, E_data in graph.nodes(data=True):
+    for E, E_data in deconvolution_graph.nodes(data=True):
         if E[0] == 'E':
-            isotopologues = frozenset(graph[E]) # unmutable!
+            isotopologues = frozenset(deconvolution_graph[E]) # unmutable!
             G_intensity[isotopologues] += E_data['intensity']
             G_min_mz[isotopologues] = min(G_min_mz[isotopologues], E_data['mz'])
             G_max_mz[isotopologues] = max(G_max_mz[isotopologues], E_data['mz'])
 
     # removing experimental peaks 'E'
-    graph.remove_nodes_from([E for E in graph.nodes() if E[0] == 'E'])
+    deconvolution_graph.remove_nodes_from([E for E in deconvolution_graph.nodes() if E[0] == 'E'])
 
     # add G nodes with positive intensity
     G_cnt = 0
     for isotopologues in G_intensity:
         G = 'G' + str(G_cnt)
         G_cnt += 1
-        graph.add_node(G,
-                       intensity=G_intensity[isotopologues],
-                       min_mz=G_min_mz[isotopologues],
-                       max_mz=G_max_mz[isotopologues])
+        deconvolution_graph.add_node(G,
+                                     intensity=G_intensity[isotopologues],
+                                     min_mz=G_min_mz[isotopologues],
+                                     max_mz=G_max_mz[isotopologues])
         for I in isotopologues:
-            graph.add_edge(I, G)
+            deconvolution_graph.add_edge(I, G)
 
     # add G nodes with zero intensity: without the experimental support
     new_nodes = []  # to avoid "changing dict size" during iteration
     new_edges = []  # explicitly construct lists of nodes and edges
-    for I in graph.nodes():
-        if I[0] == 'I' and graph.degree[I] == 1: # no experimental support
+    for I in deconvolution_graph.nodes():
+        if I[0] == 'I' and deconvolution_graph.degree[I] == 1: # no experimental support
             G = 'G' + str(G_cnt)
             G_cnt += 1
-            new_nodes.append((G, {'mz': graph.node[I]['mz'],
+            new_nodes.append((G, {'mz': deconvolution_graph.node[I]['mz'],
                                   'intensity': 0.0}))
             new_edges.append((I, G))
-    graph.add_nodes_from(new_nodes)
-    graph.add_edges_from(new_edges)
+    deconvolution_graph.add_nodes_from(new_nodes)
+    deconvolution_graph.add_edges_from(new_edges)
