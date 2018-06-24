@@ -1,0 +1,597 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"runs",
+				"runs_no"
+			],
+			[
+				"coe",
+				"coefficients\tfunction"
+			],
+			[
+				"per",
+				"percentiles_of_N_integers\tfunction"
+			],
+			[
+				"medi",
+				"rt_median_distance"
+			],
+			[
+				"anno",
+				"annotated\tstatement"
+			],
+			[
+				"o",
+				"ordered_str"
+			],
+			[
+				"min",
+				"min_rt\tstatement"
+			],
+			[
+				"unlabelled",
+				"unlabelled_slim\tstatement"
+			],
+			[
+				"annot",
+				"annotated_stats\tstatement"
+			],
+			[
+				"asa",
+				"asarray\tfunction"
+			],
+			[
+				"ann",
+				"annotated_slim\tstatement"
+			],
+			[
+				"rt",
+				"rt_median_distance"
+			],
+			[
+				"as",
+				"asarray\tfunction"
+			],
+			[
+				"pat",
+				"patsy\tmodule"
+			],
+			[
+				"mod",
+				"model_name\tstatement"
+			],
+			[
+				"Nto",
+				"NotImplementedError\tclass"
+			],
+			[
+				"scan",
+				"scannumber"
+			],
+			[
+				"sca",
+				"scannumber"
+			],
+			[
+				"nu",
+				"numSlice2"
+			],
+			[
+				"num",
+				"numSlice"
+			],
+			[
+				"mul",
+				"multiprocessing\tmodule"
+			],
+			[
+				"D",
+				"D_stats"
+			],
+			[
+				"kd",
+				"kd_tree_nice\tmodule"
+			],
+			[
+				"bo",
+				"boxes_sizes\tstatement"
+			],
+			[
+				"box",
+				"box_tenants\tstatement"
+			],
+			[
+				"idx",
+				"idx2"
+			],
+			[
+				"rt_l",
+				"rt_aligned_min"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					""
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Test"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Install"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Cross-Compile (Interactive)"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Golang Build/Go.sublime-build",
+				"Run"
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"send",
+				"SendCode: Choose Program"
+			],
+			[
+				"term",
+				"Terminal View: Open Bash Terminal"
+			],
+			[
+				"sen",
+				"SendCode: Choose Program"
+			],
+			[
+				"terminal",
+				"Terminal View: Open Bash Terminal"
+			],
+			[
+				"termin",
+				"Preferences: Terminal View: Settings"
+			],
+			[
+				"ay",
+				"ayu: Activate theme"
+			],
+			[
+				"ins",
+				"Package Control: Install Package"
+			],
+			[
+				"colo",
+				"UI: Select Color Scheme"
+			],
+			[
+				"box",
+				"Boxy Theme: Preferences"
+			],
+			[
+				"remo",
+				"Package Control: Remove Package"
+			],
+			[
+				"colorco",
+				"Tweak Colorcode to current color scheme"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"color",
+				"UI: Select Color Scheme"
+			],
+			[
+				"theme",
+				"UI: Select Color Scheme"
+			],
+			[
+				"ter",
+				"Preferences: Terminal View: Settings"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"send code",
+				"SendCode: Choose Program"
+			],
+			[
+				"instla",
+				"Package Control: Install Package"
+			],
+			[
+				"colors",
+				"UI: Select Color Scheme"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"her",
+				"Hermes: List Kernels"
+			],
+			[
+				"herm",
+				"Hermes: Connect Kernel"
+			],
+			[
+				"them",
+				"UI: Select Color Scheme"
+			],
+			[
+				"antia",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 136.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = '6f4c264a24d933ce70df5dedcf1dcaee' + 'ebe013ee18cced0ef93d5f746d80ef60'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/matteo/Projects/MassTodonPy"
+	],
+	"file_history":
+	[
+		"/Users/matteo/Projects/rta/rta/preprocessing.py",
+		"/Users/matteo/Projects/rta/rta/xvalidation/filters.py",
+		"/Users/matteo/Projects/rta/rta/models/GMM_OLS_combo.py",
+		"/Users/matteo/Projects/rta/rta/x_validation_potential.py",
+		"/Users/matteo/Projects/rta/rta/models/GMLSQSpline.py",
+		"/Users/matteo/Projects/rta/rta/models/SQSpline.py",
+		"/Users/matteo/Projects/rta/TODO.md",
+		"/Users/matteo/Projects/rta/rta/models/devel/gmm_ols.py",
+		"/Users/matteo/Projects/rta/rta/models/plot.py",
+		"/Users/matteo/Projects/rta/rta/models/RapidGMLSQSpline.py",
+		"/Users/matteo/Projects/rta/rta/alignment/run_alignment.py",
+		"/Users/matteo/Projects/rta/rta/models/base_model.py",
+		"/Users/matteo/Projects/rta/rta/array_operations/misc.py",
+		"/Users/matteo/Projects/rta/rta/junk/patsy_bs.py",
+		"/Users/matteo/Projects/rta/rta/models/spline_regression.py",
+		"/Users/matteo/Projects/rta/rta/misc.py",
+		"/Users/matteo/Projects/rta/rta/splines/denoising.py",
+		"/Users/matteo/Projects/rta/rta/models/least_squares_splines.py",
+		"/Users/matteo/Projects/rta/rta/patsy_operations/parsers.py",
+		"/Users/matteo/Projects/rta/rta/models/test_statistics/rt_residuals_distro.py",
+		"/Users/matteo/Projects/rta/rta/models/sklearn_regressors.py",
+		"/Users/matteo/Projects/rta/rta/array_operations/__init__.py",
+		"/Users/matteo/Projects/rta/rta/patsy_operations/__init__.py",
+		"/Users/matteo/Projects/rta/rta/xvalidation/__init__.py",
+		"/Users/matteo/Projects/rta/rta/xvalidation/grouped_k_folds.py",
+		"/Users/matteo/Projects/rta/rta/xvalidation/pept_ids_representation_in_runs.py",
+		"/Users/matteo/Projects/rta/rta/splines/denoising2.py",
+		"/Users/matteo/Projects/rta/rta/read_in_data.py",
+		"/Users/matteo/Projects/rta/rta/getting_to_grips_with_pandas.py",
+		"/Users/matteo/Projects/rta/rta/profiling_denoise_and_align.py",
+		"/Users/matteo/Projects/rta/rta/splines/denoising_procedure.py",
+		"/Users/matteo/Projects/rta/rta/tweaking_preprocessing.py",
+		"/Users/matteo/Downloads/multiprocessing_test.py",
+		"/Users/matteo/Projects/rta/rta/scripts/xvalidationq.py",
+		"/Users/matteo/Projects/rta/rta/models/quantile.py",
+		"/Users/matteo/Projects/rta/rta/models/__init__.py",
+		"/Users/matteo/Projects/rta/rta/models/huber.py",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/PXD001845/20141202_AMB_Bora_10x_40MeOH_1FA_OT_120k_10uscans_728_ETD_4ms_24precZ.raw",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/uniprot-organism%3A1241935.fasta",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/tabula-IH532330.csv",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/taxonomy-islandicus+LAL14%2F1.tab",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/raw2np.go",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/scans_cnt.go",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/data/20140909_F_EV_Sisl-prep2-SAX-fr6_r120_r240-ETD5SA20_1.mgf",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/analysis/getting_spectra.py",
+		"/Users/matteo/Poligon/Go/hello_world_2.go",
+		"/Users/matteo/Poligon/Go/hello_world_0.go",
+		"/Users/matteo/Poligon/Go/hello_world_1.go",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/analysis/reading_files/read_spectrum.go",
+		"/Users/matteo/Library/Application Support/Sublime Text 3/Packages/User/golang.sublime-settings",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/Search summary top-down SAX all lines.txt",
+		"/Users/matteo/Projects/masstodon_response_to_reviewers/analysis/PXD003074_header.py",
+		"/Users/matteo/Downloads/Finnigan-0.0206/README",
+		"/Users/matteo/Projects/rta/rta/kd_tree/kd_tree_nice.py",
+		"/Users/matteo/Projects/rta/rta/scripts/find_neighbour_graph.py",
+		"/Users/matteo/Projects/rta/rta/dbscan/dbscan_all_boxes.py",
+		"/Users/matteo/Projects/rta/rta/dbscan/dbscan_percentile_boxes.py",
+		"/Users/matteo/Projects/rta/rta/kd_tree/developing_kd_trees.py",
+		"/Users/matteo/.config/zathura/zathurarc",
+		"/opt/X11/include/X11/extensions/xtrapdi.h"
+	],
+	"find":
+	{
+		"height": 26.0
+	},
+	"find_in_files":
+	{
+		"height": 134.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 54.0
+	},
+	"input":
+	{
+		"height": 50.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.golang_build":
+	{
+		"height": 225.0
+	},
+	"output.gotools_syntax_errors":
+	{
+		"height": 127.0
+	},
+	"pinned_build_system": "",
+	"project": "masstodonpy.sublime-project",
+	"replace":
+	{
+		"height": 48.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"file",
+				"rta/xvalidation/filters.py"
+			],
+			[
+				"prep",
+				"rta/preprocessing.py"
+			],
+			[
+				"fil",
+				"rta/xvalidation/filters.py"
+			],
+			[
+				"pre",
+				"rta/preprocessing.py"
+			],
+			[
+				"preop",
+				"rta/preprocessing.py"
+			],
+			[
+				"TODO",
+				"TODO.md"
+			],
+			[
+				"SQL",
+				"rta/models/SQSpline.py"
+			],
+			[
+				"plot",
+				"rta/models/plot.py"
+			],
+			[
+				"comb",
+				"rta/models/GMM_OLS_combo.py"
+			],
+			[
+				"junk",
+				"rta/junk/patsy_bs.py"
+			],
+			[
+				"bas",
+				"rta/models/base_model.py"
+			],
+			[
+				"GLM",
+				"rta/models/GMM_OLS_combo.py"
+			],
+			[
+				"misc",
+				"rta/array_operations/misc.py"
+			],
+			[
+				"array_oper",
+				"rta/array_operations/misc.py"
+			],
+			[
+				"base",
+				"rta/models/base_model.py"
+			],
+			[
+				"Spine",
+				"rta/models/spline_regression.py"
+			],
+			[
+				"plo",
+				"rta/models/plot.py"
+			],
+			[
+				"pars",
+				"rta/patsy_operations/parsers.py"
+			],
+			[
+				"deni",
+				"rta/splines/denoising.py"
+			],
+			[
+				"deno",
+				"rta/splines/denoising.py"
+			],
+			[
+				"SKL",
+				"rta/models/sklearn_regressors.py"
+			],
+			[
+				"splin",
+				"rta/models/spline_regression.py"
+			],
+			[
+				"skle",
+				"rta/models/sklearn_regressors.py"
+			],
+			[
+				"poten",
+				"rta/x_validation_potential.py"
+			],
+			[
+				"pandas",
+				"rta/getting_to_grips_with_pandas.py"
+			],
+			[
+				"twa",
+				"rta/tweaking_preprocessing.py"
+			],
+			[
+				"spline",
+				"rta/models/spline_regression.py"
+			],
+			[
+				"denoi",
+				"rta/splines/denoising.py"
+			],
+			[
+				"quant",
+				"rta/models/quantile.py"
+			],
+			[
+				"hub",
+				"rta/models/huber.py"
+			],
+			[
+				"kd",
+				"rta/kd_tree/kd_tree_nice.py"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 294.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

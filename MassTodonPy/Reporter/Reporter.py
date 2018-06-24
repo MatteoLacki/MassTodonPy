@@ -371,19 +371,19 @@ class Reporter(object):
 
         """
         write_rows(self.iter_precise_estimates(),
-                   path + 'assigned_spectrum_precise.csv')
+                   os.path.join(path, 'assigned_spectrum_precise.csv'))
         write_rows(self.iter_local_fit_quality(),
-                   path + 'assigned_spectrum_local_fits.csv')
+                   os.path.join(path, 'assigned_spectrum_local_fits.csv'))
         write_rows(self.iter_molecule_estimates(include_zero_intensities),
-                   path + 'estimates_of_molecule_intensities.csv')
+                   os.path.join(path, 'estimates_of_molecule_intensities.csv'))
         write_rows(self.iter_global_quality_fits_rows(),
-                   path + 'global_fit_quality.csv')
+                   os.path.join(path, 'global_fit_quality.csv'))
         write_rows(self.iter_aggregated_rows(),
-                   path + 'molecules_aggregated_estimates.csv')
+                   os.path.join(path, 'molecules_aggregated_estimates.csv'))
         write_rows(self.iter_aggregated_fragment_intensities_rows(),
-                   path + 'fragment_intensities.csv')
+                   os.path.join(path, 'fragment_intensities.csv'))
         write_rows(self.iter_aggregated_precursors_rows(),
-                   path + 'aggregated_precusors.csv')
+                   os.path.join(path, 'aggregated_precusors.csv'))
 
     # TODO: remove colors -> it's part of the plotting library object
     # TODO: divide into separate iterators

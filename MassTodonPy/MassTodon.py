@@ -69,6 +69,7 @@ from collections    import Counter
 from math           import ceil, log10
 from time           import time
 import csv
+import os
 
 from MassTodonPy.Data.Constants             import eps
 from MassTodonPy.Deconvolution.Deconvolve   import build_deconvolution_graph
@@ -97,7 +98,7 @@ class MassTodon(object):
                  block_prolines=True,
                  distance_charges=5.,
                  min_intensity=eps,
-                 percent_top_peaks=1.0,
+                 percent_top_peaks=.999,
                  deconvolution_method='Matteo',
                  joint_probability=.999,
                  min_prob_per_molecule=.7,
@@ -192,6 +193,7 @@ class MassTodon(object):
         ni2 : float
             Variance of the theoretic isotopologue's m/z ratio.
         """
+        self.times = {}
         t0 = time()
         if isinstance(mz_tol, str):
             mz_tol = float(mz_tol)
@@ -206,18 +208,16 @@ class MassTodon(object):
                                    blocked_fragments=blocked_fragments,
                                    block_prolines=block_prolines,
                                    distance_charges=distance_charges)
-
         self.molecules = list(self.precursor.molecules())
         t1 = time()
-        spec_t = t1 - t0
+        self.times["creating_molecules"] = t1 - t0
         self.spectrum = Spectrum(spectrum=spectrum,
                                  mz_digits=self.mz_digits,
                                  min_intensity=min_intensity,
                                  percent_top_peaks=percent_top_peaks)
         t2 = time()
-        mole_t = t2 - t1
+        self.times["spectrum_preprocessing"] = t2 - t1
         self.deconvolution_method = deconvolution_method
-
         self.deconvolution_graph = \
             build_deconvolution_graph(molecules=self.molecules, 
                                       spectrum=self.spectrum,
@@ -228,7 +228,8 @@ class MassTodon(object):
                                       # IsoSpec arguments:
                                       joint_probability=joint_probability, 
                                       mz_digits=self.mz_digits)
-
+        t3 = time()
+        self.times["deconvolution_graph"] = t3 - t2
         self.solutions = \
             deconvolve(deconvolution_graph=self.deconvolution_graph,
                        method=self.deconvolution_method,
@@ -241,42 +242,36 @@ class MassTodon(object):
                        max_times=_max_times,
                        show_progress=_show_progress,
                        maxiters=_maxiters)
-
-        self.solutions = deconvolve(molecules=self.molecules,
-                                    spectrum=self.spectrum,
-                                    method=self.deconvolution_method,
-                                    mz_tol=mz_tol,
-                                    min_prob_per_molecule=min_prob_per_molecule,
-                                    joint_probability=joint_probability,
-                                    mz_digits=self.mz_digits,
-                                    L1_flow=_L1_flow,
-                                    L2_flow=_L2_flow,
-                                    L1_intensity=_L1_intensity,
-                                    L2_intensity=_L2_intensity,
-                                    max_times=_max_times,
-                                    show_progress=_show_progress,
-                                    maxiters=_maxiters,
-                                    sigma2=sigma2,
-                                    _ni2=ni2,
-                                    _verbose=_verbose)
-
         #TODO: leaving as generator causes problems: no 'len' to call later on.
         self.solutions = list(self.solutions)
+        t4 = time()
+        self.times["deconvolution"] = t4 - t3
         self.report = Reporter(masstodon=self,
                                max_buffer_len=_max_buffer_len)
-
+        t5 = time()
+        self.times["report"] = t5 - t4
         #TODO: change the code below so that it could handle
         #      reaction products from different precursors
         #TODO: make it work with a,b,x,y fragment types
         self.simple_cz_match = \
             SimpleCzMatch(molecules=self.molecules,
                           precursor_charge=self.precursor.q)
+        t6 = time()
+        self.times["simple_cz_match"] = t6 - t5
         self.cz_match = \
             CzMatch(molecules=self.molecules,
                     precursor_charge=self.precursor.q)
+        t7 = time()
+        self.times["cz_match"] = t7 - t6
+
 
     def write(self, path):
         """Write results to path."""
         self.report.write(path)
         self.simple_cz_match.write(path)
         self.cz_match.write(path)
+        with open(os.path.join(path, 'dict.csv'), 'w') as h:
+            writer = csv.writer(h)
+            for key, value in self.times.items():
+                writer.writerow([key, value])
+
