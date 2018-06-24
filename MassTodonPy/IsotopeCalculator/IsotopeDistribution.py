@@ -70,3 +70,8 @@ class IsotopeDistribution(Measure):
 
         """
         self.round_atoms(precision)
+
+    def plot(self):
+        import matplotlib.pyplot as plt
+        plt.style.use('dark_background')
+        plt.vlines(self.mz, [0], self.probability, colors='blue')

@@ -78,8 +78,6 @@ def build_deconvolution_graph(molecules,
 
     # build up the deconvolution graph
     for M_cnt, mol in enumerate(molecules):
-        if _verbose:
-            print(mol)
         M = 'M' + str(M_cnt)
         # mol_graph represents how a molecule links to the spectrum
         # and might be included in the deconvolution graph
@@ -88,6 +86,8 @@ def build_deconvolution_graph(molecules,
         # this is the reverse mapping between molecules and the deconvolution_graph
         mol.graph_tag = M
 
+        # if mol.name == 'precursor' and mol.q in (15, 16, 17, 18, 19):
+        #     print(mol.name)
         # add isotopologues
         for mz_I, prob in mol.isotopologues(**isospec_args):
             I = 'I' + str(I_cnt)
@@ -95,9 +95,13 @@ def build_deconvolution_graph(molecules,
             mol_graph.add_node(I, mz=mz_I, probability=prob)
             mol_graph.add_edge(M, I)
             mz_L, mz_R = mz_tol(mz_I)  # tolerance interval
+            # if mol.name == 'precursor' and mol.q in (15, 16, 17, 18, 19):
+            #     print(mz_L, mz_R)
             # link with real peaks ---------------> show indices ↓ ?
             for E_cnt, mz_E, intensity in spectrum[mz_L, mz_R, True]:
                 # get E_cnt additionally to m/z and intensity <--|
+                # if mol.name == 'precursor' and mol.q in (15, 16, 17, 18, 19):
+                #     print(mz_E, '-->', intensity)
                 E = 'E' + str(E_cnt)
                 mol_graph.add_node(E, mz=mz_E, intensity=intensity)
                 mol_graph.add_edge(I, E)
@@ -106,6 +110,12 @@ def build_deconvolution_graph(molecules,
         total_prob = sum(d['probability']
                          for n, d in mol_graph.nodes(data=True)
                          if n[0] == 'I' and mol_graph.degree[n] > 1)
+
+        # if mol.name == 'precursor' and mol.q in (15, 16, 17, 18, 19):
+        #     print(len(mol_graph))
+        #     print(total_prob)
+        #     print()
+
 
         # plant the mol_graph into the deconvolution_graph?
         if total_prob >= min_prob_per_molecule:
@@ -117,6 +127,10 @@ def build_deconvolution_graph(molecules,
             if method == 'Matteo' and _merge_sister_Is:
                 # Glue Is sharing common Es.
                 _glue_sister_isotopologues(mol_graph)
+
+            # if mol.name == 'precursor':
+            #     print(mol.name, mol.q, mol.g , total_prob)
+
             deconvolution_graph.add_nodes_from(mol_graph.nodes(data=True))
             deconvolution_graph.add_edges_from(mol_graph.edges(data=True))
 
