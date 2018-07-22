@@ -6,165 +6,35 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-mz_dummy        = np.array([1.1, 1.2, 1.3, 1.4, 2.2, 2.3, 2.4, 2.5, 2.6, 2.8, 2.9, 3.0])
-intensity_dummy = np.array([0.1, 1.2, 2.3, 1.4, 0.2, 2.3, 4.4, 2.5, 1.6, 0.8, 2.9, 0.2])
+from MassTodonPy.plotters.spectrum import plot_spectrum
+from MassTodonPy.readers.from_npy import spectrum_from_npy
 
-def sorted(x):
-    return np.all(np.diff(mz_r))
+# mz_dummy        = np.array([1.1, 1.2, 1.3, 1.4, 2.2, 2.3, 2.4, 2.5, 2.6, 2.8, 2.9, 3.0])
+# intensity_dummy = np.array([0.1, 1.2, 2.3, 1.4, 0.2, 2.3, 4.4, 2.5, 1.6, 0.8, 2.9, 0.2])
+# clusters_dummy = clusters(mz_dummy, intensity_dummy)
+# plot(mz_dummy, intensity_dummy, list(clusters_dummy))
 
-def plot(mz, intensity, clusters=None, show=True):
-    """Make a simple visualization of the data."""
-    plt.vlines(x=mz, ymin=[0], ymax=intensity)
-    if clusters:
-        plt.scatter(x=mz, y=np.zeros(len(mz)), c=clusters)
-    if show:
-        plt.show()
-
-def get_spectrum(data_path):
-    return [ np.load(os.path.join(data_path, p)) for p in ('mz.npy', 'in.npy') ]
-
-# task:
-#   bitonic marker of modes
-#   I don't remember what it's used for
-#       ok, to estimate the whole lot of underlying gaussian parameters.
-
-# the programme:
-#   write and test (lineprof) pure python code for the task.
-    # rewrite in C and expose using cffi
-    # better even: rewrite in bloody Golang, becuase other things are there.
-    # then we can even assume zeros existing.
-    #   easier criterion: zero intensity triggers the end of old clustering
-    # THERE ARE NO ZEROS THERE!!!
-
-
-# min_mz_diff can be established statistically, as the first percentile of mass diffs.
-
-def bitonic_clustering(mz, intensity, min_mz_diff=.15):
-    """Generate cluster numbers based on bitonicity of the intensity."""
-    # previous two intensities
-    i__ = 1.0
-    _i_ = 0.0
-    # cluster no
-    c = -1 # the first cluster will get tag '0'
-    # previous m/z 
-    m_ = - np.inf
-    for _m, __i in zip(mz, intensity):
-        big_mz_diff = _m - m_ > min_mz_diff
-        if (__i - _i_ >= 0.0 and _i_ < i__) or big_mz_diff:
-            c += 1
-        yield c
-        if big_mz_diff:
-            i__ = 0.0
-        else:
-            i__ = _i_
-        _i_ = __i
-        m_  = _m
-
-def get_clusters(clustering, count):
-    return np.fromiter(clustering, dtype=int, count=count)
-
-def clusters2array(mz, intensity, clustering=bitonic_clustering, **clustering_kwds):
-    return np.fromiter(clustering(mz, intensity, **clustering_kwds),
-                       dtype=int, count=len(mz))
-
-def clusters(mz, intensity, clustering=bitonic_clustering, **clustering_kwds):
-    return list(clustering(mz, intensity, **clustering_kwds))
-
-clusters_dummy = clusters(mz_dummy, intensity_dummy)
-plot(mz_dummy, intensity_dummy, list(clusters_dummy))
 
 data_path = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
-mz, intensity = get_spectrum(data_path)
-plot(mz, intensity)
+mz, intensity = spectrum_from_npy(data_path)
 
-cs = clusters(mz, intensity)
-
-colors_no = 10
-cmap = plt.get_cmap('tab10', colors_no)
-colors = [cmap(c % colors_no) for c in cs]
-plot(mz, intensity, colors)
-
-csa = clusters2array(mz, intensity)
-clusters_no = csa[-1] + 1
+# cs = clusters(mz, intensity)
+# colors_no = 10
+# cmap = plt.get_cmap('tab10', colors_no)
+# colors = [cmap(c % colors_no) for c in cs]
+# plot(mz, intensity, colors)
+# csa = clusters2array(mz, intensity)
+# clusters_no = csa[-1] + 1
 
 
-def iter_clusters_from(assignments):
-    """ Get left and right ends of subsequent clusters defined by assignments.
-
-    It iterates over 'sparse' representation of the assignments to clusters,
-    i.e. tuples composed of the index of the first element in cluster,
-    index of the last element of cluster.
-    Clusters are assumed to appear orderly one after another.
-
-    Args:
-        assignments (iter of int): assignents to cluster.
-    """
-    c_ = next(assignments) # cluster: 0 for a fresh generator.
-    i_ = 0
-    _i = 1
-    for _c in assignments: # next cluster
-        if _c == c_ + 1:
-            yield i_, _i # start and end of cluster c_
-            c_ += 1
-            i_ = _i
-        _i += 1
-    yield i_, _i # start and end of the final cluster
+from MassTodonPy.Spectra.peak_clustering import mz_bitonic
+import numpy as np
 
 
-bc = bitonic_clustering(mz, intensity, min_mz_diff=.15)
-s_e_clusters = iter_clusters_from(bc)
+# around a second. That's something to rewrite later to C++.
+clusters = mz_bitonic(mz, intensity, min_mz_diff=.15, abs_perc_dev=.2)
 
 
-s, e = next(s_e_clusters)
-mz_local, intensity_local = mz[s:e], intensity[s:e]
-
-
-def get_local_clustering(mz, s, e, c,
-                         abs_perc_dev = .2,
-                         verbose = False):
-    """Find out, if indices much be changed.
-
-    Args:
-        mz (np.array of floats): the recorded m/z values.
-        s (int): the index of the start of the cluster of peaks.
-        e (int): the index of the end of a cluster of peaks.
-        c (int): the number of current cluster of peaks.
-        abs_perc_dev (float):
-    Yields:
-        np.array of ints: assignment into clusters.
-    """
-    clusters = np.full(shape = (e-s,), fill_value = c, dtype=int)
-    mz_local = mz[s:e]
-    # differences of consecutive m/z values
-    mz_diffs = np.diff(mz_local)
-    # the median should be a stable values to compare to
-    # as there are vastly more similar diffs than other.
-    me_mz_diff = np.median(mz_diffs)
-    cc = c
-    signal_border = abs_perc_dev * me_mz_diff
-    for i, mz_diff in enumerate(mz_diffs):
-        if abs(mz_diff - me_mz_diff) > signal_border:
-            cc += 1
-            if verbose:
-                print('Found poor clustering between {} and {}'.format(s,e))
-        clusters[i+1] = cc
-    return clusters
-
-
-bc = bitonic_clustering(mz, intensity, min_mz_diff=.15)
-s_e_clusters = iter_clusters_from(bc) # put this into loop definition
-abs_perc_dev = .2
-clusters = np.full(shape = (len(mz),),
-                   fill_value = 0,
-                   dtype = int)
-c = 0
-for s, e in s_e_clusters:
-    lclust = get_local_clustering(mz, s, e, c, abs_perc_dev, True)
-    clusters[s:e] = lclust
-    if lclust[0] != lclust[-1]:
-        c = lclust[-1]
-    else:
-        c += 1
 
 
 colors_no = 10
@@ -187,38 +57,71 @@ plt.scatter(mz[:-1], np.diff(mz), c='grey')
 plt.scatter(mz_4_diff_plot, mz_diffs_4_diff_plot, c='red')
 plt.show()
 
+from sklearn.linear_model import HuberRegressor
 
+x = np.array(mz_4_diff_plot)
+y = np.array(mz_diffs_4_diff_plot)
+coefs = np.polyfit(x, y, 4)
+parabola = np.poly1d(coefs)
 
-# empirical test suite:
-mz_test_idx = np.logical_and( mz >= 858.0, mz <= 859.4 )
-mz_test = mz[mz_test_idx]
-intensity_test = intensity[mz_test_idx]
-
-# plot(mz_test, intensity_test, )
-# zero_intensity = intensity_test == 0.0
-# plt.scatter(mz_test[zero_intensity], intensity_test[zero_intensity])
-# plt.show()
-
-# investigating clustering based on m/z distances
-cs = clusters(mz_test, intensity_test, min_mz_diff=.6)
-colors = [cmap(c % colors_no) for c in cs]
-plot(mz_test, intensity_test, colors)
-
-
-# global robust regression approach:
-    # there should be ~ 6 to 8 times more small diffs than big ones
-
-
-x = mz[0:-1]
-y = np.diff(mz)
-plt.scatter(x**2, y)
+x_parabola = np.linspace(min(x), max(x), 10000)
+y_parabola = parabola(x_parabola)
+plt.plot(x_parabola, y_parabola, color='red')
+plt.scatter(x, y, s=1, c='grey')
 plt.show()
 
-plt.hist(np.log(y) - 2 * np.log(x), bins=100, density=True)
+# what is the median absolute error?
+errors = y - parabola(x)
+U = np.linspace(0,100, 100)/100.0
+P = np.percentile(errors, 100*U)
+plt.scatter(P, U)
+
+plt.hist(parabola(x) - y)
 plt.show()
 
-n, bins, patches = plt.hist(x, 50, density=True, facecolor='g', alpha=0.75)
+# remove the observations that are too far away.
+S = np.abs(errors) < np.percentile(np.abs(errors), 99.99)
 
-# good idea: fix the local assignment!
+plt.scatter(x, y, s=1, c=S)
+plt.show()
 
 
+new_parab = np.poly1d(np.polyfit(x[S], y[S], deg=4))
+plt.plot(x_parabola, y_parabola, color='blue')
+plt.plot(x_parabola, new_parab(x_parabola), color='red')
+plt.scatter(x, y, s=1, c='grey')
+plt.show()
+
+# the impact of outliers seem truly negligable. Good.
+# Leave order 4 polynomial, as is.
+# Use it for other procedures.
+# Forget about the robust fit: not so important.
+
+# Order the code!
+# The 4th order polynomial will be used to do what???
+
+# Wait, we don't want to use it directly.
+# We might use it to spot too small and too big deviations, though.
+# So we might invest more time to have something truly better.
+# Like a spline.
+# The small diffs are particularly troublesome.
+
+# What we need to do really now, is to estimate the 
+# standard deviations: the hereroscedasticity of the trend.
+# Implement the estimator of the normal parameters based on 
+# the historgram.
+
+# Then, simply use it for passing to a function that will
+# spread the IsoSpec infinitely-resolved peaks over the bins.
+
+# Implement a binning based on one spectrum first.
+# Then, think how to aggregate spectra.
+# But this has to be done based on some similarity across runs.
+# So it's more complicated: leave it for now.
+
+# Instead, simply make a binning defined over what?
+# The question is: should we have bins as large as
+# the base peak groups, or smaller?
+# If we assume, that more than one thing can explain them,
+# then better smaller?
+# It's a problem of continuous VS discrete.

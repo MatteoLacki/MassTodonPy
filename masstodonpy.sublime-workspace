@@ -4,6 +4,26 @@
 		"selected_items":
 		[
 			[
+				"inten",
+				"intensity_dummy"
+			],
+			[
+				"bito",
+				"bitonic_clustering"
+			],
+			[
+				"abs",
+				"abs_perc_dev"
+			],
+			[
+				"mz",
+				"mz_diffs"
+			],
+			[
+				"good",
+				"good_c"
+			],
+			[
 				"intensit",
 				"intensity_test"
 			],
@@ -152,39 +172,28 @@
 			}
 		},
 		{
-			"file": "/Users/matteo/Projects/rta/rta/development_script.py",
-			"settings":
-			{
-				"buffer_size": 4069,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "%load_ext autoreload\n%autoreload 2\n%load_ext line_profiler\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport os\n\nmz_dummy        = np.array([1.1, 1.2, 1.3, 1.4, 2.2, 2.3, 2.4, 2.5, 2.6, 2.8, 2.9, 3.0])\nintensity_dummy = np.array([0.1, 1.2, 2.3, 1.4, 0.2, 2.3, 4.4, 2.5, 1.6, 0.8, 2.9, 0.2])\n\ndef sorted(x):\n    return np.all(np.diff(mz_r))\n\ndef plot(mz, intensity, clusters=None, show=True):\n    \"\"\"Make a simple visualization of the data.\"\"\"\n    plt.vlines(x=mz, ymin=[0], ymax=intensity)\n    if clusters:\n        plt.scatter(x=mz, y=np.zeros(len(mz)), c=clusters)\n    if show:\n        plt.show()\n\ndef get_spectrum(data_path):\n    return [ np.load(os.path.join(data_path, p)) for p in ('mz.npy', 'in.npy') ]\n\n# task:\n#   bitonic marker of modes\n#   I don't remember what it's used for\n#       ok, to estimate the whole lot of underlying gaussian parameters.\n\n# the programme:\n#   write and test (lineprof) pure python code for the task.\n    # rewrite in C and expose using cffi\n    # better even: rewrite in bloody Golang, becuase other things are there.\n    # then we can even assume zeros existing.\n    #   easier criterion: zero intensity triggers the end of old clustering\n    # THERE ARE NO ZEROS THERE!!!\n\n\n# min_mz_diff can be established statistically, as the first percentile of mass diffs.\n\ndef bitonic_clustering(mz, intensity, min_mz_diff=.15):\n    \"\"\"Generate cluster numbers based on bitonicity of the intensity.\"\"\"\n    # previous two intensities\n    i__ = 1.0\n    _i_ = 0.0\n    # cluster no\n    c = -1 # the first cluster will get tag '0'\n    # previous m/z \n    m_ = - np.inf\n    for _m, __i in zip(mz, intensity):\n        big_mz_diff = _m - m_ > min_mz_diff\n        if (__i - _i_ >= 0.0 and _i_ < i__) or big_mz_diff:\n            c += 1\n        yield c\n        if big_mz_diff:\n            i__ = 0.0\n        else:\n            i__ = _i_\n        _i_ = __i\n        m_  = _m\n\ndef get_clusters(clustering, count):\n    return np.fromiter(clustering, dtype=int, count=count)\n\ndef clusters2array(mz, intensity, clustering=bitonic_clustering, **clustering_kwds):\n    return np.fromiter(clustering(mz, intensity, **clustering_kwds),\n                       dtype=int, count=len(mz))\n\ndef clusters(mz, intensity, clustering=bitonic_clustering, **clustering_kwds):\n    return list(clustering(mz, intensity, **clustering_kwds))\n\nclusters_dummy = clusters(mz_dummy, intensity_dummy)\nplot(mz_dummy, intensity_dummy, list(clusters_dummy))\n\ndata_path = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'\nmz, intensity = get_spectrum(data_path)\ncs = clusters(mz, intensity)\n\ncolors_no = 10\ncmap = plt.get_cmap('tab10', colors_no)\ncolors = [cmap(c % colors_no) for c in cs]\nplot(mz, intensity, colors)\n\n# empirical test suite:\nmz_test_idx = np.logical_and( mz >= 858.0, mz <= 859.4 )\nmz_test = mz[mz_test_idx]\nintensity_test = intensity[mz_test_idx]\n\n# plot(mz_test, intensity_test, )\n# zero_intensity = intensity_test == 0.0\n# plt.scatter(mz_test[zero_intensity], intensity_test[zero_intensity])\n# plt.show()\n\n# investigating clustering based on m/z distances\ncs = clusters(mz_test, intensity_test, min_mz_diff=.6)\ncolors = [cmap(c % colors_no) for c in cs]\nplot(mz_test, intensity_test, colors)\n\n\n# global robust regression approach:\n    # there should be ~ 6 to 8 times more small diffs than big ones\n\n\nx = mz[0:-1]\ny = np.diff(mz)\nplt.scatter(x**2, y)\nplt.show()\n\nplt.hist(np.log(y) - 2 * np.log(x), bins=100, density=True)\nplt.show()\n\nn, bins, patches = plt.hist(x, 50, density=True, facecolor='g', alpha=0.75)\n\n# good idea: fix the local assignment!\n\n\n",
 			"file": "Development/Orbitrap/preprocessing.py",
-			"file_size": 3261,
-			"file_write_time": 131762411023124791,
 			"settings":
 			{
-				"buffer_size": 3666,
+				"buffer_size": 3961,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "Development/Orbitrap/iterator_class_method.py",
+			"file": "MassTodonPy/Spectra/peak_clustering.py",
 			"settings":
 			{
-				"buffer_size": 310,
+				"buffer_size": 5726,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "In [1]:                                                                                    \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n                                                                                           \n",
+			"contents": "In [1]:                                                                                              \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n                                                                                                     \n",
 			"settings":
 			{
-				"buffer_size": 6900,
+				"buffer_size": 5610,
 				"line_ending": "Unix",
 				"name": "Terminal (bash)",
 				"read_only": true,
@@ -236,12 +245,36 @@
 		"selected_items":
 		[
 			[
-				"terminal",
-				"Terminal View: Open Bash Terminal"
+				"colo",
+				"UI: Select Color Scheme"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"ins",
+				"Package Control: Install Package"
+			],
+			[
+				"color",
+				"UI: Select Color Scheme"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"term",
+				"Preferences: Terminal View: Color Scheme"
 			],
 			[
 				"send",
 				"SendCode: Choose Program"
+			],
+			[
+				"terminal",
+				"Terminal View: Open Bash Terminal"
 			],
 			[
 				"teemin",
@@ -256,10 +289,6 @@
 				"SendCode: Choose Program"
 			],
 			[
-				"term",
-				"Terminal View: Open Bash Terminal"
-			],
-			[
 				"sen",
 				"SendCode: Choose Program"
 			],
@@ -270,14 +299,6 @@
 			[
 				"ay",
 				"ayu: Activate theme"
-			],
-			[
-				"ins",
-				"Package Control: Install Package"
-			],
-			[
-				"colo",
-				"UI: Select Color Scheme"
 			],
 			[
 				"box",
@@ -294,10 +315,6 @@
 			[
 				"instal",
 				"Package Control: Install Package"
-			],
-			[
-				"color",
-				"UI: Select Color Scheme"
 			],
 			[
 				"theme",
@@ -318,10 +335,6 @@
 			[
 				"colors",
 				"UI: Select Color Scheme"
-			],
-			[
-				"inst",
-				"Package Control: Install Package"
 			],
 			[
 				"her",
@@ -362,18 +375,31 @@
 	"expanded_folders":
 	[
 		"/Users/matteo/Projects/MassTodonPy",
-		"/Users/matteo/Projects/MassTodonPy/Development",
-		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy"
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/readers",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra"
 	],
 	"file_history":
 	[
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/bitonic_clustering.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/from_npy.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/Read.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/readers/__init__.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/plotters/__init__.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/plotters/spectrum.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/Orbitrap.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/arrays/operations.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Arrays/operations.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Arrays/__init__.py",
+		"/Users/matteo/Desktop/Stat/more_of_density_and_quantile_regression.py",
+		"/Users/matteo/Projects/rta/rta/development_script.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/iterator_class_method.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/Spectrum.py",
 		"/Users/matteo/Projects/MassTodonPy/docs/Makefile",
 		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/preprocessing.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Reporter/Reporter.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Deconvolution/DeconvolutionProblem.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/MassTodon.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/Spectrum.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Deconvolution/Deconvolve.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/IsotopeDistribution.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Measure/Measure.py",
@@ -444,7 +470,7 @@
 	],
 	"find":
 	{
-		"height": 28.0
+		"height": 54.0
 	},
 	"find_in_files":
 	{
@@ -459,6 +485,12 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"np.",
+			"bitonic_clustering",
+			"cluste",
+			"sorted",
+			"mz_local",
+			"            \n",
 			"list",
 			"spectrum",
 			"min_intensity",
@@ -482,6 +514,7 @@
 		"regex": false,
 		"replace_history":
 		[
+			"bitonic_iterator",
 			"deconvolution_graph"
 		],
 		"reverse": false,
@@ -509,43 +542,15 @@
 						"selection":
 						[
 							[
-								1340,
-								1340
+								1333,
+								1333
 							]
 						],
 						"settings":
 						{
 							"auto_name": "cmaps['Qualitative'] = ['Pastel1', 'Pastel2', 'Pai",
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/Users/matteo/Projects/rta/rta/development_script.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 4069,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								39,
-								98
-							]
-						],
-						"settings":
-						{
 							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
+							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
@@ -554,28 +559,22 @@
 					},
 					"stack_index": 3,
 					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 0,
-			"sheets":
-			[
+				},
 				{
-					"buffer": 2,
+					"buffer": 1,
 					"file": "Development/Orbitrap/preprocessing.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3666,
+						"buffer_size": 3961,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								718,
-								718
+								745,
+								745
 							]
 						],
 						"settings":
@@ -588,49 +587,51 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
-				},
+				}
+			]
+		},
+		{
+			"selected": 1,
+			"sheets":
+			[
 				{
-					"buffer": 3,
-					"file": "Development/Orbitrap/iterator_class_method.py",
+					"buffer": 2,
+					"file": "MassTodonPy/Spectra/peak_clustering.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 310,
+						"buffer_size": 5726,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								310,
-								310
+								5023,
+								5023
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2316.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
 					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 0,
-			"sheets":
-			[
+				},
 				{
-					"buffer": 4,
+					"buffer": 3,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6900,
+						"buffer_size": 5610,
 						"regions":
 						{
 							"0,0":
@@ -656,13 +657,37 @@
 									]
 								],
 								"scope": "terminalview.black_green"
+							},
+							"58,0":
+							{
+								"flags": 272,
+								"regions":
+								[
+									[
+										5610,
+										5610
+									]
+								],
+								"scope": "terminalview.black_green"
+							},
+							"58,6":
+							{
+								"flags": 272,
+								"regions":
+								[
+									[
+										5610,
+										5610
+									]
+								],
+								"scope": "terminalview.black_green"
 							}
 						},
 						"selection":
 						[
 							[
-								8,
-								8
+								15,
+								15
 							]
 						],
 						"settings":
@@ -698,7 +723,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -727,19 +752,12 @@
 				0,
 				2,
 				1
-			],
-			[
-				2,
-				0,
-				3,
-				1
 			]
 		],
 		"cols":
 		[
 			0.0,
-			0.33,
-			0.66,
+			0.5,
 			1.0
 		],
 		"rows":
@@ -765,7 +783,7 @@
 	"project": "masstodonpy.sublime-project",
 	"replace":
 	{
-		"height": 52.0
+		"height": 94.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -774,6 +792,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"biton",
+				"MassTodonPy/Spectra/bitonic_clustering.py"
+			],
 			[
 				"dec",
 				"MassTodonPy/Deconvolution/DeconvolutionProblem.py"
@@ -943,7 +965,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 1,
+	"selected_group": 0,
 	"settings":
 	{
 	},
@@ -951,7 +973,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": false,
-	"side_bar_width": 286.0,
+	"side_bar_width": 221.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
