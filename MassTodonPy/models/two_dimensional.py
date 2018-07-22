@@ -43,3 +43,12 @@ class Model2D(Model):
         if show:
             plt.show()
 
+    def res(self):
+        """Get residuals/errors of the model."""
+        return self.y - self(self.x)
+
+    def error_stats(self):
+        err = self.res()
+        err_deciles = np.percentile(err, np.linspace(0, 100, 11))
+        median_absolute_deviation = np.median(np.abs(err))
+        return err_deciles, median_absolute_deviation

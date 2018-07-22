@@ -8,9 +8,13 @@ class Model(object):
         """Refit the model."""
         raise NotImplementedError
 
-    def predict(self, newdata={}, *args, **kwds):
+    def __call__(self, x, y, *args, **kwds):
         """Predict the values at the new data points."""
         raise NotImplementedError
+
+    def predict(self, x, y, *args, **kwds):
+        """Predict the values at the new data points."""
+        self(x, y, *args, **kwds)
 
     def coef(self):
         """Retrieve spline coefficient.
@@ -39,8 +43,8 @@ class Model(object):
         raise NotImplementedError
 
 
-def predict(model, newdata={}, *args, **kwds):
-    return model.predict(newdata, *args, **kwds)
+def predict(model, x, y, *args, **kwds):
+    return model(x, y, *args, **kwds)
 
 def fitted(model):
     return model.fitted()

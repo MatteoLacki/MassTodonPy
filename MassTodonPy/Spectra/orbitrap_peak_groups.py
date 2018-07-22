@@ -84,7 +84,7 @@ class Cluster(object):
                      *model_args, **model_kwds):
         """Fit a spline to (m/z, Δm/z)."""
         mz_lefts, mz_diffs = self.mz_and_mz_diffs()
-        self._mzdiff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
+        self.mz_diff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
 
 
     def mz_diff(self, mz):
@@ -95,7 +95,7 @@ class Cluster(object):
         mz : np.array
             m/z values for which you need the values of the estimated m/z differences.
         """
-        return self._mzdiff_model(mz)
+        return self.mz_diff_model(mz)
 
 
     def plot(self,
@@ -152,7 +152,7 @@ class Cluster(object):
                         c = 'blue',
                         s = .5)
         if trend:
-            self._mzdiff_model.plot(plot_data = False,
+            self.mz_diff_model.plot(plot_data = False,
                                     show      = False)
         if cluster_diffs:
             # mask those that are within clusters by bigger red dots.
