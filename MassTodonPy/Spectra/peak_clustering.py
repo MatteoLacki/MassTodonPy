@@ -1,7 +1,10 @@
 from math import inf
 import numpy as np
 
+from MassTodonPy.plotters.spectrum import plot_spectrum
 
+
+# around a second. That's something to rewrite later to C++.
 def bitonic_iterator(mz, intensity, min_mz_diff=.15):
     """Cluster based on bitonicity of the intensity.
 
@@ -106,7 +109,8 @@ def iter_cluster_ends(assignments):
     ------
         tuple: indices marking the beginning and the end of a cluster.
     """
-    c_ = next(assignments) # cluster: 0 for a fresh generator.
+    c_ = 0
+    _  = next(assignments) # cluster: 0 for a fresh generator.
     i_ = 0
     _i = 1
     for _c in assignments: # next cluster
@@ -192,3 +196,25 @@ def mz_bitonic(mz, intensity,
         else:
             c += 1
     return clusters
+
+
+
+def show_clustering_is_good(data_path = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1',
+                            mz_name   = 'mz.npy',
+                            intensity_name = 'in.npy'):
+    """Show if the bitonic clustering meets the standard.
+
+    Parameters
+    ----------
+    data_path : str
+        The path to the folder containing the files.
+    mz_name : str
+        The name of the file that contains m/z values.
+    intensity_name : str
+        The name of the file that contains the intensity values.
+
+    """
+    mz, intensity = spectrum_from_npy(data_path)
+    clusters = mz_bitonic(mz, intensity, min_mz_diff=.15, abs_perc_dev=.2)
+    idx = (1146.95 < mz) & (mz < 1149.1)
+    plot_spectrum(mz[idx], intensity[idx], clusters[idx])

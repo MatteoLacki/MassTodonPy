@@ -14,10 +14,8 @@ def spectrum_from_npy(data_path,
     ----------
     data_path : str
         The path to the folder containing the files.
-
     mz_name : str
         The name of the file that contains m/z values.
-
     intensity_name : str
         The name of the file that contains the intensity values.
     """

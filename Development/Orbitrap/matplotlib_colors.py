@@ -40,6 +40,8 @@ for cmap_category, cmap_list in cmaps.items():
 
 plt.show()
 
-plt.get_cmap('tab10')
+cmap = plt.get_cmap('tab10', 10)
 
-
+cmap(0)
+help(cmap)
+ 
