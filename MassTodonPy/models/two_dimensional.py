@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 from MassTodonPy.models.model import Model
+
 
 class Model2D(Model):
     def x_percentiles(self, No):
@@ -48,7 +50,9 @@ class Model2D(Model):
         return self.y - self(self.x)
 
     def error_stats(self):
-        err = self.res()
+        err         = self.res()
         err_deciles = np.percentile(err, np.linspace(0, 100, 11))
+
         median_absolute_deviation = np.median(np.abs(err))
         return err_deciles, median_absolute_deviation
+

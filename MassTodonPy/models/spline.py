@@ -1,9 +1,12 @@
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy.interpolate import LSQUnivariateSpline
+import numpy             as np
 
+from scipy.interpolate   import LSQUnivariateSpline
+
+from MassTodonPy.arrays.operations      import dedup_sort
 from MassTodonPy.models.two_dimensional import Model2D
-from MassTodonPy.arrays.operations import dedup_sort
+from MassTodonPy.stats.descriptive      import mad_denoising
+
 
 class Spline(Model2D):
     def fit(self, x, y,
@@ -32,15 +35,29 @@ class Spline(Model2D):
         t = t[1:-1]
         self._spline = LSQUnivariateSpline(self.x, self.y, t)
 
+
+    def denoise_refit(self,
+                      denoiser,
+                    **denoiser_args):
+        self.is_signal, _, _ = denoiser(self.res(), **denoiser_args)
+        x_s = self.x[self.is_signal]
+        y_s = self.y[self.is_signal]
+        t = self.x_percentiles(len(x_s)//1000)[1:-1]
+        self._spline = LSQUnivariateSpline(x_s, y_s, t)
+
     def __call__(self, x):
         return self._spline(x)
+
 
     def __repr__(self):
         return "Ich bin ein Spline. Hast du Angst?"
 
+
 def spline(x, y, 
            drop_duplicates = True,
-           sort            = True):
+           sort            = True,
+           denoise_refit   = {'denoiser': mad_denoising,
+                              'std_cnt' : 100}):
     """Fit a scipy-spline to the data.
 
     Arguments:
@@ -49,4 +66,6 @@ def spline(x, y,
     """
     s = Spline()
     s.fit(x, y, drop_duplicates, sort)
+    if denoise_refit:
+        s.denoise_refit(**denoise_refit)
     return s

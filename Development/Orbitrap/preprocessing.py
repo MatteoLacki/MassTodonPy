@@ -10,21 +10,26 @@ from MassTodonPy.readers.from_npy               import spectrum_from_npy
 from MassTodonPy.Spectra.peak_clustering        import mz_bitonic
 from MassTodonPy.Spectra.peak_clustering        import iter_cluster_ends
 from MassTodonPy.Spectra.orbitrap_peak_groups   import bitonic_clustering
+from MassTodonPy.models.polynomial              import polynomial
+
 
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
 mz, intensity = spectrum_from_npy(data_path)
 bc            = bitonic_clustering(mz, intensity, min_mz_diff=.15, abs_perc_dev=.2)
 bc.fit_mz_diffs()
-
 bc.plot_mz_diffs()
-bc.mz_diff_model
-
-from MassTodonPy.models.polynomial import polynomial
-
 bc.fit_mz_diffs(model = polynomial)
-bc.mz_diff_model.error_stats()
+bc.plot_mz_diffs()
+
+
+
+
+
 
 # implement the finding of the erroneous cases.
+
+# implement the median estimation and standard deviation based on medi
+
 # implement the estimation of the standard deviations.
 
 

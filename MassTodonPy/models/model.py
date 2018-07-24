@@ -27,6 +27,9 @@ class Model(object):
         """Get residuals."""
         raise NotImplementedError
 
+    def errors(self):
+        return self.res()
+
     def residuals(self):
         """Get residuals: syntactic sugar for 'res'."""
         return self.res
@@ -59,6 +62,9 @@ def residuals(model):
     return model.res()
 
 def res(model):
+    return model.res()
+
+def errors(model):
     return model.res()
 
 def cv(model, **kwds):

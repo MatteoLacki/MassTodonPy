@@ -3,6 +3,16 @@
 import numpy as np
 
 from MassTodonPy.models.two_dimensional import Model2D
+from MassTodonPy.stats.descriptive      import mad_denoising
+
+
+def fit_polynomial(x, y, degree = 3, coefs = True):
+    _coefs = np.polyfit(x, y, degree)
+    polynomial = np.poly1d(_coefs)
+    if coefs:
+        return polynomial, _coefs
+    else:
+        return polynomial
 
 
 class Polynomial(Model2D):
@@ -34,15 +44,29 @@ class Polynomial(Model2D):
         -------
         tuple of np.arrays: fixed 'x' and 'y'.
         """
-        self.x, self.y   = x, y
+        self.x, self.y = x, y
         self.x_min = min(self.x)
         self.x_max = max(self.x)
-        self._coefs      = np.polyfit(self.x, self.y, self.degree)
-        self._polynomial = np.poly1d(self._coefs)
+        self._polynomial, self._coefs = fit_polynomial(self.x,
+                                                       self.y,
+                                                       self.degree,
+                                                       True)
+
+    def denoise_refit(self,
+                    denoiser,
+                  **denoiser_args):
+        self.is_signal, _, _ = denoiser(self.errors(), **denoiser_args)
+        x_s = self.x[self.is_signal]
+        y_s = self.y[self.is_signal]
+        self._polynomial, self._coefs = fit_polynomial(x_s,
+                                                       y_s,
+                                                       self.degree,
+                                                       True)
 
     def coef(self):
         """Get the coefficients of the polynomial fitted with least squares."""
         return self._coefs
+
 
     def __call__(self, x):
         """Extrapolate the value of the fitted polynomial at 'x'.
@@ -59,7 +83,10 @@ class Polynomial(Model2D):
         return "Ich bin ein Polynom. Hast du Angst?"
 
 
-def polynomial(x, y, degree = 3):
+def polynomial(x, y,
+               degree        = 3,
+               denoise_refit = {'denoiser': mad_denoising,
+                                'std_cnt' : 100}):
     """Fit a scipy-spline to the data.
 
     Parameters:
@@ -72,4 +99,6 @@ def polynomial(x, y, degree = 3):
     """
     p = Polynomial(degree)
     p.fit(x, y)
+    if denoise_refit:
+        p.denoise_refit(**denoise_refit)
     return p

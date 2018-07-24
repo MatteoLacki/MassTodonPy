@@ -157,9 +157,14 @@ class Cluster(object):
         if cluster_diffs:
             # mask those that are within clusters by bigger red dots.
             mz_lefts, mz_diffs = self.mz_and_mz_diffs()
+            try:
+                signal = self.mz_diff_model.is_signal
+                c = np.array(['papayawhip' if s else 'yellow' for s in signal])
+            except AttributeError:
+                c = 'papayawhip'
             plt.scatter(mz_lefts,
                         mz_diffs,
-                        c = 'papayawhip',
+                        c = c,
                         s = 1.5)
         if show and (all_diffs or cluster_diffs):
             plt.show()
