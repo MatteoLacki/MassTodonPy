@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import norm
+
+from MassTodonPy.stats.simple_normal_estimators import mean, sd
 
 
 def plot_spectrum(mz, intensity,
@@ -29,10 +32,28 @@ def plot_spectrum(mz, intensity,
 
     """
     plt.style.use(plt_style)
-    plt.vlines(x=mz, ymin=[0], ymax=intensity)
+    plt.vlines(x=mz, ymin=[0], ymax=intensity, colors='white')
     if clusters is not None:
         cmap = plt.get_cmap('tab10', colors_no)
         colors = [cmap(c % colors_no) for c in clusters]
         plt.scatter(x=mz, y=np.zeros(len(mz)), c=colors)
+    if show:
+        plt.show()
+
+
+def plot_peak_group(mz,
+                    intensity,
+                    knots_no  = 100,
+                    sd_cnt    = 3,
+                    plt_style = 'dark_background',
+                    show      = True):
+    mean_e = mean(mz, intensity)
+    sd_    = sd(mz, intensity, mean_e)
+    G      = norm(loc = mean_e, scale = sd_)
+    x      = np.linspace(mean_e - sd_cnt*sd_,
+                         mean_e + sd_cnt*sd_,
+                         knots_no)
+    plt.scatter(mz, intensity)
+    plt.plot(x, G.pdf(x) * sum(intensity) * np.diff(mz)[1])
     if show:
         plt.show()

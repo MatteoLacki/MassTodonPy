@@ -44,8 +44,13 @@ class Cluster(object):
 
     def iter_cluster_ends(self):
         """Iterate over consecutive cluster ends."""
-        for i_, _i in iter_cluster_ends(np.nditer(self.clusters)):
-            yield i_, _i
+        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+            yield s, e
+
+
+    def iter_clusters(self):
+        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+            yield self.mz[s:e], self.intensity[s:e]
 
 
     def iter_mz_and_mz_diffs(self):
@@ -186,7 +191,11 @@ class BitonicCluster(Cluster):
 
 def bitonic_clustering(mz, intensity,
                        min_mz_diff  = .15,
-                       abs_perc_dev = .20):
+                       abs_perc_dev = .20,
+                       diff_model   = spline, 
+                      *diff_model_args, 
+                     **diff_model_kwds):
     bc = BitonicCluster(min_mz_diff, abs_perc_dev)
     bc.cluster(mz, intensity, drop_duplicates = True, sort = True)
+    bc.fit_mz_diffs(model = diff_model, *diff_model_args, **diff_model_kwds)
     return bc
