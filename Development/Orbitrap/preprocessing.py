@@ -84,8 +84,24 @@ p = polynomial(means, sds)
 #     plt.title("Cluster No {}".format(cluster_no))
 #     cluster_no += 1
 # plt.show()
-from MassTodonPy.Measure.Measure import Measure
+from MassTodonPy.Spectra.orbitrap.spectrum import OrbitrapSpectrum
 
-m = Measure(atoms=mz, masses=intensity)
+orbi = OrbitrapSpectrum(mz, intensity)
+orbi.plot()
+
+
+from MassTodonPy.Data.get_dataset import get_dataset
+
+
+substanceP = get_dataset('substanceP')
+
+list(substanceP.precursor.molecules())
+modifications = defaultdict(dict)
+for (number, group), mods in substanceP.precursor.modifications.items():
+    modifications[number][group] = dict(mods)
+modifications = dict(modifications)
+
+
+
 
 

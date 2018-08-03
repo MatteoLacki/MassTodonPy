@@ -219,7 +219,7 @@ class Measure(object):
         return zip(self.atoms, self.masses)
 
     #TODO: 
-        # extend to any slice
+    # extend to any slice
     def __getitem__(self, key):
         """Filter atoms between 'L' and 'R'.
 
@@ -236,7 +236,7 @@ class Measure(object):
             or '(idx, mz, intensity)',
             where 'idx' is the unique ID of the atom.
 
-        """
+        """    
         try:
             if len(key) == 2:
                 L, R = key
@@ -251,7 +251,9 @@ class Measure(object):
                     yield idx, self.atoms[idx], self.masses[idx]
                 idx += 1
         except IndexError:
+            # WTF???
             return
+
 
     def total_mass(self):
         return self.masses.sum()

@@ -49,4 +49,6 @@ class LinearDict(MutableMapping):
         out = self.__class__(self)
         return out
 
-    # def __mul__(self, scalar):
+    def __mul__(self, scalar):
+        """Implement."""
+        raise NotImplementedError

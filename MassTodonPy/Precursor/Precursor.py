@@ -63,7 +63,7 @@ class Precursor(object):
     def __init__(self,
                  fasta,
                  charge,
-                 name="",
+                 name = "",
                  modifications={},
                  fragments="cz",
                  blocked_fragments=set(['c0']),
@@ -129,8 +129,9 @@ class Precursor(object):
             raise KeyError("Supply '(number, group)' or just 'group'.")
 
     def __repr__(self):
-        out = "({name} {fasta} q={q}".format(**self.__dict__)
-        out += ' modified)' if self.modifications else ')'
+        out = "{name}, {q}-charged,".format(**self.__dict__)
+        out += ' modified,\n' if self.modifications else '\n'
+        out += "fasta: {fasta}".format(**self.__dict__)
         return out
 
     def __len__(self):
@@ -217,3 +218,23 @@ class Precursor(object):
         return hash((self.name,
                      self.fasta,
                      self.q, flatten_modification(self.modifications)))
+
+
+def precursor(fasta,
+              charge,
+              name              = "",
+              modifications     = {},
+              fragments         = "cz",
+              blocked_fragments = set(['c0']),
+              block_prolines    = True,
+              distance_charges  = 5):
+    """Prepare a ready precursor."""
+    prec = Precursor(fasta,
+                     charge,
+                     name,
+                     modifications,
+                     fragments,
+                     blocked_fragments,
+                     block_prolines,
+                     distance_charges)
+    return prec

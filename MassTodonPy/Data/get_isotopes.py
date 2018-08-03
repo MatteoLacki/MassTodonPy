@@ -16,9 +16,30 @@ def get_isotopic_masses_and_probabilities():
     """
     from MassTodonPy.Data.isotopes import isotopes as isotopes_raw
     iso_masses = defaultdict(list)
-    iso_probs = defaultdict(list)
+    iso_probs  = defaultdict(list)
     for element, isos in isotopes_raw:
         for mass, prob in isos:
             iso_masses[element].append(mass)
             iso_probs[element].append(prob)
     return iso_masses, iso_probs
+
+
+
+def get_isotopic_masses():
+    """Retrieve the information on masses of isotopes."""
+    from MassTodonPy.Data.isotopes import isotopes as isotopes_raw
+    iso_masses = defaultdict(list)
+    for element, isos in isotopes_raw:
+        for mass, prob in isos:
+            iso_masses[element].append(mass)
+    return iso_masses
+
+
+def get_isotopic_probabilities():
+    """Retrieve the information on frequencies of isotopes."""
+    from MassTodonPy.Data.isotopes import isotopes as isotopes_raw
+    iso_probs  = defaultdict(list)
+    for element, isos in isotopes_raw:
+        for mass, prob in isos:
+            iso_probs[element].append(prob)
+    return iso_probs

@@ -3,11 +3,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from MassTodonPy.arrays.operations          import dedup_sort
-from MassTodonPy.models.spline              import spline
-from MassTodonPy.plotters.spectrum          import plot_spectrum
-from MassTodonPy.Spectra.peak_clustering    import mz_bitonic
-from MassTodonPy.Spectra.peak_clustering    import iter_cluster_ends
+from MassTodonPy.arrays.operations                  import dedup_sort
+from MassTodonPy.models.spline                      import spline
+from MassTodonPy.plotters.spectrum                  import plot_spectrum
+from MassTodonPy.Spectra.orbitrap.peak_clustering   import mz_bitonic
+from MassTodonPy.Spectra.orbitrap.peak_clustering   import iter_cluster_ends
 
 
 class Cluster(object):

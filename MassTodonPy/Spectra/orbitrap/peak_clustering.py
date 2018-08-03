@@ -1,5 +1,5 @@
-from math import inf
-import numpy as np
+from    math    import  inf
+import  numpy   as      np
 
 from MassTodonPy.plotters.spectrum import plot_spectrum
 

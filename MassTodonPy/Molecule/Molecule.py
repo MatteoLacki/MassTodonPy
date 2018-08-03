@@ -46,11 +46,11 @@ class Molecule(object):
         cls.iso_calc = IsotopeCalculator(**args)
 
     def __init__(self, name, source, formula, q=0, g=0):
-        self.name = name
-        self.source = source
-        self.formula = formula
-        self.q = int(q)
-        self.g = int(g)
+        self.name      = name
+        self.source    = source
+        self.formula   = formula
+        self.q         = int(q)
+        self.g         = int(g)
         self.intensity = 0.0
 
     #TODO generalize to abxy

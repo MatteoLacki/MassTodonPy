@@ -190,3 +190,31 @@ class IsotopeCalculator(object):
                                  probability=probability)
             iso_distr.round_mz(mz_digits)
             return iso_distr
+
+    def __call__(self, 
+                 formula,
+                 prob   = None,
+                 q      = 0,
+                 g      = 0,
+                 mz_digits = None,
+                 memoize   = False):
+        """Call the isotopic generator."""
+        return self.get_envelope(formula,
+                                 joint_probability=prob,
+                                 q=0,
+                                 g=0,
+                                 mz_digits=None,
+                                 memoize=False)
+
+
+def isotope_calculator(joint_probability=.999,
+                       mz_digits=infinity,
+                       _masses=None,
+                       _probabilities=None,
+                       _isotope_DB=None):
+    IC = IsotopeCalculator(joint_probability=.999,
+                           mz_digits=infinity,
+                           _masses=None,
+                           _probabilities=None,
+                           _isotope_DB=None)
+    return IC

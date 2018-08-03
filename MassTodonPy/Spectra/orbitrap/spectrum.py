@@ -1,5 +1,4 @@
 from bisect import bisect_left, bisect_right
-
 from MassTodonPy.Measure.Measure    import Measure
 from MassTodonPy.plotters.spectrum  import plot_spectrum
 
@@ -45,12 +44,4 @@ class OrbitrapSpectrum(Measure):
     def zoom(self, mz_left, mz_right):
         id_s = bisect_left(  self.mz, mz_left)
         id_e = bisect_right( self.mz, mz_right)
-        return self.mz[id_s:id_e], self.intensity[id_s:id_e] 
-
-# orbi_spec = OrbitrapSpectrum(mz, intensity)
-# from MassTodonPy.models.model import plot
-# plot(orbi_spec)
-# orbi_spec.zoom(1250, 1500)
-
-# what do we need more?
-
+        return self.mz[id_s:id_e], self.intensity[id_s:id_e]
