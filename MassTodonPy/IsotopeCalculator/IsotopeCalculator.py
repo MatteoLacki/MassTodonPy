@@ -117,7 +117,7 @@ class IsotopeCalculator(object):
                        memoize=False):
         counts = []
         masses = []
-        probs = []
+        probs  = []
         for el, cnt in Formula(formula).items():
             counts.append(cnt)
             masses.append(self._masses[el])

@@ -10,6 +10,8 @@ from MassTodonPy.Misc.unicode_compatibility import is_string
 
 
 # TODO: add support for passing in 2D numpy arrays.
+# This implementation is stupid: it should be simpler
+# there should
 class Spectrum(Measure):
     """Prepare experimental spectrum.
 

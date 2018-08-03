@@ -21,8 +21,8 @@ from collections import Counter
 from collections import defaultdict
 import cvxopt
 import imp
-import networkx as nx
-from networkx import connected_component_subgraphs
+import networkx as      nx
+from networkx   import  connected_component_subgraphs
 
 from MassTodonPy.Data.Constants import infinity
 from MassTodonPy.Deconvolution.DeconvolutionProblem import DeconvolutionProblem

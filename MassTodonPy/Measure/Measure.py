@@ -34,7 +34,7 @@ class Measure(object):
         If you have sorted the measure beforehand, do set 'is_sorted' to True.
 
         """
-        self.atoms = atoms
+        self.atoms  = atoms
         self.masses = masses
         if sort:
             self.sort()
@@ -155,7 +155,7 @@ class Measure(object):
 
         """
         if cut_off > 0:
-            self.atoms = self.atoms[self.masses >= cut_off]
+            self.atoms  = self.atoms[self.masses >= cut_off]
             self.masses = self.masses[self.masses >= cut_off]
 
     def split_measure(self, cut_off):
@@ -272,6 +272,8 @@ class Measure(object):
             for atom, mass in self:
                 writer.writerow([atom, mass])
 
+    #TODO:  replace this with matplotlib.
+    #       write an additional plugin masstodonbokeh
     def plot(self,
              path="",
              mode="inline",
