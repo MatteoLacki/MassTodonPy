@@ -28,7 +28,6 @@ from MassTodonPy.Formula.Formula import Formula
 from MassTodonPy.IsotopeCalculator.Misc import cdata2numpyarray  # TODO IsoSpec 2.0
 from MassTodonPy.IsotopeCalculator.Misc import get_mean_and_variance
 from MassTodonPy.IsotopeCalculator.Misc import check_charges
-from MassTodonPy.IsotopeCalculator.IsotopeDistribution import IsotopeDistribution as IsoDistr
 from MassTodonPy.Measure.Measure import Measure
 
 # convolute spectra with diffs spectra instead of Dirac deltas.
@@ -87,7 +86,7 @@ class IsotopeCalculator(object):
         self.joint_probability = joint_probability
 
     def get_monoisotopic_mz(self, formula, q, g=0):
-        """Calculate monoisotopic mass of a molecule."""
+        """Calculate monoisotopic m/z of a molecule."""
         check_charges(q, g)
         mass = sum(self._masses[el][0] * count
                    for el, count in Formula(formula).items())

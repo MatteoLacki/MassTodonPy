@@ -18,14 +18,18 @@
 
 from future.builtins import super
 import numpy as np
+import matplotlib.pyplot as plt
 
 from MassTodonPy.Measure.Measure import Measure
 
 
-class IsotopeDistribution(Measure):
+class Envelope(Measure):
     """Store an isotopic distribution."""
 
-    def __init__(self, mz=np.array([]), probability=np.array([]), sort=True):
+    def __init__(self,
+                 mz          = np.array([]),
+                 probability = np.array([]),
+                 sort        = True):
         """Initialize an isotopic distribution.
 
         Parameters
@@ -71,7 +75,14 @@ class IsotopeDistribution(Measure):
         """
         self.round_atoms(precision)
 
-    def plot(self):
-        import matplotlib.pyplot as plt
-        plt.style.use('dark_background')
+    def plot(self,
+             plt_style = 'dark_background',
+             show      = True):
+        plt.style.use(plt_style)
         plt.vlines(self.mz, [0], self.probability, colors='blue')
+        if show:
+            plt.show()
+
+
+def envelope(mz, probability, sort):
+    return Envelope(mz, probability, sort)
