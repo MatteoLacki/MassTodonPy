@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 from MassTodonPy.Measure.Measure import Measure
 
-
+# Compared to Measure, the multiplication changes atoms, rather then masses.
 class Envelope(Measure):
     """Store an isotopic distribution."""
 
@@ -62,6 +62,66 @@ class Envelope(Measure):
     def probability(self, probability):
         """Set probabilities."""
         self.masses = probability
+
+    def copy(self):
+        """Make a deep copy of me."""
+        out = self.__class__(self.mz, self.probability)
+        return out
+
+    def __mul__(self, scalar):
+        """Multiply by a scalar."""
+        if scalar == 0:
+            return self.__class__()
+        elif scalar == 1:
+            return self.copy()
+        else:
+            return self.__class__(scalar * self.mz, self.probability)
+
+    def __rmul__(self, scalar):
+        """Multiply by a scalar."""
+        if scalar == 1:
+            return self
+        else:
+            return self.__mul__(scalar)
+
+    def __imul__(self, scalar):
+        """Multiply by a scalar."""
+        if scalar != 1:
+            self.mz = self.mz * scalar
+        return self
+
+    def __truediv__(self, scalar):
+        return self.__div__(scalar)
+
+    def __div__(self, scalar):
+        inverse = 1.0 / scalar
+        return self.__mul__(inverse)
+
+    def __rdiv__(self, scalar):
+        inverse = 1.0 / scalar
+        return self.__rmul__(inverse)
+
+    def __idiv__(self, scalar):
+        inverse = 1.0 / scalar
+        return self.__imul__(inverse)
+
+    def add_mass_divide_by_charge(self, mass, q):
+        """Add mass and divide by charge.
+
+        This avoids double copying.
+        (of first adding and then dividing)
+        """
+        return self.__class__((self.mz + mass)/q, self.probability)
+
+    def head_mz(self):
+        return self.mz[0]
+
+    def tail_mz(self):
+        return self.mz[-1]
+
+    def max_peak(self):
+        i = np.argmax(self.mz)
+        return self.mz[i], self.probability[i]
 
     def round_mz(self, precision):
         """Round the mass to charge ratios to a given precision.

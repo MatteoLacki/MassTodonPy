@@ -4,6 +4,30 @@ import  numpy   as      np
 from MassTodonPy.plotters.spectrum import plot_spectrum
 
 
+
+def max_mz_diff_iterator(mz, min_mz_diff=1.5):
+    """Cluster points based on the distance between them.
+
+    Parameters
+    ==========
+    mz: np.array
+        The recorded m/z values.
+    min_mz_diff : float
+        The minimal m/z difference that separates clusters.
+
+    Yields
+    ======
+    int : number of cluster
+    """
+    c  = -1   # guardian
+    m_ = -inf # guardian
+    for _m in mz:
+        if _m - m_ >= min_mz_diff:
+            c += 1
+        yield c
+        m_ = _m
+
+
 # around a second. That's something to rewrite later to C++.
 def bitonic_iterator(mz, intensity, min_mz_diff=.15):
     """Cluster based on bitonicity of the intensity.
@@ -120,6 +144,21 @@ def iter_cluster_ends(assignments):
             i_ = _i
         _i += 1
     yield i_, _i # start and end of the final cluster
+
+
+def iter_clusters(mz, intensity, assignments):
+    """Iterate over clusters given by assignments.
+
+    Parameters
+    ----------
+        assignments : iter of int
+            Iterator with clusters' assignents.
+    Yields
+    ------
+        tuple: indices marking the beginning and the end of a cluster.
+    """
+    for s, e in iter_cluster_ends(assignments):
+        yield mz[s:e], intensity[s:e]
 
 
 def fix_local_clustering(mz, s, e, c,

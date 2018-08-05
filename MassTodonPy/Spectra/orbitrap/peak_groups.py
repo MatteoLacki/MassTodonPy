@@ -10,26 +10,15 @@ from MassTodonPy.Spectra.orbitrap.peak_clustering   import mz_bitonic
 from MassTodonPy.Spectra.orbitrap.peak_clustering   import iter_cluster_ends
 
 
-class Cluster(object):
-    def __init__(self, *_cluster_args, **_cluster_kwds):
-        """Pass the arguments for the clustering algorithm here.
+# this will take the spectrum.
+class ClusteringAlgorithm(object):
+    def __init__(self):
+        self.clusters = None
 
-        In future, this will ease up copy contructors and similar things.
-        The solution is taken from SKLearn.
-        """
-        raise NotImplementedError
-
-
-    def cluster(self, mz, intensity, 
-                drop_duplicates = True,
-                sort            = True):
-        self.mz, self.intensity = dedup_sort(mz, intensity, drop_duplicates, sort)
-        self._cluster()
-
-
-    def _cluster(self):
+    def cluster(self, spectrum):
+        """Prepare self.clusters."""
+        self.spectrum = spectrum
         raise NotImplementedError("This should be setting 'self.clusters'.")
-
 
     def __len__(self):
         """Get the number of clusters.
@@ -41,17 +30,14 @@ class Cluster(object):
         """
         return self.clusters[-1] + 1
 
-
     def iter_cluster_ends(self):
         """Iterate over consecutive cluster ends."""
         for s, e in iter_cluster_ends(np.nditer(self.clusters)):
             yield s, e
 
-
     def iter_clusters(self):
         for s, e in iter_cluster_ends(np.nditer(self.clusters)):
-            yield self.mz[s:e], self.intensity[s:e]
-
+            yield self.spectrum.mz[s:e], self.spectrum.intensity[s:e]
 
     def iter_mz_and_mz_diffs(self):
         """Iterate over m/z and m/z diffs.
@@ -68,7 +54,6 @@ class Cluster(object):
             mz_diff = np.diff(mz)
             yield mz[:-1], mz_diff
 
-
     def mz_and_mz_diffs(self):
         """Get m/z and m/z diffs."""
         diffs_no = len(self.mz) - len(self)
@@ -84,13 +69,11 @@ class Cluster(object):
             i_ = _i
         return mz, mz_diffs
 
-
     def fit_mz_diffs(self, model=spline, 
                      *model_args, **model_kwds):
         """Fit a spline to (m/z, Δm/z)."""
         mz_lefts, mz_diffs = self.mz_and_mz_diffs()
         self.mz_diff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
-
 
     def mz_diff(self, mz):
         """Return the fitted mz_diff for a given values of mz.
@@ -101,7 +84,6 @@ class Cluster(object):
             m/z values for which you need the values of the estimated m/z differences.
         """
         return self.mz_diff_model(mz)
-
 
     def plot(self,
              plt_style = 'dark_background',
@@ -176,7 +158,7 @@ class Cluster(object):
 
 
 
-class BitonicCluster(Cluster):
+class BitonicClustering(ClusteringAlgorithm):
     """Clustering based on bitonic intensities."""
     def __init__(self, min_mz_diff = .15, abs_perc_dev = .2):
         self.min_mz_diff  = min_mz_diff
@@ -195,7 +177,7 @@ def bitonic_clustering(mz, intensity,
                        diff_model   = spline, 
                       *diff_model_args, 
                      **diff_model_kwds):
-    bc = BitonicCluster(min_mz_diff, abs_perc_dev)
+    bc = BitonicClustering(min_mz_diff, abs_perc_dev)
     bc.cluster(mz, intensity, drop_duplicates = True, sort = True)
     bc.fit_mz_diffs(model = diff_model, *diff_model_args, **diff_model_kwds)
     return bc

@@ -2,16 +2,19 @@
 %autoreload 2
 %load_ext line_profiler
 
+from collections import Counter
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
 
+
 from MassTodonPy.readers.from_npy    import spectrum_from_npy
 from MassTodonPy.Precursor.Precursor import precursor
-from MassTodonPy.plotters.spectrum import plot_spectrum
-# from MassTodonPy.IsotopeCalculator.IsotopeCalculator import isotope_calculator
-from MassTodonPy.IsotopeCalculator.simple import isotope_calculator
-from MassTodonPy.Spectra.orbitrap.peak_groups   import bitonic_clustering
+from MassTodonPy.IsotopeCalculator.simple           import isotope_calculator
+from MassTodonPy.Spectra.orbitrap.peak_clustering   import max_mz_diff_iterator
+from MassTodonPy.Spectra.orbitrap.peak_clustering   import iter_clusters
+from MassTodonPy.Spectra.orbitrap.peak_groups       import bitonic_clustering
+from MassTodonPy.Spectra.simple                     import spectrum
 
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
 mz, intensity = spectrum_from_npy(data_path)
@@ -19,6 +22,15 @@ bc            = bitonic_clustering(mz,
                                    intensity, 
                                    min_mz_diff  = .15,
                                    abs_perc_dev = .2)
+spec = spectrum(mz, intensity)
+
+# deduplication should be in the spectrum
+from MassTodonPy.Spectra.orbitrap.peak_clustering import ClusteringAlgorithm
+
+
+
+
+slice(1,23).stop
 
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
 charge = 24
@@ -26,84 +38,77 @@ prec   = precursor(fasta, charge, name = "shit")
 mols   = list(prec.molecules())
 
 
+spectrum(mz, intensity)
+
+len(mols)
+# exchange the molecule's isotopic generator for simpler.
 mol = mols[0]
 mol.mean_mz
 mol.monoisotopic_mz
 f = mol.formula
-list(f)
-
-mol.formula
-
 # Task: enhance the calculation
 # t0 = time()
 # isotopologues = [m.isotopologues() for m in mols]
 # t1 = time()
 # 89 secs.
 # this is actually not so bad,
+# the question is, do we need to do it?
 # but how much can we save on using mean and sd?
 # OK, have to have it done in Numpy to have a speed-up
-
 iso_calc = isotope_calculator()
-iso_calc._masses
-iso_calc._probabilities
-iso_calc._mean_mass
-iso_calc._mean_variance
-
-
-iso_calc.monoisotopic(mol.formula)
-iso_calc.mean(mol.formula, q=10, g=12)
-iso_calc.sd(mol.formula,   q=10, g=12)
-
-iso_calc(mol.formula)
-
-
-
-from IsoSpecPy.IsoSpecPy import IsoSpec
-
-isospec = IsoSpec((100,200),
-                  ((1.1, 2.31), (12.4, 13.45)),
-                  ((.9, .1), (.5,.5)),
-                  .999)
+iso_calc.monoisotopic_mz(mol.formula, q=charge)
+iso_calc.heaviest_mz(mol.formula, q=charge) - iso_calc.lightiest_mz(mol.formula, q=charge)
 
 %%timeit
-isospec.getConfs()
-
-IsoSpecify(str(mol.formula), .99)
-
-
-masses_npy = np.array(list(masses))
-
-def getConfsNumpyBuffered(isospec):
-    ffi = FFI()
-    m, l, c = isospec.getConfsRaw()
-    obj_cnt = len(m)
-    obj_size = np.dtype('float64').itemsize
-    m = np.frombuffer(ffi.buffer(m, obj_cnt * obj_size),
-                      dtype = np.dtype('float64'))
-    l = np.frombuffer(ffi.buffer(l, obj_cnt * obj_size),
-                      dtype = np.dtype('float64'))
-    return m, l
-
-def getConfsNumpy(isospec):
-    m, l, c = isospec.getConfsRaw()
-    return np.array(list(m)), np.array(list(l))
-
-%%timeit
-m, l = getConfsNumpy(isospec)
-
-%%timeit
-m, l = getConfsNumpyBuffered(isospec)
-
-%%timeit
-m, l, c = isospec.getConfsRaw()
-
-%%timeit
-m, l, c = isospec.getConfs()
-
+iso_calc.most_probable_mz(mol.formula, q=charge)
 
 
 %%timeit
-getConfsNumpy(isospec)
+mean = iso_calc.mean_mz(mol.formula, q=charge)
+sd   = iso_calc.sd(mol.formula,   q=charge)
+
+
+mean - 3*sd < env.head_mz() / charge
+mean + 3*sd > env.tail_mz() / charge
+
+env = iso_calc(mol.formula)
+env.plot()
+env.tail_mz()
+env.head_mz()
+(env.tail_mz() - env.head_mz())/charge
+env.max_peak()
+
+# get a method that defines the maximal space for the given
+# set of atoms in the precursor
+
+max(max(np.diff(iso_calc._masses[e])) for e in prec.formula)
+
+# how much can we gain by subdivision of spectrum based on m/z ?
+# we can actually try to do bitonic_clustering after this obvious preprocessing.
+
+
+np.diff(iso_calc._masses['C'])
+np.diff(iso_calc._masses['H'])
+np.diff(iso_calc._masses['N'])
+np.diff(iso_calc._masses['S'])
+np.diff(iso_calc._masses['O'])
+# so, a good value is 1.1 Thomson. I wouldn't believe that it can hurt.
+max_diff = 1.1
+
+
+list(max_mz_diff_iterator(mz, max_diff))[-1]
+len(list(iter_cluster_ends(max_mz_diff_iterator(mz, max_diff)))
+
+for mz_l, intensity_l in iter_clusters(mz,
+                                       intensity,
+                                       max_mz_diff_iterator(mz, 1.5)):
+
+subspectra = [ 
+    for spec in iter_clusters(mz, intensity, max_mz_diff_iterator(mz, max_diff))]
+
+
+%%timeit
+env = iso_calc(mol.formula, _memoize=False)
 
 
 
