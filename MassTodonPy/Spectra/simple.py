@@ -41,7 +41,10 @@ class Spectrum(Measure):
                  mz        = np.array([]),
                  intensity = np.array([]),
                  sort      = True,
-                 drop_duplicates = True):
+                 drop_duplicates = True,
+                 bc              = None,
+                 mdc             = None,
+                 mz_diff_model   = None):
         """Initialize the Spectrum."""
         self._store_names = ('m/z', 'intensity')
         self.clusters     = None
@@ -49,6 +52,13 @@ class Spectrum(Measure):
                                              intensity,
                                              drop_duplicates,
                                              sort)
+        # parameters for spectra spawns as subspectra
+        if bc is not None:
+            self.bc = bc
+        if mdc is not None:
+            self.mdc = mdc
+        if mz_diff_model is not None:
+            self.mz_diff_model = mz_diff_model
 
     @property
     def mz(self):
@@ -108,43 +118,63 @@ class Spectrum(Measure):
 
     def plot(self, 
              plt_style = 'dark_background',
-             show      = True):
+             show      = True,
+             clusters  = 'bc'):
+        clusters = self.bc if clusters == 'bc' else self.mdc
         plot_spectrum(mz        = self.mz,
                       intensity = self.intensity,
-                      clusters  = self.clusters,
+                      clusters  = clusters,
                       plt_style = plt_style,
                       show      = show)
 
     def bitonic_clustering(self,
                            min_mz_diff  = .15,
                            abs_perc_dev = .2):
-        self.clusters = bitonic_clustering(x = self.mz,
-                                           w = self.intensity,
-                                           min_x_diff   = min_mz_diff,
-                                           abs_perc_dev = abs_perc_dev)
+        self.bc = bitonic_clustering(x = self.mz,
+                                     w = self.intensity,
+                                     min_x_diff   = min_mz_diff,
+                                     abs_perc_dev = abs_perc_dev)
 
     def min_mz_diff_clustering(self,
                                min_mz_diff = 1.1):
-        self.clusters = min_diff_clustering(x          = self.mz,
-                                            min_x_diff = min_mz_diff)
+        self.mdc = min_diff_clustering(x          = self.mz,
+                                       min_x_diff = min_mz_diff)
 
-    def iter_clusters(self):
+    def iter_clusters(self, clustering):
         """Iterate over consecutive cluster ends."""
-        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+        for s, e in iter_cluster_ends(np.nditer(clustering)):
             yield self.mz[s:e], self.intensity[s:e]
 
-    def iter_subspectra(self):
-        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
-            yield self.__class__(self.mz[s:e], self.intensity[s:e])
+    def iter_bc_clusters(self):
+        return self.iter_clusters(self.bc)
+
+    def iter_mdc_clusters(self):
+        return self.iter_clusters(self.mdc)
+
+    def iter_subspectra(self, clustering):
+        for s, e in iter_cluster_ends(np.nditer(clustering)):
+            yield self.__class__(mz        = self.mz[s:e],
+                                 intensity = self.intensity[s:e],
+                                 sort      = False,
+                                 drop_duplicates = True,
+                                 bc        = self.bc[s:e],
+                                 mdc       = self.mdc[s:e],
+                                 mz_diff_model = self.mz_diff_model)
+
+    def iter_bc_subspectra(self):
+        return self.iter_subspectra(self.bc)
+
+    def iter_mdc_subspectra(self):
+        return self.iter_subspectra(self.mdc)
 
     def mz_lefts_mz_diffs_in_clusters(self):
         """Get the left ends of histogramed data and lengths of bases of the bins."""
         # the total number of diffs within clusters
-        diffs_no = len(self.mz) - self.clusters[-1] - 1
+        diffs_no = len(self.mz) - self.bc[-1] - 1
         mz_lefts = np.zeros(shape = (diffs_no,), dtype = float)
         mz_diffs = mz_lefts.copy()
         i_ = _i = 0
-        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+        for s, e in iter_cluster_ends(np.nditer(self.bc)):
             mz      = self.mz[s:e]
             mz_diff = np.diff(mz)
             _i += len(mz) - 1

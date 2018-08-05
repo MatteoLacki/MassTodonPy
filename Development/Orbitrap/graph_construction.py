@@ -16,17 +16,23 @@ from MassTodonPy.Spectra.simple                     import spectrum
 
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
 mz, intensity = spectrum_from_npy(data_path)
+
 spec = spectrum(mz, intensity)
-spec.plot()
 spec.bitonic_clustering()
-spec.plot()
+spec.fit_mz_diff_model()
 spec.min_mz_diff_clustering()
+subspectra = list(spec.iter_mdc_subspectra())
+subspectra[90].plot()
+
 spec.plot()
 
 spec.mz_lefts_mz_diffs_in_clusters()
 spec.fit_mz_diff_model()
 spec.mz_diff_model(10)
 spec.plot_mz_diffs()
+
+
+
 
 # deduplication should be in the spectrum
 from MassTodonPy.Spectra.orbitrap.peak_clustering import ClusteringAlgorithm
