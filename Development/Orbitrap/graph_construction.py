@@ -11,26 +11,26 @@ from time import time
 from MassTodonPy.readers.from_npy    import spectrum_from_npy
 from MassTodonPy.Precursor.Precursor import precursor
 from MassTodonPy.IsotopeCalculator.simple           import isotope_calculator
-from MassTodonPy.Spectra.orbitrap.peak_clustering   import max_mz_diff_iterator
-from MassTodonPy.Spectra.orbitrap.peak_clustering   import iter_clusters
 from MassTodonPy.Spectra.orbitrap.peak_groups       import bitonic_clustering
 from MassTodonPy.Spectra.simple                     import spectrum
 
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
 mz, intensity = spectrum_from_npy(data_path)
-bc            = bitonic_clustering(mz,
-                                   intensity, 
-                                   min_mz_diff  = .15,
-                                   abs_perc_dev = .2)
 spec = spectrum(mz, intensity)
+spec.plot()
+spec.bitonic_clustering()
+spec.plot()
+spec.min_mz_diff_clustering()
+spec.plot()
+
+spec.mz_lefts_mz_diffs_in_clusters()
+spec.fit_mz_diff_model()
+spec.mz_diff_model(10)
+spec.plot_mz_diffs()
 
 # deduplication should be in the spectrum
 from MassTodonPy.Spectra.orbitrap.peak_clustering import ClusteringAlgorithm
 
-
-
-
-slice(1,23).stop
 
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
 charge = 24

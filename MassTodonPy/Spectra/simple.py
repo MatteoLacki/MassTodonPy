@@ -1,10 +1,21 @@
 from   bisect import bisect_left, bisect_right
-import numpy  as     np
+import matplotlib.pyplot as plt
+import numpy  as np
 
 from MassTodonPy.arrays.operations  import dedup_sort
 from MassTodonPy.Data.Constants     import eps, infinity
 from MassTodonPy.Measure.Measure    import Measure
+from MassTodonPy.models.spline      import spline
+from MassTodonPy.models.polynomial  import polynomial
 from MassTodonPy.plotters.spectrum  import plot_spectrum
+
+
+from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
+                                                         iter_cluster_ends,\
+                                                         min_diff_clustering
+
+from MassTodonPy.stats.simple_normal_estimators   import mean,\
+                                                         sd
 
 
 class Spectrum(Measure):
@@ -33,6 +44,7 @@ class Spectrum(Measure):
                  drop_duplicates = True):
         """Initialize the Spectrum."""
         self._store_names = ('m/z', 'intensity')
+        self.clusters     = None
         self.mz, self.intensity = dedup_sort(mz,
                                              intensity,
                                              drop_duplicates,
@@ -64,7 +76,14 @@ class Spectrum(Measure):
         return self.__class__(self.mz[id_s:id_e], 
                               self.intensity[id_s:id_e],
                               sort = False)
-               
+
+    def mean_mz(self):
+        """Mean m/z weighted by intensities."""
+        return mean(self.mz, self.intensity)
+
+    def sd_mz(self):
+        """Get standard deviation of m/z with probs induced by intensity."""
+        return sd(self.mz, self.intensity)
 
     def total_intensity(self):
         return self.intensity.sum()
@@ -92,12 +111,103 @@ class Spectrum(Measure):
              show      = True):
         plot_spectrum(mz        = self.mz,
                       intensity = self.intensity,
-                      clusters  = self.clusters(),
+                      clusters  = self.clusters,
                       plt_style = plt_style,
                       show      = show)
 
-    def cluster(self, clustering_algorithm):
-        self.clustering = clustering_algorithm(self.mz, self.intensity)
+    def bitonic_clustering(self,
+                           min_mz_diff  = .15,
+                           abs_perc_dev = .2):
+        self.clusters = bitonic_clustering(x = self.mz,
+                                           w = self.intensity,
+                                           min_x_diff   = min_mz_diff,
+                                           abs_perc_dev = abs_perc_dev)
+
+    def min_mz_diff_clustering(self,
+                               min_mz_diff = 1.1):
+        self.clusters = min_diff_clustering(x          = self.mz,
+                                            min_x_diff = min_mz_diff)
+
+    def iter_clusters(self):
+        """Iterate over consecutive cluster ends."""
+        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+            yield self.mz[s:e], self.intensity[s:e]
+
+    def iter_subspectra(self):
+        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+            yield self.__class__(self.mz[s:e], self.intensity[s:e])
+
+    def mz_lefts_mz_diffs_in_clusters(self):
+        """Get the left ends of histogramed data and lengths of bases of the bins."""
+        # the total number of diffs within clusters
+        diffs_no = len(self.mz) - self.clusters[-1] - 1
+        mz_lefts = np.zeros(shape = (diffs_no,), dtype = float)
+        mz_diffs = mz_lefts.copy()
+        i_ = _i = 0
+        for s, e in iter_cluster_ends(np.nditer(self.clusters)):
+            mz      = self.mz[s:e]
+            mz_diff = np.diff(mz)
+            _i += len(mz) - 1
+            mz_lefts[i_:_i] = mz[:-1]
+            mz_diffs[i_:_i] = mz_diff
+            i_ = _i
+        return mz_lefts, mz_diffs
+
+    def fit_mz_diff_model(self, 
+                          model=spline,
+                         *model_args,
+                        **model_kwds):
+        mz_lefts, mz_diffs = self.mz_lefts_mz_diffs_in_clusters()
+        self.mz_diff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
+
+
+    def plot_mz_diffs(self,
+                      plt_style     = 'dark_background',
+                      all_diffs     = True,
+                      cluster_diffs = True,
+                      trend         = True,
+                      show          = True):
+        """Plot the clustering on the mass spectrum.
+
+        Parameters
+        ----------
+            plt_style : str
+                The type of the matplotlib style used in the plot.
+            all_diffs : logical
+                Plot all the differences, or only the ones in clusters?
+            cluster_diffs : logical
+                Plot the differences that belong to the cluster.
+            trend : logical
+                Plot the fitted trendline.
+            show : logical
+                Immediately show the plot? Alternatively, just add it to the present canvas.
+
+        """
+        plt.style.use(plt_style)
+        if all_diffs:
+            # plot all the subsequent m/z differences as function of m/z
+            plt.scatter(self.mz[:-1],
+                        np.diff(self.mz),
+                        c = 'blue',
+                        s = .5)
+        if trend:
+            self.mz_diff_model.plot(plot_data = False,
+                                    show      = False)
+        if cluster_diffs:
+            # mask those that are within clusters by bigger red dots.
+            mz_lefts, mz_diffs = self.mz_lefts_mz_diffs_in_clusters()
+            try:
+                signal = self.mz_diff_model.is_signal
+                c = np.array(['papayawhip' if s else 'yellow' for s in signal])
+            except AttributeError:
+                c = 'papayawhip'
+            plt.scatter(mz_lefts,
+                        mz_diffs,
+                        c = c,
+                        s = 1.5)
+        if show and (all_diffs or cluster_diffs):
+            plt.show()
+
 
 
 def spectrum(mz        = np.array([]),

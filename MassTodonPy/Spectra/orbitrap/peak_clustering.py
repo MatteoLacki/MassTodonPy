@@ -4,15 +4,14 @@ import  numpy   as      np
 from MassTodonPy.plotters.spectrum import plot_spectrum
 
 
-
-def max_mz_diff_iterator(mz, min_mz_diff=1.5):
+def max_x_diff_iterator(x, min_x_diff=1.5):
     """Cluster points based on the distance between them.
 
     Parameters
     ==========
-    mz: np.array
-        The recorded m/z values.
-    min_mz_diff : float
+    x: np.array
+        Values to cluster.
+    min_x_diff : float
         The minimal m/z difference that separates clusters.
 
     Yields
@@ -20,62 +19,62 @@ def max_mz_diff_iterator(mz, min_mz_diff=1.5):
     int : number of cluster
     """
     c  = -1   # guardian
-    m_ = -inf # guardian
-    for _m in mz:
-        if _m - m_ >= min_mz_diff:
+    x_ = -inf # guardian
+    for _x in x:
+        if _x - x_ >= min_x_diff:
             c += 1
         yield c
-        m_ = _m
+        x_ = _x
 
 
 # around a second. That's something to rewrite later to C++.
-def bitonic_iterator(mz, intensity, min_mz_diff=.15):
+def bitonic_iterator(x, w, min_x_diff=.15):
     """Cluster based on bitonicity of the intensity.
 
     If three consecutive intensities form a dump,
     I_{i-1} > I_i < I_{i+1}, then 'i' is considered
     a new cluster.
-    Also, if m_i/z_i - m_{i-1}/z_{i-1} > min_mz_diff,
+    Also, if y_i - y_{i-1} > min_y_diff,
     then 'i' is considered a new cluster.
 
     Parametes
     ---------
-    mz: np.array
-        The recorded m/z values.
-    intensity: np.array
-        The recorded intensities.
-    min_mz_diff : float
-        The minimal m/z difference that separates clusters.
+    x: np.array
+        Values to cluster, sorted!
+    w: np.array
+        Weights of y.
+    min_x_diff : float
+        The minimal difference in x entries that separates clusters.
     """
     # previous two intensities: set up guardians
     i__ = 1.0
     _i_ = 0.0
     c   = -1    # cluster no: the first cluster will get tag '0'
-    m_  = -inf # previous m/z 
-    for _m, __i in zip(mz, intensity):
-        big_mz_diff = _m - m_ > min_mz_diff
-        if (__i >= _i_ and _i_ < i__) or big_mz_diff:
+    x_  = -inf # previous m/z 
+    for _x, __i in zip(x, w):
+        big_x_diff = _x - x_ > min_x_diff
+        if (__i >= _i_ and _i_ < i__) or big_x_diff:
             c += 1
         yield c
-        if big_mz_diff:
+        if big_x_diff:
             i__ = 0.0
         else:
             i__ = _i_
         _i_ = __i
-        m_  = _m
+        x_  = _x
 
 
-def clusters2array(mz, intensity,
+def clusters2array(x, w,
                    clustering=bitonic_iterator,
                    **clustering_kwds):
     """Write elements of cluster iterator to a numpy array.
 
     Parameters
     ----------
-    mz: np.array
-        The recorded m/z values.
-    intensity: np.array
-        The recorded intensities.
+    x: np.array
+        Values to cluster, sorted!
+    w: np.array
+        Weights of y.
     clustering: iterator
         Iterator of clusters.
     *clustering args:
@@ -87,22 +86,22 @@ def clusters2array(mz, intensity,
     -------
         np.array : an array of cluster assignments.
     """
-    return np.fromiter(clustering(mz, intensity, **clustering_kwds),
-                       dtype=int, count=len(mz))
+    return np.fromiter(clustering(x, w, **clustering_kwds),
+                       dtype=int, count=len(x))
 
 
-def list_of_clusters(mz, intensity,
-                     clustering=bitonic_iterator,
-                     *clustering_args,
-                     **clustering_kwds):
+def list_of_clusters(x, w,
+                     clustering = bitonic_iterator,
+                    *clustering_args,
+                   **clustering_kwds):
     """Write elements of cluster iterator to a list.
 
     Parameters
     ----------
-    mz: np.array
-        The recorded m/z values.
-    intensity: np.array
-        The recorded intensities.
+    x: np.array
+        Values to cluster, sorted!
+    w: np.array
+        Weights of y.
     clustering: iterator
         Iterator of clusters.
     *clustering args:
@@ -114,7 +113,7 @@ def list_of_clusters(mz, intensity,
     -------
         list : list of cluster assignments.
     """
-    return list(clustering(mz, intensity, **clustering_kwds))
+    return list(clustering(x, w, **clustering_kwds))
 
 
 def iter_cluster_ends(assignments):
@@ -146,30 +145,34 @@ def iter_cluster_ends(assignments):
     yield i_, _i # start and end of the final cluster
 
 
-def iter_clusters(mz, intensity, assignments):
+def iter_clusters(x, w, assignments):
     """Iterate over clusters given by assignments.
 
     Parameters
     ----------
-        assignments : iter of int
-            Iterator with clusters' assignents.
+    x: np.array
+        Values to cluster, sorted!
+    w: np.array
+        Weights of y.
+    assignments : iter of int
+        Iterator with clusters' assignents.
     Yields
     ------
         tuple: indices marking the beginning and the end of a cluster.
     """
     for s, e in iter_cluster_ends(assignments):
-        yield mz[s:e], intensity[s:e]
+        yield x[s:e], w[s:e]
 
 
-def fix_local_clustering(mz, s, e, c,
+def fix_local_clustering(x, s, e, c,
                          abs_perc_dev = .2,
                          verbose      = False):
     """Fix bitonic clustering.
 
     Parameters
     ----------
-    mz :np.array
-        The recorded m/z values.
+    x :np.array
+        The values to be clustered.
     s : int
         The index of the start of the cluster of peaks.
     e :int
@@ -186,16 +189,16 @@ def fix_local_clustering(mz, s, e, c,
     np.array: assignment into clusters.
     """
     clusters = np.full(shape = (e-s,), fill_value = c, dtype=int)
-    mz_local = mz[s:e]
+    x_local = x[s:e]
     # differences of consecutive m/z values
-    mz_diffs = np.diff(mz_local)
+    x_diffs = np.diff(x_local)
     # the median should be a stable values to compare to
     # as there are vastly more similar diffs than other.
-    me_mz_diff = np.median(mz_diffs)
+    me_x_diff = np.median(x_diffs)
     cc = c
-    signal_border = abs_perc_dev * me_mz_diff
-    for i, mz_diff in enumerate(mz_diffs):
-        if abs(mz_diff - me_mz_diff) > signal_border:
+    signal_border = abs_perc_dev * me_x_diff
+    for i, x_diff in enumerate(x_diffs):
+        if abs(x_diff - me_x_diff) > signal_border:
             cc += 1
             if verbose:
                 print('Found poor clustering between {} and {}'.format(s,e))
@@ -203,32 +206,32 @@ def fix_local_clustering(mz, s, e, c,
     return clusters
 
 
-def mz_bitonic(mz, intensity,
-               min_mz_diff  = .15,
-               abs_perc_dev = .2):
-    """Cluster points based on consecutive m/z distances and the bitonicity of the intensities.
+def bitonic_clustering(x, w,
+                       min_x_diff   = .15,
+                       abs_perc_dev = .2):
+    """Cluster points based on differences in consecutive values of sorted x and the bitonicity of the y.
 
     Parameters
     ----------
-    mz: np.array
-        The recorded m/z values.
-    intensity: np.array
-        The recorded intensities.
-    min_mz_diff : float
-        The minimal m/z difference that separates clusters.
+    x: np.array
+        Values to cluster, sorted!
+    w: np.array
+        Weights of y.
+    min_x_diff : float
+        The minimal difference in x that separates clusters.
 
     Returns
     -------
     np.array of ints: assignments into consecutive clusters.
     """
     # an array to store the clusters
-    clusters = np.full(shape = (len(mz),), fill_value = 0, dtype = int)
+    clusters = np.full(shape = (len(x),), fill_value = 0, dtype = int)
     # the clustering iterator
-    bc = bitonic_iterator(mz, intensity, min_mz_diff = min_mz_diff)
+    bc = bitonic_iterator(x, w, min_x_diff = min_x_diff)
     # cluster count
     c = 0
     for s, e in iter_cluster_ends(bc):
-        lclust = fix_local_clustering(mz, s, e, c, abs_perc_dev)
+        lclust = fix_local_clustering(x, s, e, c, abs_perc_dev)
         clusters[s:e] = lclust
         if lclust[0] != lclust[-1]:
             c = lclust[-1]
@@ -237,23 +240,8 @@ def mz_bitonic(mz, intensity,
     return clusters
 
 
-
-def show_clustering_is_good(data_path = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1',
-                            mz_name   = 'mz.npy',
-                            intensity_name = 'in.npy'):
-    """Show if the bitonic clustering meets the standard.
-
-    Parameters
-    ----------
-    data_path : str
-        The path to the folder containing the files.
-    mz_name : str
-        The name of the file that contains m/z values.
-    intensity_name : str
-        The name of the file that contains the intensity values.
-
-    """
-    mz, intensity = spectrum_from_npy(data_path)
-    clusters = mz_bitonic(mz, intensity, min_mz_diff=.15, abs_perc_dev=.2)
-    idx = (1146.95 < mz) & (mz < 1149.1)
-    plot_spectrum(mz[idx], intensity[idx], clusters[idx])
+def min_diff_clustering(x,
+                        min_x_diff = 1.1):
+    return np.fromiter(max_x_diff_iterator(x, min_x_diff),
+                       dtype=int,
+                       count=len(x))
