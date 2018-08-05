@@ -22,9 +22,37 @@ spec.bitonic_clustering()
 spec.fit_mz_diff_model()
 spec.min_mz_diff_clustering()
 subspectra = list(spec.iter_mdc_subspectra())
-subspectra[90].plot()
+subspec    = subspectra[90]
 
+
+subspec.mean_mz()
+subspec.min_mz()
+subspec.max_mz()
+subspec.plot_mz_diffs()
+
+len(subspec.mz)
+len(subspec.bc)
+len(subspec.mdc)
+
+subspectra[89].bc
+
+
+from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
+                                                         iter_cluster_ends,\
+                                                         min_diff_clustering
+
+list(iter_cluster_ends(np.nditer(subspec.bc)))
+
+iter_cluster_ends
+subspec.bc
+
+subspec.mz_lefts_mz_diffs_in_clusters()
+len(subspec.mz)
+
+spec.plot_mz_diffs()
 spec.plot()
+
+
 
 spec.mz_lefts_mz_diffs_in_clusters()
 spec.fit_mz_diff_model()

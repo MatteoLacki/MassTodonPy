@@ -38,13 +38,15 @@ class Spectrum(Measure):
         Percentage of the heighest peaks in the spectrum to be included.
     """
     def __init__(self,
-                 mz        = np.array([]),
-                 intensity = np.array([]),
-                 sort      = True,
+                 mz              = np.array([]),
+                 intensity       = np.array([]),
+                 sort            = True,
                  drop_duplicates = True,
                  bc              = None,
                  mdc             = None,
-                 mz_diff_model   = None):
+                 mz_diff_model   = None,
+                 min_mz_diff_bc  = None,
+                 min_mz_diff_mdc = None):
         """Initialize the Spectrum."""
         self._store_names = ('m/z', 'intensity')
         self.clusters     = None
@@ -53,12 +55,11 @@ class Spectrum(Measure):
                                              drop_duplicates,
                                              sort)
         # parameters for spectra spawns as subspectra
-        if bc is not None:
-            self.bc = bc
-        if mdc is not None:
-            self.mdc = mdc
-        if mz_diff_model is not None:
-            self.mz_diff_model = mz_diff_model
+        self.bc = bc
+        self.mdc = mdc
+        self.mz_diff_model = mz_diff_model
+        self.min_mz_diff_bc = min_mz_diff_bc
+        self.min_mz_diff_mdc = min_mz_diff_mdc
 
     @property
     def mz(self):
@@ -86,6 +87,12 @@ class Spectrum(Measure):
         return self.__class__(self.mz[id_s:id_e], 
                               self.intensity[id_s:id_e],
                               sort = False)
+
+    def min_mz(self):
+        return min(self.mz)
+
+    def max_mz(self):
+        return max(self.mz)
 
     def mean_mz(self):
         """Mean m/z weighted by intensities."""
@@ -134,15 +141,19 @@ class Spectrum(Measure):
                                      w = self.intensity,
                                      min_x_diff   = min_mz_diff,
                                      abs_perc_dev = abs_perc_dev)
+        self.min_mz_diff_bc = min_mz_diff
 
     def min_mz_diff_clustering(self,
                                min_mz_diff = 1.1):
+        if self.min_mz_diff_bc:
+            assert min_mz_diff >= self.min_mz_diff_bc, "This can break up clusters: reduce min_mz_diff to levels lower than used for bitonic clustering."
         self.mdc = min_diff_clustering(x          = self.mz,
                                        min_x_diff = min_mz_diff)
+        self.min_mz_diff_mdc = min_mz_diff
 
     def iter_clusters(self, clustering):
         """Iterate over consecutive cluster ends."""
-        for s, e in iter_cluster_ends(np.nditer(clustering)):
+        for s, e in iter_cluster_ends(clustering):
             yield self.mz[s:e], self.intensity[s:e]
 
     def iter_bc_clusters(self):
@@ -152,14 +163,16 @@ class Spectrum(Measure):
         return self.iter_clusters(self.mdc)
 
     def iter_subspectra(self, clustering):
-        for s, e in iter_cluster_ends(np.nditer(clustering)):
-            yield self.__class__(mz        = self.mz[s:e],
-                                 intensity = self.intensity[s:e],
-                                 sort      = False,
+        for s, e in iter_cluster_ends(clustering):
+            yield self.__class__(mz              = self.mz[s:e],
+                                 intensity       = self.intensity[s:e],
+                                 sort            = False,
                                  drop_duplicates = True,
-                                 bc        = self.bc[s:e],
-                                 mdc       = self.mdc[s:e],
-                                 mz_diff_model = self.mz_diff_model)
+                                 bc              = self.bc[s:e],
+                                 mdc             = self.mdc[s:e],
+                                 mz_diff_model   = self.mz_diff_model,
+                                 min_mz_diff_bc  = self.min_mz_diff_bc,
+                                 min_mz_diff_mdc = self.min_mz_diff_mdc)
 
     def iter_bc_subspectra(self):
         return self.iter_subspectra(self.bc)
@@ -170,11 +183,12 @@ class Spectrum(Measure):
     def mz_lefts_mz_diffs_in_clusters(self):
         """Get the left ends of histogramed data and lengths of bases of the bins."""
         # the total number of diffs within clusters
-        diffs_no = len(self.mz) - self.bc[-1] - 1
-        mz_lefts = np.zeros(shape = (diffs_no,), dtype = float)
-        mz_diffs = mz_lefts.copy()
+        clusters_no = self.bc[-1] - self.bc[0]
+        diffs_no    = len(self.mz) - clusters_no - 1
+        mz_lefts    = np.zeros(shape = (diffs_no,), dtype = float)
+        mz_diffs    = mz_lefts.copy()
         i_ = _i = 0
-        for s, e in iter_cluster_ends(np.nditer(self.bc)):
+        for s, e in iter_cluster_ends(self.bc):
             mz      = self.mz[s:e]
             mz_diff = np.diff(mz)
             _i += len(mz) - 1
@@ -192,6 +206,7 @@ class Spectrum(Measure):
 
 
     def plot_mz_diffs(self,
+                      knots_no      = 1000,
                       plt_style     = 'dark_background',
                       all_diffs     = True,
                       cluster_diffs = True,
@@ -221,8 +236,9 @@ class Spectrum(Measure):
                         c = 'blue',
                         s = .5)
         if trend:
-            self.mz_diff_model.plot(plot_data = False,
-                                    show      = False)
+            x = np.linspace(self.min_mz(), self.max_mz(), knots_no)
+            y = self.mz_diff_model(x)
+            plt.plot(x, y, c='red')
         if cluster_diffs:
             # mask those that are within clusters by bigger red dots.
             mz_lefts, mz_diffs = self.mz_lefts_mz_diffs_in_clusters()
@@ -237,7 +253,6 @@ class Spectrum(Measure):
                         s = 1.5)
         if show and (all_diffs or cluster_diffs):
             plt.show()
-
 
 
 def spectrum(mz        = np.array([]),

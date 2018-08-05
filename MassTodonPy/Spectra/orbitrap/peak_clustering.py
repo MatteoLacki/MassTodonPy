@@ -132,8 +132,12 @@ def iter_cluster_ends(assignments):
     ------
         tuple: indices marking the beginning and the end of a cluster.
     """
-    c_ = 0
-    _  = next(assignments) # cluster: 0 for a fresh generator.
+    if isinstance(assignments, np.ndarray):
+        c_ = assignments[0]
+        assignments = np.nditer(assignments)
+        _ = next(assignments)
+    else: # an iterable
+        c_ = next(assignments)
     i_ = 0
     _i = 1
     for _c in assignments: # next cluster
