@@ -96,3 +96,10 @@ class Molecule(object):
                      self.q,
                      self.g))
 # Python 3 does not use cmp anymore.
+
+
+def molecule(name, source, formula, q=0, g=0):
+    mol = Molecule(name, source, formula, q=q, g=g)
+    return mol
+
+

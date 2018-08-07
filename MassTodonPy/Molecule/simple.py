@@ -18,7 +18,6 @@
 from __future__ import absolute_import, division, print_function
 
 from MassTodonPy.Data.Constants           import infinity
-from MassTodonPy.IsotopeCalculator.simple import isotope_calculator
 from MassTodonPy.plotters.spectrum        import plot_spectrum
 
 class Molecule(object):
@@ -80,9 +79,7 @@ class Molecule(object):
                  show      = show)
 
 
-
-def molecule(name, source, formula, q=0, g=0, iso_calc_kwds = {}):
-    iso_calc = isotope_calculator(**iso_calc_kwds)
+def molecule(name, source, formula, iso_calc, q=0, g=0):
     mol      = Molecule(name, source, formula, iso_calc, q=q, g=g)
     return mol
 

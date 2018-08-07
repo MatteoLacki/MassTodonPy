@@ -32,6 +32,9 @@ subspectra = list(spec.iter_mdc_subspectra())
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
 charge = 24
 prec   = precursor(fasta, charge, name = "shit")
+next(prec.molecules())
+
+# this does not work now: fix it.
 mols   = list(prec.molecules())
 
 # now: I need to build a graph method to construct all this:
@@ -49,10 +52,16 @@ subspec.plot()
 
 from MassTodonPy.Molecule.simple import molecule
 
+iso_calc = isotope_calculator()
+
 mol  = mols[0]
-mol2 = molecule(mol.name, mol.source, mol.formula, mol.q, mol.g)
+mol2 = molecule(mol.name, mol.source, mol.formula, iso_calc, mol.q, mol.g)
 env = mol2.isotopologues()
 mol2.plot()
+
+
+# there is multiple instantiation of the isotopic distirbutions.
+# fuck fuck fuck.
 
 
 

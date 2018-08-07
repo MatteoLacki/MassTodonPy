@@ -19,8 +19,9 @@ from __future__ import absolute_import, division, print_function
 from six.moves import range
 
 from MassTodonPy.Data.get_amino_acids import get_amino_acids
-from MassTodonPy.Formula.Formula import Formula
-from MassTodonPy.Molecule.Molecule import Molecule
+from MassTodonPy.Formula.Formula      import Formula
+from MassTodonPy.Molecule.Molecule    import molecule as old_molecule
+from MassTodonPy.Molecule.simple      import molecule as new_molecule
 
 
 def flatten_modification(mod):
@@ -63,16 +64,18 @@ class Precursor(object):
     def __init__(self,
                  fasta,
                  charge,
-                 name = "",
-                 modifications={},
-                 fragments="cz",
-                 blocked_fragments=set(['c0']),
-                 block_prolines=True,
-                 distance_charges=5,
+                 name              = "",
+                 modifications     = {},
+                 fragments         = "cz",
+                 blocked_fragments = set(['c0']),
+                 block_prolines    = True,
+                 distance_charges  = 5,
+                 molecule_maker    = new_molecule,
                  **kwds):
-        self.name = name
+        self.name  = name
         self.fasta = fasta
-        self.q = int(charge)
+        self.q     = int(charge)
+        self.molecule_maker = molecule_maker
         self.groups = ('N', 'C_alpha', 'C_carbo')
                              # include N, C_alpha, C_carbo in start and end.
         self.group2frag = dict(start = dict(N='y', C_alpha='z', C_carbo='x'),
@@ -208,7 +211,11 @@ class Precursor(object):
                     potential_charges_cnt += 1
                     # +0000 +0000 00+  at most 3 charges
                 if potential_charges_cnt >= q:
-                    yield Molecule(name, self, formula, q, g)
+                    yield self.molecule_maker(name,
+                                              self,
+                                              formula,
+                                              q, 
+                                              g)
 
     def __hash__(self):
         """Get a hash from the precursor's unique id.
