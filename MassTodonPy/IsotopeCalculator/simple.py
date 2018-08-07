@@ -97,7 +97,7 @@ class IsotopeCalculator(object):
                  _memoize = False):
         """Get an isotopic envelope."""
         if _memoize:
-            env_key = (str(formula), joint_probability)
+            env_key = (str(formula), prob)
             try:
                 env = self._isotope_DB[env_key]
             except KeyError:
@@ -107,8 +107,8 @@ class IsotopeCalculator(object):
             env = self._make_envelope(formula, prob)
         # simplification: the q and g are only shifting the
         # distribution, rather than affecting the whole distribution.
-        add_mass_divide_by_charge
-
+        H_mass = self._masses['H'][0]
+        env.add_mass_divide_by_charge(H_mass * (q + g), q)
         return env
 
 

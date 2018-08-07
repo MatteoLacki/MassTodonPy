@@ -8,75 +8,62 @@ import matplotlib.pyplot as plt
 from time import time
 
 
-from MassTodonPy.readers.from_npy    import spectrum_from_npy
-from MassTodonPy.Precursor.Precursor import precursor
+from MassTodonPy.readers.from_npy                   import spectrum_from_npy
+from MassTodonPy.Precursor.Precursor                import precursor
 from MassTodonPy.IsotopeCalculator.simple           import isotope_calculator
 from MassTodonPy.Spectra.orbitrap.peak_groups       import bitonic_clustering
 from MassTodonPy.Spectra.simple                     import spectrum
 
+
+# generating subspectra
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
 mz, intensity = spectrum_from_npy(data_path)
+
 
 spec = spectrum(mz, intensity)
 spec.bitonic_clustering()
 spec.fit_mz_diff_model()
 spec.min_mz_diff_clustering()
 subspectra = list(spec.iter_mdc_subspectra())
-subspec    = subspectra[90]
 
+# np.argmax([len(s) for s in subspectra])
 
-subspec.mean_mz()
-subspec.min_mz()
-subspec.max_mz()
-subspec.plot_mz_diffs()
-
-len(subspec.mz)
-len(subspec.bc)
-len(subspec.mdc)
-
-subspectra[89].bc
-
-
-from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
-                                                         iter_cluster_ends,\
-                                                         min_diff_clustering
-
-list(iter_cluster_ends(np.nditer(subspec.bc)))
-
-iter_cluster_ends
-subspec.bc
-
-subspec.mz_lefts_mz_diffs_in_clusters()
-len(subspec.mz)
-
-spec.plot_mz_diffs()
-spec.plot()
-
-
-
-spec.mz_lefts_mz_diffs_in_clusters()
-spec.fit_mz_diff_model()
-spec.mz_diff_model(10)
-spec.plot_mz_diffs()
-
-
-
-
-# deduplication should be in the spectrum
-from MassTodonPy.Spectra.orbitrap.peak_clustering import ClusteringAlgorithm
-
-
+# generating formulas
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
 charge = 24
 prec   = precursor(fasta, charge, name = "shit")
 mols   = list(prec.molecules())
 
+# now: I need to build a graph method to construct all this:
+# actually, I can use the fork with the mols, as long as I will not write them.
 
-spectrum(mz, intensity)
+# OK, for one spectrum, each graph construction is the same:
+# we have to specify right and left ends of intervals and simply match.
+
+# at the end, probably the same will work for basic solution.
+
+# the biggest subspectrum: it only shows, that this definition should be enhanced. E.G. the major component of isotopic distribution is the variation in carbon, but carbon distirbution is binomial and so, there must be a trace of that in the shape of the intensities: it also results in a more or less bitonic shape.
+subspec = subspectra[np.argmax([len(s) for s in subspectra])]
+len(subspec)
+subspec.plot()
+
+from MassTodonPy.Molecule.simple import molecule
+
+mol  = mols[0]
+mol2 = molecule(mol.name, mol.source, mol.formula, mol.q, mol.g)
+env = mol2.isotopologues()
+mol2.plot()
+
+
+
+
+
 
 len(mols)
 # exchange the molecule's isotopic generator for simpler.
-mol = mols[0]
+
+# why the first molecule has no charge?
+
 mol.mean_mz
 mol.monoisotopic_mz
 f = mol.formula
