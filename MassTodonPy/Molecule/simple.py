@@ -17,11 +17,17 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 from __future__ import absolute_import, division, print_function
 
-from MassTodonPy.Data.Constants           import infinity
-from MassTodonPy.plotters.spectrum        import plot_spectrum
+from MassTodonPy.Data.Constants     import infinity
+from MassTodonPy.plotters.spectrum  import plot_spectrum
+from MassTodonPy.IsotopeCalculator  import iso_calc
 
 class Molecule(object):
-    def __init__(self, name, source, formula, iso_calc, q=0, g=0):
+    def __init__(self, name,
+                       source,
+                       formula,
+                       iso_calc = iso_calc,
+                       q        = 0,
+                       g        = 0):
         self.name      = name
         self.source    = source
         self.formula   = formula
@@ -79,7 +85,12 @@ class Molecule(object):
                  show      = show)
 
 
-def molecule(name, source, formula, iso_calc, q=0, g=0):
-    mol      = Molecule(name, source, formula, iso_calc, q=q, g=g)
+def molecule(name,
+             source,
+             formula,
+             iso_calc = iso_calc,
+             q        = 0,
+             g        = 0):
+    mol = Molecule(name, source, formula, iso_calc, q, g)
     return mol
 

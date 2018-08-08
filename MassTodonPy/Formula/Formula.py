@@ -30,6 +30,9 @@ class NegativeAtomCount(Exception):
 def dict_2_string(d):
     return "".join(element + str(count) for element, count in sorted(d.items()))
 
+def dict_2_string_readable(d):
+    return " ".join(element + ":"+ str(count) for element, count in sorted(d.items()))
+
 
 class Formula(LinearDict):
     pattern = get_pattern('([A-Z][a-z]?)([0-9]*)')
@@ -44,12 +47,10 @@ class Formula(LinearDict):
         super().__init__(formula)
 
     def __str__(self):
-        return dict_2_string(self._storage)
+        return dict_2_string_readable(self._storage)
 
     def __repr__(self):
-        out = self._storage.__repr__()
-        out = "Formula({})".format(out[1:-1])
-        return out
+        return str(self)
 
     def check_positivity(self):
         if any(count < 0 for element, count in self.items()):
@@ -59,3 +60,7 @@ class Formula(LinearDict):
         out = self._storage.copy()
         out['H'] += q + g
         return dict_2_string(out)
+
+
+def formula(formula):
+    return Formula(formula)

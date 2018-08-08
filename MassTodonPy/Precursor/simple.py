@@ -20,15 +20,14 @@ from six.moves import range
 
 from MassTodonPy.Data.get_amino_acids import get_amino_acids
 from MassTodonPy.Formula.Formula      import Formula
-from MassTodonPy.Molecule.Molecule    import molecule as old_molecule
-from MassTodonPy.Molecule.simple      import molecule as new_molecule
-
+from MassTodonPy.IsotopeCalculator    import iso_calc
+from MassTodonPy.Molecule.simple      import Molecule
 
 def flatten_modification(mod):
     return ''.join(''.join((str(n), t, str(v)))
                    for (n, t), v in mod.items())
 
-class Precursor(object):
+class Precursor(Molecule):
     """Make precursor.
 
     Parameters
@@ -69,13 +68,14 @@ class Precursor(object):
                  blocked_fragments = set(['c0']),
                  block_prolines    = True,
                  distance_charges  = 5,
-                 molecule_maker    = new_molecule,
+                 iso_calc          = iso_calc,
                  **kwds):
         self.name  = name
         self.fasta = fasta
         self.q     = int(charge)
-        self.molecule_maker = molecule_maker
-        self.groups = ('N', 'C_alpha', 'C_carbo')
+        self.g     = 0 # To get the plotting from superclass.
+        self.iso_calc = iso_calc
+        self.groups   = ('N', 'C_alpha', 'C_carbo')
                              # include N, C_alpha, C_carbo in start and end.
         self.group2frag = dict(start = dict(N='y', C_alpha='z', C_carbo='x'),
                                  end = dict(N='c', C_alpha='a', C_carbo='b'))
@@ -210,11 +210,8 @@ class Precursor(object):
                     potential_charges_cnt += 1
                     # +0000 +0000 00+  at most 3 charges
                 if potential_charges_cnt >= q:
-                    yield self.molecule_maker(name,
-                                              self,
-                                              formula,
-                                              q, 
-                                              g)
+                    yield Molecule(name, self, formula,
+                                   self.iso_calc, q, g)
 
     def __hash__(self):
         """Get a hash from the precursor's unique id.
@@ -233,7 +230,8 @@ def precursor(fasta,
               fragments         = "cz",
               blocked_fragments = set(['c0']),
               block_prolines    = True,
-              distance_charges  = 5):
+              distance_charges  = 5,
+              iso_calc          = iso_calc):
     """Prepare a ready precursor."""
     prec = Precursor(fasta,
                      charge,
@@ -242,5 +240,6 @@ def precursor(fasta,
                      fragments,
                      blocked_fragments,
                      block_prolines,
-                     distance_charges)
+                     distance_charges,
+                     iso_calc)
     return prec

@@ -108,7 +108,7 @@ class IsotopeCalculator(object):
         # simplification: the q and g are only shifting the
         # distribution, rather than affecting the whole distribution.
         H_mass = self._masses['H'][0]
-        env.add_mass_divide_by_charge(H_mass * (q + g), q)
+        env = env.add_mass_divide_by_charge(H_mass * (q + g), q)
         return env
 
 

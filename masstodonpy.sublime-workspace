@@ -4,6 +4,82 @@
 		"selected_items":
 		[
 			[
+				"Mas",
+				"MassTodonPy"
+			],
+			[
+				"isotopo",
+				"isotopologues"
+			],
+			[
+				"isot",
+				"isotopologues"
+			],
+			[
+				"clsuter",
+				"clusters"
+			],
+			[
+				"subsp",
+				"subspectra"
+			],
+			[
+				"subs",
+				"subspectra"
+			],
+			[
+				"bitonic",
+				"bitonic_clustering"
+			],
+			[
+				"bitoni",
+				"bitonic_clustering"
+			],
+			[
+				"mz",
+				"mz_l"
+			],
+			[
+				"Iso",
+				"IsotopeCalculator"
+			],
+			[
+				"getCon",
+				"getConfsRaw"
+			],
+			[
+				"from",
+				"frombuffer"
+			],
+			[
+				"env",
+				"envelope"
+			],
+			[
+				"spect",
+				"spectrum_from_npy"
+			],
+			[
+				"get",
+				"get_isotopic_probabilities"
+			],
+			[
+				"itn",
+				"intensity"
+			],
+			[
+				"plot",
+				"plot_spectrum"
+			],
+			[
+				"mean",
+				"mean_mz"
+			],
+			[
+				"simple",
+				"simple_sd_estimator"
+			],
+			[
 				"numpy",
 				"numpy_weighted_median"
 			],
@@ -46,10 +122,6 @@
 			[
 				"all",
 				"all_diffs"
-			],
-			[
-				"mz",
-				"mz_lefts"
 			],
 			[
 				"colors",
@@ -204,46 +276,39 @@
 	"buffers":
 	[
 		{
-			"file": "MassTodonPy/plotters/spectrum.py",
+			"file": "MassTodonPy/Precursor/simple.py",
 			"settings":
 			{
-				"buffer_size": 1222,
+				"buffer_size": 9125,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "from scipy.stats import norm\n\n\n# generate in-silico data\nmean = 0.0\nstd  = 1.0\nN    = 10000\nX    = np.random.normal(mean, std, N)\n\ndensity, bin_edges = np.histogram(X, density=True)\nL_distr = np.diff(bin_edges) * density.cumsum()\nR_distr = np.flip(np.diff(bin_edges), 0) * np.flip(density, 0).cumsum()\n\n# I cannot use quantile of 1: it's infinity.\n# nor can I use quantiles of 0: it's minus infinity\nL_distr = L_distr[1:]\nR_distr = R_distr[1:]\nG = norm(loc=0, scale=1)\n# I need corresponding quantile\n\n\nz0 = bin_edges[1:-1]\nz1 = np.flip(bin_edges, 0)[1:-1]\n\nu0 = G.ppf(L_distr)\nu1 = G.isf(R_distr)\n\nu = np.concatenate((u0, u1))\nz = np.concatenate((z0, z1))\n\nu_sq  = sum(u**2)\nu_sum = sum(u)\nN     = len(L_distr) + len(R_distr)\nz_sum = sum(z)\nu_z   = sum(u * z)\ndet   = N * u_sq - u_sum**2\n\nmean_lsq_estim = ( u_sq  * z_sum - u_sum * u_z) / det\nsd_lsq_estim   = (-u_sum * z_sum + N     * u_z) / det\n# this seriously sucks....\n\n\n\n# check that the estimate of sigma ain't negative!!!\n\n\n\n\n\ndef least_squares_estimate():\n\n\n\n# naive numpy weighted median\n\n\n\ndef numpy_weighted_median(data, weights=None):\n    \"\"\"Calculate the weighted median of an array/list using numpy.\"\"\"\n    import numpy as np\n    if weights is None:\n        return np.median(np.array(data).flatten())\n    data, weights = np.array(data).flatten(), np.array(weights).flatten()\n    if any(weights > 0):\n        sorted_data, sorted_weights = map(np.array, zip(*sorted(zip(data, weights))))\n        midpoint = 0.5 * sum(sorted_weights)\n        if any(weights > midpoint):\n            return (data[weights == np.max(weights)])[0]\n        cumulative_weight = np.cumsum(sorted_weights)\n        below_midpoint_index = np.where(cumulative_weight <= midpoint)[0][-1]\n        if cumulative_weight[below_midpoint_index] - midpoint < sys.float_info.epsilon:\n            return np.mean(sorted_data[below_midpoint_index:below_midpoint_index+2])\n    return sorted_data[below_midpoint_index+1]\n\n\n\n\n\n# implement the median estimation and standard deviation based on medi\n\n# implement the estimation of the standard deviations.\n\n\n\n# Wait, we don't want to use it directly.\n# We might use it to spot too small and too big deviations, though.\n# So we might invest more time to have something truly better.\n# Like a spline.\n# The small diffs are particularly troublesome.\n\n# What we need to do really now, is to estimate the \n# standard deviations: the hereroscedasticity of the trend.\n# Implement the estimator of the normal parameters based on \n# the historgram.\n\n# Then, simply use it for passing to a function that will\n# spread the IsoSpec infinitely-resolved peaks over the bins.\n\n# Implement a binning based on one spectrum first.\n# Then, think how to aggregate spectra.\n# But this has to be done based on some similarity across runs.\n# So it's more complicated: leave it for now.\n\n# Instead, simply make a binning defined over what?\n# The question is: should we have bins as large as\n# the base peak groups, or smaller?\n# If we assume, that more than one thing can explain them,\n# then better smaller?\n# It's a problem of continuous VS discrete.\n",
-			"file": "Development/Orbitrap/futile_attemp_with_quantile_estimator.py",
-			"file_size": 3097,
-			"file_write_time": 131771092900674401,
+			"file": "MassTodonPy/Molecule/simple.py",
 			"settings":
 			{
-				"buffer_size": 3097,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "%load_ext autoreload\n%autoreload 2\n%load_ext line_profiler\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nfrom MassTodonPy.plotters.spectrum              import plot_spectrum\nfrom MassTodonPy.readers.from_npy               import spectrum_from_npy\nfrom MassTodonPy.Spectra.peak_clustering        import mz_bitonic\nfrom MassTodonPy.Spectra.peak_clustering        import iter_cluster_ends\nfrom MassTodonPy.Spectra.orbitrap_peak_groups   import bitonic_clustering\nfrom MassTodonPy.models.polynomial              import polynomial\n\n\ndata_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'\nmz, intensity = spectrum_from_npy(data_path)\nbc            = bitonic_clustering(mz,\n                                   intensity, \n                                   min_mz_diff   = .15,\n                                   abs_perc_dev = .2)\n\n\n# bc.plot_mz_diffs()\n# bc.fit_mz_diffs(model = polynomial)\n# bc.plot_mz_diffs()\n\n# # the fishy m/z values are here.\n# fishy_mz = bc.mz_diff_model.x[ ~bc.mz_diff_model.is_signal ]\n# fishy_clusters = np.unique(bc.clusters[np.isin(bc.mz, fishy_mz)])\n# fc = fishy_clusters[3]\n\n# def plot_fishy(fc):\n#     mz_fishy        = mz[bc.clusters == fc]\n#     intensity_fishy = intensity[bc.clusters == fc]\n\n#     plt.vlines(mz_fishy, [0], intensity_fishy, colors='white')\n#     plt.show()\n\n# plot_fishy(fishy_clusters[7])\n# # ergo: not all fishy clusters are so fishy. Leave it for now.\n\n\n### The estimation of the Gaussian parameters.\n# INPUT:    binned histogram data\n# OUTPUT:   estimated mean and standard deviation of the normal distribution\n\n\n\n# this does not work at all: all the intensities are almost the same...\ngroups = list(bc.iter_clusters())\nmz_g, intensity_g = groups[1500]\n# plot_spectrum(mz_g, intensity_g)\n\n# mz_g_diff = np.diff(mz_g)\n# ends      = np.zeros(dtype = mz_g.dtype, shape = mz_g.shape)\n# ends[1:]  = mz_g[:-1] - mz_g_diff/2.0\n# ends[0]   = mz_g[0]   - mz_g_diff[0]/2.0\n# xy        = [(e, 0) for e in ends]\n# lengths   = np.zeros(dtype = mz_g.dtype, shape = mz_g.shape)\n# lengths[0:-1] = mz_g_diff/2.0\n# lengths[1:]   += mz_g_diff/2.0\n# lengths[0]    += mz_g_diff[0]/2.0\n# lengths[-1]    += mz_g_diff[-1]/2.0\n\n# for XY, L, I in zip(xy, lengths, intensity_g):\n#     plt.Rectangle(XY, L, I)\n# plt.bar(ends, intensity_g, lengths, align='edge')\n# plt.scatter(mz_g, intensity_g)\n# plt.show()\n\n\ndef max_intensity_mean_estimator(mz_g, intensity_g):\n    \"\"\"An idiotically simple estimator: the mass of the most intense peak.\"\"\"\n    return mz_g[np.argmax(intensity_g)]\n\ndef simple_mean_estimator(mz_g, intensity_g):\n    return np.dot(mz_g, intensity_g)/sum(intensity_g)\n\ndef simple_sd_estimator(mz_g, intensity_g):\n    mean_e = simple_mean_estimator(mz_g, intensity_g)\n    return sqrt( np.dot(  ) )\n\nnp.array([1,23,4])**2\n\n# estimate standard deviation:\nfrom math import sqrt\nfrom scipy.stats import norm\n \nmean_e = simple_mean_estimator(mz_g, intensity_g)\nmz_c   = mz_g - mean_e\nprobs  = intensity_g/sum(intensity_g)\nsd     = sqrt( np.dot( np.power(mz_c, 2), probs ))\n\nG = norm(loc = mean_e, scale = sd)\nx = np.linspace(mean_e - 3*sd, mean_e + 3*sd, 100)\nplt.plot(x, G.pdf(x))\nplt.scatter(mz_g, intensity_g/ sum(intensity_g) / np.diff(mz_g)[1] )\n# plot_spectrum(centered_mz, intensity_g, show=False)\nplt.show()\n\n\n\n# fuck these stupid methods. Simplicity !!!!\n",
-			"file": "Development/Orbitrap/preprocessing.py",
-			"file_size": 3313,
-			"file_write_time": 131775418260092674,
-			"settings":
-			{
-				"buffer_size": 3415,
+				"buffer_size": 3056,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "In [1]: np.array([1,23,4])**2                               \n------------------------------------------------------------\nNameError                  Traceback (most recent call last)\n<ipython-input-1-a905b9b5c641> in <module>()                \n----> 1 np.array([1,23,4])**2                               \n                                                            \nNameError: name 'np' is not defined                         \n                                                            \nIn [2]:                                                     \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n                                                            \n",
+			"file": "MassTodonPy/Formula/Formula.py",
 			"settings":
 			{
-				"buffer_size": 3294,
-				"line_ending": "Unix",
-				"name": "Terminal (bash)",
-				"read_only": true,
-				"scratch": true
+				"buffer_size": 1897,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Development/Orbitrap/graph_construction.py",
+			"settings":
+			{
+				"buffer_size": 5542,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
 			}
 		}
 	],
@@ -291,6 +356,50 @@
 		"selected_items":
 		[
 			[
+				"color",
+				"UI: Select Color Scheme"
+			],
+			[
+				"col",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"colo",
+				"UI: Select Color Scheme"
+			],
+			[
+				"ui",
+				"UI: Select Theme"
+			],
+			[
+				"skin",
+				"UI: Select Skin"
+			],
+			[
+				"colorsub",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"tertm",
+				"Terminal View: Open Bash Terminal"
+			],
+			[
+				"sen",
+				"SendCode: Choose Program"
+			],
+			[
+				"send",
+				"SendCode: Choose Program"
+			],
+			[
+				"terminma",
+				"Terminal View: Open Bash Terminal"
+			],
+			[
 				"term",
 				"Terminal View: Open Bash Terminal"
 			],
@@ -299,32 +408,12 @@
 				"Terminal View: Open Bash Terminal"
 			],
 			[
-				"send",
-				"SendCode: Choose Program"
-			],
-			[
 				"termi",
 				"Terminal View: Open Bash Terminal"
 			],
 			[
-				"sen",
-				"SendCode: Choose Program"
-			],
-			[
-				"colo",
-				"UI: Select Color Scheme"
-			],
-			[
-				"inst",
-				"Package Control: Install Package"
-			],
-			[
 				"ins",
 				"Package Control: Install Package"
-			],
-			[
-				"color",
-				"UI: Select Color Scheme"
 			],
 			[
 				"install",
@@ -419,37 +508,69 @@
 		"show_minimap": false,
 		"show_open_files": false,
 		"show_tabs": false,
-		"side_bar_visible": true,
+		"side_bar_visible": false,
 		"status_bar_visible": false
 	},
 	"expanded_folders":
 	[
 		"/Users/matteo/Projects/MassTodonPy",
-		"/Users/matteo/Projects/MassTodonPy/Development",
-		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/plotters",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra"
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Formula",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Molecule",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/__pycache__",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/stats"
 	],
 	"file_history":
 	[
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/polynomial.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/spline.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor/test_Precursor.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Molecule/simple.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor/Precursor.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/__init__.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Formula/Formula.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/simple.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Molecule/Molecule.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/envelope.py",
+		"/Users/matteo/Projects/MassTodonPy/bin/plot_mass_spectrum",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/simple.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/two_dimensional.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/preprocessing.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/peak_groups.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/peak_clustering.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/stats/simple_normal_estimators.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/arrays/operations.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Measure/Measure.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Spectrum/Measure.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/IsotopeCalculator.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/isospec_wrapper.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/playing_with_IsoSpec.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/IsotopeCalculator/isospec_wrapper.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/IsotopeDistribution.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Data/get_isotopes.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Formula/LinearDict.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/simplerIsotopeCalculator.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Formula/LinearDict.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/plotters/spectrum.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/spectrum.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Deconvolution/Deconvolve.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/Spectrum.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/orbitrap_peak_groups.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/orbitrap_spectrum.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap_peak_groups.py",
-		"/Users/matteo/Poligon/R/StatisticalUncertainties/R/histogram_gauss_estimation.R",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/polynomial.py",
+		"/Users/matteo/Downloads/S180518_51_IA_workflow2.xml",
 		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/futile_attemp_with_quantile_estimator.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/stats/descriptive.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/spline.py",
+		"/Users/matteo/Poligon/R/StatisticalUncertainties/R/histogram_gauss_estimation.R",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/model.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/two_dimensional.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/denoiser.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/stats/__init__.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/plotters/spectrum.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/peak_clustering.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/arrays/operations.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/__init__.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/readers/from_npy.py",
-		"/Users/matteo/Projects/MassTodonPy/bin/plot_mass_spectrum",
 		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/matplotlib_colors.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Data/dummy.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/bitonic_clustering.py",
@@ -463,15 +584,10 @@
 		"/Users/matteo/Desktop/Stat/more_of_density_and_quantile_regression.py",
 		"/Users/matteo/Projects/rta/rta/development_script.py",
 		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/iterator_class_method.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/Spectrum.py",
 		"/Users/matteo/Projects/MassTodonPy/docs/Makefile",
-		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/preprocessing.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Reporter/Reporter.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Deconvolution/DeconvolutionProblem.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/MassTodon.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Deconvolution/Deconvolve.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/IsotopeDistribution.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Measure/Measure.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Plot/bokeh_spectrum.py",
 		"/Users/matteo/Projects/MassTodonPy/TODO.md",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Misc/sorting.py",
@@ -539,7 +655,7 @@
 	],
 	"find":
 	{
-		"height": 30.0
+		"height": 54.0
 	},
 	"find_in_files":
 	{
@@ -554,6 +670,47 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"iso_calc",
+			"molecule_ma",
+			"molecule_maker",
+			"new_",
+			"molecule_maker",
+			"print",
+			"pritn",
+			"print",
+			"isotope_calculator",
+			"Molecule",
+			"iso",
+			"add_mass_divide_by_charge",
+			"Iso",
+			"nditer",
+			"nd_iter",
+			"Spectrum",
+			"mz_lefts_mz_diffs_in_clusters",
+			"clustering",
+			"mz_bitonic",
+			"bitonic_clustering",
+			" \n",
+			".\n",
+			"mz",
+			"Cluster",
+			"Cluste",
+			"Cluster",
+			"mz_bitonic",
+			"trim",
+			"()",
+			"pass",
+			")\n",
+			"IsotopeDistribution",
+			"Searching",
+			"IsotopeDistribution",
+			"Measure",
+			"Formula",
+			"    ...: ",
+			"    ...:\n",
+			"bisect_left",
+			"§",
+			"sqrt",
 			"sys",
 			"Projects",
 			"())",
@@ -596,6 +753,9 @@
 		"regex": false,
 		"replace_history":
 		[
+			"bc",
+			"x",
+			"",
 			"self.mz_diff_model",
 			"bitonic_iterator",
 			"deconvolution_graph"
@@ -614,19 +774,19 @@
 			[
 				{
 					"buffer": 0,
-					"file": "MassTodonPy/plotters/spectrum.py",
+					"file": "MassTodonPy/Precursor/simple.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1222,
+						"buffer_size": 9125,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1028,
-								1028
+								7393,
+								7393
 							]
 						],
 						"settings":
@@ -636,27 +796,57 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1570.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "Development/Orbitrap/futile_attemp_with_quantile_estimator.py",
+					"file": "MassTodonPy/Molecule/simple.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3097,
+						"buffer_size": 3056,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								598,
-								598
+								2087,
+								2087
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 370.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "MassTodonPy/Formula/Formula.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1897,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1025,
+								1025
 							]
 						],
 						"settings":
@@ -671,42 +861,7 @@
 					},
 					"stack_index": 1,
 					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "Development/Orbitrap/preprocessing.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3415,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2855,
-								2855
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 825.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
 				}
-			]
-		},
-		{
-			"sheets":
-			[
 			]
 		},
 		{
@@ -715,354 +870,30 @@
 			[
 				{
 					"buffer": 3,
+					"file": "Development/Orbitrap/graph_construction.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3294,
+						"buffer_size": 5542,
 						"regions":
 						{
-							"0,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										0,
-										4
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"0,18":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										18,
-										19
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"0,20":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										20,
-										22
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"0,23":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										23,
-										24
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"0,28":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										28,
-										29
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"0,5":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										5,
-										8
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"1,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										61,
-										121
-									]
-								],
-								"scope": "terminalview.black_red"
-							},
-							"2,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										122,
-										131
-									]
-								],
-								"scope": "terminalview.black_red"
-							},
-							"3,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										183,
-										213
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"3,34":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										217,
-										225
-									]
-								],
-								"scope": "terminalview.black_cyan"
-							},
-							"3,42":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										225,
-										227
-									]
-								],
-								"scope": "terminalview.black_blue"
-							},
-							"4,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										244,
-										251
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"4,10":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										254,
-										255
-									]
-								],
-								"scope": "terminalview.black_blue"
-							},
-							"4,16":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										260,
-										262
-									]
-								],
-								"scope": "terminalview.black_blue"
-							},
-							"4,18":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										262,
-										263
-									]
-								],
-								"scope": "terminalview.black_cyan"
-							},
-							"4,19":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										263,
-										264
-									]
-								],
-								"scope": "terminalview.black_blue"
-							},
-							"4,20":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										264,
-										266
-									]
-								],
-								"scope": "terminalview.black_cyan"
-							},
-							"4,22":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										266,
-										267
-									]
-								],
-								"scope": "terminalview.black_blue"
-							},
-							"4,23":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										267,
-										268
-									]
-								],
-								"scope": "terminalview.black_cyan"
-							},
-							"4,24":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										268,
-										272
-									]
-								],
-								"scope": "terminalview.black_blue"
-							},
-							"4,28":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										272,
-										273
-									]
-								],
-								"scope": "terminalview.black_cyan"
-							},
-							"4,7":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										251,
-										252
-									]
-								],
-								"scope": "terminalview.black_red"
-							},
-							"6,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										366,
-										375
-									]
-								],
-								"scope": "terminalview.black_red"
-							},
-							"8,0":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										488,
-										492
-									]
-								],
-								"scope": "terminalview.black_green"
-							},
-							"8,5":
-							{
-								"flags": 272,
-								"regions":
-								[
-									[
-										493,
-										496
-									]
-								],
-								"scope": "terminalview.black_green"
-							}
 						},
 						"selection":
 						[
 							[
-								496,
-								496
+								1029,
+								1029
 							]
 						],
 						"settings":
 						{
-							"auto_complete": false,
-							"auto_complete_commit_on_tab": false,
-							"caret_style": "blink",
-							"color_scheme": "Packages/TerminalView/TerminalView.hidden-tmTheme",
-							"draw_centered": false,
-							"draw_indent_guides": false,
-							"draw_white_space": "none",
-							"gutter": false,
-							"highlight_line": false,
-							"scroll_past_end": false,
-							"syntax": "Packages/Text/Plain text.tmLanguage",
-							"terminal_view": true,
-							"terminal_view_activate_args":
-							{
-								"cmd": "/bin/bash -l",
-								"cwd": "/Users/matteo/Projects/MassTodonPy",
-								"keep_open": false,
-								"syntax": null,
-								"title": "Terminal (bash)"
-							},
-							"terminal_view_last_cursor_pos":
-							[
-								8,
-								8
-							],
-							"word_wrap": false
+							"syntax": "Packages/Python/Python.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1070,7 +901,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 30.0
+		"height": 25.0
 	},
 	"input":
 	{
@@ -1091,19 +922,12 @@
 				0,
 				2,
 				1
-			],
-			[
-				2,
-				0,
-				3,
-				1
 			]
 		],
 		"cols":
 		[
 			0.0,
-			0.33,
-			0.66,
+			0.5,
 			1.0
 		],
 		"rows":
@@ -1129,7 +953,7 @@
 	"project": "masstodonpy.sublime-project",
 	"replace":
 	{
-		"height": 56.0
+		"height": 94.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1138,6 +962,66 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"simple",
+				"MassTodonPy/IsotopeCalculator/simple.py"
+			],
+			[
+				"evn",
+				"MassTodonPy/IsotopeCalculator/envelope.py"
+			],
+			[
+				"plo",
+				"bin/plot_mass_spectrum"
+			],
+			[
+				"two",
+				"MassTodonPy/models/two_dimensional.py"
+			],
+			[
+				"peak",
+				"MassTodonPy/Spectra/orbitrap/peak_groups.py"
+			],
+			[
+				"peakl",
+				"MassTodonPy/Spectra/orbitrap/peak_clustering.py"
+			],
+			[
+				"peak_",
+				"MassTodonPy/Spectra/orbitrap/peak_clustering.py"
+			],
+			[
+				"Meas",
+				"MassTodonPy/Measure/Measure.py"
+			],
+			[
+				"Measu",
+				"Development/Spectrum/Measure.py"
+			],
+			[
+				"env",
+				"MassTodonPy/IsotopeCalculator/envelope.py"
+			],
+			[
+				"Mea",
+				"MassTodonPy/Measure/Measure.py"
+			],
+			[
+				"Linera",
+				"Development/Formula/LinearDict.py"
+			],
+			[
+				"Formu",
+				"MassTodonPy/Formula/Formula.py"
+			],
+			[
+				"prep",
+				"Development/Orbitrap/preprocessing.py"
+			],
+			[
+				"poli",
+				"MassTodonPy/models/polynomial.py"
+			],
 			[
 				"spline",
 				"MassTodonPy/models/spline.py"
@@ -1161,10 +1045,6 @@
 			[
 				"desc",
 				"MassTodonPy/stats/descriptive.py"
-			],
-			[
-				"two",
-				"MassTodonPy/models/two_dimensional.py"
 			],
 			[
 				"model",
@@ -1231,10 +1111,6 @@
 				"rta/xvalidation/filters.py"
 			],
 			[
-				"prep",
-				"rta/preprocessing.py"
-			],
-			[
 				"fil",
 				"rta/xvalidation/filters.py"
 			],
@@ -1281,10 +1157,6 @@
 			[
 				"Spine",
 				"rta/models/spline_regression.py"
-			],
-			[
-				"plo",
-				"rta/models/plot.py"
 			],
 			[
 				"pars",
@@ -1355,15 +1227,15 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
 	},
 	"show_minimap": false,
 	"show_open_files": false,
 	"show_tabs": true,
-	"side_bar_visible": false,
-	"side_bar_width": 224.0,
+	"side_bar_visible": true,
+	"side_bar_width": 189.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

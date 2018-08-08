@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 from time import time
 
 
-from MassTodonPy.readers.from_npy                   import spectrum_from_npy
-from MassTodonPy.Precursor.Precursor                import precursor
-from MassTodonPy.IsotopeCalculator.simple           import isotope_calculator
-from MassTodonPy.Spectra.orbitrap.peak_groups       import bitonic_clustering
-from MassTodonPy.Spectra.simple                     import spectrum
-
+from MassTodonPy.readers.from_npy             import spectrum_from_npy
+from MassTodonPy.Precursor.simple             import precursor
+from MassTodonPy.IsotopeCalculator.simple     import isotope_calculator
+from MassTodonPy.Spectra.orbitrap.peak_groups import bitonic_clustering
+from MassTodonPy.Spectra.simple               import spectrum
+from MassTodonPy.Molecule.simple              import molecule
+from MassTodonPy.Formula.Formula              import formula
 
 # generating subspectra
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
 mz, intensity = spectrum_from_npy(data_path)
-
 
 spec = spectrum(mz, intensity)
 spec.bitonic_clustering()
@@ -26,16 +26,15 @@ spec.fit_mz_diff_model()
 spec.min_mz_diff_clustering()
 subspectra = list(spec.iter_mdc_subspectra())
 
-# np.argmax([len(s) for s in subspectra])
 
 # generating formulas
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
 charge = 24
 prec   = precursor(fasta, charge, name = "shit")
-next(prec.molecules())
-
-# this does not work now: fix it.
 mols   = list(prec.molecules())
+mols[55555].plot()
+mols[55].plot()
+
 
 # now: I need to build a graph method to construct all this:
 # actually, I can use the fork with the mols, as long as I will not write them.
@@ -50,9 +49,9 @@ subspec = subspectra[np.argmax([len(s) for s in subspectra])]
 len(subspec)
 subspec.plot()
 
-from MassTodonPy.Molecule.simple import molecule
 
-iso_calc = isotope_calculator()
+
+
 
 mol  = mols[0]
 mol2 = molecule(mol.name, mol.source, mol.formula, iso_calc, mol.q, mol.g)

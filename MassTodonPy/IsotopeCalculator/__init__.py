@@ -17,3 +17,6 @@
 #   <https://www.gnu.org/licenses/agpl-3.0.en.html>.
 
 # from isotopeCalculator import IsotopeCalculator, aggregate, merge_runs
+from .simple import isotope_calculator
+
+iso_calc = isotope_calculator()
