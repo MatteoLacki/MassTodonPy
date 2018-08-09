@@ -35,6 +35,9 @@ charge = 24
 prec   = precursor(fasta, charge, name = "")
 mols   = list(prec.molecules())
 
+# alternati
+
+
 # mol_tree = iTree.IntervalTree()
 # for mol in mols:
 #     s, e          = mol.interval 
@@ -93,5 +96,6 @@ cs = list(connected_component_subgraphs(G))
 Counter(len(c) for c in cs)
 # the analysis looks very similar, like the previous one.
 
-
+# how to restrict the list of possibilities?
+# 
 

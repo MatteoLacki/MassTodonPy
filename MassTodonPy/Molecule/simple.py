@@ -66,7 +66,6 @@ class Molecule(object):
                                    self.q,
                                    self.g)
 
-    @property
     def interval(self, std_cnt = 4):
         mean_mz = self.mean_mz
         sd_mz   = self.sd_mz
