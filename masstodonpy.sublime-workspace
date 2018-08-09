@@ -4,6 +4,26 @@
 		"selected_items":
 		[
 			[
+				"max",
+				"max_mz"
+			],
+			[
+				"intev",
+				"interval"
+			],
+			[
+				"subs",
+				"subspec"
+			],
+			[
+				"subspec",
+				"subspectra"
+			],
+			[
+				"itne",
+				"interval"
+			],
+			[
 				"Mas",
 				"MassTodonPy"
 			],
@@ -21,10 +41,6 @@
 			],
 			[
 				"subsp",
-				"subspectra"
-			],
-			[
-				"subs",
 				"subspectra"
 			],
 			[
@@ -276,37 +292,30 @@
 	"buffers":
 	[
 		{
-			"file": "MassTodonPy/Precursor/simple.py",
+			"file": "MassTodonPy/Deconvolution/Deconvolve.py",
 			"settings":
 			{
-				"buffer_size": 9125,
+				"buffer_size": 10955,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "MassTodonPy/Molecule/simple.py",
-			"settings":
-			{
-				"buffer_size": 3056,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "MassTodonPy/Formula/Formula.py",
-			"settings":
-			{
-				"buffer_size": 1897,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
+			"contents": "%load_ext autoreload\n%autoreload 2\n%load_ext line_profiler\n\nfrom collections            import  Counter\nimport numpy                as      np\nimport matplotlib.pyplot    as      plt\nfrom   time                 import  time\nimport intervaltree         as      iTree\nimport networkx             as      nx\nfrom networkx               import  connected_component_subgraphs\n\nfrom MassTodonPy.readers.from_npy             import spectrum_from_npy\nfrom MassTodonPy.Precursor.simple             import precursor\nfrom MassTodonPy.IsotopeCalculator.simple     import isotope_calculator\nfrom MassTodonPy.Spectra.orbitrap.peak_groups import bitonic_clustering\nfrom MassTodonPy.Spectra.simple               import spectrum\nfrom MassTodonPy.Molecule.simple              import molecule\nfrom MassTodonPy.Formula.Formula              import formula\n\n\n# generating subspectra\ndata_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'\nmz, intensity = spectrum_from_npy(data_path)\n\nspec = spectrum(mz, intensity)\nspec.bitonic_clustering()\nspec.fit_mz_diff_model()\nspec.min_mz_diff_clustering()\nsubspectra = list(spec.iter_mdc_subspectra())\n\n# generating formulas\nfasta  = \"GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD\"\ncharge = 24\nprec   = precursor(fasta, charge, name = \"\")\nmols   = list(prec.molecules())\n\n# mol_tree = iTree.IntervalTree()\n# for mol in mols:\n#     s, e          = mol.interval \n#     mol_tree[s:e] = mol\n# 10 sec: long long\n\nemp_tree = iTree.IntervalTree()\nfor subspec in subspectra:\n    s, e = subspec.interval\n    emp_tree[s:e] = subspec\n# 25.3 ms ± 1.25 ms per loop (mean ± std. dev. of 7 runs, 100 loops each)\n\n# this seems a lot quicker than doing the ccs\ndd = {}\nfor mol in mols:\n    s, e    = mol.interval\n    dd[mol] = emp_tree[s:e] \n# but this can be done much faster by direct iteration from left to right!\n\n# alternative to the above: construct a neighbourhood graph.\ndef build_graph_with_interval_tree(iTree, mols):\n    G = nx.Graph()\n    for M in mols:\n        s, e = M.interval\n        G_M = iTree[s:e]\n        if G_M:\n            G.add_node(M, type = 'M')\n        for S in G_M:\n            G.add_node(S, type = 'S')\n            G.add_edge(S, M)\n    return G\n\nG = build_graph_with_interval_tree(emp_tree, mols)\n# 8.2 secs\n\ncs = list(connected_component_subgraphs(G))\nCounter(len(c) for c in cs)\n\nspec[759.3382795685296:760.5482233729739].plot()\nCounter(len(v) for k, v in dd.items())\n# Counter({0: 33074, 1: 29335, 2: 2077, 3: 95, 4: 5}): hence, it seems that mostly things do not compete.\n# have to check, if the bloody intervals are calculated properly.\n\n# another approach: build a graph based on the established bc groups.\nbc_tree = iTree.IntervalTree()\nfor subspec in subspectra:\n    for bc_group in subspec.iter_bc_subspectra():\n        s, e = bc_group.interval\n        if s < e: # what to do otherwise: most likely there is an error.\n            bc_tree[s:e] = bc_group\n# 13.8 sec\nG = build_graph_with_interval_tree(bc_tree, mols)\n# 64 secs\ncs = list(connected_component_subgraphs(G))\n#  96 secs\nCounter(len(c) for c in cs)\n# the analysis looks very similar, like the previous one.\n\n# how to restrict the list of possibilities?\n# \n\n",
 			"file": "Development/Orbitrap/graph_construction.py",
+			"file_size": 3334,
+			"file_write_time": 131782355141148802,
 			"settings":
 			{
-				"buffer_size": 5542,
+				"buffer_size": 3379,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "MassTodonPy/Spectra/simple.py",
+			"settings":
+			{
+				"buffer_size": 9723,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -356,7 +365,7 @@
 		"selected_items":
 		[
 			[
-				"color",
+				"colo",
 				"UI: Select Color Scheme"
 			],
 			[
@@ -364,7 +373,7 @@
 				"Colorsublime: Install Theme"
 			],
 			[
-				"colo",
+				"color",
 				"UI: Select Color Scheme"
 			],
 			[
@@ -515,9 +524,7 @@
 	[
 		"/Users/matteo/Projects/MassTodonPy",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Formula",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Molecule",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Deconvolution",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/__pycache__",
@@ -525,16 +532,18 @@
 	],
 	"file_history":
 	[
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor/test_Precursor.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor/simple.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Molecule/simple.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/simple.py",
+		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/graph_construction.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Formula/Formula.py",
+		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor/test_Precursor.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Precursor/Precursor.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/__init__.py",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Formula/Formula.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/simple.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Molecule/Molecule.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/IsotopeCalculator/envelope.py",
 		"/Users/matteo/Projects/MassTodonPy/bin/plot_mass_spectrum",
-		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/simple.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/models/two_dimensional.py",
 		"/Users/matteo/Projects/MassTodonPy/Development/Orbitrap/preprocessing.py",
 		"/Users/matteo/Projects/MassTodonPy/MassTodonPy/Spectra/orbitrap/peak_groups.py",
@@ -650,12 +659,11 @@
 		"/Users/matteo/Projects/rta/rta/dbscan/dbscan_all_boxes.py",
 		"/Users/matteo/Projects/rta/rta/dbscan/dbscan_percentile_boxes.py",
 		"/Users/matteo/Projects/rta/rta/kd_tree/developing_kd_trees.py",
-		"/Users/matteo/.config/zathura/zathurarc",
-		"/opt/X11/include/X11/extensions/xtrapdi.h"
+		"/Users/matteo/.config/zathura/zathurarc"
 	],
 	"find":
 	{
-		"height": 54.0
+		"height": 28.0
 	},
 	"find_in_files":
 	{
@@ -769,24 +777,24 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "MassTodonPy/Precursor/simple.py",
+					"file": "MassTodonPy/Deconvolution/Deconvolve.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9125,
+						"buffer_size": 10955,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7393,
-								7393
+								3418,
+								3418
 							]
 						],
 						"settings":
@@ -796,70 +804,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1570.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "MassTodonPy/Molecule/simple.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3056,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2087,
-								2087
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 370.0,
+						"translation.y": 824.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "MassTodonPy/Formula/Formula.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1897,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1025,
-								1025
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -869,20 +817,20 @@
 			"sheets":
 			[
 				{
-					"buffer": 3,
+					"buffer": 1,
 					"file": "Development/Orbitrap/graph_construction.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5542,
+						"buffer_size": 3379,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1029,
-								1029
+								1448,
+								1448
 							]
 						],
 						"settings":
@@ -890,10 +838,46 @@
 							"syntax": "Packages/Python/Python.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 323.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 2,
+					"file": "MassTodonPy/Spectra/simple.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9723,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3469,
+								3469
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python 3/Python3.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1163.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -901,7 +885,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 25.0
+		"height": 28.0
 	},
 	"input":
 	{
@@ -922,12 +906,19 @@
 				0,
 				2,
 				1
+			],
+			[
+				2,
+				0,
+				3,
+				1
 			]
 		],
 		"cols":
 		[
 			0.0,
-			0.5,
+			0.33,
+			0.66,
 			1.0
 		],
 		"rows":
@@ -953,7 +944,7 @@
 	"project": "masstodonpy.sublime-project",
 	"replace":
 	{
-		"height": 94.0
+		"height": 52.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -962,6 +953,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"gra",
+				"Development/Orbitrap/graph_construction.py"
+			],
 			[
 				"simple",
 				"MassTodonPy/IsotopeCalculator/simple.py"

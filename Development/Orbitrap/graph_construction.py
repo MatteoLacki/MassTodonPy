@@ -2,11 +2,13 @@
 %autoreload 2
 %load_ext line_profiler
 
-from collections import Counter
-import numpy as np
-import matplotlib.pyplot as plt
-from time import time
-
+from collections            import  Counter
+import numpy                as      np
+import matplotlib.pyplot    as      plt
+from   time                 import  time
+import intervaltree         as      iTree
+import networkx             as      nx
+from networkx               import  connected_component_subgraphs
 
 from MassTodonPy.readers.from_npy             import spectrum_from_npy
 from MassTodonPy.Precursor.simple             import precursor
@@ -15,6 +17,7 @@ from MassTodonPy.Spectra.orbitrap.peak_groups import bitonic_clustering
 from MassTodonPy.Spectra.simple               import spectrum
 from MassTodonPy.Molecule.simple              import molecule
 from MassTodonPy.Formula.Formula              import formula
+
 
 # generating subspectra
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
@@ -26,143 +29,69 @@ spec.fit_mz_diff_model()
 spec.min_mz_diff_clustering()
 subspectra = list(spec.iter_mdc_subspectra())
 
-
 # generating formulas
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
 charge = 24
-prec   = precursor(fasta, charge, name = "shit")
+prec   = precursor(fasta, charge, name = "")
 mols   = list(prec.molecules())
-mols[55555].plot()
-mols[55].plot()
+
+# mol_tree = iTree.IntervalTree()
+# for mol in mols:
+#     s, e          = mol.interval 
+#     mol_tree[s:e] = mol
+# 10 sec: long long
+
+emp_tree = iTree.IntervalTree()
+for subspec in subspectra:
+    s, e = subspec.interval
+    emp_tree[s:e] = subspec
+# 25.3 ms ± 1.25 ms per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+# this seems a lot quicker than doing the ccs
+dd = {}
+for mol in mols:
+    s, e    = mol.interval
+    dd[mol] = emp_tree[s:e] 
+# but this can be done much faster by direct iteration from left to right!
+
+# alternative to the above: construct a neighbourhood graph.
+def build_graph_with_interval_tree(iTree, mols):
+    G = nx.Graph()
+    for M in mols:
+        s, e = M.interval
+        G_M = iTree[s:e]
+        if G_M:
+            G.add_node(M, type = 'M')
+        for S in G_M:
+            G.add_node(S, type = 'S')
+            G.add_edge(S, M)
+    return G
+
+G = build_graph_with_interval_tree(emp_tree, mols)
+# 8.2 secs
+
+cs = list(connected_component_subgraphs(G))
+Counter(len(c) for c in cs)
+
+spec[759.3382795685296:760.5482233729739].plot()
+Counter(len(v) for k, v in dd.items())
+# Counter({0: 33074, 1: 29335, 2: 2077, 3: 95, 4: 5}): hence, it seems that mostly things do not compete.
+# have to check, if the bloody intervals are calculated properly.
+
+# another approach: build a graph based on the established bc groups.
+bc_tree = iTree.IntervalTree()
+for subspec in subspectra:
+    for bc_group in subspec.iter_bc_subspectra():
+        s, e = bc_group.interval
+        if s < e: # what to do otherwise: most likely there is an error.
+            bc_tree[s:e] = bc_group
+# 13.8 sec
+G = build_graph_with_interval_tree(bc_tree, mols)
+# 64 secs
+cs = list(connected_component_subgraphs(G))
+#  96 secs
+Counter(len(c) for c in cs)
+# the analysis looks very similar, like the previous one.
 
 
-# now: I need to build a graph method to construct all this:
-# actually, I can use the fork with the mols, as long as I will not write them.
-
-# OK, for one spectrum, each graph construction is the same:
-# we have to specify right and left ends of intervals and simply match.
-
-# at the end, probably the same will work for basic solution.
-
-# the biggest subspectrum: it only shows, that this definition should be enhanced. E.G. the major component of isotopic distribution is the variation in carbon, but carbon distirbution is binomial and so, there must be a trace of that in the shape of the intensities: it also results in a more or less bitonic shape.
-subspec = subspectra[np.argmax([len(s) for s in subspectra])]
-len(subspec)
-subspec.plot()
-
-
-
-
-
-mol  = mols[0]
-mol2 = molecule(mol.name, mol.source, mol.formula, iso_calc, mol.q, mol.g)
-env = mol2.isotopologues()
-mol2.plot()
-
-
-# there is multiple instantiation of the isotopic distirbutions.
-# fuck fuck fuck.
-
-
-
-
-
-
-len(mols)
-# exchange the molecule's isotopic generator for simpler.
-
-# why the first molecule has no charge?
-
-mol.mean_mz
-mol.monoisotopic_mz
-f = mol.formula
-# Task: enhance the calculation
-# t0 = time()
-# isotopologues = [m.isotopologues() for m in mols]
-# t1 = time()
-# 89 secs.
-# this is actually not so bad,
-# the question is, do we need to do it?
-# but how much can we save on using mean and sd?
-# OK, have to have it done in Numpy to have a speed-up
-iso_calc = isotope_calculator()
-iso_calc.monoisotopic_mz(mol.formula, q=charge)
-iso_calc.heaviest_mz(mol.formula, q=charge) - iso_calc.lightiest_mz(mol.formula, q=charge)
-
-%%timeit
-iso_calc.most_probable_mz(mol.formula, q=charge)
-
-
-%%timeit
-mean = iso_calc.mean_mz(mol.formula, q=charge)
-sd   = iso_calc.sd(mol.formula,   q=charge)
-
-
-mean - 3*sd < env.head_mz() / charge
-mean + 3*sd > env.tail_mz() / charge
-
-env = iso_calc(mol.formula)
-env.plot()
-env.tail_mz()
-env.head_mz()
-(env.tail_mz() - env.head_mz())/charge
-env.max_peak()
-
-# get a method that defines the maximal space for the given
-# set of atoms in the precursor
-
-max(max(np.diff(iso_calc._masses[e])) for e in prec.formula)
-
-# how much can we gain by subdivision of spectrum based on m/z ?
-# we can actually try to do bitonic_clustering after this obvious preprocessing.
-
-
-np.diff(iso_calc._masses['C'])
-np.diff(iso_calc._masses['H'])
-np.diff(iso_calc._masses['N'])
-np.diff(iso_calc._masses['S'])
-np.diff(iso_calc._masses['O'])
-# so, a good value is 1.1 Thomson. I wouldn't believe that it can hurt.
-max_diff = 1.1
-
-
-list(max_mz_diff_iterator(mz, max_diff))[-1]
-len(list(iter_cluster_ends(max_mz_diff_iterator(mz, max_diff)))
-
-for mz_l, intensity_l in iter_clusters(mz,
-                                       intensity,
-                                       max_mz_diff_iterator(mz, 1.5)):
-
-subspectra = [ 
-    for spec in iter_clusters(mz, intensity, max_mz_diff_iterator(mz, max_diff))]
-
-
-%%timeit
-env = iso_calc(mol.formula, _memoize=False)
-
-
-
-
-%%timeit
-means = [iso_calc.mean(m.formula) for m in mols]
-
-
-
-
-iso_calc.get_envelope('C200H400')
-iso_calc('C200H400')
-
-
-
-atoms_in_all_formulas = set(prec.formula._storage.keys())
-
-
-
-mol.formula
-A = iso_calc(mol.formula)
-masses, probs = A.atoms, A.masses
-
-
-plot_spectrum(masses, probs, show=False)
-plt.scatter(mol.mean_mz, 0, c= 'red')
-plt.show()
 

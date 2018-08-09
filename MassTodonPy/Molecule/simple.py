@@ -50,19 +50,38 @@ class Molecule(object):
 
     @property
     def monoisotopic_mz(self):
-        return self.iso_calc.get_monoisotopic_mz(self.formula, self.q, self.g)
+        return self.iso_calc.monoisotopic_mz(self.formula,
+                                             self.q,
+                                             self.g)
 
     @property
     def mean_mz(self):
-        return self.iso_calc.get_mean_mz(self.formula, self.q, self.g)
+        return self.iso_calc.mean_mz(self.formula,
+                                     self.q,
+                                     self.g)
+
+    @property
+    def sd_mz(self):
+        return self.iso_calc.sd_mz(self.formula,
+                                   self.q,
+                                   self.g)
+
+    @property
+    def interval(self, std_cnt = 4):
+        mean_mz = self.mean_mz
+        sd_mz   = self.sd_mz
+        s = mean_mz - std_cnt * sd_mz
+        e = mean_mz + std_cnt * sd_mz
+        return s, e
 
     def isotopologues(self,
-                      prob = .999):
+                      prob     = .999,
+                      _memoize = True):
         return self.iso_calc(self.formula,
                              prob,
                              self.q,
                              self.g,
-                             _memoize=True)
+                             _memoize = _memoize)
 
     def __repr__(self):
         return "({name} {source.name} q={q} g={g} I={I_int})".format(

@@ -88,12 +88,18 @@ class Spectrum(Measure):
                               self.intensity[id_s:id_e],
                               sort = False)
 
+    @property
     def min_mz(self):
         return min(self.mz)
 
+    @property
     def max_mz(self):
         return max(self.mz)
 
+    @property
+    def interval(self):
+        return self.min_mz, self.max_mz
+ 
     def mean_mz(self):
         """Mean m/z weighted by intensities."""
         return mean(self.mz, self.intensity)
