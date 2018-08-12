@@ -19,6 +19,7 @@ class Model2D(Model):
              knots_no  = 1000,
              plot_data = True,
              plt_style = 'dark_background',
+             scatter_color = 'blue',
              show      = True):
         """Plot data points and the fitted line.
 
@@ -38,7 +39,7 @@ class Model2D(Model):
         """
         plt.style.use(plt_style)
         if plot_data:
-            plt.scatter(self.x, self.y, c='blue', s=.5)
+            plt.scatter(self.x, self.y, c=scatter_color, s=.5)
         x_ = np.linspace(self.x_min, self.x_max, knots_no)
         y_ = self(x_)
         plt.plot(x_, y_, c='red')

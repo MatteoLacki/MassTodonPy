@@ -76,6 +76,9 @@ mols   = list(prec.molecules())
 # divmod(K, 2): div: number of theoretical group
               # mod:
                 # start = 0, end = 1
+
+
+
 mol_intervals = np.zeros(dtype=float, shape=(2*len(mols),))
 mol_indices   = np.zeros(dtype=int,   shape=(2*len(mols),))
 for i, mol in enumerate(mols):
@@ -118,6 +121,8 @@ all_mz      = list(all_mz[sorting])
 subproblems    = [] # a list of tuples of sets: mols and theory
 open_theoretic = set([])
 open_empiric   = set([])
+
+
 for mz, is_mol, idx in zip(all_mz, is_mols, all_indices):
     t = T[i] # type of point.
 

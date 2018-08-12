@@ -1,6 +1,7 @@
-from   bisect import bisect_left, bisect_right
+from   bisect            import bisect_left, bisect_right
+from   collections       import  Counter
 import matplotlib.pyplot as plt
-import numpy  as np
+import numpy             as np
 
 from MassTodonPy.arrays.operations  import dedup_sort
 from MassTodonPy.Data.Constants     import eps, infinity
@@ -210,7 +211,6 @@ class Spectrum(Measure):
         mz_lefts, mz_diffs = self.mz_lefts_mz_diffs_in_clusters()
         self.mz_diff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
 
-
     def plot_mz_diffs(self,
                       knots_no      = 1000,
                       plt_style     = 'dark_background',
@@ -260,6 +260,41 @@ class Spectrum(Measure):
         if show and (all_diffs or cluster_diffs):
             plt.show()
 
+    def get_bc_stats(self):
+        means = []
+        sds   = []
+        counts= []
+        total_intensities = []
+        mz_spreads = []
+        for local_mz, local_intensity in self.iter_bc_clusters():
+            means.append(mean(local_mz, local_intensity))
+            sds.append(sd(local_mz, local_intensity))
+            counts.append( len(local_mz) )
+            total_intensities.append( sum(local_intensity) )
+            mz_spreads.append( max(local_mz) - min(local_mz) )
+        out = tuple(map(np.array, [means, sds, counts, total_intensities, mz_spreads]))
+        return out
+
+    def fit_sd_mz_model(self,
+                        model = polynomial,
+                        fit_to_most_frequent = True,
+                       *model_args,
+                      **model_kwds):
+        means, sds, counts, _ = self.get_bc_stats()
+        if fit_to_most_frequent:
+            cnts, freq       = list(zip(*Counter(counts).items()))
+            self.sd_mz_c     = counts == cnts[np.argmax(freq)]
+            self.sd_mz_model = model(means[self.sd_mz_c],
+                                     sds[self.sd_mz_c])
+        else:
+            self.sd_mz_model = model(means, sds)
+
+    def plot_sd_mz(self,
+                   plt_style = 'dark_background',
+                   show      = True):
+        self.sd_mz_model.plot(plt_style     = plt_style,
+                              scatter_color = self.sd_mz_c,
+                              show          = show)
 
 def spectrum(mz        = np.array([]),
              intensity = np.array([]),
