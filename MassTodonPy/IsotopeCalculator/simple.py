@@ -20,10 +20,12 @@ from MassTodonPy.IsotopeCalculator.isospec_wrapper import isospec_numpy
 
 class IsotopeCalculator(object):
     def __init__(self,
+                 digits         = infinity,
                  _masses        = get_isotopic_masses(),
                  _probabilities = get_isotopic_probabilities(),
                  _isotope_DB    = {}):
         """Initialize the isotopic calculator."""
+        self.digits         = digits
         self._masses        = _masses
         self._probabilities = _probabilities
         self._isotope_DB    = _isotope_DB
@@ -94,7 +96,7 @@ class IsotopeCalculator(object):
                  prob     = .999,
                  q        = 0,
                  g        = 0,
-                 _memoize = False):
+                _memoize  = False):
         """Get an isotopic envelope."""
         if _memoize:
             env_key = (str(formula), prob)
@@ -102,20 +104,29 @@ class IsotopeCalculator(object):
                 env = self._isotope_DB[env_key]
             except KeyError:
                 env = self._make_envelope(formula, prob)
+                if self.digits < infinity:
+                    # round to prescibed level.
+                    env.round_mz(self.digits)
                 self._isotope_DB[env_key] = env
         else:
             env = self._make_envelope(formula, prob)
+            if self.digits < infinity:
+                # round to prescibed level.
+                env.round_mz(self.digits)
         # simplification: the q and g are only shifting the
         # distribution, rather than affecting the whole distribution.
         H_mass = self._masses['H'][0]
-        env = env.add_mass_divide_by_charge(H_mass * (q + g), q)
+        if q > 0:
+            env = env.add_mass_divide_by_charge(H_mass * (q + g), q)
         return env
 
 
-def isotope_calculator(_masses        = get_isotopic_masses(),
+def isotope_calculator(digits         = infinity,
+                       _masses        = get_isotopic_masses(),
                        _probabilities = get_isotopic_probabilities(),
                        _isotope_DB    = {}):
-    IC = IsotopeCalculator(_masses        = _masses,
+    IC = IsotopeCalculator(digits         = digits,
+                           _masses        = _masses,
                            _probabilities = _probabilities,
                            _isotope_DB    = _isotope_DB)
     return IC

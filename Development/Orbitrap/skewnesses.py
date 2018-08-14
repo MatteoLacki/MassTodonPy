@@ -10,7 +10,6 @@ import intervaltree         as      iTree
 import networkx             as      nx
 from   networkx             import  connected_component_subgraphs
 import pandas               as      pd
-from   math                 import  log10, floor
 
 from MassTodonPy.readers.from_npy             import spectrum_from_npy
 from MassTodonPy.Precursor.simple             import precursor
@@ -42,65 +41,38 @@ subspectra = list(spec.iter_mdc_subspectra())
 spec
 
 mz_local, _ = next(spec.iter_bc_clusters())
-min_diff    = np.diff(mz_local)[0]
-mz_digits   = floor(log10(min_diff))
+min_diff = np.diff(mz_local)[0]
 
-# preparing isotopic calculator: it is parametrized by the digits number.
-iso_calc = isotope_calculator(digits = mz_digits)
+# this shows, that it's worth exploring deviations from the symmetry around the average
+# as potential measure of non-normality.
+spec[1126.5:1126.8].plot()
 
-# generating formulas
-fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"
-charge = 24
-prec   = precursor(fasta, charge, name="", iso_calc=iso_calc)
-mols   = np.array(list(prec.molecules()))
+means, sds, skewnesses, counts, total_intensities, mz_spreads = spec.get_bc_stats()
+plt.style.use('dark_background')
+plt.hist(skewnesses[skewnesses<infinity], bins=100)
+plt.show()
 
-# Screen stupid formulas, and then proceed with standard algorithm for 
-# finding connected components of the neighbourhood graph.
-emp_tree = iTree.IntervalTree()
-for subspec in subspectra:
-    s, e = subspec.interval
-    emp_tree[s:e] = subspec
+finite_skew = skewnesses[skewnesses<infinity]
+np.mean(finite_skew)
+np.std(finite_skew)
 
-good_mols = []
-good_subspectra = set([])
-good_subspectra_cnt = Counter()
-for mol in mols:
-    s, e    = mol.interval(std_cnt = 3)
-    touched_spectra = emp_tree[s:e]
-    if touched_spectra:
-        good_mols.append(mol)
-        good_subspectra |= touched_spectra
+good_skew = finite_skew[np.abs(finite_skew-np.median(finite_skew)) < 3 * np.std(finite_skew)]
+plt.hist(good_skew)
+plt.show()
+len(skewnesses) - len(good_skew)
+# this means that groups that are heavily skewed do not
+# carry most of the probability.
+plt.hist(total_intensities[skewnesses<infinity][np.abs(finite_skew-np.median(finite_skew)) < 3 * np.std(finite_skew)]/max(total_intensities))
+plt.show()
+# as with respect to the maximal intensity, theirs is fairly limited.
 
-# the screening lasts: 4.12 sec
-# this naive filtering managed to cut the problem by more than half.
-len(good_mols)
-len(good_subspectra)
+subspectra_bc = list(spec.iter_bc_subspectra())
+subspectra_bc = np.array(subspectra_bc)
+poor_groups = subspectra_bc[np.isin(counts, (13, 14))]
+poor_groups[0].plot()
+# again: deviation from center-symmetry
+poor_groups[1].plot()
 
-mol = good_mols[0]
-env = mol.isotopologues()
-
-
-%%timeit
-agg(env.mz, env.probability)
-#.8 ms 
-
-# control:
-agg(np.array([.1111, .1112, .1131]), np.array([1,2,4]), digits = 3)
-
-
-min_diff
-np.percentile( np.diff(env.mz), q = np.linspace(0,100,20))
-
-
-
-# test if its worth it to use the prerviously established clusters.
-from MassTodonPy.Deconvolution.Deconvolve import build_deconvolution_graph
-
-
-# simplify the isotopic distributions: go back to merging isotopologues.
-
-# is it worth it?
-DG = build_deconvolution_graph(good_mols, spec)
-
-
+# DD = pd.DataFrame(dict(mean=means, sd=sds, intensity=total_intensities, cnt=counts, spread=mz_spreads))
+# DD.to_csv(path_or_buf = '/Users/matteo/Projects/MassTodonPy/data/data_4_sd.csv', index=False)
 

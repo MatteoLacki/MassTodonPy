@@ -8,6 +8,14 @@ D = D %>% mutate(log_mean = log(mean),  log_sd = log(sd), log_intensity=log(inte
 M = lm(sd ~ mean + cnt + intensity, D)
 summary(M)
 
+# check the distribution of peak counts in different m/z
+with(D, plot(mean, cnt))
+D %>% ggplot(aes(x=ordered(cnt), y=mean)) + geom_boxplot() + theme_tufte() + coord_flip()
+# ergo: no clear dependcence upon the m/z position and the number of counts.
+table(D$cnt)
+qplot(x=cnt, data=D, geom='bar') # 5-9 counts dominate.
+
+# check all other things :D
 plot(D, pch='.')
 with(D, plot(mean, spread, col=cnt))
 with(D, plot(sd, spread, col=cnt))

@@ -94,7 +94,7 @@ class Measure(object):
 
         """
         self.__has_type_of(other)
-        self.atoms = np.concatenate((self.atoms, other.atoms))
+        self.atoms  = np.concatenate((self.atoms, other.atoms))
         self.masses = np.concatenate((self.masses, other.masses))
         self.__aggregate()
         return self

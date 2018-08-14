@@ -74,8 +74,8 @@ class Molecule(object):
         return s, e
 
     def isotopologues(self,
-                      prob     = .999,
-                      _memoize = True):
+                      prob    = .999,
+                     _memoize = True):
         return self.iso_calc(self.formula,
                              prob,
                              self.q,
