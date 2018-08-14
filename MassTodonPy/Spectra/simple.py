@@ -16,7 +16,8 @@ from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
                                                          min_diff_clustering
 
 from MassTodonPy.stats.simple_normal_estimators   import mean,\
-                                                         sd
+                                                         sd,\
+                                                         skewness
 
 
 class Spectrum(Measure):
@@ -43,6 +44,7 @@ class Spectrum(Measure):
                  intensity       = np.array([]),
                  sort            = True,
                  drop_duplicates = True,
+                 only_positive   = True,
                  bc              = None,
                  mdc             = None,
                  mz_diff_model   = None,
@@ -55,11 +57,13 @@ class Spectrum(Measure):
                                              intensity,
                                              drop_duplicates,
                                              sort)
+        self.mz        = self.mz[self.intensity > 0]
+        self.intensity = self.intensity[self.intensity > 0]
         # parameters for spectra spawns as subspectra
-        self.bc = bc
+        self.bc  = bc
         self.mdc = mdc
-        self.mz_diff_model = mz_diff_model
-        self.min_mz_diff_bc = min_mz_diff_bc
+        self.mz_diff_model   = mz_diff_model
+        self.min_mz_diff_bc  = min_mz_diff_bc
         self.min_mz_diff_mdc = min_mz_diff_mdc
 
     @property
@@ -108,6 +112,9 @@ class Spectrum(Measure):
     def sd_mz(self):
         """Get standard deviation of m/z with probs induced by intensity."""
         return sd(self.mz, self.intensity)
+
+    def skewness_mz(self):
+        return skewness(self.mz, self.intensity)
 
     def total_intensity(self):
         return self.intensity.sum()
@@ -260,27 +267,33 @@ class Spectrum(Measure):
         if show and (all_diffs or cluster_diffs):
             plt.show()
 
+    #TODO: this is a good method for any clustering.
     def get_bc_stats(self):
         means = []
         sds   = []
+        skewnesses = []
         counts= []
         total_intensities = []
         mz_spreads = []
         for local_mz, local_intensity in self.iter_bc_clusters():
-            means.append(mean(local_mz, local_intensity))
-            sds.append(sd(local_mz, local_intensity))
-            counts.append( len(local_mz) )
-            total_intensities.append( sum(local_intensity) )
-            mz_spreads.append( max(local_mz) - min(local_mz) )
-        out = tuple(map(np.array, [means, sds, counts, total_intensities, mz_spreads]))
-        return out
+            mean_mz       = mean(local_mz, local_intensity)
+            sd_mz         = sd(local_mz, local_intensity, mean_mz)
+            skewnesses_mz = skewness(local_mz, local_intensity, mean_mz, sd_mz)
+            means.append(mean_mz)
+            sds.append(sd_mz)
+            skewnesses.append(skewnesses_mz)
+            counts.append(len(local_mz))
+            total_intensities.append(sum(local_intensity))
+            mz_spreads.append(max(local_mz) - min(local_mz))
+        o = tuple(map(np.array, [means, sds, skewnesses, counts, total_intensities, mz_spreads]))
+        return o
 
     def fit_sd_mz_model(self,
                         model = polynomial,
                         fit_to_most_frequent = True,
                        *model_args,
                       **model_kwds):
-        means, sds, counts, _ = self.get_bc_stats()
+        means, sds, skewnesses, counts, total_intensities, spreads = self.get_bc_stats()
         if fit_to_most_frequent:
             cnts, freq       = list(zip(*Counter(counts).items()))
             self.sd_mz_c     = counts == cnts[np.argmax(freq)]
