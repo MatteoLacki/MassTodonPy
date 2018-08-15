@@ -33,42 +33,16 @@ mz, intensity = spectrum_from_npy(data_path)
 
 spec = spectrum(mz, intensity)
 spec.bitonic_clustering()
-spec.fit_mz_diff_model(model = polynomial,
-                       degree= 3)
-
-
-spec.mz_diff_model.coef()
-
-np.roots(spec.mz_diff_model._polynomial)
-
-spec.mz.min()
-
-coefs = spec.mz_diff_model.coef()
-coefs[0] - 
-np.roots()
-
-
-spec.mz_diff_model.plot()
-spec.mz_diff_model.coef()
-
-polynomial(np.array([1,2,3,4]), np.array([1,4,9.4, 16.7]), 2).coef()
-
+spec.fit_mz_diff_model()
 spec.min_mz_diff_clustering()
 # TODO: replace this later on: a more complex model has to be fitted.
 # and the estimation of the Standard Deviations of groups has to be 
 # dependent upon more data points all across the spectrum.
-
 spec.fit_sd_mz_model()
-# spec.sd_mz_model.plot()
 
 subspectra = list(spec.iter_mdc_subspectra())
-
-mz_local, _ = next(spec.iter_bc_clusters())
-min_diff    = np.diff(mz_local)[0]
-mz_digits   = abs(floor(log10(min_diff)))
-
-# preparing isotopic calculator: it is parametrized by the digits number.
-iso_calc = isotope_calculator(digits = mz_digits)
+mz_digits  = spec.get_mz_digits()
+iso_calc   = isotope_calculator(digits = mz_digits)
 
 # generating formulas
 fasta  = "GAASMMGDVKESKMQITPETPGRIPVLNPFESPSDYSNLHEQTLASPSVFKSTKLPTPGKFRWSIDQLAVINPVEIDPEDIHRQALYLSHSRIDKDVEDKRQKAIEEFFTKDVIVPSPWTDHEGKQLSQCHSSKCTNINSDSPVGKKLTIHSEKSD"

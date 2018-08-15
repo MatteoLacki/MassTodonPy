@@ -1,6 +1,7 @@
 from   bisect            import bisect_left, bisect_right
 from   collections       import  Counter
 import matplotlib.pyplot as plt
+from   math              import floor, log10
 import numpy             as np
 
 from MassTodonPy.arrays.operations  import dedup_sort
@@ -126,6 +127,12 @@ class Spectrum(Measure):
     def l2(self):
         """Get l2 norm."""
         return np.linalg.norm(self.intensity)
+
+    def get_mz_digits(self):
+        """Return the smallest m/z difference within the first bc cluster."""
+        mz, _    = next(self.iter_bc_clusters())
+        min_diff = np.diff(mz)[0]
+        return abs(floor(log10(min_diff)))
 
     def trim_intensity(self, cut_off):
         """Trim intensities below the provided cut off.

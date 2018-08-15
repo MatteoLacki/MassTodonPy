@@ -33,14 +33,14 @@ class Spectrum(Measure):
 
     """
     def __init__(self,
-                 mz=np.array([]),
-                 intensity=np.array([]),
-                 spectrum='',
-                 mz_digits=infinity,
-                 min_intensity=eps,
-                 percent_top_peaks=1.0,
-                 sort=True,
-                 low_spectrum=False,
+                 mz                = np.array([]),
+                 intensity         = np.array([]),
+                 spectrum          = '',
+                 mz_digits         = infinity,
+                 min_intensity     = eps,
+                 percent_top_peaks = 1.0,
+                 sort              = True,
+                 low_spectrum      = False,
                  **kwds):
         """Initialize the Spectrum."""
         self._low_spectrum = low_spectrum
