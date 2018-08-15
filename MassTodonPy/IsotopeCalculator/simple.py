@@ -118,6 +118,7 @@ class IsotopeCalculator(object):
         H_mass = self._masses['H'][0]
         if q > 0:
             env = env.add_mass_divide_by_charge(H_mass * (q + g), q)
+
         return env
 
 

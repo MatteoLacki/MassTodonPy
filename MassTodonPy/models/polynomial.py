@@ -25,7 +25,7 @@ class Polynomial(Model2D):
             The degree of the fitted polynomial.
         """
         assert degree >= 1, "The degree must be greater or equal to 1."
-        self.degree = int(3)
+        self.degree = int(degree)
 
     def fit(self, x, y):
         """Fit a spline to 2D data.

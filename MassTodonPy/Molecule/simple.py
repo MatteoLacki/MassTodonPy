@@ -80,7 +80,7 @@ class Molecule(object):
                              prob,
                              self.q,
                              self.g,
-                             _memoize = _memoize)
+                            _memoize=_memoize)
 
     def __repr__(self):
         return "({name} {source.name} q={q} g={g} I={I_int})".format(

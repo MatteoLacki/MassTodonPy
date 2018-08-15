@@ -236,7 +236,7 @@ class Measure(object):
             or '(idx, mz, intensity)',
             where 'idx' is the unique ID of the atom.
 
-        """    
+        """
         try:
             if len(key) == 2:
                 L, R = key

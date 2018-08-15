@@ -210,8 +210,12 @@ class Precursor(Molecule):
                     potential_charges_cnt += 1
                     # +0000 +0000 00+  at most 3 charges
                 if potential_charges_cnt >= q:
-                    yield Molecule(name, self, formula,
-                                   self.iso_calc, q, g)
+                    yield Molecule(name     = name, 
+                                   source   = self,
+                                   formula  = formula,
+                                   iso_calc = self.iso_calc,
+                                   q        = q,
+                                   g        = g)
 
     def __hash__(self):
         """Get a hash from the precursor's unique id.

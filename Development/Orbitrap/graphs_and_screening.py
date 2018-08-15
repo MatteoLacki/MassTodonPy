@@ -22,7 +22,10 @@ from MassTodonPy.Formula.Formula              import formula
 from MassTodonPy.Molecule.simple              import Molecule
 from MassTodonPy.stats.simple_normal_estimators   import mean,\
                                                          sd
-from MassTodonPy.Data.Constants import infinity
+from MassTodonPy.Data.Constants     import infinity
+from MassTodonPy.models.polynomial  import polynomial
+
+
 
 # generating subspectra
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
@@ -30,20 +33,39 @@ mz, intensity = spectrum_from_npy(data_path)
 
 spec = spectrum(mz, intensity)
 spec.bitonic_clustering()
-spec.fit_mz_diff_model()
+spec.fit_mz_diff_model(model = polynomial,
+                       degree= 3)
+
+
+spec.mz_diff_model.coef()
+
+np.roots(spec.mz_diff_model._polynomial)
+
+spec.mz.min()
+
+coefs = spec.mz_diff_model.coef()
+coefs[0] - 
+np.roots()
+
+
+spec.mz_diff_model.plot()
+spec.mz_diff_model.coef()
+
+polynomial(np.array([1,2,3,4]), np.array([1,4,9.4, 16.7]), 2).coef()
+
 spec.min_mz_diff_clustering()
 # TODO: replace this later on: a more complex model has to be fitted.
 # and the estimation of the Standard Deviations of groups has to be 
 # dependent upon more data points all across the spectrum.
+
 spec.fit_sd_mz_model()
 # spec.sd_mz_model.plot()
 
 subspectra = list(spec.iter_mdc_subspectra())
-spec
 
 mz_local, _ = next(spec.iter_bc_clusters())
 min_diff    = np.diff(mz_local)[0]
-mz_digits   = floor(log10(min_diff))
+mz_digits   = abs(floor(log10(min_diff)))
 
 # preparing isotopic calculator: it is parametrized by the digits number.
 iso_calc = isotope_calculator(digits = mz_digits)
@@ -65,7 +87,7 @@ good_mols = []
 good_subspectra = set([])
 good_subspectra_cnt = Counter()
 for mol in mols:
-    s, e    = mol.interval(std_cnt = 3)
+    s, e = mol.interval(std_cnt = 3)
     touched_spectra = emp_tree[s:e]
     if touched_spectra:
         good_mols.append(mol)
@@ -77,19 +99,12 @@ len(good_mols)
 len(good_subspectra)
 
 mol = good_mols[0]
+mol.iso_calc.digits
 env = mol.isotopologues()
+len(env)
 
 
-%%timeit
-agg(env.mz, env.probability)
-#.8 ms 
 
-# control:
-agg(np.array([.1111, .1112, .1131]), np.array([1,2,4]), digits = 3)
-
-
-min_diff
-np.percentile( np.diff(env.mz), q = np.linspace(0,100,20))
 
 
 
