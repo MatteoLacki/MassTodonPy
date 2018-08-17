@@ -9,6 +9,7 @@ __pycache__
 .Rhistory
 .Rproj.user
 *.Rproj
+.RData
 
 #Python
 build

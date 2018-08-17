@@ -87,7 +87,20 @@ class Spectrum(Measure):
         """Set intensities."""
         self.masses = intensity
 
+    def filter(self, mz_min, mz_max):
+        """Filter part of the spectrum between mz_min and mz_max.
+
+        Returns:
+        tuple: m/z's and intensities.
+        """
+        id_s = bisect_left(self.mz, mz_min)
+        id_e = bisect_right(self.mz, mz_max)
+        return self.mz[id_s:id_e], self.intensity[id_s:id_e]
+
     def __getitem__(self, interval):
+        """Similar to filter, but return a class.
+
+        It is much slower."""
         id_s = bisect_left(self.mz, interval.start)
         id_e = bisect_right(self.mz, interval.stop)
         return self.__class__(self.mz[id_s:id_e], 
@@ -171,6 +184,16 @@ class Spectrum(Measure):
         self.mdc = min_diff_clustering(x          = self.mz,
                                        min_x_diff = min_mz_diff)
         self.min_mz_diff_mdc = min_mz_diff
+
+    def iter_clustering_ends(self, clustering):
+        for s, e in iter_cluster_ends(clustering):
+            yield self.mz[s], self.mz[e-1]
+
+    def iter_bc_ends(self):
+        return self.iter_clustering_ends(self.bc)
+
+    def iter_mdc_ends(self):
+        return self.iter_clustering_ends(self.mdc)
 
     def iter_clusters(self, clustering):
         """Iterate over consecutive cluster ends."""
@@ -274,8 +297,11 @@ class Spectrum(Measure):
         if show and (all_diffs or cluster_diffs):
             plt.show()
 
-    #TODO: this is a good method for any clustering.
+    # TODO: this is a good method for any clustering.
+    # TODO: rewrite in numpy to have an array. 
     def get_bc_stats(self):
+        min_mz = []
+        max_mz = []
         means = []
         sds   = []
         skewnesses = []
@@ -283,6 +309,8 @@ class Spectrum(Measure):
         total_intensities = []
         mz_spreads = []
         for local_mz, local_intensity in self.iter_bc_clusters():
+            min_mz.append(min(local_mz))
+            max_mz.append(max(local_mz))
             mean_mz       = mean(local_mz, local_intensity)
             sd_mz         = sd(local_mz, local_intensity, mean_mz)
             skewnesses_mz = skewness(local_mz, local_intensity, mean_mz, sd_mz)
@@ -292,7 +320,7 @@ class Spectrum(Measure):
             counts.append(len(local_mz))
             total_intensities.append(sum(local_intensity))
             mz_spreads.append(max(local_mz) - min(local_mz))
-        o = tuple(map(np.array, [means, sds, skewnesses, counts, total_intensities, mz_spreads]))
+        o = tuple(map(np.array, [min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads]))
         return o
 
     def fit_sd_mz_model(self,
@@ -300,7 +328,7 @@ class Spectrum(Measure):
                         fit_to_most_frequent = True,
                        *model_args,
                       **model_kwds):
-        means, sds, skewnesses, counts, total_intensities, spreads = self.get_bc_stats()
+        min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, spreads = self.get_bc_stats()
         if fit_to_most_frequent:
             cnts, freq       = list(zip(*Counter(counts).items()))
             self.sd_mz_c     = counts == cnts[np.argmax(freq)]
