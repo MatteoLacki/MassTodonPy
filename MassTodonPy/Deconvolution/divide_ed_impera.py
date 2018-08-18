@@ -37,9 +37,17 @@ class Imperator(object):
     def impera(self):
         return nx.connected_component_subgraphs(self.G)
 
-    def plot(self, node_size=.3, show=True):
+    # TODO add colors for the nodes.
+    def plot(self,
+             node_size = 2.0,
+             plt_style = 'dark_background',
+             show      = True):
         """Plot the deconvolution graph."""
-        nx.draw(self.G, node_size=node_size)
+        colors = ['red' if isinstance(N, int) else 'blue' for N in self.G]
+        nx.draw(self.G,
+                node_size  = node_size,
+                node_color = colors)
+        # plt.title('Peak group are red.\nTheory is blue.\nIf all this works\nbetter for you.')
         if show:
             plt.show()
 
