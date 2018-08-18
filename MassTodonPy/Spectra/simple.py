@@ -98,9 +98,7 @@ class Spectrum(Measure):
         return self.mz[id_s:id_e], self.intensity[id_s:id_e]
 
     def __getitem__(self, interval):
-        """Similar to filter, but return a class.
-
-        It is much slower."""
+        """Similar to filter, but return a class."""
         id_s = bisect_left(self.mz, interval.start)
         id_e = bisect_right(self.mz, interval.stop)
         return self.__class__(self.mz[id_s:id_e], 

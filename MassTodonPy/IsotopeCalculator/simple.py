@@ -119,6 +119,7 @@ class IsotopeCalculator(object):
         if q > 0:
             env = env.add_mass_divide_by_charge(H_mass * (q + g), q)
 
+        env.round_mz(self.digits)
         return env
 
 
