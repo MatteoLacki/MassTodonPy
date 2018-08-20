@@ -20,7 +20,8 @@ class Imperator(object):
     def divide(self, molecules, peak_groups):
         self.G = nx.Graph()
         for tree in self.divide_iter(molecules, peak_groups):
-            self.G.add_edges_from(tree)
+            self.G.add_edges_from((M_cnt, E, {'prob': P}) for 
+                                  (M_cnt, E), P in tree.items())
 
     def divide_iter(self, molecules, peak_groups):
         for M in molecules:
@@ -33,7 +34,7 @@ class Imperator(object):
                     I[(M,E)] += I_prob                 #   E  E  E
                     tot_prob += I_prob                 #    \ | /
             if tot_prob >= self.min_prob: # planting tree E - M - E in graph G
-                yield ((M, E, {'prob': P}) for (M, E), P in I.items())
+                yield I
 
     def impera_iter(self):
         """Iterate over connected components of the deconvolution graph."""
@@ -86,18 +87,17 @@ class ImperatorMagnus(Imperator):
     def divide_iter(self, molecules, peak_groups):
         for M_cnt, M in enumerate(molecules):
             M_cnt = - M_cnt - 1 # it is quicker not to run the __hash__ for M, but use this count
-            tot_prob = 0.0
+            P_within_groups = 0.0
             # edge is an collection of merged isotopologues
             I = defaultdict(float) # values correspond to total probability on that edge. 
             for I_mz, I_prob in M.isotopologues(self.P, True):
                 E = peak_groups[I_mz]
                 if E > 0:
                     I[(M_cnt, E)] += I_prob
-                    tot_prob += I_prob
-                else:                                  #   E  E  E 
-                    I[(M_cnt, M_cnt)] += I_prob        #    \ | /
-            if tot_prob >= self.min_prob: # planting tree E - M - E in graph G
-                yield ((M_cnt, E, {'prob': P}) for (M_cnt, E), P in I.items())
+                    P_within_groups += I_prob
+            if P_within_groups >= self.min_prob: 
+                # planting tree E - M - E in graph G
+                yield I
 
     def plot_ccs(self,
                  plt_style = 'dark_background',

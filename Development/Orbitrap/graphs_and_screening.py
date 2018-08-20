@@ -52,7 +52,8 @@ isotopic_coverage = .99
 good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
                                                          mols,
                                                          std_cnt = 3)
-# attention: the sd's will surely change!!! Good! :)
+# attention: the sd's will surely change!!! Good! :) Will they? They are not so important.
+# The bloody interval widths fully replace this concept.
 # to delete
 # bc = np.array(list(spec.iter_bc_clusters())) # not needed.
 min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads = spec.get_bc_stats()
@@ -66,10 +67,17 @@ t0 = time()
 imperator = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
 imperator.impera()
 t1 = time()
-# calculated in 
+# calculated in surprising 35 secs.
 print(t1 - t0)
 
 imperator.plot()
 imperator.plot_ccs()
+
+
+
+
+
+
+
 
 
