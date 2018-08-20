@@ -4,6 +4,7 @@
 
 from collections            import  defaultdict, namedtuple, Counter
 import numpy                as      np
+import networkx             as      nx
 import matplotlib.pyplot    as      plt
 from   time                 import  time
 import pandas               as      pd
@@ -73,11 +74,37 @@ print(t1 - t0)
 imperator.plot()
 imperator.plot_ccs()
 
+ccs = np.array(imperator.ccs)
+# cc = ccs[np.argmax([len(c) for c in ccs])]
+cc = ccs[100]
+draw_connected_component(cc)
 
 
+from networkx.linalg.attrmatrix import attr_matrix
+from scipy.optimize import nnls
+
+mol_columns = np.array([N < 0  for N in cc])
+peak_rows   = np.array([N >= 0 for N in cc])
 
 
+def graph2matrices(cc):
+    mol_columns = np.array([N < 0  for N in cc])
+    peak_rows   = np.array([N >= 0 for N in cc])
+    X, ordering = attr_matrix(cc, edge_attr='prob')
+    X = X[:,mol_columns][peak_rows,:]
+    ordering = np.array(ordering)
+    peaks    = ordering[ordering >= 0]
+    Y = np.concatenate((total_intensities[peaks],
+                        np.zeros(X.shape[1])))
+    x = 1.0 - np.array(X.sum(axis=0)).flatten()
+    X = np.concatenate((X,
+                        np.diag(x)))
+    return X, Y
 
-
+betas = []
+for cc in ccs:
+    X, Y = graph2matrices(cc)
+    betas.append(nnls(X, Y))
+# this code taks 63.9 ms to solve :D Fuck CVXOPT.
 
 

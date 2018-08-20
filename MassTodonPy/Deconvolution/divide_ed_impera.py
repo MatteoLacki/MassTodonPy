@@ -141,3 +141,15 @@ def divide_ed_impera(molecules,
     imp = ImperatorMagnus(min_prob, isotopic_coverage)
     imp.divide(molecules, peak_groups)
     return imp
+
+
+def draw_connected_component(G, show=True):
+    colors= ['red' if N > 0 else 'blue' for N in cc]
+    pos   = nx.spring_layout(cc)
+    nodes = nx.draw_networkx_nodes(cc,
+                                   pos = pos,
+                                   node_color = colors)
+    edges = nx.draw_networkx_edges(cc,
+                                   pos = pos)
+    if show:
+        plt.show()
