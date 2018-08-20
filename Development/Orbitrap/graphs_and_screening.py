@@ -6,26 +6,22 @@ from collections            import  defaultdict, namedtuple, Counter
 import numpy                as      np
 import matplotlib.pyplot    as      plt
 from   time                 import  time
-
-import networkx             as      nx
-from   networkx             import  connected_component_subgraphs
 import pandas               as      pd
 from   math                 import  log10, floor
 
-from MassTodonPy.readers.from_npy             import spectrum_from_npy
-from MassTodonPy.Precursor.simple             import precursor
-from MassTodonPy.IsotopeCalculator.simple     import isotope_calculator
-from MassTodonPy.Spectra.orbitrap.peak_groups import bitonic_clustering
-from MassTodonPy.Spectra.simple               import spectrum
-from MassTodonPy.Molecule.simple              import molecule
-from MassTodonPy.Formula.Formula              import formula
-from MassTodonPy.Molecule.simple              import Molecule
-from MassTodonPy.stats.simple_normal_estimators   import mean,\
-                                                         sd
-from MassTodonPy.Data.Constants      import infinity
-from MassTodonPy.models.polynomial   import polynomial
-from MassTodonPy.Spectra.lightweight import lightweight_spectrum
-from MassTodonPy.Deconvolution.divide_ed_impera import divide_ed_impera
+from MassTodonPy.readers.from_npy               import spectrum_from_npy
+from MassTodonPy.Precursor.simple               import precursor
+from MassTodonPy.IsotopeCalculator.simple       import isotope_calculator
+from MassTodonPy.Spectra.orbitrap.peak_groups   import bitonic_clustering
+from MassTodonPy.Spectra.simple                 import spectrum
+from MassTodonPy.Molecule.simple                import molecule
+from MassTodonPy.Formula.Formula                import formula
+from MassTodonPy.Molecule.simple                import Molecule
+from MassTodonPy.stats.simple_normal_estimators import mean, sd
+from MassTodonPy.Data.Constants                 import infinity
+from MassTodonPy.models.polynomial              import polynomial
+from MassTodonPy.Spectra.lightweight            import lightweight_spectrum
+from MassTodonPy.Deconvolution.divide_ed_impera import divide_ed_impera, Imperator, ImperatorMagnus
 from MassTodonPy.preprocessing.filters          import filter_subspectra_molecules
 
 # generating subspectra
@@ -60,15 +56,20 @@ good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
 # to delete
 # bc = np.array(list(spec.iter_bc_clusters())) # not needed.
 min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads = spec.get_bc_stats()
+good_clusters = min_mz < max_mz
 min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads =\
     [x[good_clusters] for x in (min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads)]
 
 peak_groups = lightweight_spectrum(min_mz, max_mz, total_intensities) # efficient data structure
-imperator   = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
+
+t0 = time()
+imperator = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
+imperator.impera()
+t1 = time()
+# calculated in 
+print(t1 - t0)
+
 imperator.plot()
-
-
-
-
+imperator.plot_ccs()
 
 

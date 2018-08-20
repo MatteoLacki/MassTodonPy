@@ -1,6 +1,7 @@
 """Deal with experimental spectrum."""
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 
 from MassTodonPy.Data.Constants import eps, infinity
 from MassTodonPy.Parsers.Paths import parse_path
@@ -163,6 +164,5 @@ class Spectrum(Measure):
         self.trim(cut_off)
 
     def plot(self, background='dark_background'):
-        import matplotlib.pyplot as plt
-        plt.style.use('dark_background')
+        plt.style.use(background)
         plt.vlines(self.mz, [0], self.intensity, colors='blue')
