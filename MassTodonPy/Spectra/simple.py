@@ -157,13 +157,16 @@ class Spectrum(Measure):
 
     def plot(self, 
              plt_style = 'dark_background',
+             peak_color= 'white',
              show      = True,
-             clusters  = 'bc'):
-        clusters = self.bc if clusters == 'bc' else self.mdc
+             clusters  = None):
+        if clusters:
+            clusters = self.bc if clusters == 'bc' else self.mdc
         plot_spectrum(mz        = self.mz,
                       intensity = self.intensity,
                       clusters  = clusters,
                       plt_style = plt_style,
+                      peak_color= peak_color,
                       show      = show)
 
     def bitonic_clustering(self,

@@ -24,6 +24,9 @@ from MassTodonPy.models.polynomial              import polynomial
 from MassTodonPy.Spectra.lightweight            import lightweight_spectrum
 from MassTodonPy.Deconvolution.divide_ed_impera import divide_ed_impera, Imperator, ImperatorMagnus
 from MassTodonPy.preprocessing.filters          import filter_subspectra_molecules
+from MassTodonPy.Deconvolution.simple           import get_matrix_representation
+from MassTodonPy.plotters.graphs                import plot_numbered_graph
+from MassTodonPy.plotters.spectrum              import plot_spectrum
 
 # generating subspectra
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
@@ -48,7 +51,7 @@ charge = 24
 prec   = precursor(fasta, charge, name="", iso_calc=iso_calc)
 mols   = np.array(list(prec.molecules()))
 min_prob = .8
-isotopic_coverage = .99
+isotopic_coverage = .999
 
 good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
                                                          mols,
@@ -56,55 +59,79 @@ good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
 # attention: the sd's will surely change!!! Good! :) Will they? They are not so important.
 # The bloody interval widths fully replace this concept.
 # to delete
-# bc = np.array(list(spec.iter_bc_clusters())) # not needed.
+bc = np.array(list(spec.iter_bc_clusters()))
 min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads = spec.get_bc_stats()
-good_clusters = min_mz < max_mz
-min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads =\
-    [x[good_clusters] for x in (min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads)]
+ok = min_mz < max_mz
+min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads, bc =\
+    [x[ok] for x in (min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads, bc)]
 
 peak_groups = lightweight_spectrum(min_mz, max_mz, total_intensities) # efficient data structure
-
-t0 = time()
-imperator = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
+imperator   = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
 imperator.impera()
-t1 = time()
-# calculated in surprising 35 secs.
-print(t1 - t0)
-
-imperator.plot()
+# imperator.plot()
 imperator.plot_ccs()
 
-ccs = np.array(imperator.ccs)
-# cc = ccs[np.argmax([len(c) for c in ccs])]
-cc = ccs[100]
-draw_connected_component(cc)
+ccs    = np.array(imperator.ccs) 
+simple = False
+cc     = ccs[100] if simple else ccs[np.argmax([len(c) for c in ccs])]
 
+plot_numbered_graph(cc)
 
+# Y, X, mz_s, mz_e = get_matrix_representation(cc, total_intensities, min_mz, max_mz)
 from networkx.linalg.attrmatrix import attr_matrix
-from scipy.optimize import nnls
 
-mol_columns = np.array([N < 0  for N in cc])
-peak_rows   = np.array([N >= 0 for N in cc])
+plt_style = 'default'
+plt.style.use(plt_style)
 
+fit_to_zeros = False
 
-def graph2matrices(cc):
+mz_all   = []
+pred_all = []
+mz_widths= []
+mz_means_all = []
+Y_all = []
+for cc in ccs:
     mol_columns = np.array([N < 0  for N in cc])
     peak_rows   = np.array([N >= 0 for N in cc])
     X, ordering = attr_matrix(cc, edge_attr='prob')
     X = X[:,mol_columns][peak_rows,:]
     ordering = np.array(ordering)
     peaks    = ordering[ordering >= 0]
-    Y = np.concatenate((total_intensities[peaks],
-                        np.zeros(X.shape[1])))
-    x = 1.0 - np.array(X.sum(axis=0)).flatten()
-    X = np.concatenate((X,
-                        np.diag(x)))
-    return X, Y
+    Y = total_intensities[peaks]
+    if fit_to_zeros:
+        Y = np.concatenate((Y, np.zeros(X.shape[1])))
+        x = 1.0 - np.array(X.sum(axis=0)).flatten()
+        X = np.concatenate((X,
+                            np.diag(x)))
+    mz_s = min_mz[peaks]
+    mz_e = max_mz[peaks]
+    mz_means_all.extend(means[peaks])
+    beta, residual = nnls(X, Y)
+    pred_all.extend(np.array(np.dot(X[:len(mz_s),], beta)).flatten())
+    mz_width = mz_e - mz_s
+    mz_widths.extend(mz_e - mz_s)
+    mz_all.extend(mz_s)
+    Y_all.extend(Y[Y>0])
+
+plt.bar(mz_all, pred_all, mz_widths,
+        align='edge',
+        alpha=1,
+        color='grey')
+plt.scatter(mz_means_all, Y_all, c= 'red', s=8)
+spec.plot(plt_style=plt_style, show=False, peak_color='black')
+plt.show()
+
+# try also not to fit to zero intensities.
+# rationale: we alreday filter out some things.
+# assume that missigngess is irrelevant now.
 
 betas = []
 for cc in ccs:
-    X, Y = graph2matrices(cc)
+    Y, X, mz_s, mz_e = get_matrix_representation(cc, total_intensities)
     betas.append(nnls(X, Y))
 # this code taks 63.9 ms to solve :D Fuck CVXOPT.
+
+
+
 
 

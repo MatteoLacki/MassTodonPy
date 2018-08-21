@@ -9,6 +9,7 @@ def plot_spectrum(mz, intensity,
                   clusters  = None,
                   plt_style = 'dark_background',
                   colors_no = 10,
+                  peak_color= 'white',
                   show      = True):
     """Make a simple visualization of a mass spectrum.
 
@@ -32,7 +33,7 @@ def plot_spectrum(mz, intensity,
 
     """
     plt.style.use(plt_style)
-    plt.vlines(x=mz, ymin=[0], ymax=intensity, colors='white')
+    plt.vlines(x=mz, ymin=[0], ymax=intensity, colors=peak_color)
     if clusters is not None:
         cmap = plt.get_cmap('tab10', colors_no)
         colors = [cmap(c % colors_no) for c in clusters]
