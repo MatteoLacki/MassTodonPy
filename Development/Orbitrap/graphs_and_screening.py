@@ -35,11 +35,10 @@ mz, intensity = spectrum_from_npy(data_path)
 spec = spectrum(mz, intensity)
 spec.bitonic_clustering()
 spec.min_mz_diff_clustering()
-spec.fit_mz_diff_model()
 # spec.plot_mz_diffs()
 # spec.plot(clusters='bitonic')
 # spec.plot(clusters='min_mz_diff')
-spec.bc.stats()
+spec.bc.plot_sd()
 
 
 

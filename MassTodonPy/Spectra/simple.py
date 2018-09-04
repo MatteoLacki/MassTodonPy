@@ -7,10 +7,7 @@ import numpy             as np
 from MassTodonPy.arrays.operations  import dedup_sort
 from MassTodonPy.Data.Constants     import eps, infinity
 from MassTodonPy.Measure.Measure    import Measure
-from MassTodonPy.models.spline      import spline
-from MassTodonPy.models.polynomial  import polynomial
 from MassTodonPy.plotters.spectrum  import plot_spectrum
-
 from MassTodonPy.Spectra.clustering import min_diff_clust, bitonic_clust
 
 from MassTodonPy.stats.simple_normal_estimators   import mean,\
@@ -205,13 +202,6 @@ class Spectrum(Measure):
     def iter_min_mz_diff_subspectra(self):
         return self.iter_subspectra(self.mdc)
 
-    def fit_mz_diff_model(self, 
-                          model=spline,
-                         *model_args,
-                        **model_kwds):
-        mz_lefts, mz_diffs = self.bc.left_ends_and_diffs()
-        self.mz_diff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
-
     def plot_mz_diffs(self,
                       knots_no      = 1000,
                       plt_style     = 'dark_background',
@@ -237,38 +227,17 @@ class Spectrum(Measure):
         """
         plt.style.use(plt_style)
         if all_diffs:
-            # plot all the subsequent m/z differences as function of m/z
+            # Δ(m/z) = f(m/z)
             plt.scatter(self.mz[:-1],
                         np.diff(self.mz),
                         c = 'blue',
                         s = .5)
         if trend:
-            self.mz_diff_model.plot(scatter_color = 'papayawhip',
+            self.bc.diff_model.plot(scatter_color = 'papayawhip',
                                     show = False)
         if show:
             plt.show()
 
-
-    def fit_sd_mz_model(self,
-                        model = polynomial,
-                        fit_to_most_frequent = True,
-                       *model_args,
-                      **model_kwds):
-        min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, spreads = self.get_bc_stats()
-        if fit_to_most_frequent:
-            cnts, freq       = list(zip(*Counter(counts).items()))
-            self.sd_mz_c     = counts == cnts[np.argmax(freq)]
-            self.sd_mz_model = model(means[self.sd_mz_c],
-                                     sds[self.sd_mz_c])
-        else:
-            self.sd_mz_model = model(means, sds)
-
-    def plot_sd_mz(self,
-                   plt_style = 'dark_background',
-                   show      = True):
-        self.sd_mz_model.plot(plt_style     = plt_style,
-                              scatter_color = self.sd_mz_c,
-                              show          = show)
 
 def spectrum(mz        = np.array([]),
              intensity = np.array([]),

@@ -1,5 +1,8 @@
 import numpy as np
+from collections import Counter
 
+from MassTodonPy.models.polynomial import polynomial
+from MassTodonPy.models.spline     import spline
 from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
                                                          iter_cluster_ends,\
                                                          min_diff_clustering
@@ -95,10 +98,53 @@ class Bitonic(PeakClustering):
             o  = [x[OK] for x in o]
         return o
 
+    def fit_diff_model(self, 
+                       model=spline,
+                      *model_args,
+                     **model_kwds):
+        lefts, diffs = self.left_ends_and_diffs()
+        self.diff_model = model(lefts, diffs, *model_args, **model_kwds)
 
-def bitonic_clust(x, w, min_mz_diff=.15, abs_perc_dev=.2):
+    def fit_sd_model(self,
+                     model = polynomial,
+                     fit_to_most_frequent = True,
+                    *model_args,
+                   **model_kwds):
+        min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, spreads = self.stats()
+        if fit_to_most_frequent:
+            cnts, freq    = list(zip(*Counter(counts).items()))
+            self.sd_mz_c  = counts == cnts[np.argmax(freq)]
+            self.sd_model = model(means[self.sd_mz_c],
+                                  sds[self.sd_mz_c])
+        else:
+            self.sd_model = model(means, sds)
+
+    # TODO: this should contain more class-specific code
+    def plot_sd(self,
+                plt_style = 'dark_background',
+                show      = True):
+        self.sd_model.plot(plt_style = plt_style,
+                           show      = show)
+
+def bitonic_clust(x, w, 
+                  min_mz_diff=.15,
+                  abs_perc_dev=.2,
+                  model_diff=spline,
+                  model_diff_args=[],
+                  model_diff_kwds={},
+                  fit_to_most_frequent = True,
+                  model_sd=polynomial,
+                  model_sd_args=[],
+                  model_sd_kwds={}):
     bc = Bitonic()
     bc.fit(x, w, min_mz_diff, abs_perc_dev)
+    bc.fit_diff_model(model_diff,
+                     *model_diff_args,
+                    **model_diff_kwds)
+    bc.fit_sd_model(model_sd,
+                    fit_to_most_frequent,
+                   *model_sd_args,
+                  **model_sd_kwds)
     return bc
 
 
