@@ -11,10 +11,7 @@ from MassTodonPy.models.spline      import spline
 from MassTodonPy.models.polynomial  import polynomial
 from MassTodonPy.plotters.spectrum  import plot_spectrum
 
-
-from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
-                                                         iter_cluster_ends,\
-                                                         min_diff_clustering
+from MassTodonPy.Spectra.clustering import min_diff_clust, bitonic_clust
 
 from MassTodonPy.stats.simple_normal_estimators   import mean,\
                                                          sd,\
@@ -160,8 +157,10 @@ class Spectrum(Measure):
              peak_color= 'white',
              show      = True,
              clusters  = None):
-        if clusters:
-            clusters = self.bc if clusters == 'bc' else self.mdc
+        if clusters is 'bitonic':
+            clusters = self.bc.clusters 
+        elif clusters is 'min_mz_diff':
+            clusters = self.mdc.clusters
         plot_spectrum(mz        = self.mz,
                       intensity = self.intensity,
                       clusters  = clusters,
@@ -172,81 +171,45 @@ class Spectrum(Measure):
     def bitonic_clustering(self,
                            min_mz_diff  = .15,
                            abs_perc_dev = .2):
-        self.bc = bitonic_clustering(x = self.mz,
-                                     w = self.intensity,
-                                     min_x_diff   = min_mz_diff,
-                                     abs_perc_dev = abs_perc_dev)
+        self.bc = bitonic_clust(self.mz,
+                                self.intensity,
+                                min_mz_diff,
+                                abs_perc_dev)
         self.min_mz_diff_bc = min_mz_diff
 
     def min_mz_diff_clustering(self,
                                min_mz_diff = 1.1):
         if self.min_mz_diff_bc:
             assert min_mz_diff >= self.min_mz_diff_bc, "This can break up clusters: reduce min_mz_diff to levels lower than used for bitonic clustering."
-        self.mdc = min_diff_clustering(x          = self.mz,
-                                       min_x_diff = min_mz_diff)
+        self.mdc = min_diff_clust(self.mz,
+                                  self.intensity,
+                                  min_mz_diff)
         self.min_mz_diff_mdc = min_mz_diff
 
-    def iter_clustering_ends(self, clustering):
-        for s, e in iter_cluster_ends(clustering):
-            yield self.mz[s], self.mz[e-1]
-
-    def iter_bc_ends(self):
-        return self.iter_clustering_ends(self.bc)
-
-    def iter_mdc_ends(self):
-        return self.iter_clustering_ends(self.mdc)
-
-    def iter_clusters(self, clustering):
-        """Iterate over consecutive cluster ends."""
-        for s, e in iter_cluster_ends(clustering):
-            yield self.mz[s:e], self.intensity[s:e]
-
-    def iter_bc_clusters(self):
-        return self.iter_clusters(self.bc)
-
-    def iter_mdc_clusters(self):
-        return self.iter_clusters(self.mdc)
-
     def iter_subspectra(self, clustering):
-        for s, e in iter_cluster_ends(clustering):
+        for s, e in clustering._iter_cluster_ends():
             yield self.__class__(mz              = self.mz[s:e],
                                  intensity       = self.intensity[s:e],
                                  sort            = False,
                                  drop_duplicates = True,
-                                 bc              = self.bc[s:e],
-                                 mdc             = self.mdc[s:e],
+                                 bc              = self.bc.clusters[s:e],
+                                 mdc             = self.mdc.clusters[s:e],
                                  mz_diff_model   = self.mz_diff_model,
                                  min_mz_diff_bc  = self.min_mz_diff_bc,
                                  min_mz_diff_mdc = self.min_mz_diff_mdc)
 
-    def iter_bc_subspectra(self):
+    def iter_bitonic_subspectra(self):
+        # yield from self.iter_subspectra(self.bc)
         return self.iter_subspectra(self.bc)
 
-    def iter_mdc_subspectra(self):
+    def iter_min_mz_diff_subspectra(self):
         return self.iter_subspectra(self.mdc)
-
-    def mz_lefts_mz_diffs_in_clusters(self):
-        """Get the left ends of histogramed data and lengths of bases of the bins."""
-        # the total number of diffs within clusters
-        clusters_no = self.bc[-1] - self.bc[0]
-        diffs_no    = len(self.mz) - clusters_no - 1
-        mz_lefts    = np.zeros(shape = (diffs_no,), dtype = float)
-        mz_diffs    = mz_lefts.copy()
-        i_ = _i = 0
-        for s, e in iter_cluster_ends(self.bc):
-            mz      = self.mz[s:e]
-            mz_diff = np.diff(mz)
-            _i += len(mz) - 1
-            mz_lefts[i_:_i] = mz[:-1]
-            mz_diffs[i_:_i] = mz_diff
-            i_ = _i
-        return mz_lefts, mz_diffs
 
     def fit_mz_diff_model(self, 
                           model=spline,
                          *model_args,
                         **model_kwds):
-        mz_lefts, mz_diffs = self.mz_lefts_mz_diffs_in_clusters()
+        mz_lefts, mz_diffs = self.bc.left_ends_and_diffs()
         self.mz_diff_model = model(mz_lefts, mz_diffs, *model_args, **model_kwds)
 
     def plot_mz_diffs(self,
@@ -280,53 +243,11 @@ class Spectrum(Measure):
                         c = 'blue',
                         s = .5)
         if trend:
-            x = np.linspace(self.min_mz(), self.max_mz(), knots_no)
-            y = self.mz_diff_model(x)
-            plt.plot(x, y, c='red')
-        if cluster_diffs:
-            # mask those that are within clusters by bigger red dots.
-            mz_lefts, mz_diffs = self.mz_lefts_mz_diffs_in_clusters()
-            try:
-                signal = self.mz_diff_model.is_signal
-                c = np.array(['papayawhip' if s else 'yellow' for s in signal])
-            except AttributeError:
-                c = 'papayawhip'
-            plt.scatter(mz_lefts,
-                        mz_diffs,
-                        c = c,
-                        s = 1.5)
-        if show and (all_diffs or cluster_diffs):
+            self.mz_diff_model.plot(scatter_color = 'papayawhip',
+                                    show = False)
+        if show:
             plt.show()
 
-    # TODO: this is a good method for any clustering.
-    # TODO: rewrite in numpy to have an array. 
-    def get_bc_stats(self, cut_one_point_intervals=True):
-        min_mz = []
-        max_mz = []
-        means  = []
-        sds    = []
-        skewnesses = []
-        counts     = []
-        total_intensities = []
-        mz_spreads        = []
-        for local_mz, local_intensity in self.iter_bc_clusters():
-            min_mz.append(min(local_mz))
-            max_mz.append(max(local_mz))
-            mean_mz       = mean(local_mz, local_intensity)
-            sd_mz         = sd(local_mz, local_intensity, mean_mz)
-            skewnesses_mz = skewness(local_mz, local_intensity, mean_mz, sd_mz)
-            means.append(mean_mz)
-            sds.append(sd_mz)
-            skewnesses.append(skewnesses_mz)
-            counts.append(len(local_mz))
-            total_intensities.append(sum(local_intensity))
-            mz_spreads.append(max(local_mz) - min(local_mz))
-        o = tuple(map(np.array, [min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads]))
-        if cut_one_point_intervals:
-            OK = o[0] < o[1]
-            o  = [x[OK] for x in o]
-            self.min_mzs, self.max_mzs, self.mean_mzs, self.sds, self.skewnesses,\
-                self.group_peak_cnts, self.total_intensities = o
 
     def fit_sd_mz_model(self,
                         model = polynomial,

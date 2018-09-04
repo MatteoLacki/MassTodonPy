@@ -33,19 +33,13 @@ data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_fi
 mz, intensity = spectrum_from_npy(data_path)
 
 spec = spectrum(mz, intensity)
-
-from MassTodonPy.Spectra.clustering import Bitonic, MinMZdiff
-
-bc = Bitonic()
-bc.fit(spec.mz, spec.intensity)
-for i in bc:
-    print(i)
-
-mdc = MinMZdiff()
-mdc.fit(spec.mz, spec.intensity)
-for i in mdc:
-    print(i)
-
+spec.bitonic_clustering()
+spec.min_mz_diff_clustering()
+spec.fit_mz_diff_model()
+# spec.plot_mz_diffs()
+# spec.plot(clusters='bitonic')
+# spec.plot(clusters='min_mz_diff')
+spec.bc.stats()
 
 
 
