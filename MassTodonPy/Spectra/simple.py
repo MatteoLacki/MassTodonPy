@@ -60,7 +60,7 @@ class Spectrum(Measure):
                                              sort)
         self.mz        = self.mz[self.intensity > 0]
         self.intensity = self.intensity[self.intensity > 0]
-        # parameters for spectra spawns as subspectra
+        # parameters for spectra spawned as subspectra: needeed for convenience mainly.
         self.bc  = bc
         self.mdc = mdc
         self.mz_diff_model   = mz_diff_model
@@ -115,7 +115,7 @@ class Spectrum(Measure):
 
     @property
     def interval(self):
-        return self.min_mz, self.max_mz
+        return min(self.mz), max(self.mz)
  
     def mean_mz(self):
         """Mean m/z weighted by intensities."""
@@ -300,15 +300,15 @@ class Spectrum(Measure):
 
     # TODO: this is a good method for any clustering.
     # TODO: rewrite in numpy to have an array. 
-    def get_bc_stats(self):
+    def get_bc_stats(self, cut_one_point_intervals=True):
         min_mz = []
         max_mz = []
-        means = []
-        sds   = []
+        means  = []
+        sds    = []
         skewnesses = []
-        counts= []
+        counts     = []
         total_intensities = []
-        mz_spreads = []
+        mz_spreads        = []
         for local_mz, local_intensity in self.iter_bc_clusters():
             min_mz.append(min(local_mz))
             max_mz.append(max(local_mz))
@@ -322,7 +322,11 @@ class Spectrum(Measure):
             total_intensities.append(sum(local_intensity))
             mz_spreads.append(max(local_mz) - min(local_mz))
         o = tuple(map(np.array, [min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads]))
-        return o
+        if cut_one_point_intervals:
+            OK = o[0] < o[1]
+            o  = [x[OK] for x in o]
+            self.min_mzs, self.max_mzs, self.mean_mzs, self.sds, self.skewnesses,\
+                self.group_peak_cnts, self.total_intensities = o
 
     def fit_sd_mz_model(self,
                         model = polynomial,

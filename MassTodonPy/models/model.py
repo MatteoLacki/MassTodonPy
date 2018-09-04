@@ -12,15 +12,18 @@ class Model(object):
         """Predict the values at the new data points."""
         raise NotImplementedError
 
-    def predict(self, x, y, *args, **kwds):
+    def predict(self, x):
         """Predict the values at the new data points."""
         self(x, y, *args, **kwds)
 
-    def coef(self):
-        """Retrieve spline coefficient.
+    def pred(self, x):
+        return self.predict(x)
 
-        Then again, why would you?
-        """
+    def fitted(self):
+        raise NotImplementedError
+
+    def coef(self):
+        """Retrieve model's coefficients."""
         raise NotImplementedError
 
     def res(self):
@@ -32,7 +35,7 @@ class Model(object):
 
     def residuals(self):
         """Get residuals: syntactic sugar for 'res'."""
-        return self.res
+        return self.res()
 
     def __repr__(self):
         return 'This is the logic for all models.'
