@@ -63,16 +63,16 @@ imperator = divide_ed_impera(good_mols, spec.bc, min_prob, isotopic_coverage)
 fit_time = time() - t0
 # imperator.plot()
 # imperator.plot_ccs()
-
-imperator.set_estimated_intensities()
-
+# imperator.plot_solutions()
 
 
 
-# what is this code below????
-    # a global view on spectrum after fitting
-        # where should it be? which class it belongs to?
-            # spectrum?
+
+
+# there should be an overall masstodon class, that will plot the overall results.
+# or at least a function.
+
+
 
 
 # it seems we have to now divide the fittings according to some criterion 
@@ -120,18 +120,4 @@ plt_style = 'fast'
 spec.plot(plt_style=plt_style, show=False, peak_color='black')
 # plt.savefig('/Users/matteo/Desktop/test.pdf')
 plt.show()
-
-# try also not to fit to zero intensities.
-# rationale: we alreday filter out some things.
-# assume that missigngess is irrelevant now.
-
-betas = []
-for cc in ccs:
-    Y, X, mz_s, mz_e = get_matrix_representation(cc, total_intensities)
-    betas.append(nnls(X, Y))
-# this code taks 63.9 ms to solve :D Fuck CVXOPT.
-
-
-
-
 
