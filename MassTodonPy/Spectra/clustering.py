@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, namedtuple
 from   math      import floor, log10
 import numpy     as np
 
@@ -8,6 +8,7 @@ from MassTodonPy.models.spline     import spline
 from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
                                                          iter_cluster_ends,\
                                                          min_diff_clustering
+from MassTodonPy.Spectra.lightweight              import lightweight_spectrum
 from MassTodonPy.stats.simple_normal_estimators   import mean,\
                                                          sd,\
                                                          skewness
@@ -58,6 +59,8 @@ def min_diff_clust(x, w, min_mz_diff = 1.1):
 
 
 
+Groups = namedtuple('Groups', 'min_mz max_mz mean_mz sd_mz skewness_mz count intensity')
+Groups.__new__.__defaults__ = tuple([] for _ in range(7))
 
 
 class Bitonic(PeakClustering):
@@ -76,32 +79,27 @@ class Bitonic(PeakClustering):
                                            min_mz_diff,
                                            abs_perc_dev)
 
-    def stats(self, cut_one_point_intervals=True):
-        min_mz = []
-        max_mz = []
-        means  = []
-        sds    = []
-        skewnesses = []
-        counts     = []
-        total_intensities = []
-        mz_spreads        = []
+    def get_stats(self, out_trivial_intervals=True):
+        O = Groups()
         for local_mz, local_intensity in self:
-            min_mz.append(min(local_mz))
-            max_mz.append(max(local_mz))
             mean_mz       = mean(local_mz, local_intensity)
             sd_mz         = sd(local_mz, local_intensity, mean_mz)
             skewnesses_mz = skewness(local_mz, local_intensity, mean_mz, sd_mz)
-            means.append(mean_mz)
-            sds.append(sd_mz)
-            skewnesses.append(skewnesses_mz)
-            counts.append(len(local_mz))
-            total_intensities.append(sum(local_intensity))
-            mz_spreads.append(max(local_mz) - min(local_mz))
-        o = tuple(map(np.array, [min_mz, max_mz, means, sds, skewnesses, counts, total_intensities, mz_spreads]))
-        if cut_one_point_intervals:
-            OK = o[0] < o[1]
-            o  = [x[OK] for x in o]
-        return o
+            min_mz        = min(local_mz)
+            max_mz        = max(local_mz)
+            for o, v in zip(O, (min_mz, max_mz, mean_mz, sd_mz, skewnesses_mz,\
+                                len(local_mz), sum(local_intensity))): 
+                o.append(v)
+        O = Groups(*map(np.array, O))
+        if out_trivial_intervals:
+            OK = O.min_mz < O.max_mz
+            O  = [x[OK] for x in O]
+        self.groups = Groups(*O)
+
+    def get_lightweight_spectrum(self):
+        self.ls = lightweight_spectrum(self.groups.min_mz,
+                                       self.groups.max_mz,
+                                       self.groups.intensity)
 
     def get_smallest_diff_digits(self):
         """Return the number of digits of the smallest difference within the first bitonic cluster."""
@@ -138,17 +136,20 @@ class Bitonic(PeakClustering):
                            show      = show)
 
 def bitonic_clust(x, w, 
-                  min_mz_diff=.15,
-                  abs_perc_dev=.2,
-                  model_diff=spline,
-                  model_diff_args=[],
-                  model_diff_kwds={},
+                  min_mz_diff          = .15,
+                  abs_perc_dev         = .2,
+                  out_trivial_intervals= True,
+                  model_diff           = spline,
+                  model_diff_args      = [],
+                  model_diff_kwds      = {},
                   fit_to_most_frequent = True,
-                  model_sd=polynomial,
-                  model_sd_args=[],
-                  model_sd_kwds={}):
+                  model_sd             = polynomial,
+                  model_sd_args        = [],
+                  model_sd_kwds        = {}):
     bc = Bitonic()
     bc.fit(x, w, min_mz_diff, abs_perc_dev)
+    bc.get_stats(out_trivial_intervals)
+    bc.get_lightweight_spectrum()
     if model_diff:
         bc.fit_diff_model(model_diff,
                          *model_diff_args,

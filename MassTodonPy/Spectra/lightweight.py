@@ -35,12 +35,12 @@ def test_lightweight_spectrum():
                              [1,6,9],
                              [3,4,5])
     assert L[-2] == -1
-    assert L[0]  == 0
-    assert L[.5] == 0
+    assert L[0]  ==  0
+    assert L[.5] ==  0
     assert L[1]  == -1
     assert L[1.5]== -1
     assert L[4]  == -1
-    assert L[5]  == 1
-    assert L[5.5]== 1
+    assert L[5]  ==  1
+    assert L[5.5]==  1
     assert L[6]  == -1
     assert L[10] == -1

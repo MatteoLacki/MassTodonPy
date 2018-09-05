@@ -7,13 +7,13 @@ from    MassTodonPy.models.nnls     import nnls
 
 class DeconvolutionProblem(object):
     def fit(self, 
-            connected_component_of_G,
+            connected_component,
             total_intensities,
             min_mz,
             max_mz,
             mean_mz,
             include_zero_intensities = False):
-        self.cc     = connected_component_of_G
+        self.cc     = connected_component
         mol_columns = np.array([N < 0  for N in self.cc])
         peak_rows   = np.array([N >= 0 for N in self.cc])
         X, ordering = attr_matrix(self.cc, edge_attr='prob')
@@ -31,6 +31,15 @@ class DeconvolutionProblem(object):
             X = np.concatenate((X, np.diag(x)))
         self.model  = nnls(X, Y)
 
+    def iter_estimates(self):
+        coefs = np.nditer(self.model.coef())
+        for N in self.cc:
+            if N < 0:
+                yield N, float(next(coefs))
+
+    def __len__(self):
+        return len(self.cc)
+
     def l1(self):
         return sum(np.abs(self.model.res()))
 
@@ -41,7 +50,7 @@ class DeconvolutionProblem(object):
     def spectrum(self):
         pred = self.model.fitted()
         Y    = self.model.Y
-        return self.mz_s, self.mz_e, self.mean_mz, self.pred, Y[Y > 0]
+        return self.mz_s, self.mz_e, self.mean_mz, pred, Y[Y > 0]
 
     def plot(self, plt_style = 'fast',
                    bar_color = 'grey',

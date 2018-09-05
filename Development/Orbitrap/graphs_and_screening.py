@@ -35,6 +35,7 @@ mz, intensity = spectrum_from_npy(data_path)
 spec = spectrum(mz, intensity)
 spec.bitonic_clustering(model_diff=None, model_sd=None)
 spec.min_mz_diff_clustering()
+
 # spec.plot_mz_diffs()
 # spec.plot(clusters='bitonic')
 # spec.plot(clusters='min_mz_diff')
@@ -58,17 +59,8 @@ good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
                                                          mols,
                                                          std_cnt = 3)
 
-# ordering lightweight spectrum.
 
 # bc = np.array(list(spec.bc))
-# min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads = spec.bc.stats()
-# ok = min_mz < max_mz
-# min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads, bc =\
-#     [x[ok] for x in (min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads, bc)]
-
-
-min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads = spec.bc.stats()
-peak_groups = lightweight_spectrum(min_mz, max_mz, total_intensities) # efficient data structure
 t0 = time()
 imperator = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
 imperator.impera()
@@ -82,17 +74,46 @@ simple = False
 cc     = ccs[100] if simple else ccs[np.argmax([len(c) for c in ccs])]
 
 
+cc.nodes(data=True)
+
+cc
+dp.spectrum()
+
+
+mol = good_mols[0]
+mol.name
+mol.intensity
+
+cc.nodes(data=True)
+cc.edges(data=True)
+
+peak_groups.intensity
+
+# 0. add the estimates to cc in dp
+dp.cc.nodes
+dp.cc.nodes[-19859]['intensity'] = 10
+dp.cc[-19859]
+
+mol_columns = np.array([N < 0  for N in dp.cc])
+
+dp.model.coef()
+
+X, ordering = attr_matrix(dp.cc, edge_attr='prob')
+X = X[:,mol_columns][peak_rows,:]
+
+for n in dp.cc:
+    if n < 0:
+        print(n)
+
+
+imperator.
+
+
 from networkx.linalg.attrmatrix import attr_matrix
 # plt_style = 'default'
 # plt.style.use(plt_style)
 
-# there is no clear solution to the problem of what should go where.
-# this should be given the spectrum, IMHO.
-deconvolution_problem
-
-# what if spec contained all these things?
-spec[10:400]
-
+# that's the place of fitting: could be part of impera.
 dps = []
 for cc in ccs:
     dp = DeconvolutionProblem()
@@ -102,12 +123,37 @@ for cc in ccs:
 
 dps = np.array(dps)
 dps[105].plot()
+len(dps)
+dps[121].plot()
+dps[121]
+dp.idx
+dp.total_intensities
+
+
+
+
+# i = np.argmax(list(map(len, ccs)))
+i = 121
+dps[i].model.plot()
+dps[i].model.plot_res()
+dps[i].model._coef
+for a in dps[i].iter_estimates():
+    print(a)
+
+
+it = np.nditer(dps[i].model._coef)
+float(next(it))
+
+
 # what is this code below????
+    # a global view on spectrum after fitting
+        # where should it be? which class it belongs to?
+            # spectrum?
 
 
 # it seems we have to now divide the fittings according to some criterion 
 # into shit, soso, hmmm, ok, good, great.
-from    MassTodonPy.models.nnls     import nnls
+from MassTodonPy.models.nnls import nnls
 fit_to_zeros = False
 
 mz_all   = []

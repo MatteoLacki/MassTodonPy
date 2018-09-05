@@ -19,7 +19,8 @@ class Imperator(object):
 
     def divide(self, molecules, peak_groups):
         self.G = nx.Graph()
-        for tree in self.divide_iter(molecules, peak_groups):
+        self.molecules = molecules
+        for tree in self.divide_iter(self.molecules, peak_groups.ls):
             self.G.add_edges_from((M_cnt, E, {'prob': P}) for 
                                   (M_cnt, E), P in tree.items())
 
@@ -85,7 +86,8 @@ class Imperator(object):
 
 class ImperatorMagnus(Imperator):
     def divide_iter(self, molecules, peak_groups):
-        for M_cnt, M in enumerate(molecules):
+        self.molecules = molecules
+        for M_cnt, M in enumerate(self.molecules):
             M_cnt = - M_cnt - 1 # it is quicker not to run the __hash__ for M, but use this count
             P_within_groups = 0.0
             # edge is an collection of merged isotopologues
@@ -93,7 +95,7 @@ class ImperatorMagnus(Imperator):
             for I_mz, I_prob in M.isotopologues(self.P, True):
                 E = peak_groups[I_mz]
                 if E > 0:
-                    I[(M_cnt, E)] += I_prob
+                    I[(M_cnt, E)]   += I_prob
                     P_within_groups += I_prob
             if P_within_groups >= self.min_prob: 
                 # planting tree E - M - E in graph G
@@ -132,6 +134,16 @@ class ImperatorMagnus(Imperator):
                 node_color = colors)
         if show:
             plt.show()
+
+    # def impera(self):
+    #     """Solve the deconvolution problems."""
+    #     self.dps = []
+    #     for cc in self.ccs:
+    #         dp = DeconvolutionProblem()
+    #         dp.fit(cc, total_intensities, min_mz, max_mz, mean_mz)
+    #         self.dps.append(dp)
+
+    # def prescribe_estimates_to_molecules(self):
 
 
 # this ultimately selects the default class.

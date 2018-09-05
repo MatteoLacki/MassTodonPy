@@ -191,11 +191,10 @@ class Spectrum(Measure):
                                  min_mz_diff_mdc = self.min_mz_diff_mdc)
 
     def iter_bitonic_subspectra(self):
-        # yield from self.iter_subspectra(self.bc)
-        return self.iter_subspectra(self.bc)
+        yield from self.iter_subspectra(self.bc)
 
     def iter_min_mz_diff_subspectra(self):
-        return self.iter_subspectra(self.mdc)
+        yield from self.iter_subspectra(self.mdc)
 
     def plot_mz_diffs(self,
                       knots_no      = 1000,
