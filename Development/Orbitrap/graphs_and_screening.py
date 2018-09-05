@@ -65,8 +65,8 @@ fit_time = time() - t0
 # imperator.plot_ccs()
 # imperator.plot_solutions()
 
-
-
+imperator.solutions[10].plot()
+imperator.solutions[10].plot_fancy()
 
 
 # there should be an overall masstodon class, that will plot the overall results.

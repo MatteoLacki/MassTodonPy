@@ -98,13 +98,15 @@ class Imperator(object):
         if show:
             plt.show()
 
-    def plot_solutions(self, plt_style = 'fast',
+    def plot_solutions(self, fancy     = True,
+                             plt_style = 'fast',
                              bar_color = 'grey',
                              bar_alpha = 0.5,
                              show      = True):
         plt.style.use(plt_style)
         for sol in self.solutions:
-            sol.plot(plt_style, bar_color, bar_alpha, False)
+            plotter = sol.plot_fancy if fancy else sol.plot
+            plotter(plt_style, bar_color, bar_alpha, False)
         if show:
             plt.show()
 

@@ -64,9 +64,41 @@ class DeconvolutionProblem(object):
                 alpha   = bar_alpha,
                 color   = bar_color)
         Y = self.model.Y
-        plt.scatter(self.mean_mz, Y[Y > 0], c = 'red', s = 8)
+        Y = Y[Y>0]
+        plt.vlines(self.mean_mz, [0], Y, linestyles='dotted')
+        plt.scatter(self.mean_mz, Y, c = 'red', s = 8)
         if show:
             plt.show()
+
+    def plot_fancy(self,
+                   plt_style = 'fast',
+                   bar_color = 'grey',
+                   bar_alpha = 0.5,
+                   show      = True):
+        plt.style.use(plt_style)
+        x_l   = self.mz_s
+        x_r   = self.mz_e
+        x     = self.mean_mz
+        y_hat = self.model.fitted()
+        y = self.model.Y
+        y = y[y>0]
+        bar_top    = np.maximum(y, y_hat)
+        bar_bottom = np.minimum(y, y_hat)
+        color      = np.full(y.shape, 'blue')
+        color[y < y_hat] = 'red'
+        plt.bar(x       = x_l,
+                height  = bar_top - bar_bottom,
+                bottom  = bar_bottom,
+                width   = x_r - x_l,
+                align   = 'edge',
+                alpha   = bar_alpha,
+                color   = color)
+        plt.vlines(x, [0], bar_bottom, color='grey')
+        plt.scatter(x, y, marker = 'o', s = 16, color='black')
+        plt.scatter(x, y_hat, marker = 'x', s = 16, color='black')
+        if show:
+            plt.show()
+
 
 
 def deconvolve(connected_component,
