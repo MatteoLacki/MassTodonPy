@@ -116,6 +116,7 @@ class ImperatorMagnus(Imperator):
         plt.title("Analysis of Connected Components")
         plt.xlabel("Number of Molecules")
         plt.ylabel("Number of Peak Groups")
+        plt.axes().set_aspect('equal')
         if show:
             plt.show()
 

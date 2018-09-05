@@ -1,5 +1,7 @@
 from    networkx.linalg.attrmatrix  import attr_matrix
 import  numpy                       as     np
+import  matplotlib.pyplot           as     plt
+
 from    MassTodonPy.models.nnls     import nnls
 
 

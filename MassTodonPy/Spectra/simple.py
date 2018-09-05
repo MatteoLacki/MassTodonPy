@@ -1,11 +1,8 @@
 from   bisect            import bisect_left, bisect_right
-from   collections       import  Counter
 import matplotlib.pyplot as plt
-from   math              import floor, log10
 import numpy             as np
 
 from MassTodonPy.arrays.operations  import dedup_sort
-from MassTodonPy.Data.Constants     import eps, infinity
 from MassTodonPy.Measure.Measure    import Measure
 from MassTodonPy.plotters.spectrum  import plot_spectrum
 from MassTodonPy.Spectra.clustering import min_diff_clust, bitonic_clust
@@ -133,12 +130,6 @@ class Spectrum(Measure):
         """Get l2 norm."""
         return np.linalg.norm(self.intensity)
 
-    def get_mz_digits(self):
-        """Return the smallest m/z difference within the first bc cluster."""
-        mz, _    = next(self.iter_bc_clusters())
-        min_diff = np.diff(mz)[0]
-        return abs(floor(log10(min_diff)))
-
     def trim_intensity(self, cut_off):
         """Trim intensities below the provided cut off.
 
@@ -158,6 +149,8 @@ class Spectrum(Measure):
             clusters = self.bc.clusters 
         elif clusters is 'min_mz_diff':
             clusters = self.mdc.clusters
+        else:
+            raise KeyError("Wrong clustering name: should be either 'bitonic' or 'min_mz_diff'.")
         plot_spectrum(mz        = self.mz,
                       intensity = self.intensity,
                       clusters  = clusters,
@@ -167,11 +160,13 @@ class Spectrum(Measure):
 
     def bitonic_clustering(self,
                            min_mz_diff  = .15,
-                           abs_perc_dev = .2):
+                           abs_perc_dev = .2,
+                           **kwds):
         self.bc = bitonic_clust(self.mz,
                                 self.intensity,
                                 min_mz_diff,
-                                abs_perc_dev)
+                                abs_perc_dev,
+                                **kwds)
         self.min_mz_diff_bc = min_mz_diff
 
     def min_mz_diff_clustering(self,

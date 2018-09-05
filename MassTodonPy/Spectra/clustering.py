@@ -1,5 +1,7 @@
-import numpy as np
 from collections import Counter
+from   math      import floor, log10
+import numpy     as np
+
 
 from MassTodonPy.models.polynomial import polynomial
 from MassTodonPy.models.spline     import spline
@@ -9,7 +11,10 @@ from MassTodonPy.Spectra.orbitrap.peak_clustering import bitonic_clustering,\
 from MassTodonPy.stats.simple_normal_estimators   import mean,\
                                                          sd,\
                                                          skewness
+
+
 class PeakClustering(object):
+    """Common interface for peak clusterings."""
     def __init__(self):
         self.clusters = None
 
@@ -38,14 +43,13 @@ class PeakClustering(object):
         return lefts, diffs
 
 
-
 class MinDiff(PeakClustering):
+    """The minimal difference peak clustering."""
     def fit(self, x, w, min_mz_diff = 1.1):
         self.x = x
         self.w = w
         self.clusters = min_diff_clustering(self.x,
                                             min_mz_diff)
-
 
 def min_diff_clust(x, w, min_mz_diff = 1.1):
     mdc = MinDiff()
@@ -57,6 +61,7 @@ def min_diff_clust(x, w, min_mz_diff = 1.1):
 
 
 class Bitonic(PeakClustering):
+    """Clustering based on the bitonicity of intensities."""
     def __iter__(self):
         for s, e in self._iter_cluster_ends():
             yield self.x[s:e], self.w[s:e]
@@ -98,6 +103,12 @@ class Bitonic(PeakClustering):
             o  = [x[OK] for x in o]
         return o
 
+    def get_smallest_diff_digits(self):
+        """Return the number of digits of the smallest difference within the first bitonic cluster."""
+        x, _ = next(self.__iter__())
+        min_diff = np.diff(x)[0]
+        return abs(floor(log10(min_diff)))
+
     def fit_diff_model(self, 
                        model=spline,
                       *model_args,
@@ -138,13 +149,15 @@ def bitonic_clust(x, w,
                   model_sd_kwds={}):
     bc = Bitonic()
     bc.fit(x, w, min_mz_diff, abs_perc_dev)
-    bc.fit_diff_model(model_diff,
-                     *model_diff_args,
-                    **model_diff_kwds)
-    bc.fit_sd_model(model_sd,
-                    fit_to_most_frequent,
-                   *model_sd_args,
-                  **model_sd_kwds)
+    if model_diff:
+        bc.fit_diff_model(model_diff,
+                         *model_diff_args,
+                        **model_diff_kwds)
+    if model_sd:
+        bc.fit_sd_model(model_sd,
+                        fit_to_most_frequent,
+                       *model_sd_args,
+                      **model_sd_kwds)
     return bc
 
 

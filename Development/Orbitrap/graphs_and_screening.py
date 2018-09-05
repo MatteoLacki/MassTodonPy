@@ -33,29 +33,17 @@ data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_fi
 mz, intensity = spectrum_from_npy(data_path)
 
 spec = spectrum(mz, intensity)
-spec.bitonic_clustering()
+spec.bitonic_clustering(model_diff=None, model_sd=None)
 spec.min_mz_diff_clustering()
 # spec.plot_mz_diffs()
 # spec.plot(clusters='bitonic')
 # spec.plot(clusters='min_mz_diff')
-spec.bc.plot_sd()
+# spec.bc.plot_sd()
+# spec.plot(clusters='bitonic')
+# spec.plot(clusters='min_mz_diff')
 
-
-
-spec.bitonic_clustering()
-spec.fit_mz_diff_model()
-spec.min_mz_diff_clustering()
-
-spec.plot(clusters='bc')
-# TODO: replace this later on: a more complex model has to be fitted.
-# and the estimation of the Standard Deviations of groups has to be 
-# dependent upon more data points all across the spectrum.
-spec.fit_sd_mz_model()
-
-
-
-subspectra = list(spec.iter_mdc_subspectra())
-mz_digits  = spec.get_mz_digits()
+subspectra = list(spec.iter_min_mz_diff_subspectra())
+mz_digits  = spec.bc.get_smallest_diff_digits()
 iso_calc   = isotope_calculator(digits = mz_digits)
 
 # generating formulas
@@ -69,22 +57,22 @@ isotopic_coverage = .999
 good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
                                                          mols,
                                                          std_cnt = 3)
-# attention: the sd's will surely change!!! Good! :) Will they? They are not so important.
-# The bloody interval widths fully replace this concept.
-# to delete
-bc = np.array(list(spec.iter_bc_clusters()))
-min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads = spec.get_bc_stats()
-ok = min_mz < max_mz
-min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads, bc =\
-    [x[ok] for x in (min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads, bc)]
 
+# ordering lightweight spectrum.
+
+# bc = np.array(list(spec.bc))
+# min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads = spec.bc.stats()
+# ok = min_mz < max_mz
+# min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads, bc =\
+#     [x[ok] for x in (min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads, bc)]
+
+
+min_mz, max_mz, mean_mz, sds, skewnesses, counts, total_intensities, mz_spreads = spec.bc.stats()
 peak_groups = lightweight_spectrum(min_mz, max_mz, total_intensities) # efficient data structure
 t0 = time()
 imperator = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
 imperator.impera()
 fit_time = time() - t0
-
-
 
 # imperator.plot()
 # imperator.plot_ccs()
@@ -94,17 +82,11 @@ simple = False
 cc     = ccs[100] if simple else ccs[np.argmax([len(c) for c in ccs])]
 
 
-
-
-
-
-
 from networkx.linalg.attrmatrix import attr_matrix
 # plt_style = 'default'
 # plt.style.use(plt_style)
 
 # there is no clear solution to the problem of what should go where.
-
 # this should be given the spectrum, IMHO.
 deconvolution_problem
 
@@ -119,9 +101,13 @@ for cc in ccs:
     dps.append(dp)
 
 dps = np.array(dps)
-dps[10].plot()
+dps[105].plot()
+# what is this code below????
 
 
+# it seems we have to now divide the fittings according to some criterion 
+# into shit, soso, hmmm, ok, good, great.
+from    MassTodonPy.models.nnls     import nnls
 fit_to_zeros = False
 
 mz_all   = []
@@ -160,6 +146,7 @@ plt.bar(mz_all, pred_all, mz_widths,
         alpha= .5,
         color='grey')
 plt.scatter(mz_means_all, Y_all, c= 'red', s=8)
+plt_style = 'fast'
 spec.plot(plt_style=plt_style, show=False, peak_color='black')
 # plt.savefig('/Users/matteo/Desktop/test.pdf')
 plt.show()
