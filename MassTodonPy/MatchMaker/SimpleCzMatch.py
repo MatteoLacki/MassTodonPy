@@ -139,19 +139,19 @@ class SimpleCzMatch(object):
             intensities = matrix([float(I) for N, I in G.nodes.data('intensity')])
             costs = matrix([float(ETnoD_PTR) for N,M, ETnoD_PTR
                             in G.edges.data('ETnoD_PTR')])
-            edges_cnt = G.size()  # number of c-z pairings
-            equalities = incidence_matrix(G, len(intensities), edges_cnt)
+            edges_cnt    = G.size()  # number of c-z pairings
+            equalities   = incidence_matrix(G, len(intensities), edges_cnt)
             inequalities = diag(-1.0, edges_cnt)
             upper_bounds = matrix([0.0] * edges_cnt)
             primalstart = {}
             primalstart['x'] = matrix([0.0] * edges_cnt)
             primalstart['s'] = matrix([eps] * len(upper_bounds))
-            solution = solvers.conelp(c=costs,
-                                      G=inequalities,
-                                      h=upper_bounds,
-                                      A=equalities,
-                                      b=intensities,
-                                      primalstart=primalstart)
+            solution = solvers.conelp(c = costs,
+                                      G = inequalities,
+                                      h = upper_bounds,
+                                      A = equalities,
+                                      b = intensities,
+                                      primalstart = primalstart)
             self._I_ETnoD_PTR_fragments += solution['primal objective']
             for i, (N, M) in enumerate(G.edges()):
                 self.graph[N][M]['flow'] = solution['x'][i]

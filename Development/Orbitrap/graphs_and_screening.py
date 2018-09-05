@@ -27,6 +27,7 @@ from MassTodonPy.preprocessing.filters          import filter_subspectra_molecul
 from MassTodonPy.Deconvolution.simple           import DeconvolutionProblem
 from MassTodonPy.plotters.graphs                import plot_numbered_graph
 from MassTodonPy.plotters.spectrum              import plot_spectrum
+from MassTodonPy.MatchMaker.SimpleCzMatch       import SimpleCzMatch
 
 # generating subspectra
 data_path     = '/Users/matteo/Projects/review_masstodon/data/PXD001845/numpy_files/20141202_AMB_pBora_PLK_10x_40MeOH_1FA_OT_120k_10uscans_928_ETciD_8ms_15SA_19precZ/1'
@@ -64,9 +65,11 @@ fit_time = time() - t0
 # imperator.plot()
 # imperator.plot_ccs()
 # imperator.plot_solutions()
+# imperator.solutions[10].plot()
+# imperator.solutions[10].plot_fancy()
 
-imperator.solutions[10].plot()
-imperator.solutions[10].plot_fancy()
+SimpleCzMatch(good_mols, charge, True)
+
 
 
 # there should be an overall masstodon class, that will plot the overall results.
