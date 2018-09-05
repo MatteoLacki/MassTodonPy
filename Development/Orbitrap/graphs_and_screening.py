@@ -2,7 +2,7 @@
 %autoreload 2
 %load_ext line_profiler
 
-from collections            import  defaultdict, namedtuple, Counter
+from   collections          import  defaultdict, namedtuple, Counter
 import numpy                as      np
 import networkx             as      nx
 import matplotlib.pyplot    as      plt
@@ -22,7 +22,7 @@ from MassTodonPy.stats.simple_normal_estimators import mean, sd
 from MassTodonPy.Data.Constants                 import infinity
 from MassTodonPy.models.polynomial              import polynomial
 from MassTodonPy.Spectra.lightweight            import lightweight_spectrum
-from MassTodonPy.Deconvolution.divide_ed_impera import divide_ed_impera, Imperator, ImperatorMagnus
+from MassTodonPy.Deconvolution.divide_ed_impera import divide_ed_impera
 from MassTodonPy.preprocessing.filters          import filter_subspectra_molecules
 from MassTodonPy.Deconvolution.simple           import DeconvolutionProblem
 from MassTodonPy.plotters.graphs                import plot_numbered_graph
@@ -62,8 +62,7 @@ good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
 
 # bc = np.array(list(spec.bc))
 t0 = time()
-imperator = divide_ed_impera(good_mols, peak_groups, min_prob, isotopic_coverage)
-imperator.impera()
+imperator = divide_ed_impera(good_mols, spec.bc, min_prob, isotopic_coverage)
 fit_time = time() - t0
 
 # imperator.plot()
