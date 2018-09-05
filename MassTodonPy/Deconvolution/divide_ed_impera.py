@@ -7,6 +7,8 @@ import  networkx            as      nx
 from    collections         import  defaultdict, Counter
 import  matplotlib.pyplot   as      plt
 
+from MassTodonPy.Deconvolution.simple import deconvolve 
+
 
 class Imperator(object):
     def __init__(self, molecules,
@@ -28,13 +30,14 @@ class Imperator(object):
                                   (M_cnt, E), P in tree.items())
 
     def divide_iter(self):
+        ls = self.clust.ls
         for M_cnt, M in enumerate(self.mols):
             M_cnt = - M_cnt - 1 # it is quicker not to run the __hash__ for M, but use this count
             P_within_groups = 0.0
             # edge is an collection of merged isotopologues
             I = defaultdict(float) # values correspond to total probability on that edge. 
             for I_mz, I_prob in M.isotopologues(self.P, True):
-                E = self.clust.ls[I_mz]
+                E = ls[I_mz]
                 if E > 0:
                     I[(M_cnt, E)]   += I_prob
                     P_within_groups += I_prob
@@ -48,7 +51,18 @@ class Imperator(object):
 
     def impera(self):
         """List all conected components."""
-        self.ccs = list(self.impera_iter())
+        self.solutions = [deconvolve(cc, 
+                                     self.clust.groups.intensity,
+                                     self.clust.groups.min_mz,
+                                     self.clust.groups.max_mz,
+                                     self.clust.groups.mean_mz) for cc in self.impera_iter()]
+
+    def set_estimated_intensities(self):
+        for sol in self.solutions:
+            for idx, estimate in sol.iter_estimates():
+                if estimate > 0.0:
+                    idx = - idx- 1
+                    self.mols[idx].intensity = estimate
 
     def plot(self,
              node_size = 2.0,
@@ -71,9 +85,9 @@ class Imperator(object):
         edges_cnt = []
         mols_cnt  = []
         clust_cnt = []
-        for cc in self.ccs:
-            edges_cnt.append(len(cc.edges))
-            x = Counter(0 if N < 0 else 1 for N in cc)
+        for sol in self.solutions:
+            edges_cnt.append(len(sol.cc.edges))
+            x = Counter(0 if N < 0 else 1 for N in sol.cc)
             mols_cnt.append(x[0])
             clust_cnt.append(x[1])
         plt.scatter(mols_cnt, clust_cnt, s = edges_cnt)
@@ -88,14 +102,15 @@ class Imperator(object):
         return len(self.G)
 
 
-# this ultimately selects the default class.
+
 def divide_ed_impera(molecules,
                      clustering,
                      min_prob          = .8,
                      isotopic_coverage = .99):
     imp = Imperator(molecules, clustering, min_prob, isotopic_coverage)
     imp.divide()
-    imperator.impera()
+    imp.impera()
+    imp.set_estimated_intensities()
     return imp
 
 

@@ -58,90 +58,15 @@ isotopic_coverage = .999
 good_mols, good_subspectra = filter_subspectra_molecules(subspectra,
                                                          mols,
                                                          std_cnt = 3)
-
-
-# bc = np.array(list(spec.bc))
 t0 = time()
 imperator = divide_ed_impera(good_mols, spec.bc, min_prob, isotopic_coverage)
 fit_time = time() - t0
-
 # imperator.plot()
 # imperator.plot_ccs()
 
-ccs    = np.array(imperator.ccs) 
-simple = False
-cc     = ccs[100] if simple else ccs[np.argmax([len(c) for c in ccs])]
+imperator.set_estimated_intensities()
 
 
-cc.nodes(data=True)
-
-cc
-dp.spectrum()
-
-
-mol = good_mols[0]
-mol.name
-mol.intensity
-
-cc.nodes(data=True)
-cc.edges(data=True)
-
-peak_groups.intensity
-
-# 0. add the estimates to cc in dp
-dp.cc.nodes
-dp.cc.nodes[-19859]['intensity'] = 10
-dp.cc[-19859]
-
-mol_columns = np.array([N < 0  for N in dp.cc])
-
-dp.model.coef()
-
-X, ordering = attr_matrix(dp.cc, edge_attr='prob')
-X = X[:,mol_columns][peak_rows,:]
-
-for n in dp.cc:
-    if n < 0:
-        print(n)
-
-
-imperator.
-
-
-from networkx.linalg.attrmatrix import attr_matrix
-# plt_style = 'default'
-# plt.style.use(plt_style)
-
-# that's the place of fitting: could be part of impera.
-dps = []
-for cc in ccs:
-    dp = DeconvolutionProblem()
-    dp.fit(cc, total_intensities, min_mz, max_mz, mean_mz)
-    # dp.plot()
-    dps.append(dp)
-
-dps = np.array(dps)
-dps[105].plot()
-len(dps)
-dps[121].plot()
-dps[121]
-dp.idx
-dp.total_intensities
-
-
-
-
-# i = np.argmax(list(map(len, ccs)))
-i = 121
-dps[i].model.plot()
-dps[i].model.plot_res()
-dps[i].model._coef
-for a in dps[i].iter_estimates():
-    print(a)
-
-
-it = np.nditer(dps[i].model._coef)
-float(next(it))
 
 
 # what is this code below????

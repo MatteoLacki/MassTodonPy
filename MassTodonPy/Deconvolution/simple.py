@@ -69,12 +69,18 @@ class DeconvolutionProblem(object):
             plt.show()
 
 
-# def deconvolution_problem(connected_component_of_G,
-#                           total_intensities,
-#                           min_mz,
-#                             max_mz,
-#                             mean_mz,
-#                             include_zero_intensities = False):
-#     dp = DeconvolutionProblem()
-#     dp.fit()
+def deconvolve(connected_component,
+               total_intensities,
+               min_mz,
+               max_mz,
+               mean_mz,
+               include_zero_intensities = False):
+    dp = DeconvolutionProblem()
+    dp.fit(connected_component,
+           total_intensities,
+           min_mz,
+           max_mz,
+           mean_mz,
+           include_zero_intensities)
+    return dp
 
