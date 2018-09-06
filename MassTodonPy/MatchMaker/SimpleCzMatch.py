@@ -78,10 +78,10 @@ class SimpleCzMatch(object):
         self._I_ETnoD_PTR_bond = Counter()
         self._I_lavish = 0.0
         self._make_graph()
-        self._match()
-        self.intensities = self._get_intensities()
-        self.probabilities = self._get_probabilities()
-        self.branching_ratio = self._I_PTR_precursor / self._I_ETnoD_precursor if self._I_ETnoD_precursor else None
+        # self._match()
+        # self.intensities = self._get_intensities()
+        # self.probabilities = self._get_probabilities()
+        # self.branching_ratio = self._I_PTR_precursor / self._I_ETnoD_precursor if self._I_ETnoD_precursor else None
 
     def _get_node(self, molecule):
         """Define what should be hashed as graph node."""

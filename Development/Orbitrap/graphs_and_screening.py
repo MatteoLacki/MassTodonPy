@@ -68,8 +68,17 @@ fit_time = time() - t0
 # imperator.solutions[10].plot()
 # imperator.solutions[10].plot_fancy()
 
-SimpleCzMatch(good_mols, charge, True)
+simple_cz = SimpleCzMatch(good_mols, charge, True)
+simple_cz._I_ETnoD_precursor
+simple_cz._I_PTR_precursor
 
+good_mols
+
+mol = good_mols[0]
+[m for m in good_mols if m.name is 'precursor' and m.intensity > 0]
+
+
+# simple_cz._molecules
 
 
 # there should be an overall masstodon class, that will plot the overall results.
